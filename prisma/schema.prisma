@@ -1,0 +1,59 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../lib/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  createdAt DateTime @default(now()) @db.Timestamptz(3)
+  expiresAt DateTime @db.Timestamptz(3)
+}
+
+model ThreadsAccount {
+  id          String     @id
+  username    String
+  accessToken String
+  expiresAt   DateTime   @db.Timestamptz(3)
+  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
+  isActive    Boolean    @default(false)
+  posts       Post[]
+  syncState   SyncState?
+}
+
+model Post {
+  id        String         @id
+  accountId String
+  account   ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  text      String
+  timestamp DateTime       @db.Timestamptz(3)
+  mediaType String
+  permalink String
+  views     Int            @default(0)
+  likes     Int            @default(0)
+  replies   Int            @default(0)
+  reposts   Int            @default(0)
+  quotes    Int            @default(0)
+  shares    Int            @default(0)
+  syncedAt  DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@index([accountId, timestamp])
+  @@index([accountId, views])
+  @@index([accountId, likes])
+  @@index([accountId, mediaType])
+}
+
+model SyncState {
+  accountId    String         @id
+  account      ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  lastSyncedAt DateTime       @db.Timestamptz(3)
+}
+
+model AppSettings {
+  key   String @id
+  value String
+}

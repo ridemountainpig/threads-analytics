@@ -1,0 +1,35 @@
+import { getSession } from "@/lib/auth";
+import { redirect } from "next/navigation";
+import LoginForm from "./login-form";
+import { getDictionary } from "@/lib/i18n-server";
+import LanguageSwitcher from "@/components/dashboard/language-switcher";
+import Image from "next/image";
+
+export default async function LoginPage() {
+  const authenticated = await getSession();
+  if (authenticated) redirect("/dashboard/overview");
+  const { locale, t } = await getDictionary();
+
+  return (
+    <div className="bg-background flex min-h-screen items-center justify-center p-4">
+      <div className="absolute top-4 right-4">
+        <LanguageSwitcher locale={locale} />
+      </div>
+      <div className="w-full max-w-sm space-y-6 p-8">
+        <div className="space-y-2 text-center">
+          <Image
+            src="/threads-analytics-icon.png"
+            alt="Threads Analytics icon"
+            width={56}
+            height={56}
+            className="mx-auto rounded-xl"
+            priority
+          />
+          <h1 className="text-2xl font-semibold tracking-tight">{t.login.title}</h1>
+          <p className="text-muted-foreground text-sm">{t.login.subtitle}</p>
+        </div>
+        <LoginForm labels={t.login} />
+      </div>
+    </div>
+  );
+}
