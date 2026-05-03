@@ -9,6 +9,22 @@
   <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a>
 </p>
 
+<p align="center">
+  <img src="public/dashboard-zh.png" alt="Threads Analytics 儀表板" />
+</p>
+
+---
+
+## 目錄
+
+- [快速開始](#快速開始)
+- [功能](#功能)
+- [系統需求](#系統需求)
+- [開發設定](#開發設定)
+- [取得 Threads Access Token](#取得-threads-access-token)
+- [分析功能說明](#分析功能說明)
+- [部署](#部署)
+
 ---
 
 ## 快速開始

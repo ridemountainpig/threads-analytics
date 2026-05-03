@@ -9,6 +9,22 @@
   <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a>
 </p>
 
+<p align="center">
+  <img src="public/dashboard.png" alt="Threads Analytics dashboard" />
+</p>
+
+---
+
+## Table of Contents
+
+- [Quick Start](#quick-start)
+- [Features](#features)
+- [Requirements](#requirements)
+- [Development](#development)
+- [Getting Your Threads Access Token](#getting-your-threads-access-token)
+- [Analytics Reference](#analytics-reference)
+- [Deployment](#deployment)
+
 ---
 
 ## Quick Start
