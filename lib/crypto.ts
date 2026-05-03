@@ -1,13 +1,13 @@
-import { createCipheriv, createDecipheriv, randomBytes } from "crypto";
+import { createCipheriv, createDecipheriv, createHash, randomBytes } from "crypto";
 
 const ALGORITHM = "aes-256-gcm";
 
 function getKey(): Buffer {
-  const hex = process.env.TOKEN_ENCRYPTION_KEY;
-  if (!hex || hex.length !== 64) {
-    throw new Error("TOKEN_ENCRYPTION_KEY must be a 64-char hex string (32 bytes)");
+  const raw = process.env.TOKEN_ENCRYPTION_KEY;
+  if (!raw) {
+    throw new Error("TOKEN_ENCRYPTION_KEY is not set");
   }
-  return Buffer.from(hex, "hex");
+  return createHash("sha256").update(raw).digest();
 }
 
 export function encryptToken(plaintext: string): string {
@@ -30,5 +30,5 @@ export function decryptToken(ciphertext: string): string {
   const encrypted = buf.subarray(28);
   const decipher = createDecipheriv(ALGORITHM, key, iv);
   decipher.setAuthTag(tag);
-  return decipher.update(encrypted) + decipher.final("utf8");
+  return decipher.update(encrypted, undefined, "utf8") + decipher.final("utf8");
 }

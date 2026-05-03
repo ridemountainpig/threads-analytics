@@ -1,6 +1,6 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, refresh } from "next/cache";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { encryptToken, decryptToken } from "@/lib/crypto";
@@ -39,6 +39,7 @@ export async function addAccountAction(
     return { username: user.username };
   } catch (err) {
     if (err instanceof TokenExpiredError) return { error: "Token is invalid or expired" };
+    console.error("[addAccountAction] unexpected error:", err);
     return { error: "Failed to verify token. Please check and try again." };
   }
 }
@@ -67,7 +68,7 @@ export async function switchAccountAction(accountId: string): Promise<void> {
     db.threadsAccount.updateMany({ data: { isActive: false } }),
     db.threadsAccount.update({ where: { id: accountId }, data: { isActive: true } }),
   ]);
-  revalidatePath("/dashboard");
+  refresh();
 }
 
 export async function getActiveToken(): Promise<{ token: string; userId: string } | null> {
@@ -76,5 +77,9 @@ export async function getActiveToken(): Promise<{ token: string; userId: string 
   const account = await db.threadsAccount.findFirst({ where: { isActive: true } });
   if (!account) return null;
   if (account.expiresAt < new Date()) return null;
-  return { token: decryptToken(account.accessToken), userId: account.id };
+  try {
+    return { token: decryptToken(account.accessToken), userId: account.id };
+  } catch {
+    return null;
+  }
 }

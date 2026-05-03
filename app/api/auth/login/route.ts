@@ -41,6 +41,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: "Incorrect password" }, { status: 401 });
   }
 
+  loginAttempts.delete(ip);
   const token = await createSession();
   await setSessionCookie(token);
   return NextResponse.json({ success: true });

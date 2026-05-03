@@ -44,6 +44,7 @@ interface Props {
     medianViews?: string;
     hitRate?: string;
     confidence?: string;
+    confidenceLevels?: Record<"low" | "medium" | "high", string>;
     engagementRate: string;
   };
 }
@@ -131,7 +132,8 @@ export default function DayOfWeekChart({ data, labels }: Props) {
                     {hitRateLabel}: {point.hitRate}%
                   </p>
                   <p className="text-muted-foreground">
-                    {confidenceLabel}: {point.confidence}
+                    {confidenceLabel}:{" "}
+                    {copy.confidenceLevels?.[point.confidence] ?? point.confidence}
                   </p>
                 </div>
               );

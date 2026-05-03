@@ -25,7 +25,7 @@ export async function GET(request: NextRequest) {
     sinceTs !== null ? new Date(sinceTs * 1000) : new Date(Date.now() - 90 * 24 * 60 * 60 * 1000);
 
   const account = await db.threadsAccount.findFirst({ where: { isActive: true } });
-  if (!account) return NextResponse.json({ posts: [] });
+  if (!account) return NextResponse.json({ error: "No active account" }, { status: 404 });
 
   const orderBy =
     sort === "views"

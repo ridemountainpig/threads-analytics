@@ -53,7 +53,15 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ error: "No active account" }, { status: 404 });
   }
 
-  const accessToken = decryptToken(account.accessToken);
+  let accessToken: string;
+  try {
+    accessToken = decryptToken(account.accessToken);
+  } catch {
+    return NextResponse.json(
+      { error: "Account credentials are unavailable. Please reconnect this account." },
+      { status: 500 },
+    );
+  }
 
   // Fetch user-level insights from Threads API
   let userInsights;
@@ -68,6 +76,7 @@ export async function GET(request: NextRequest) {
     if (err instanceof TokenExpiredError) {
       return NextResponse.json({ error: "token_expired" }, { status: 401 });
     }
+    console.error("[analytics] getUserInsights failed, using empty fallback:", err);
     userInsights = { views: [], totalLikes: 0, totalReplies: 0, totalReposts: 0, totalQuotes: 0 };
   }
 

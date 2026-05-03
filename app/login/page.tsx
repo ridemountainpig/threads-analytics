@@ -5,9 +5,16 @@ import { getDictionary } from "@/lib/i18n-server";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
 import Image from "next/image";
 
-export default async function LoginPage() {
+export default async function LoginPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ from?: string }>;
+}) {
   const authenticated = await getSession();
-  if (authenticated) redirect("/dashboard/overview");
+  const { from } = await searchParams;
+  const redirectTo =
+    from && from.startsWith("/") && !from.startsWith("//") ? from : "/dashboard/overview";
+  if (authenticated) redirect(redirectTo);
   const { locale, t } = await getDictionary();
 
   return (
@@ -28,7 +35,7 @@ export default async function LoginPage() {
           <h1 className="text-2xl font-semibold tracking-tight">{t.login.title}</h1>
           <p className="text-muted-foreground text-sm">{t.login.subtitle}</p>
         </div>
-        <LoginForm labels={t.login} />
+        <LoginForm labels={t.login} redirectTo={redirectTo} />
       </div>
     </div>
   );

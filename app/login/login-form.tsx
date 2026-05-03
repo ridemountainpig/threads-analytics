@@ -16,9 +16,10 @@ interface LoginFormProps {
     errorRequired?: string;
     errorIncorrect?: string;
   };
+  redirectTo?: string;
 }
 
-export default function LoginForm({ labels }: LoginFormProps) {
+export default function LoginForm({ labels, redirectTo }: LoginFormProps) {
   const [state, action, pending] = useActionState(loginAction, undefined);
   const copy = labels ?? {
     password: "Password",
@@ -40,6 +41,7 @@ export default function LoginForm({ labels }: LoginFormProps) {
 
   return (
     <form action={action} className="space-y-4">
+      {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
       <div className="space-y-2">
         <Label htmlFor="password">{copy.password}</Label>
         <Input

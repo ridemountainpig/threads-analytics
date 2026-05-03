@@ -24,6 +24,7 @@ interface Props {
     p75Views?: string;
     hitRate?: string;
     confidence?: string;
+    confidenceLevels?: Record<"low" | "medium" | "high", string>;
     contentType?: string;
     lengthBucket?: string;
     colorIntensity?: string;
@@ -185,7 +186,8 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
               {copy.posts}: {tooltip.point.postCount}
             </p>
             <p>
-              {confidenceLabel}: {tooltip.point.confidence}
+              {confidenceLabel}:{" "}
+              {copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence}
             </p>
           </div>
         </div>

@@ -40,6 +40,7 @@ export const dictionaries = {
       posts: "Posts",
       settings: "Settings",
       signOut: "Sign out",
+      switchAccount: "Switch account",
     },
     timeRange: {
       all: "All",
@@ -305,6 +306,7 @@ export const dictionaries = {
       posts: "貼文",
       settings: "設定",
       signOut: "登出",
+      switchAccount: "切換帳號",
     },
     timeRange: {
       all: "全部",

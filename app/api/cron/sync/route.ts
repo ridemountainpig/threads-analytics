@@ -8,14 +8,15 @@ export const dynamic = "force-dynamic";
 function safeEqual(a: string, b: string) {
   const left = Buffer.from(a);
   const right = Buffer.from(b);
-
-  if (left.length !== right.length) return false;
-  return timingSafeEqual(left, right);
+  const maxLen = Math.max(left.length, right.length);
+  const paddedLeft = Buffer.concat([left, Buffer.alloc(maxLen - left.length)]);
+  const paddedRight = Buffer.concat([right, Buffer.alloc(maxLen - right.length)]);
+  return timingSafeEqual(paddedLeft, paddedRight) && left.length === right.length;
 }
 
 function isAuthorized(request: Request) {
   const secret = process.env.CRON_SECRET;
-  if (!secret) return process.env.NODE_ENV !== "production";
+  if (!secret) return false;
 
   const authorization = request.headers.get("authorization");
   const bearer = authorization?.startsWith("Bearer ") ? authorization.slice(7) : null;

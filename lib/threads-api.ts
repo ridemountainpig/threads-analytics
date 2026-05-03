@@ -95,7 +95,7 @@ export async function getPosts(
   const data = await apiGet<PostsResponse>(`/${userId}/threads`, params);
 
   const posts: ThreadsPost[] = (data.data ?? [])
-    .filter((p) => p.media_type !== "REPOST_FACADE")
+    .filter((p) => p.media_type !== "REPOST_FACADE" && Boolean(p.timestamp))
     .map((p) => ({
       id: p.id,
       text: p.text ?? "",

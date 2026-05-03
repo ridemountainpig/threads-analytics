@@ -55,6 +55,7 @@ interface HourlyBreakdownChartProps {
     p75Views?: string;
     hitRate?: string;
     confidence?: string;
+    confidenceLevels?: Record<"low" | "medium" | "high", string>;
   };
 }
 
@@ -184,7 +185,10 @@ export default function HourlyBreakdownChart({
                     {copy.postsTooltip}: {point?.postCount ?? 0}
                   </p>
                   <p className="text-muted-foreground">
-                    {confidenceLabel}: {point?.confidence ?? "low"}
+                    {confidenceLabel}:{" "}
+                    {copy.confidenceLevels?.[point?.confidence ?? "low"] ??
+                      point?.confidence ??
+                      "low"}
                   </p>
                 </div>
               );

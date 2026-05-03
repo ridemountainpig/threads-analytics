@@ -5,14 +5,22 @@ import { db } from "./db";
 const SESSION_COOKIE = "ta_session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
 
-const HMAC_KEY = Buffer.alloc(32);
+function getHmacKey(): Buffer {
+  const raw = process.env.TOKEN_ENCRYPTION_KEY;
+  if (!raw) throw new Error("TOKEN_ENCRYPTION_KEY is not set");
+  return Buffer.from(raw);
+}
+
+const MAX_PASSWORD_LENGTH = 256;
 
 export async function verifyPassword(input: string): Promise<boolean> {
   const expected = process.env.APP_PASSWORD;
   if (!expected) return false;
+  if (input.length > MAX_PASSWORD_LENGTH) return false;
   try {
-    const a = createHmac("sha256", HMAC_KEY).update(input).digest();
-    const b = createHmac("sha256", HMAC_KEY).update(expected).digest();
+    const key = getHmacKey();
+    const a = createHmac("sha256", key).update(input).digest();
+    const b = createHmac("sha256", key).update(expected).digest();
     return timingSafeEqual(a, b);
   } catch {
     return false;

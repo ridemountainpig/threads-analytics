@@ -47,6 +47,7 @@ interface ContentTypeChartProps {
     p75Views?: string;
     hitRate?: string;
     confidence?: string;
+    confidenceLevels?: Record<"low" | "medium" | "high", string>;
     contentType?: string;
     engagementRate: string;
     shareRate: string;
@@ -119,7 +120,7 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
             labelFormatter={(label, payload) => {
               const point = payload?.[0]?.payload;
               return point
-                ? `${label} · ${point.postCount} ${postsLabel} · ${confidenceLabel}: ${point.confidence}`
+                ? `${label} · ${point.postCount} ${postsLabel} · ${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence as "low" | "medium" | "high"] ?? point.confidence}`
                 : String(label);
             }}
             content={({ active, payload, label }) => {
@@ -152,7 +153,8 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
                     {hitRateLabel}: {point.hitRate}%
                   </p>
                   <p className="text-muted-foreground">
-                    {confidenceLabel}: {point.confidence}
+                    {confidenceLabel}:{" "}
+                    {copy.confidenceLevels?.[point.confidence] ?? point.confidence}
                   </p>
                 </div>
               );

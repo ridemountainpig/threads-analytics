@@ -45,13 +45,14 @@ interface WeeklyFrequencyChartProps {
     medianViews?: string;
     hitRate?: string;
     confidence?: string;
+    confidenceLevels?: Record<"low" | "medium" | "high", string>;
     engagementRate: string;
     shareRate: string;
   };
 }
 
 function formatWeek(week: string) {
-  return week.replace("2026-", "");
+  return week.replace(/^\d{4}-/, "");
 }
 
 export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyChartProps) {
@@ -120,7 +121,7 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             labelFormatter={(label, payload) => {
               const point = payload?.[0]?.payload;
               return point
-                ? `${formatWeek(String(label))} · ${confidenceLabel}: ${point.confidence}`
+                ? `${formatWeek(String(label))} · ${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence as "low" | "medium" | "high"] ?? point.confidence}`
                 : formatWeek(String(label));
             }}
             content={({ active, payload, label }) => {
@@ -151,7 +152,8 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
                     {hitRateLabel}: {point.hitRate}%
                   </p>
                   <p className="text-muted-foreground">
-                    {confidenceLabel}: {point.confidence}
+                    {confidenceLabel}:{" "}
+                    {copy.confidenceLevels?.[point.confidence] ?? point.confidence}
                   </p>
                 </div>
               );

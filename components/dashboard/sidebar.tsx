@@ -6,6 +6,7 @@ import { LayoutDashboard, BarChart2, FileText, Settings, LogOut } from "lucide-r
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
+import AccountSwitcher from "@/components/dashboard/account-switcher";
 import type { Locale } from "@/lib/i18n";
 
 const navItems = [
@@ -15,8 +16,14 @@ const navItems = [
   { href: "/dashboard/settings", labelKey: "settings", icon: Settings },
 ] as const;
 
+interface Account {
+  id: string;
+  username: string;
+  isActive: boolean;
+}
+
 interface SidebarProps {
-  username?: string;
+  accounts: Account[];
   locale: Locale;
   appName: string;
   labels: {
@@ -25,18 +32,27 @@ interface SidebarProps {
     posts: string;
     settings: string;
     signOut: string;
+    switchAccount: string;
   };
 }
 
-export default function Sidebar({ username, locale, appName, labels }: SidebarProps) {
+export default function Sidebar({ accounts, locale, appName, labels }: SidebarProps) {
   const pathname = usePathname();
+  const activeUsername = accounts.find((a) => a.isActive)?.username;
+  const multiAccount = accounts.length > 1;
 
   return (
     <>
       <header className="bg-background/95 sticky top-0 z-30 flex items-center justify-between border-b px-4 py-3 backdrop-blur md:hidden">
-        <div className="min-w-0">
+        <div className="min-w-0 flex-1 pr-2">
           <h2 className="truncate text-sm font-semibold">{appName}</h2>
-          {username && <p className="text-muted-foreground truncate text-xs">@{username}</p>}
+          {multiAccount ? (
+            <AccountSwitcher accounts={accounts} label={labels.switchAccount} />
+          ) : (
+            activeUsername && (
+              <p className="text-muted-foreground truncate text-xs">@{activeUsername}</p>
+            )
+          )}
         </div>
         <LanguageSwitcher locale={locale} compact />
       </header>
@@ -44,7 +60,15 @@ export default function Sidebar({ username, locale, appName, labels }: SidebarPr
       <aside className="bg-background sticky top-0 hidden h-screen w-56 shrink-0 flex-col border-r md:flex">
         <div className="border-b p-4">
           <h2 className="text-sm font-semibold">{appName}</h2>
-          {username && <p className="text-muted-foreground mt-0.5 truncate text-xs">@{username}</p>}
+          {multiAccount ? (
+            <div className="mt-0.5">
+              <AccountSwitcher accounts={accounts} label={labels.switchAccount} />
+            </div>
+          ) : (
+            activeUsername && (
+              <p className="text-muted-foreground mt-0.5 truncate text-xs">@{activeUsername}</p>
+            )
+          )}
         </div>
 
         <nav className="flex-1 space-y-0.5 p-2">

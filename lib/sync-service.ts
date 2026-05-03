@@ -18,7 +18,12 @@ export async function syncActiveAccount(): Promise<SyncResult> {
   if (!account) return { error: "No active account. Please add a Threads account first." };
   if (account.expiresAt < new Date()) return { error: "token_expired" };
 
-  const accessToken = decryptToken(account.accessToken);
+  let accessToken: string;
+  try {
+    accessToken = decryptToken(account.accessToken);
+  } catch {
+    return { error: "Account credentials are unavailable. Please reconnect this account." };
+  }
   const userId = account.id;
 
   try {
@@ -51,9 +56,14 @@ export async function syncActiveAccount(): Promise<SyncResult> {
       const withInsights = await Promise.all(
         batch.map(async (post) => {
           if (stalePostIds.has(post.id)) return { post, insights: null };
-          const insights = await getPostInsights(post.id, accessToken);
-          if (insights === null) insightsFailed++;
-          return { post, insights };
+          try {
+            const insights = await getPostInsights(post.id, accessToken);
+            if (insights === null) insightsFailed++;
+            return { post, insights };
+          } catch {
+            insightsFailed++;
+            return { post, insights: null };
+          }
         }),
       );
 

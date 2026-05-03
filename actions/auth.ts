@@ -15,7 +15,12 @@ export async function loginAction(
 
   const token = await createSession();
   await setSessionCookie(token);
-  redirect("/dashboard/overview");
+  const redirectTo = formData.get("redirectTo") as string | null;
+  const destination =
+    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+      ? redirectTo
+      : "/dashboard/overview";
+  redirect(destination);
 }
 
 export async function logoutAction(): Promise<void> {
