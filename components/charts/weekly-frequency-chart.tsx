@@ -48,6 +48,7 @@ interface WeeklyFrequencyChartProps {
     confidenceLevels?: Record<"low" | "medium" | "high", string>;
     engagementRate: string;
     shareRate: string;
+    noData?: string;
   };
 }
 
@@ -64,6 +65,7 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
     confidence: "Confidence",
     engagementRate: "Engagement Rate",
     shareRate: "Share Rate",
+    noData: "No data",
   };
   const medianViewsLabel = copy.medianViews ?? "Median Views";
   const hitRateLabel = copy.hitRate ?? "Hit Rate";
@@ -72,7 +74,7 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }

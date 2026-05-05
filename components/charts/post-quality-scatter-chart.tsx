@@ -55,6 +55,8 @@ interface Props {
     quadrantUnderperforming?: string;
     quadrantGroup?: string;
     mediaTypes?: Record<string, string>;
+    noData?: string;
+    noText?: string;
   };
 }
 
@@ -79,8 +81,8 @@ function getQuadrantLabel(quadrant: DataPoint["quadrant"], labels?: Props["label
   return labels?.quadrantUnderperforming ?? fallback.underperforming;
 }
 
-function truncateText(text: string) {
-  return text.length > 96 ? `${text.slice(0, 96)}...` : text || "(no text)";
+function truncateText(text: string, noText?: string) {
+  return text.length > 96 ? `${text.slice(0, 96)}...` : text || (noText ?? "(no text)");
 }
 
 export default function PostQualityScatterChart({ data, labels }: Props) {
@@ -92,12 +94,13 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
     shares: "Shares",
     textLength: "Text Length",
     viewsMultiplier: "Views vs Median",
+    noData: "No data",
   };
 
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-[280px] items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }
@@ -146,7 +149,7 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
                   style={tooltipStyle}
                   className="border-border bg-popover text-popover-foreground max-w-[280px] rounded border px-2 py-1 text-xs shadow-sm"
                 >
-                  <p style={tooltipLabelStyle}>{truncateText(point.text)}</p>
+                  <p style={tooltipLabelStyle}>{truncateText(point.text, copy.noText)}</p>
                   <p>
                     {copy.views}: {point.views.toLocaleString()}
                   </p>

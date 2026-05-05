@@ -33,6 +33,7 @@ interface DailyViewsChartProps {
     sevenDayAvg: string;
     baseline?: string;
     date?: string;
+    noData?: string;
   };
 }
 
@@ -49,13 +50,14 @@ export default function DailyViewsChart({ data, dateLocale, labels }: DailyViews
     views: "Views",
     sevenDayAvg: "7d Avg",
     baseline: "Baseline",
+    noData: "No data",
   };
   const baselineLabel = copy.baseline ?? "Baseline";
 
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }

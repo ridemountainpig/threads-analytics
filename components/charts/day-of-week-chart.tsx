@@ -46,6 +46,7 @@ interface Props {
     confidence?: string;
     confidenceLevels?: Record<"low" | "medium" | "high", string>;
     engagementRate: string;
+    noData?: string;
   };
 }
 
@@ -58,6 +59,7 @@ export default function DayOfWeekChart({ data, labels }: Props) {
     hitRate: "Hit Rate",
     confidence: "Confidence",
     engagementRate: "Engagement Rate",
+    noData: "No data",
   };
   const medianViewsLabel = copy.medianViews ?? "Median Views";
   const hitRateLabel = copy.hitRate ?? "Hit Rate";
@@ -67,7 +69,7 @@ export default function DayOfWeekChart({ data, labels }: Props) {
   if (!data.length || data.every((d) => d.medianViews === 0)) {
     return (
       <div className="text-muted-foreground flex h-[160px] items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }

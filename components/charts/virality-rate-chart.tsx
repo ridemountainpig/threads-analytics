@@ -28,26 +28,40 @@ interface DataPoint {
 
 interface Props {
   data: DataPoint[];
+  dateLocale?: string;
+  labels?: {
+    date?: string;
+    viralityRate?: string;
+    sharesPerViews?: string;
+    noData?: string;
+  };
 }
 
-export default function ViralityRateChart({ data }: Props) {
+export default function ViralityRateChart({ data, dateLocale, labels }: Props) {
+  const copy = labels ?? {
+    date: "Date",
+    viralityRate: "Virality Rate",
+    sharesPerViews: "Shares / Views",
+    noData: "No data",
+  };
+
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-40 items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }
 
   return (
     <>
-      <AxisHint x="Date" y="Shares / Views" />
+      <AxisHint x={copy.date ?? "Date"} y={copy.sharesPerViews ?? "Shares / Views"} />
       <ResponsiveContainer width="100%" height={160}>
         <LineChart data={data} margin={compactChartMargin}>
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value)}
+            tickFormatter={(value) => formatShortDate(value, dateLocale)}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
@@ -60,8 +74,22 @@ export default function ViralityRateChart({ data }: Props) {
             width={36}
           />
           <Tooltip
-            labelFormatter={(v) => formatShortDate(String(v))}
-            formatter={(v) => [`${v}%`, "Shares / Views"]}
+            labelFormatter={(v) => formatShortDate(String(v), dateLocale)}
+            content={({ active, payload }) => {
+              if (!active || !payload?.length) return null;
+              const point = payload[0]?.payload as DataPoint;
+              return (
+                <div
+                  style={tooltipStyle}
+                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
+                >
+                  <p style={tooltipLabelStyle}>{formatShortDate(point.date, dateLocale)}</p>
+                  <p>
+                    {copy.sharesPerViews}: {point.viralityRate.toFixed(2)}%
+                  </p>
+                </div>
+              );
+            }}
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}
@@ -72,7 +100,7 @@ export default function ViralityRateChart({ data }: Props) {
             stroke={chartColors.share}
             strokeWidth={1.5}
             dot={false}
-            name="Virality Rate"
+            name={copy.viralityRate}
           />
         </LineChart>
       </ResponsiveContainer>

@@ -51,6 +51,7 @@ interface PostLengthChartProps {
     confidenceLevels?: Record<"low" | "medium" | "high", string>;
     engagementRate: string;
     replyRate: string;
+    noData?: string;
   };
 }
 
@@ -64,6 +65,7 @@ export default function PostLengthChart({ data, labels }: PostLengthChartProps) 
     confidence: "Confidence",
     engagementRate: "Engagement Rate",
     replyRate: "Reply Rate",
+    noData: "No data",
   };
   const medianViewsLabel = copy.medianViews ?? "Median Views";
   const p75ViewsLabel = copy.p75Views ?? "P75 Views";
@@ -74,7 +76,7 @@ export default function PostLengthChart({ data, labels }: PostLengthChartProps) 
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }

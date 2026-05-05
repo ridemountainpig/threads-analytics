@@ -45,6 +45,7 @@ interface Props {
     avgViewsPost: string;
     posts: string;
     date?: string;
+    noData?: string;
   };
 }
 
@@ -53,12 +54,13 @@ export default function OverallPerformanceChart({ data, dateLocale, labels }: Pr
     views: "Views",
     avgViewsPost: "Avg Views / Post",
     posts: "Posts",
+    noData: "No data",
   };
 
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-[280px] items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }

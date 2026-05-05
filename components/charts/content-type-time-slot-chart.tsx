@@ -6,27 +6,24 @@ import AxisHint from "./axis-hint";
 
 interface DataPoint {
   mediaType: string;
-  lengthBucket: string;
+  hour: number;
   postCount: number;
-  avgViews: number;
   medianViews: number;
-  p75Views: number;
-  hitRate: number;
+  avgViews: number;
   confidence: "low" | "medium" | "high";
 }
 
 interface Props {
   data: DataPoint[];
+  dateLocale?: string;
   labels?: {
     posts: string;
     avgViews: string;
     medianViews?: string;
-    p75Views?: string;
-    hitRate?: string;
     confidence?: string;
     confidenceLevels?: Record<"low" | "medium" | "high", string>;
     contentType?: string;
-    lengthBucket?: string;
+    hour?: string;
     colorIntensity?: string;
     less: string;
     more: string;
@@ -34,8 +31,6 @@ interface Props {
     noData?: string;
   };
 }
-
-const LENGTH_BUCKETS = ["0-50", "51-150", "151-300", "301+"];
 
 function getIntensity(value: number, max: number) {
   if (value <= 0 || max <= 0) return 0;
@@ -50,6 +45,19 @@ const INTENSITY_CLASSES: Record<number, string> = {
   4: "bg-primary/55",
 };
 
+const HOURS = Array.from({ length: 24 }, (_, i) => i);
+
+function formatHour(h: number, locale?: string) {
+  try {
+    return new Intl.DateTimeFormat(locale ?? "en-US", { hour: "numeric", hourCycle: "h23" }).format(
+      new Date(2000, 0, 1, h),
+    );
+  } catch {
+    if (h === 0) return "0h";
+    return `${h}h`;
+  }
+}
+
 interface TooltipState {
   point: DataPoint;
   label: string;
@@ -57,23 +65,19 @@ interface TooltipState {
   y: number;
 }
 
-export default function ContentFormatLengthMatrix({ data, labels }: Props) {
+export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const copy = labels ?? {
     posts: "Posts",
     avgViews: "Avg Views",
     medianViews: "Median Views",
-    p75Views: "P75 Views",
-    hitRate: "Hit Rate",
     confidence: "Confidence",
     less: "Less",
     more: "More",
     noData: "No data",
   };
   const medianViewsLabel = copy.medianViews ?? "Median Views";
-  const p75ViewsLabel = copy.p75Views ?? "P75 Views";
-  const hitRateLabel = copy.hitRate ?? "Hit Rate";
   const confidenceLabel = copy.confidence ?? "Confidence";
   const getMediaTypeLabel = (mediaType: string) => copy.mediaTypes?.[mediaType] ?? mediaType;
 
@@ -85,28 +89,28 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
     );
   }
 
-  const mediaTypes = Array.from(new Set(data.map((point) => point.mediaType))).sort();
-  const max = Math.max(...data.map((point) => point.medianViews));
-  const byKey = new Map(data.map((point) => [`${point.mediaType}:${point.lengthBucket}`, point]));
+  const mediaTypes = Array.from(new Set(data.map((d) => d.mediaType))).sort();
+  const max = Math.max(...data.map((d) => d.medianViews));
+  const byKey = new Map(data.map((d) => [`${d.mediaType}:${d.hour}`, d]));
 
   return (
     <>
       <div className="w-full overflow-x-auto">
         <AxisHint
-          columns={copy.lengthBucket ?? "Character Count"}
+          columns={copy.hour ?? "Hour"}
           rows={copy.contentType ?? "Content Type"}
           color={`${medianViewsLabel} / ${copy.colorIntensity ?? "Color Intensity"}`}
         />
         <div
-          className="grid min-w-[520px] gap-1"
+          className="grid min-w-[720px] gap-0.5"
           style={{
-            gridTemplateColumns: `112px repeat(${LENGTH_BUCKETS.length}, minmax(88px, 1fr))`,
+            gridTemplateColumns: `90px repeat(${HOURS.length}, minmax(22px, 1fr))`,
           }}
         >
           <div />
-          {LENGTH_BUCKETS.map((bucket) => (
-            <div key={bucket} className="text-muted-foreground px-2 text-center text-[11px]">
-              {bucket}
+          {HOURS.map((h) => (
+            <div key={h} className="text-muted-foreground text-center text-[9px] leading-tight">
+              {h % 3 === 0 ? formatHour(h, dateLocale) : ""}
             </div>
           ))}
           {mediaTypes.map((type) => (
@@ -114,18 +118,18 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
               <div className="text-muted-foreground flex items-center pr-2 text-xs font-medium">
                 {getMediaTypeLabel(type)}
               </div>
-              {LENGTH_BUCKETS.map((bucket) => {
-                const point = byKey.get(`${type}:${bucket}`);
+              {HOURS.map((hour) => {
+                const point = byKey.get(`${type}:${hour}`);
                 const intensity = getIntensity(point?.medianViews ?? 0, max);
                 return (
                   <div
-                    key={`${type}-${bucket}`}
+                    key={`${type}-${hour}`}
                     onMouseMove={
                       point
                         ? (e) =>
                             setTooltip({
                               point,
-                              label: `${getMediaTypeLabel(type)} · ${bucket}`,
+                              label: `${getMediaTypeLabel(type)} · ${formatHour(hour, dateLocale)}`,
                               x: e.clientX,
                               y: e.clientY,
                             })
@@ -133,20 +137,21 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
                     }
                     onMouseLeave={() => setTooltip(null)}
                     className={cn(
-                      "border-border flex h-16 min-w-0 flex-col justify-center rounded border px-2 text-center",
-                      "text-foreground",
+                      "flex h-7 min-w-0 flex-col items-center justify-center rounded-sm text-[9px]",
                       INTENSITY_CLASSES[intensity],
-                      point && "cursor-pointer",
-                      point?.confidence === "low" && "border-muted-foreground/40 border-dashed",
-                      point?.confidence === "medium" && "border-muted-foreground/30",
+                      point?.confidence === "low" &&
+                        "border-muted-foreground/40 border border-dashed",
+                      point?.confidence === "medium" && "border-muted-foreground/20 border",
+                      !point && "bg-muted/30",
                     )}
                   >
-                    <span className="text-sm font-semibold tabular-nums">
-                      {point ? point.medianViews.toLocaleString() : "-"}
-                    </span>
-                    <span className="text-foreground/70 text-[10px]">
-                      {point ? `${point.postCount} ${copy.posts}` : ""}
-                    </span>
+                    {point ? (
+                      <span className="font-medium tabular-nums">
+                        {point.medianViews > 999
+                          ? `${(point.medianViews / 1000).toFixed(1)}k`
+                          : point.medianViews}
+                      </span>
+                    ) : null}
                   </div>
                 );
               })}
@@ -155,11 +160,8 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
         </div>
         <div className="mt-2 flex items-center justify-end gap-1">
           <span className="text-muted-foreground text-[10px]">{copy.less}</span>
-          {[0, 1, 2, 3, 4].map((intensity) => (
-            <div
-              key={intensity}
-              className={cn("size-3 rounded-[2px]", INTENSITY_CLASSES[intensity])}
-            />
+          {[0, 1, 2, 3, 4].map((i) => (
+            <div key={i} className={cn("size-3 rounded-[2px]", INTENSITY_CLASSES[i])} />
           ))}
           <span className="text-muted-foreground text-[10px]">{copy.more}</span>
         </div>
@@ -177,12 +179,6 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
             </p>
             <p>
               {copy.avgViews}: {tooltip.point.avgViews.toLocaleString()}
-            </p>
-            <p>
-              {p75ViewsLabel}: {tooltip.point.p75Views.toLocaleString()}
-            </p>
-            <p>
-              {hitRateLabel}: {tooltip.point.hitRate}%
             </p>
             <p>
               {copy.posts}: {tooltip.point.postCount}

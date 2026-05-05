@@ -31,6 +31,7 @@ interface EngagementRateChartProps {
     sevenDayAvg: string;
     date?: string;
     engagementRate?: string;
+    noData?: string;
   };
 }
 
@@ -42,12 +43,13 @@ export default function EngagementRateChart({
   const copy = labels ?? {
     dailyRate: "Daily Rate",
     sevenDayAvg: "7d Avg",
+    noData: "No data",
   };
 
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }

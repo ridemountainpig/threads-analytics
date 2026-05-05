@@ -52,6 +52,7 @@ interface ContentTypeChartProps {
     engagementRate: string;
     shareRate: string;
     mediaTypes?: Record<string, string>;
+    noData?: string;
   };
 }
 
@@ -65,6 +66,7 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
     confidence: "Confidence",
     engagementRate: "Engagement Rate",
     shareRate: "Share Rate",
+    noData: "No data",
   };
   const medianViewsLabel = copy.medianViews ?? "Median Views";
   const p75ViewsLabel = copy.p75Views ?? "P75 Views";
@@ -79,7 +81,7 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }

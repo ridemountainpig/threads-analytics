@@ -45,6 +45,7 @@ interface HourlyBreakdownChartProps {
     avgLikes: number;
     postCount: number;
   }>;
+  dateLocale?: string;
   labels?: {
     allDays: string;
     days: readonly string[];
@@ -56,19 +57,27 @@ interface HourlyBreakdownChartProps {
     hitRate?: string;
     confidence?: string;
     confidenceLevels?: Record<"low" | "medium" | "high", string>;
+    noData?: string;
   };
 }
 
-function formatHour(h: number) {
-  if (h === 0) return "12 AM";
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return "12 PM";
-  return `${h - 12} PM`;
+function formatHour(h: number, locale?: string) {
+  try {
+    return new Intl.DateTimeFormat(locale ?? "en-US", { hour: "numeric", hourCycle: "h23" }).format(
+      new Date(2000, 0, 1, h),
+    );
+  } catch {
+    if (h === 0) return "12 AM";
+    if (h < 12) return `${h} AM`;
+    if (h === 12) return "12 PM";
+    return `${h - 12} PM`;
+  }
 }
 
 export default function HourlyBreakdownChart({
   heatmap,
   bestTimeToPost,
+  dateLocale,
   labels,
 }: HourlyBreakdownChartProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
@@ -149,7 +158,7 @@ export default function HourlyBreakdownChart({
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="hour"
-            tickFormatter={formatHour}
+            tickFormatter={(h: number) => formatHour(h, dateLocale)}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
@@ -168,7 +177,7 @@ export default function HourlyBreakdownChart({
               const point = payload[0]?.payload as (typeof chartData)[number] | undefined;
               return (
                 <div className="bg-popover border-border rounded border px-2 py-1 text-xs shadow-sm">
-                  <p className="font-medium">{formatHour(Number(label ?? 0))}</p>
+                  <p className="font-medium">{formatHour(Number(label ?? 0), dateLocale)}</p>
                   <p>
                     {medianViewsLabel}: {(point?.medianViews ?? 0).toLocaleString()}
                   </p>

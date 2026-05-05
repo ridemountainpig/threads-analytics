@@ -22,6 +22,12 @@ import {
   computeContentFormatLengthMatrix,
   computeActionFunnel,
   computeSharesTrend,
+  computeViralityRateTrend,
+  computeEngagementBreakdownPie,
+  computeKeywordAnalysis,
+  computeOptimalFrequency,
+  computeContentTypeTimeSlot,
+  computePostingStreak,
   type PostWithInsights,
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -40,6 +46,11 @@ import PostQualityScatterChart from "@/components/charts/post-quality-scatter-ch
 import ActionFunnelChart from "@/components/charts/action-funnel-chart";
 import ContentFormatLengthMatrix from "@/components/charts/content-format-length-matrix";
 import SharesTrendChart from "@/components/charts/shares-trend-chart";
+import ViralityRateChart from "@/components/charts/virality-rate-chart";
+import EngagementBreakdownPieChart from "@/components/charts/engagement-breakdown-pie-chart";
+import KeywordAnalysisChart from "@/components/charts/keyword-analysis-chart";
+import OptimalFrequencyChart from "@/components/charts/optimal-frequency-chart";
+import ContentTypeTimeSlotChart from "@/components/charts/content-type-time-slot-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsTabs from "@/components/dashboard/analytics-tabs";
@@ -161,6 +172,12 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   );
   const contentFormatLengthMatrix = computeContentFormatLengthMatrix(posts);
   const sharesTrend = computeSharesTrend(posts, tz);
+  const viralityRateTrend = computeViralityRateTrend(posts, tz);
+  const engagementBreakdownPie = computeEngagementBreakdownPie(posts);
+  const keywordAnalysis = computeKeywordAnalysis(posts);
+  const optimalFrequency = computeOptimalFrequency(posts, tz);
+  const contentTypeTimeSlot = computeContentTypeTimeSlot(posts, tz);
+  const postingStreak = computePostingStreak(posts, tz);
 
   const totalShares = posts.reduce((sum, p) => sum + p.shares, 0);
   const totalQuotes = posts.reduce((sum, p) => sum + p.quotes, 0);
@@ -258,6 +275,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 <HourlyBreakdownChart
                   heatmap={heatmap}
                   bestTimeToPost={bestTimeToPost}
+                  dateLocale={dateLocale}
                   labels={t.chart}
                 />
               </CardContent>
@@ -292,17 +310,33 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </Card>
           </div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.formatLengthMatrix}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.formatLengthMatrixSub}</p>
-            </CardHeader>
-            <CardContent>
-              <ContentFormatLengthMatrix data={contentFormatLengthMatrix} labels={t.chart} />
-            </CardContent>
-          </Card>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <Card className="lg:col-span-3">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                  {t.analytics.formatLengthMatrix}
+                </CardTitle>
+                <p className="text-muted-foreground text-xs">{t.analytics.formatLengthMatrixSub}</p>
+              </CardHeader>
+              <CardContent>
+                <ContentFormatLengthMatrix data={contentFormatLengthMatrix} labels={t.chart} />
+              </CardContent>
+            </Card>
+
+            <Card className="lg:col-span-2">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                  {t.analytics.engagementBreakdownPie}
+                </CardTitle>
+                <p className="text-muted-foreground text-xs">
+                  {t.analytics.engagementBreakdownPieSub}
+                </p>
+              </CardHeader>
+              <CardContent>
+                <EngagementBreakdownPieChart data={engagementBreakdownPie} labels={t.chart} />
+              </CardContent>
+            </Card>
+          </div>
 
           <Card>
             <CardHeader className="pb-2">
@@ -319,11 +353,32 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               />
             </CardContent>
           </Card>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                {t.analytics.viralityTrend}
+              </CardTitle>
+              <p className="text-muted-foreground text-xs">{t.analytics.viralityTrendSub}</p>
+            </CardHeader>
+            <CardContent>
+              <ViralityRateChart
+                data={viralityRateTrend}
+                dateLocale={dateLocale}
+                labels={{
+                  date: t.chart.date,
+                  viralityRate: t.chart.viralityRate,
+                  sharesPerViews: t.chart.sharesPerViews,
+                  noData: t.chart.noData,
+                }}
+              />
+            </CardContent>
+          </Card>
         </TabsContent>
 
         {/* ── CONTENT TAB ── */}
         <TabsContent value="content" className="mt-4 space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
             <Card>
               <CardContent className="p-4">
                 <p className="text-muted-foreground text-xs tracking-wider uppercase">
@@ -362,6 +417,24 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                   {t.analytics.totalPosts}
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{posts.length.toLocaleString()}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                  {t.analytics.longestStreak}
+                </p>
+                <p className="mt-1 text-2xl font-semibold">{postingStreak.longestStreak}</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">{t.analytics.days}</p>
+              </CardContent>
+            </Card>
+            <Card>
+              <CardContent className="p-4">
+                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                  {t.analytics.currentStreak}
+                </p>
+                <p className="mt-1 text-2xl font-semibold">{postingStreak.currentStreak}</p>
+                <p className="text-muted-foreground mt-0.5 text-xs">{t.analytics.daysPosted}</p>
               </CardContent>
             </Card>
           </div>
@@ -434,6 +507,66 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                   shares: t.chart.shares,
                   empty: t.analytics.sharesTrendEmpty,
                 }}
+              />
+            </CardContent>
+          </Card>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                  {t.analytics.keywordAnalysis}
+                </CardTitle>
+                <p className="text-muted-foreground text-xs">{t.analytics.keywordAnalysisSub}</p>
+              </CardHeader>
+              <CardContent>
+                <KeywordAnalysisChart
+                  data={keywordAnalysis}
+                  labels={{
+                    posts: t.chart.posts,
+                    avgViews: t.chart.avgViews,
+                    engagementRate: t.chart.engagementRate,
+                    shareRate: t.chart.shareRate,
+                  }}
+                />
+              </CardContent>
+            </Card>
+
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                  {t.analytics.optimalFrequency}
+                </CardTitle>
+                <p className="text-muted-foreground text-xs">{t.analytics.optimalFrequencySub}</p>
+              </CardHeader>
+              <CardContent>
+                <OptimalFrequencyChart
+                  data={optimalFrequency}
+                  labels={{
+                    range: t.chart.range,
+                    postsPerWeek: t.analytics.postsPerWeek,
+                    avgViewsPost: t.chart.avgViewsPost,
+                    engagementRate: t.chart.engagementRate,
+                    shareRate: t.chart.shareRate,
+                    weeks: t.chart.week,
+                  }}
+                />
+              </CardContent>
+            </Card>
+          </div>
+
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                {t.analytics.contentTypeTimeSlot}
+              </CardTitle>
+              <p className="text-muted-foreground text-xs">{t.analytics.contentTypeTimeSlotSub}</p>
+            </CardHeader>
+            <CardContent>
+              <ContentTypeTimeSlotChart
+                data={contentTypeTimeSlot}
+                dateLocale={dateLocale}
+                labels={t.chart}
               />
             </CardContent>
           </Card>

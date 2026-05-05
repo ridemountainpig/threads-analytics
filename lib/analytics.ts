@@ -953,3 +953,497 @@ export function computeDailyPerformance(
     };
   });
 }
+
+export interface EngagementBreakdownPoint {
+  type: "likes" | "replies" | "reposts" | "quotes" | "shares";
+  value: number;
+  rate: number;
+}
+
+export function computeEngagementBreakdownPie(
+  posts: PostWithInsights[],
+): EngagementBreakdownPoint[] {
+  const totals = {
+    likes: posts.reduce((s, p) => s + p.likes, 0),
+    replies: posts.reduce((s, p) => s + p.replies, 0),
+    reposts: posts.reduce((s, p) => s + p.reposts, 0),
+    quotes: posts.reduce((s, p) => s + p.quotes, 0),
+    shares: posts.reduce((s, p) => s + p.shares, 0),
+  };
+  const total = totals.likes + totals.replies + totals.reposts + totals.quotes + totals.shares;
+  const toPoint = (
+    type: EngagementBreakdownPoint["type"],
+    value: number,
+  ): EngagementBreakdownPoint => ({
+    type,
+    value,
+    rate: total > 0 ? Math.round((value / total) * 10000) / 100 : 0,
+  });
+  return [
+    toPoint("likes", totals.likes),
+    toPoint("replies", totals.replies),
+    toPoint("reposts", totals.reposts),
+    toPoint("quotes", totals.quotes),
+    toPoint("shares", totals.shares),
+  ];
+}
+
+const STOP_WORDS = new Set([
+  "the",
+  "a",
+  "an",
+  "and",
+  "or",
+  "but",
+  "in",
+  "on",
+  "at",
+  "to",
+  "for",
+  "of",
+  "with",
+  "by",
+  "from",
+  "is",
+  "it",
+  "that",
+  "this",
+  "was",
+  "are",
+  "be",
+  "have",
+  "has",
+  "had",
+  "not",
+  "they",
+  "we",
+  "you",
+  "he",
+  "she",
+  "i",
+  "me",
+  "my",
+  "we",
+  "our",
+  "your",
+  "his",
+  "her",
+  "its",
+  "their",
+  "what",
+  "which",
+  "who",
+  "when",
+  "where",
+  "why",
+  "how",
+  "all",
+  "each",
+  "every",
+  "both",
+  "few",
+  "more",
+  "most",
+  "other",
+  "some",
+  "such",
+  "no",
+  "only",
+  "own",
+  "same",
+  "so",
+  "than",
+  "too",
+  "very",
+  "just",
+  "because",
+  "as",
+  "until",
+  "while",
+  "about",
+  "between",
+  "through",
+  "during",
+  "before",
+  "after",
+  "above",
+  "below",
+  "up",
+  "down",
+  "out",
+  "off",
+  "over",
+  "under",
+  "again",
+  "then",
+  "once",
+  "here",
+  "there",
+  "where",
+  "why",
+  "how",
+  "all",
+  "if",
+  "also",
+  "am",
+  "been",
+  "being",
+  "could",
+  "did",
+  "do",
+  "does",
+  "done",
+  "get",
+  "got",
+  "had",
+  "has",
+  "have",
+  "having",
+  "he",
+  "her",
+  "here",
+  "him",
+  "himself",
+  "herself",
+  "into",
+  "its",
+  "let",
+  "may",
+  "might",
+  "must",
+  "need",
+  "nor",
+  "now",
+  "shall",
+  "should",
+  "still",
+  "take",
+  "them",
+  "these",
+  "those",
+  "though",
+  "through",
+  "upon",
+  "want",
+  "well",
+  "were",
+  "what",
+  "whatever",
+  "whom",
+  "whose",
+  "will",
+  "would",
+  "yet",
+  "的",
+  "了",
+  "在",
+  "是",
+  "我",
+  "有",
+  "和",
+  "就",
+  "不",
+  "人",
+  "都",
+  "一",
+  "一個",
+  "這",
+  "他",
+  "她",
+  "它",
+  "們",
+  "你",
+  "嗎",
+  "啊",
+  "吧",
+  "呢",
+  "哦",
+  "嗯",
+  "呀",
+  "啦",
+  "喔",
+  "耶",
+  "嘿",
+  "也",
+  "還",
+  "很",
+  "說",
+  "會",
+  "能",
+  "可以",
+  "the",
+  "de",
+  "le",
+  "la",
+  "les",
+  "un",
+  "une",
+  "des",
+  "et",
+  "ou",
+  "mais",
+  "dans",
+  "sur",
+  "pour",
+  "avec",
+  "ce",
+  "se",
+  "que",
+  "qui",
+  "ne",
+  "pas",
+  "plus",
+  "par",
+  "en",
+  "au",
+  "aux",
+  "du",
+  "est",
+  "son",
+  "sa",
+  "ses",
+  "ont",
+  "être",
+]);
+
+function extractKeywords(text: string): string[] {
+  return text
+    .replace(/https?:\/\/\S+/g, "")
+    .replace(/[#@]\S+/g, (m) => m.slice(1))
+    .replace(/[^\w\u4e00-\u9fff#@]/g, " ")
+    .split(/\s+/)
+    .filter((w) => {
+      if (w.length < 2) return false;
+      if (STOP_WORDS.has(w.toLowerCase())) return false;
+      if (/^\d+$/.test(w)) return false;
+      return true;
+    })
+    .map((w) => w.toLowerCase());
+}
+
+const HASHTAG_PATTERN = /[#＃]\s*([\w\u4e00-\u9fff]+)/g;
+
+function extractHashtags(text: string): string[] {
+  const tags: string[] = [];
+  let match: RegExpExecArray | null;
+  while ((match = HASHTAG_PATTERN.exec(text)) !== null) {
+    tags.push(match[1]!.toLowerCase());
+  }
+  return tags;
+}
+
+export interface KeywordAnalysisPoint {
+  word: string;
+  postCount: number;
+  avgViews: number;
+  avgEngagementRate: number;
+  avgShareRate: number;
+}
+
+export function computeKeywordAnalysis(
+  posts: PostWithInsights[],
+  minOccurrences = 3,
+  limit = 15,
+): KeywordAnalysisPoint[] {
+  const buckets = new Map<
+    string,
+    { totalViews: number; totalEngagement: number; totalShares: number; count: number }
+  >();
+
+  for (const post of posts) {
+    const keywords = new Set([
+      ...extractKeywords(post.text ?? ""),
+      ...extractHashtags(post.text ?? ""),
+    ]);
+    const rates = getMetricRates(post);
+    for (const word of keywords) {
+      const existing = buckets.get(word) ?? {
+        totalViews: 0,
+        totalEngagement: 0,
+        totalShares: 0,
+        count: 0,
+      };
+      existing.totalViews += post.views;
+      existing.totalEngagement += rates.engagementRate;
+      existing.totalShares += rates.shareRate;
+      existing.count += 1;
+      buckets.set(word, existing);
+    }
+  }
+
+  return Array.from(buckets.entries())
+    .filter(([, data]) => data.count >= minOccurrences)
+    .map(([word, data]) => ({
+      word,
+      postCount: data.count,
+      avgViews: Math.round(data.totalViews / data.count),
+      avgEngagementRate: Math.round((data.totalEngagement / data.count) * 100) / 100,
+      avgShareRate: Math.round((data.totalShares / data.count) * 100) / 100,
+    }))
+    .sort((a, b) => b.avgEngagementRate - a.avgEngagementRate)
+    .slice(0, limit);
+}
+
+export interface OptimalFrequencyPoint {
+  range: string;
+  postCount: number;
+  weekCount: number;
+  avgViewsPerPost: number;
+  engagementRate: number;
+  shareRate: number;
+}
+
+export function computeOptimalFrequency(
+  posts: PostWithInsights[],
+  tz = DEFAULT_TZ,
+): OptimalFrequencyPoint[] {
+  const weekBuckets = new Map<string, AggregateBucket>();
+  for (const post of posts) {
+    const week = getISOWeekString(new Date(post.timestamp), tz);
+    const existing = weekBuckets.get(week) ?? emptyBucket();
+    addPostToBucket(existing, post);
+    weekBuckets.set(week, existing);
+  }
+
+  const freqBuckets = new Map<
+    string,
+    {
+      totalViews: number;
+      totalEngagement: number;
+      totalShares: number;
+      totalPosts: number;
+      weekCount: number;
+    }
+  >();
+
+  const RANGES = ["1", "2", "3-4", "5-6", "7+"];
+
+  function getRange(count: number): string {
+    if (count <= 1) return "1";
+    if (count === 2) return "2";
+    if (count <= 4) return "3-4";
+    if (count <= 6) return "5-6";
+    return "7+";
+  }
+
+  for (const [, data] of weekBuckets.entries()) {
+    const range = getRange(data.count);
+    const existing = freqBuckets.get(range) ?? {
+      totalViews: 0,
+      totalEngagement: 0,
+      totalShares: 0,
+      totalPosts: 0,
+      weekCount: 0,
+    };
+    const rates = getMetricRates({
+      views: data.totalViews,
+      likes: data.totalLikes,
+      replies: data.totalReplies,
+      reposts: data.totalReposts,
+      quotes: data.totalQuotes,
+      shares: data.totalShares,
+    });
+    existing.totalViews += data.totalViews;
+    existing.totalEngagement += rates.engagementRate;
+    existing.totalShares += rates.shareRate;
+    existing.totalPosts += data.count;
+    existing.weekCount += 1;
+    freqBuckets.set(range, existing);
+  }
+
+  return RANGES.filter((r) => freqBuckets.has(r)).map((range) => {
+    const data = freqBuckets.get(range)!;
+    return {
+      range,
+      postCount: data.totalPosts,
+      weekCount: data.weekCount,
+      avgViewsPerPost: data.totalPosts > 0 ? Math.round(data.totalViews / data.totalPosts) : 0,
+      engagementRate:
+        data.weekCount > 0 ? Math.round((data.totalEngagement / data.weekCount) * 100) / 100 : 0,
+      shareRate:
+        data.weekCount > 0 ? Math.round((data.totalShares / data.weekCount) * 100) / 100 : 0,
+    };
+  });
+}
+
+export interface ContentTypeTimeSlot {
+  mediaType: string;
+  hour: number;
+  postCount: number;
+  medianViews: number;
+  avgViews: number;
+  confidence: ConfidenceLevel;
+}
+
+export function computeContentTypeTimeSlot(
+  posts: PostWithInsights[],
+  tz = DEFAULT_TZ,
+): ContentTypeTimeSlot[] {
+  const baselineMedianViews = getBaselineMedianViews(posts);
+  const buckets = new Map<string, AggregateBucket & { mediaType: string; hour: number }>();
+
+  for (const post of posts) {
+    const hour = getHour(new Date(post.timestamp), tz);
+    const mediaType = post.mediaType;
+    const key = `${mediaType}:${hour}`;
+    const existing = buckets.get(key) ?? { ...emptyBucket(), mediaType, hour };
+    addPostToBucket(existing, post);
+    buckets.set(key, existing);
+  }
+
+  return Array.from(buckets.values()).map((bucket) => ({
+    mediaType: bucket.mediaType,
+    hour: bucket.hour,
+    postCount: bucket.count,
+    medianViews: getMedian(bucket.views),
+    avgViews: bucket.count > 0 ? Math.round(bucket.totalViews / bucket.count) : 0,
+    confidence: getConfidence(bucket.count),
+  }));
+}
+
+export interface PostingStreak {
+  longestStreak: number;
+  currentStreak: number;
+  totalDaysWithPosts: number;
+}
+
+export function computePostingStreak(
+  posts: PostWithInsights[],
+  tz = DEFAULT_TZ,
+  now = new Date(),
+): PostingStreak {
+  const daysWithPosts = new Set(posts.map((p) => getDateString(new Date(p.timestamp), tz)));
+  const sorted = Array.from(daysWithPosts).sort();
+
+  let longestStreak = 0;
+  let currentStreak = 0;
+  let prev: Date | null = null;
+
+  for (const day of sorted) {
+    const d = new Date(day + "T12:00:00Z");
+    if (prev) {
+      const diff = (d.getTime() - prev.getTime()) / 86400000;
+      currentStreak = diff === 1 ? currentStreak + 1 : 1;
+    } else {
+      currentStreak = 1;
+    }
+    longestStreak = Math.max(longestStreak, currentStreak);
+    prev = d;
+  }
+
+  const today = getDateString(now, tz);
+  const todayDate = new Date(today + "T12:00:00Z");
+  let streakFromToday = 0;
+  const cursor = new Date(todayDate);
+
+  while (daysWithPosts.has(getDateString(cursor, tz))) {
+    streakFromToday++;
+    cursor.setDate(cursor.getDate() - 1);
+  }
+
+  return {
+    longestStreak,
+    currentStreak: streakFromToday,
+    totalDaysWithPosts: sorted.length,
+  };
+}

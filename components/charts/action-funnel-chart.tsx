@@ -31,6 +31,7 @@ interface Props {
     action?: string;
     count?: string;
     conversionRate?: string;
+    noData?: string;
   };
 }
 
@@ -54,7 +55,7 @@ export default function ActionFunnelChart({ data, labels }: Props) {
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-[220px] items-center justify-center text-sm">
-        No data
+        {labels?.noData ?? "No data"}
       </div>
     );
   }

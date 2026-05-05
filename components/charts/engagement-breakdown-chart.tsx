@@ -41,6 +41,7 @@ interface Props {
     quotes: string;
     date?: string;
     interactions?: string;
+    noData?: string;
   };
 }
 
@@ -50,12 +51,13 @@ export default function EngagementBreakdownChart({ data, dateLocale, labels }: P
     replies: "Replies",
     reposts: "Reposts",
     quotes: "Quotes",
+    noData: "No data",
   };
 
   if (!data.length) {
     return (
       <div className="text-muted-foreground flex h-[200px] items-center justify-center text-sm">
-        No data
+        {copy.noData}
       </div>
     );
   }
