@@ -15,6 +15,7 @@ interface LoginFormProps {
     signIn: string;
     errorRequired?: string;
     errorIncorrect?: string;
+    errorTooManyAttempts?: string;
   };
   redirectTo?: string;
 }
@@ -28,6 +29,7 @@ export default function LoginForm({ labels, redirectTo }: LoginFormProps) {
     signIn: "Sign in",
     errorRequired: "Password is required",
     errorIncorrect: "Incorrect password",
+    errorTooManyAttempts: "Too many attempts. Try again later.",
   };
 
   const errorMessage =
@@ -35,7 +37,9 @@ export default function LoginForm({ labels, redirectTo }: LoginFormProps) {
       ? (copy.errorRequired ?? "Password is required")
       : state?.error === "errorIncorrect"
         ? (copy.errorIncorrect ?? "Incorrect password")
-        : state?.error;
+        : state?.error === "errorTooManyAttempts"
+          ? (copy.errorTooManyAttempts ?? "Too many attempts. Try again later.")
+          : state?.error;
 
   const hasError = Boolean(errorMessage);
 

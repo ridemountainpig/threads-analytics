@@ -4,7 +4,6 @@ import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxi
 import AxisHint from "./axis-hint";
 import {
   axisTick,
-  barRadius,
   chartColors,
   compactChartMargin,
   formatCompactNumber,
@@ -105,7 +104,7 @@ export default function ActionFunnelChart({ data, labels }: Props) {
             dataKey="value"
             fill={chartColors.engagement}
             fillOpacity={0.82}
-            radius={barRadius}
+            radius={[0, 3, 3, 0]}
             maxBarSize={22}
           />
         </BarChart>

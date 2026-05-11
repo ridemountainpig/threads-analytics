@@ -60,7 +60,11 @@ export default function EngagementBreakdownPieChart({ data, labels }: Props) {
 
   return (
     <div className="h-[320px] w-full sm:h-[380px]">
-      <ResponsiveContainer width="100%" height="100%">
+      <ResponsiveContainer
+        width="100%"
+        height="100%"
+        initialDimension={{ width: 320, height: 320 }}
+      >
         <PieChart margin={{ top: 8, right: 8, bottom: 8, left: 8 }}>
           <Pie
             data={chartData}

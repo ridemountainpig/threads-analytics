@@ -33,6 +33,8 @@ export const dictionaries = {
       custom: "Custom",
       all: "All",
       of: "of",
+      accountCredentialsUnavailable:
+        "Account credentials are unavailable. Please reconnect this account in Settings.",
     },
     nav: {
       overview: "Overview",
@@ -142,13 +144,11 @@ export const dictionaries = {
       weeks: "weeks",
       replyRate: "reply rate",
       engagementShort: "eng.",
-      viralityTrend: "Virality Rate Trend",
-      viralityTrendSub:
-        "Daily shares / views ratio showing how shareable your content is over time",
       engagementBreakdownPie: "Engagement Type Breakdown",
       engagementBreakdownPieSub: "Proportion of likes, replies, reposts, quotes, and shares",
       keywordAnalysis: "Top Keywords by Engagement",
-      keywordAnalysisSub: "Words and hashtags with highest average engagement rate (min 3 posts)",
+      keywordAnalysisSub:
+        "Words with highest average engagement rate (min 3 posts, hashtags excluded)",
       optimalFrequency: "Optimal Posting Frequency",
       optimalFrequencySub:
         "Compare per-post reach and engagement at different weekly posting volumes",
@@ -209,8 +209,6 @@ export const dictionaries = {
       less: "Less",
       more: "More",
       days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
-      viralityRate: "Virality Rate",
-      sharesPerViews: "Shares / Views",
       range: "Range",
       postsPerWeek: "Posts/Week",
       weeks: "weeks",
@@ -253,6 +251,9 @@ export const dictionaries = {
       shares: "Shares",
       searchPlaceholder: "Search posts...",
       allTypes: "All",
+      previousPage: "Previous",
+      nextPage: "Next",
+      pageStatus: "Page {page} of {total}",
       mediaTypes: {
         CAROUSEL_ALBUM: "Carousel",
         IMAGE: "Image",
@@ -306,6 +307,7 @@ export const dictionaries = {
       signIn: "Sign in",
       errorRequired: "Password is required",
       errorIncorrect: "Incorrect password",
+      errorTooManyAttempts: "Too many attempts. Try again later.",
     },
   },
   "zh-TW": {
@@ -323,6 +325,7 @@ export const dictionaries = {
       custom: "自訂",
       all: "全部",
       of: "/",
+      accountCredentialsUnavailable: "帳號憑證無法使用，請到設定重新連接此帳號。",
     },
     nav: {
       overview: "總覽",
@@ -428,12 +431,10 @@ export const dictionaries = {
       weeks: "週",
       replyRate: "回覆率",
       engagementShort: "互動",
-      viralityTrend: "病毒傳播率趨勢",
-      viralityTrendSub: "每日分享 / 觀看比例，反映內容的分享力",
       engagementBreakdownPie: "互動類型佔比",
       engagementBreakdownPieSub: "讚、回覆、轉發、引用與分享的比例",
       keywordAnalysis: "高互動關鍵字",
-      keywordAnalysisSub: "平均互動率最高的詞彙與主題標籤（至少出現 3 次）",
+      keywordAnalysisSub: "平均互動率最高的詞彙（至少出現 3 次，不含主題標籤）",
       optimalFrequency: "最佳發文頻率",
       optimalFrequencySub: "比較不同每週發文量下的單篇觸及與互動率",
       contentTypeTimeSlot: "內容類型 × 發文時段",
@@ -459,6 +460,7 @@ export const dictionaries = {
       columns: "欄",
       rows: "列",
       posts: "貼文",
+      year: "年份",
       avgViews: "平均觀看",
       medianViews: "中位數觀看",
       p75Views: "P75 觀看",
@@ -492,8 +494,6 @@ export const dictionaries = {
       less: "少",
       more: "多",
       days: ["日", "一", "二", "三", "四", "五", "六"],
-      viralityRate: "病毒傳播率",
-      sharesPerViews: "分享 / 觀看",
       range: "區間",
       postsPerWeek: "篇/週",
       weeks: "週",
@@ -536,6 +536,9 @@ export const dictionaries = {
       shares: "分享",
       searchPlaceholder: "搜尋貼文...",
       allTypes: "全部",
+      previousPage: "上一頁",
+      nextPage: "下一頁",
+      pageStatus: "第 {page} / {total} 頁",
       mediaTypes: {
         CAROUSEL_ALBUM: "輪播",
         IMAGE: "圖片",
@@ -587,6 +590,7 @@ export const dictionaries = {
       signIn: "登入",
       errorRequired: "請輸入密碼",
       errorIncorrect: "密碼錯誤",
+      errorTooManyAttempts: "嘗試次數過多，請稍後再試。",
     },
   },
 } as const;

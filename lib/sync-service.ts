@@ -12,8 +12,14 @@ export interface SyncResult {
   error?: string;
 }
 
-export async function syncActiveAccount(): Promise<SyncResult> {
-  const account = await db.threadsAccount.findFirst({ where: { isActive: true } });
+interface SyncAccount {
+  id: string;
+  accessToken: string;
+  expiresAt: Date;
+}
+
+export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncResult> {
+  const account = preloaded ?? (await db.threadsAccount.findFirst({ where: { isActive: true } }));
 
   if (!account) return { error: "No active account. Please add a Threads account first." };
   if (account.expiresAt < new Date()) return { error: "token_expired" };

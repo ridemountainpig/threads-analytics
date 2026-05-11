@@ -22,7 +22,6 @@ import {
   computeContentFormatLengthMatrix,
   computeActionFunnel,
   computeSharesTrend,
-  computeViralityRateTrend,
   computeEngagementBreakdownPie,
   computeKeywordAnalysis,
   computeOptimalFrequency,
@@ -46,7 +45,6 @@ import PostQualityScatterChart from "@/components/charts/post-quality-scatter-ch
 import ActionFunnelChart from "@/components/charts/action-funnel-chart";
 import ContentFormatLengthMatrix from "@/components/charts/content-format-length-matrix";
 import SharesTrendChart from "@/components/charts/shares-trend-chart";
-import ViralityRateChart from "@/components/charts/virality-rate-chart";
 import EngagementBreakdownPieChart from "@/components/charts/engagement-breakdown-pie-chart";
 import KeywordAnalysisChart from "@/components/charts/keyword-analysis-chart";
 import OptimalFrequencyChart from "@/components/charts/optimal-frequency-chart";
@@ -65,20 +63,27 @@ interface PageProps {
 export default async function AnalyticsPage({ searchParams }: PageProps) {
   const { range, from, to, tab: tabParam } = await searchParams;
   const activeTab = tabParam === "content" ? "content" : "performance";
-  const { since, until } = getTimeRange({ range, from, to });
   const [{ locale, t }, account, syncInterval, tz] = await Promise.all([
     getDictionary(),
     getActiveAccount(),
     getSyncIntervalCached(),
     getServerTimezone(),
   ]);
+  const { since, until } = getTimeRange({ range, from, to }, tz);
   const dateLocale = dateLocales[locale];
 
   if (!account) {
     return <div className="text-muted-foreground p-8">{t.common.noAccount}</div>;
   }
 
-  const accessToken = decryptToken(account.accessToken);
+  let accessToken: string;
+  try {
+    accessToken = decryptToken(account.accessToken);
+  } catch {
+    return (
+      <div className="text-muted-foreground p-8">{t.common.accountCredentialsUnavailable}</div>
+    );
+  }
   const emptyUserInsights: UserInsights = {
     views: [],
     totalLikes: 0,
@@ -172,7 +177,6 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   );
   const contentFormatLengthMatrix = computeContentFormatLengthMatrix(posts);
   const sharesTrend = computeSharesTrend(posts, tz);
-  const viralityRateTrend = computeViralityRateTrend(posts, tz);
   const engagementBreakdownPie = computeEngagementBreakdownPie(posts);
   const keywordAnalysis = computeKeywordAnalysis(posts);
   const optimalFrequency = computeOptimalFrequency(posts, tz);
@@ -353,27 +357,6 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               />
             </CardContent>
           </Card>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.viralityTrend}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.viralityTrendSub}</p>
-            </CardHeader>
-            <CardContent>
-              <ViralityRateChart
-                data={viralityRateTrend}
-                dateLocale={dateLocale}
-                labels={{
-                  date: t.chart.date,
-                  viralityRate: t.chart.viralityRate,
-                  sharesPerViews: t.chart.sharesPerViews,
-                  noData: t.chart.noData,
-                }}
-              />
-            </CardContent>
-          </Card>
         </TabsContent>
 
         {/* ── CONTENT TAB ── */}
@@ -511,49 +494,47 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </CardContent>
           </Card>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.keywordAnalysis}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.keywordAnalysisSub}</p>
-              </CardHeader>
-              <CardContent>
-                <KeywordAnalysisChart
-                  data={keywordAnalysis}
-                  labels={{
-                    posts: t.chart.posts,
-                    avgViews: t.chart.avgViews,
-                    engagementRate: t.chart.engagementRate,
-                    shareRate: t.chart.shareRate,
-                  }}
-                />
-              </CardContent>
-            </Card>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                {t.analytics.keywordAnalysis}
+              </CardTitle>
+              <p className="text-muted-foreground text-xs">{t.analytics.keywordAnalysisSub}</p>
+            </CardHeader>
+            <CardContent>
+              <KeywordAnalysisChart
+                data={keywordAnalysis}
+                labels={{
+                  posts: t.chart.posts,
+                  avgViews: t.chart.avgViews,
+                  engagementRate: t.chart.engagementRate,
+                  shareRate: t.chart.shareRate,
+                }}
+              />
+            </CardContent>
+          </Card>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.optimalFrequency}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.optimalFrequencySub}</p>
-              </CardHeader>
-              <CardContent>
-                <OptimalFrequencyChart
-                  data={optimalFrequency}
-                  labels={{
-                    range: t.chart.range,
-                    postsPerWeek: t.analytics.postsPerWeek,
-                    avgViewsPost: t.chart.avgViewsPost,
-                    engagementRate: t.chart.engagementRate,
-                    shareRate: t.chart.shareRate,
-                    weeks: t.chart.week,
-                  }}
-                />
-              </CardContent>
-            </Card>
-          </div>
+          <Card>
+            <CardHeader className="pb-2">
+              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                {t.analytics.optimalFrequency}
+              </CardTitle>
+              <p className="text-muted-foreground text-xs">{t.analytics.optimalFrequencySub}</p>
+            </CardHeader>
+            <CardContent>
+              <OptimalFrequencyChart
+                data={optimalFrequency}
+                labels={{
+                  range: t.chart.range,
+                  postsPerWeek: t.analytics.postsPerWeek,
+                  avgViewsPost: t.chart.avgViewsPost,
+                  engagementRate: t.chart.engagementRate,
+                  shareRate: t.chart.shareRate,
+                  weeks: t.chart.week,
+                }}
+              />
+            </CardContent>
+          </Card>
 
           <Card>
             <CardHeader className="pb-2">

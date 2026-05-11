@@ -29,12 +29,13 @@ export async function verifyPassword(input: string): Promise<boolean> {
 
 export async function createSession(): Promise<string> {
   const token = randomBytes(32).toString("hex");
-  await db.session.create({
-    data: {
-      token,
-      expiresAt: new Date(Date.now() + SESSION_DURATION_MS),
-    },
-  });
+  const now = new Date();
+  await Promise.all([
+    db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
+    db.session.create({
+      data: { token, expiresAt: new Date(now.getTime() + SESSION_DURATION_MS) },
+    }),
+  ]);
   return token;
 }
 

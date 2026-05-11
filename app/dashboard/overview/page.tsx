@@ -39,12 +39,12 @@ function getConfidenceLabel(
 
 export default async function OverviewPage({ searchParams }: PageProps) {
   const { range, from, to } = await searchParams;
-  const { since, until } = getTimeRange({ range, from, to });
   const [{ locale, t }, account, tz] = await Promise.all([
     getDictionary(),
     getActiveAccount(),
     getServerTimezone(),
   ]);
+  const { since, until } = getTimeRange({ range, from, to }, tz);
   const dateLocale = dateLocales[locale];
 
   if (!account) {
@@ -62,7 +62,14 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     );
   }
 
-  const accessToken = decryptToken(account.accessToken);
+  let accessToken: string;
+  try {
+    accessToken = decryptToken(account.accessToken);
+  } catch {
+    return (
+      <div className="text-muted-foreground p-8">{t.common.accountCredentialsUnavailable}</div>
+    );
+  }
   const emptyUserInsights: UserInsights = {
     views: [],
     totalLikes: 0,

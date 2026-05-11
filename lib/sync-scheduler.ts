@@ -49,8 +49,8 @@ function getIntervalMinutes(value: string | undefined) {
 }
 
 export function startSyncScheduler() {
-  if (process.env.SYNC_SCHEDULER_ENABLED === "false") {
-    console.info("[sync-scheduler] disabled by SYNC_SCHEDULER_ENABLED=false");
+  if (process.env.SYNC_SCHEDULER_ENABLED !== "true") {
+    console.info("[sync-scheduler] disabled; set SYNC_SCHEDULER_ENABLED=true to enable");
     return;
   }
 
@@ -138,7 +138,7 @@ async function runScheduledSyncWithLock({
   }
 
   const startedAt = new Date();
-  const result = await syncActiveAccount();
+  const result = await syncActiveAccount(account);
 
   if (result.error) return { status: "failed", error: result.error };
 

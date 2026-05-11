@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ExternalLink, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -25,6 +25,7 @@ interface PostListProps {
   posts: Post[];
   medianViews: number;
   currentSort: string;
+  hasPagination?: boolean;
   dateLocale?: string;
   labels: {
     sort: string;
@@ -188,19 +189,29 @@ export default function PostList({
   posts,
   medianViews,
   currentSort,
+  hasPagination = false,
   labels,
   dateLocale,
 }: PostListProps) {
   const [selectedId, setSelectedId] = useState<string | null>(posts[0]?.id ?? null);
   const [searchQuery, setSearchQuery] = useState("");
   const [mediaFilter, setMediaFilter] = useState("");
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const detailScrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  useEffect(() => {
+    if (listScrollRef.current) listScrollRef.current.scrollTop = 0;
+    if (detailScrollRef.current) detailScrollRef.current.scrollTop = 0;
+    setSelectedId(posts[0]?.id ?? null);
+  }, [posts]);
+
   function setSort(sort: string) {
     const params = new URLSearchParams(searchParams.toString());
     params.set("sort", sort);
+    params.delete("page");
     router.push(`${pathname}?${params.toString()}`);
   }
 
@@ -225,7 +236,12 @@ export default function PostList({
   }
 
   return (
-    <div className="flex min-h-[520px] flex-col gap-0 overflow-hidden rounded-lg border lg:h-[calc(100vh-10rem)] lg:flex-row">
+    <div
+      className={cn(
+        "flex min-h-[520px] flex-col gap-0 overflow-hidden rounded-lg border lg:flex-row",
+        hasPagination ? "lg:h-[calc(100vh-13rem)]" : "lg:h-[calc(100vh-10rem)]",
+      )}
+    >
       {/* Left: post list */}
       <div className="flex max-h-[45vh] shrink-0 flex-col border-b lg:max-h-none lg:w-[40%] lg:border-r lg:border-b-0">
         {/* Sort controls */}
@@ -289,7 +305,7 @@ export default function PostList({
         </div>
 
         {/* Post list */}
-        <div className="flex-1 overflow-y-auto">
+        <div ref={listScrollRef} className="flex-1 overflow-y-auto">
           {filteredPosts.length === 0 ? (
             <div className="text-muted-foreground p-6 text-center text-sm">{labels.noPosts}</div>
           ) : null}
@@ -321,7 +337,7 @@ export default function PostList({
       </div>
 
       {/* Right: detail panel */}
-      <div className="flex-1 overflow-y-auto">
+      <div ref={detailScrollRef} className="flex-1 overflow-y-auto">
         {selectedPost ? (
           <div className="p-6">
             <PostDetail

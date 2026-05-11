@@ -56,7 +56,7 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with `APP_PASSWO
 
 ## Requirements
 
-- Node.js 20+
+- Node.js 20.9+
 - pnpm
 - PostgreSQL database
 
@@ -81,14 +81,16 @@ APP_PASSWORD=your_dashboard_password
 DATABASE_URL=postgresql://...              # PostgreSQL connection string
 TOKEN_ENCRYPTION_KEY=                      # openssl rand -hex 32
 CRON_SECRET=                               # optional, secures /api/cron/sync in production
+SYNC_SCHEDULER_ENABLED=false              # set true only on long-running deployments
 ```
 
-| Variable               | Description                                   | How to generate        |
-| ---------------------- | --------------------------------------------- | ---------------------- |
-| `APP_PASSWORD`         | Password to access the dashboard              | Choose any string      |
-| `DATABASE_URL`         | PostgreSQL connection string                  | From your DB provider  |
-| `TOKEN_ENCRYPTION_KEY` | Encrypts stored Threads access tokens at rest | `openssl rand -hex 32` |
-| `CRON_SECRET`          | Secures `/api/cron/sync` in production        | Random 16+ chars       |
+| Variable                 | Description                                   | How to generate        |
+| ------------------------ | --------------------------------------------- | ---------------------- |
+| `APP_PASSWORD`           | Password to access the dashboard              | Choose any string      |
+| `DATABASE_URL`           | PostgreSQL connection string                  | From your DB provider  |
+| `TOKEN_ENCRYPTION_KEY`   | Encrypts stored Threads access tokens at rest | `openssl rand -hex 32` |
+| `CRON_SECRET`            | Secures `/api/cron/sync` in production        | Random 16+ chars       |
+| `SYNC_SCHEDULER_ENABLED` | Enables the built-in polling scheduler        | `true` for Docker/VPS  |
 
 ### 3. Run database migrations
 
@@ -144,20 +146,21 @@ npx prisma migrate dev --name <name>  # Create a new migration
 
 ### Analytics — Performance tab
 
-| Chart                       | What it shows                                                                                                                                           |
-| --------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Overall Performance**     | Combined daily views, post count, and average views per post on one timeline.                                                                           |
-| **Post Quality Map**        | Scatter plot of every post by reach (views) vs. engagement rate. Dot size = shares. Four quadrants: Breakout, Conversation, Broadcast, Underperforming. |
-| **Views to Actions Funnel** | Conversion rate from total views into each action type (likes, replies, reposts, quotes, shares).                                                       |
-| **Best Time to Post**       | Heatmap of median views by hour of day. Tooltip shows sample count and confidence level.                                                                |
-| **Engagement Rate Trend**   | Daily engagement rate (interactions ÷ views) with a 7-day smoothed average.                                                                             |
-| **Best Day of Week**        | Median views, engagement rate, and post count by weekday.                                                                                               |
-| **Format × Length Matrix**  | 2-D heatmap comparing every combination of content format and post length against your median reach.                                                    |
-| **Engagement Breakdown**    | Stacked daily chart of likes, replies, reposts, and quotes over time.                                                                                   |
+| Chart                         | What it shows                                                                                                                                           |
+| ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Overall Performance**       | Combined daily views, post count, and average views per post on one timeline.                                                                           |
+| **Post Quality Map**          | Scatter plot of every post by reach (views) vs. engagement rate. Dot size = shares. Four quadrants: Breakout, Conversation, Broadcast, Underperforming. |
+| **Views to Actions Funnel**   | Conversion rate from total views into each action type (likes, replies, reposts, quotes, shares).                                                       |
+| **Best Time to Post**         | Heatmap of median views by hour of day. Tooltip shows sample count and confidence level.                                                                |
+| **Engagement Rate Trend**     | Daily engagement rate (interactions ÷ views) with a 7-day smoothed average.                                                                             |
+| **Best Day of Week**          | Median views, engagement rate, and post count by weekday.                                                                                               |
+| **Format × Length Matrix**    | 2-D heatmap comparing every combination of content format and post length against your median reach.                                                    |
+| **Engagement Type Breakdown** | Pie chart of the proportion of likes, replies, reposts, quotes, and shares.                                                                             |
+| **Engagement Breakdown**      | Stacked daily chart of likes, replies, reposts, and quotes over time.                                                                                   |
 
 ### Analytics — Content tab
 
-Stat metrics at the top of the tab: **Posting Consistency** (% of weeks with at least one post), **Share Rate**, **Quote Ratio** (quotes ÷ (quotes + reposts)), and **Total Posts**.
+Stat metrics at the top of the tab: **Posting Consistency** (% of weeks with at least one post), **Share Rate**, **Quote Ratio** (quotes ÷ (quotes + reposts)), **Total Posts**, **Longest Streak**, and **Current Streak**.
 
 | Chart                                   | What it shows                                                                                                                    |
 | --------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------- |
@@ -166,6 +169,9 @@ Stat metrics at the top of the tab: **Posting Consistency** (% of weeks with at 
 | **Post Length Analysis**                | Median views broken down by character-count bucket. Tooltip includes average, P75, hit rate, and confidence.                     |
 | **Publishing Frequency vs Performance** | Whether posting more in a given week raises or lowers per-post average views.                                                    |
 | **Shares Trend**                        | Daily share counts over time.                                                                                                    |
+| **Top Keywords by Engagement**          | Words (excluding hashtags) with the highest average engagement rate (minimum 3 posts).                                           |
+| **Optimal Posting Frequency**           | Per-post reach and engagement compared across different weekly posting volumes.                                                  |
+| **Content Type by Time Slot**           | Best posting hour for each content format based on median views.                                                                 |
 | **Top by Engagement Rate**              | Highest-engagement posts ranked by (likes + replies + reposts + quotes) ÷ views.                                                 |
 | **Reply-Rate Leaders**                  | Posts ranked by replies ÷ views — your best conversation starters.                                                               |
 
@@ -185,8 +191,36 @@ Clicking any post opens a detail panel with views, engagement rate, vs-median mu
 
 ### Auto-sync behavior
 
-- **Docker, VPS, Railway and other long-running environments** — Uses the built-in scheduler. The app automatically syncs data at the configured interval when the server starts.
-- **Vercel** — Does not support long-running processes. Use Vercel Cron to call `/api/cron/sync` instead, and set `CRON_SECRET` to protect this endpoint.
+#### Railway / Zeabur / VPS / Docker
+
+Set `SYNC_SCHEDULER_ENABLED=true` in your environment variables. The built-in scheduler starts with the server and syncs at the interval configured in Settings.
+
+#### Vercel
+
+Vercel does not support long-running processes. Use [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) to call `/api/cron/sync` on a schedule instead.
+
+1. Add a `vercel.json` to the project root:
+
+```json
+{
+  "crons": [
+    {
+      "path": "/api/cron/sync",
+      "schedule": "0 * * * *"
+    }
+  ]
+}
+```
+
+Adjust `schedule` to match the sync interval you set in Settings (e.g. `0 * * * *` for every hour, `*/30 * * * *` for every 30 minutes). Note that Vercel's free plan limits cron frequency.
+
+1. In the Vercel dashboard go to **Settings → Environment Variables** and add:
+
+| Variable      | Value                                                  |
+| ------------- | ------------------------------------------------------ |
+| `CRON_SECRET` | A random secret — generate with `openssl rand -hex 32` |
+
+Vercel automatically injects this value as `Authorization: Bearer <CRON_SECRET>` on every cron request, and the `/api/cron/sync` route uses it to verify the call is legitimate.
 
 ### Docker
 

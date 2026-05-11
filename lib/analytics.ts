@@ -795,27 +795,6 @@ export function computeDayOfWeekPerformance(
   });
 }
 
-export function computeViralityRateTrend(
-  posts: PostWithInsights[],
-  tz = DEFAULT_TZ,
-): Array<{ date: string; viralityRate: number }> {
-  const byDate = new Map<string, { totalShares: number; totalViews: number }>();
-  for (const post of posts) {
-    const date = getDateString(new Date(post.timestamp), tz);
-    const existing = byDate.get(date) ?? { totalShares: 0, totalViews: 0 };
-    byDate.set(date, {
-      totalShares: existing.totalShares + post.shares,
-      totalViews: existing.totalViews + post.views,
-    });
-  }
-  return Array.from(byDate.entries())
-    .map(([date, d]) => ({
-      date,
-      viralityRate: d.totalViews > 0 ? Math.round((d.totalShares / d.totalViews) * 10000) / 100 : 0,
-    }))
-    .sort((a, b) => a.date.localeCompare(b.date));
-}
-
 export function computeTopPostsByEngagementRate(
   posts: PostWithInsights[],
   limit = 5,
@@ -1221,17 +1200,6 @@ function extractKeywords(text: string): string[] {
     .map((w) => w.toLowerCase());
 }
 
-const HASHTAG_PATTERN = /[#＃]\s*([\w\u4e00-\u9fff]+)/g;
-
-function extractHashtags(text: string): string[] {
-  const tags: string[] = [];
-  let match: RegExpExecArray | null;
-  while ((match = HASHTAG_PATTERN.exec(text)) !== null) {
-    tags.push(match[1]!.toLowerCase());
-  }
-  return tags;
-}
-
 export interface KeywordAnalysisPoint {
   word: string;
   postCount: number;
@@ -1240,10 +1208,11 @@ export interface KeywordAnalysisPoint {
   avgShareRate: number;
 }
 
-export function computeKeywordAnalysis(
+function aggregateTermPerformance(
   posts: PostWithInsights[],
-  minOccurrences = 3,
-  limit = 15,
+  extract: (text: string) => string[],
+  minOccurrences: number,
+  limit: number,
 ): KeywordAnalysisPoint[] {
   const buckets = new Map<
     string,
@@ -1251,12 +1220,10 @@ export function computeKeywordAnalysis(
   >();
 
   for (const post of posts) {
-    const keywords = new Set([
-      ...extractKeywords(post.text ?? ""),
-      ...extractHashtags(post.text ?? ""),
-    ]);
+    const terms = new Set(extract(post.text ?? ""));
+    if (terms.size === 0) continue;
     const rates = getMetricRates(post);
-    for (const word of keywords) {
+    for (const word of terms) {
       const existing = buckets.get(word) ?? {
         totalViews: 0,
         totalEngagement: 0,
@@ -1282,6 +1249,14 @@ export function computeKeywordAnalysis(
     }))
     .sort((a, b) => b.avgEngagementRate - a.avgEngagementRate)
     .slice(0, limit);
+}
+
+export function computeKeywordAnalysis(
+  posts: PostWithInsights[],
+  minOccurrences = 3,
+  limit = 15,
+): KeywordAnalysisPoint[] {
+  return aggregateTermPerformance(posts, extractKeywords, minOccurrences, limit);
 }
 
 export interface OptimalFrequencyPoint {
