@@ -3,6 +3,7 @@ import { decryptToken } from "@/lib/crypto";
 import { getUserInsights } from "@/lib/threads-api";
 import type { UserInsights } from "@/lib/threads-api";
 import { getTimeRange, toUnix } from "@/lib/time-range";
+import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
 import {
   computeBestTimeToPost,
@@ -38,12 +39,14 @@ function getConfidenceLabel(
 }
 
 export default async function OverviewPage({ searchParams }: PageProps) {
-  const { range, from, to } = await searchParams;
-  const [{ locale, t }, account, tz] = await Promise.all([
+  const { range: rangeParam, from: fromParam, to: toParam } = await searchParams;
+  const [{ locale, t }, account, tz, resolved] = await Promise.all([
     getDictionary(),
     getActiveAccount(),
     getServerTimezone(),
+    resolveRangeParams({ range: rangeParam, from: fromParam, to: toParam }),
   ]);
+  const { range, from, to } = resolved;
   const { since, until } = getTimeRange({ range, from, to }, tz);
   const dateLocale = dateLocales[locale];
 
@@ -203,7 +206,13 @@ export default async function OverviewPage({ searchParams }: PageProps) {
           <p className="text-muted-foreground text-sm">{t.overview.subtitle}</p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:items-end lg:w-auto lg:flex-row lg:items-start lg:gap-4">
-          <TimeRangePicker locale={locale} labels={t.timeRange} />
+          <TimeRangePicker
+            locale={locale}
+            labels={t.timeRange}
+            defaultRange={range}
+            defaultFrom={from}
+            defaultTo={to}
+          />
           <SyncButton
             lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
             syncInterval={syncInterval}

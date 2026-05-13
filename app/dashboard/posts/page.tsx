@@ -1,5 +1,6 @@
 import { db } from "@/lib/db";
 import { getTimeRange } from "@/lib/time-range";
+import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
 import Link from "next/link";
 import TimeRangePicker from "@/components/dashboard/time-range-picker";
@@ -21,13 +22,21 @@ interface PageProps {
 const POSTS_PER_PAGE = 50;
 
 export default async function PostsPage({ searchParams }: PageProps) {
-  const { range, from, to, sort = "date", page } = await searchParams;
-  const [{ locale, t }, account, syncInterval, tz] = await Promise.all([
+  const {
+    range: rangeParam,
+    from: fromParam,
+    to: toParam,
+    sort = "date",
+    page,
+  } = await searchParams;
+  const [{ locale, t }, account, syncInterval, tz, resolved] = await Promise.all([
     getDictionary(),
     getActiveAccount(),
     getSyncIntervalCached(),
     getServerTimezone(),
+    resolveRangeParams({ range: rangeParam, from: fromParam, to: toParam }),
   ]);
+  const { range, from, to } = resolved;
   const { since, until } = getTimeRange({ range, from, to }, tz);
   const dateLocale = dateLocales[locale];
 
@@ -110,7 +119,13 @@ export default async function PostsPage({ searchParams }: PageProps) {
           </p>
         </div>
         <div className="flex w-full flex-col gap-3 sm:items-end lg:w-auto lg:flex-row lg:items-start lg:gap-4">
-          <TimeRangePicker locale={locale} labels={t.timeRange} />
+          <TimeRangePicker
+            locale={locale}
+            labels={t.timeRange}
+            defaultRange={range}
+            defaultFrom={from}
+            defaultTo={to}
+          />
           <SyncButton
             lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
             syncInterval={syncInterval}

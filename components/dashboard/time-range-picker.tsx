@@ -27,19 +27,40 @@ interface TimeRangePickerProps {
     halfYear?: string;
     oneYear?: string;
   };
+  defaultRange?: string;
+  defaultFrom?: string;
+  defaultTo?: string;
 }
 
-export default function TimeRangePicker({ locale, labels }: TimeRangePickerProps) {
+const COOKIE_MAX_AGE = 60 * 60 * 24 * 365;
+
+function setCookie(name: string, value: string) {
+  document.cookie = `${name}=${encodeURIComponent(value)}; path=/; max-age=${COOKIE_MAX_AGE}; SameSite=Lax`;
+}
+
+function deleteCookie(name: string) {
+  document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
+}
+
+export default function TimeRangePicker({
+  locale,
+  labels,
+  defaultRange,
+  defaultFrom,
+  defaultTo,
+}: TimeRangePickerProps) {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const hasCustom = searchParams.has("from") && searchParams.has("to");
-  const currentRange = hasCustom ? "custom" : (searchParams.get("range") ?? "90");
+  const urlHasCustom = searchParams.has("from") && searchParams.has("to");
+  const urlHasRange = searchParams.has("range");
+  const hasCustom = urlHasCustom || (!urlHasRange && !!(defaultFrom && defaultTo));
+  const currentRange = hasCustom ? "custom" : (searchParams.get("range") ?? defaultRange ?? "90");
 
   const [showCustom, setShowCustom] = useState(hasCustom);
-  const [fromVal, setFromVal] = useState(searchParams.get("from") ?? "");
-  const [toVal, setToVal] = useState(searchParams.get("to") ?? "");
+  const [fromVal, setFromVal] = useState(searchParams.get("from") ?? defaultFrom ?? "");
+  const [toVal, setToVal] = useState(searchParams.get("to") ?? defaultTo ?? "");
   const dateInputLang = locale?.startsWith("zh") ? "zh-TW" : "en-CA";
 
   function currentParams(): URLSearchParams {
@@ -54,6 +75,10 @@ export default function TimeRangePicker({ locale, labels }: TimeRangePickerProps
     params.set("range", value);
     params.delete("from");
     params.delete("to");
+    params.delete("page");
+    setCookie("ta_range", value);
+    deleteCookie("ta_range_from");
+    deleteCookie("ta_range_to");
     router.push(`${pathname}?${params.toString()}`);
     setShowCustom(false);
   }
@@ -64,6 +89,10 @@ export default function TimeRangePicker({ locale, labels }: TimeRangePickerProps
     params.set("from", fromVal);
     params.set("to", toVal);
     params.delete("range");
+    params.delete("page");
+    setCookie("ta_range_from", fromVal);
+    setCookie("ta_range_to", toVal);
+    deleteCookie("ta_range");
     router.push(`${pathname}?${params.toString()}`);
   }
 
