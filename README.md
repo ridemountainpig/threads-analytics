@@ -6,7 +6,7 @@
   A self-hosted Threads analytics dashboard. Connect your access token and explore post performance with detailed charts and metrics.
 </p>
 <p align="center">
-  <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a>
+  <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a> · <a href="./README-ja.md">日本語</a>
 </p>
 
 <p align="center">
@@ -50,7 +50,7 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with `APP_PASSWO
 - Multi-account support with account switching
 - Auto-sync on configurable intervals
 - Password-protected (single `APP_PASSWORD` env var)
-- English / 繁體中文 UI
+- English / 繁體中文 / 日本語 UI
 
 ---
 

@@ -6,7 +6,7 @@
   自架的 Threads 數據分析儀表板。連接 Access Token，用詳細圖表與指標深入了解你的貼文表現。
 </p>
 <p align="center">
-  <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a>
+  <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a> · <a href="./README-ja.md">日本語</a>
 </p>
 
 <p align="center">
@@ -50,7 +50,7 @@ pnpm dev
 - 多帳號支援，可隨時切換
 - 可設定自動同步間隔
 - 密碼保護（單一環境變數 `APP_PASSWORD`）
-- 繁體中文 / English 介面
+- 繁體中文 / English / 日本語 介面
 
 ---
 
