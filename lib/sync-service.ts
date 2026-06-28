@@ -66,7 +66,10 @@ export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncRe
             const insights = await getPostInsights(post.id, accessToken);
             if (insights === null) insightsFailed++;
             return { post, insights };
-          } catch {
+          } catch (err) {
+            // Let token expiry abort the whole sync (reported as token_expired
+            // by the outer catch) instead of silently failing every post.
+            if (err instanceof TokenExpiredError) throw err;
             insightsFailed++;
             return { post, insights: null };
           }
