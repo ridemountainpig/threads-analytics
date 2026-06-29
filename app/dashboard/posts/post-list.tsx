@@ -314,7 +314,7 @@ export default function PostList({
               key={post.id}
               onClick={() => setSelectedId(post.id)}
               className={cn(
-                "hover:bg-accent/50 cursor-pointer border-b px-4 py-3.5 transition-colors",
+                "hover:bg-accent/50 cursor-pointer border-b px-4 py-3.5 transition-colors last:border-b-0",
                 selectedId === post.id && "bg-accent",
               )}
             >

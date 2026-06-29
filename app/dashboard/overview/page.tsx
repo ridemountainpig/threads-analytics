@@ -12,6 +12,7 @@ import {
   type PostWithInsights,
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import SyncButton from "@/components/dashboard/sync-button";
 import TimeRangePicker from "@/components/dashboard/time-range-picker";
 import DailyViewsChart from "@/components/charts/daily-views-chart";
@@ -52,16 +53,11 @@ export default async function OverviewPage({ searchParams }: PageProps) {
 
   if (!account) {
     return (
-      <div className="space-y-4 p-8">
-        <h1 className="text-2xl font-semibold">{t.overview.title}</h1>
-        <p className="text-muted-foreground">
-          {t.common.noAccount}{" "}
-          <a href="/dashboard/settings" className="underline">
-            {t.common.settings}
-          </a>{" "}
-          {t.overview.noAccountHelp}
-        </p>
-      </div>
+      <NoAccountNotice
+        message={t.common.noAccount}
+        help={t.common.noAccountHelp}
+        settingsLabel={t.common.settings}
+      />
     );
   }
 
@@ -93,8 +89,18 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const prevUntil = new Date(since.getTime());
   const prevSince = new Date(since.getTime() - rangeMs);
 
-  const [userInsights, dbPosts, prevDbPosts, syncInterval] = await Promise.all([
+  // Fetch the previous period's profile insights too, so the engagement-rate
+  // delta can be measured on the same profile-view denominator as the headline
+  // rate rather than mixing it with post-view based numbers.
+  const prevUserInsightsPromise = showComparison
+    ? getUserInsights(account.id, accessToken, toUnix(prevSince), toUnix(prevUntil)).catch(
+        () => emptyUserInsights,
+      )
+    : Promise.resolve(emptyUserInsights);
+
+  const [userInsights, prevUserInsights, dbPosts, prevDbPosts, syncInterval] = await Promise.all([
     userInsightsPromise,
+    prevUserInsightsPromise,
     db.post.findMany({
       where: {
         accountId: account.id,
@@ -150,8 +156,6 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const curReposts = dbPosts.reduce((s, p) => s + p.reposts, 0);
   const curQuotes = dbPosts.reduce((s, p) => s + p.quotes, 0);
   const curShares = dbPosts.reduce((s, p) => s + p.shares, 0);
-  const curEng =
-    curViews > 0 ? ((curLikes + curReplies + curReposts + curQuotes) / curViews) * 100 : 0;
   const hasApiInsights = userInsights.views.length > 0;
   const totalViews = hasApiInsights
     ? userInsights.views.reduce((sum, d) => sum + d.value, 0)
@@ -181,8 +185,37 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const prevReposts = prevDbPosts.reduce((s, p) => s + p.reposts, 0);
   const prevQuotes = prevDbPosts.reduce((s, p) => s + p.quotes, 0);
   const prevShares = prevDbPosts.reduce((s, p) => s + p.shares, 0);
-  const prevEng =
-    prevViews > 0 ? ((prevLikes + prevReplies + prevReposts + prevQuotes) / prevViews) * 100 : 0;
+
+  // The engagement-rate delta compares both periods on one denominator: profile
+  // views when BOTH periods have insights (matching the headline rate), else
+  // post views for both. Never mix bases across the two periods.
+  const prevHasApiInsights = prevUserInsights.views.length > 0;
+  const useProfileForEngDelta = hasApiInsights && prevHasApiInsights;
+  const engRateOf = (
+    views: number,
+    likes: number,
+    replies: number,
+    reposts: number,
+    quotes: number,
+  ) => (views > 0 ? ((likes + replies + reposts + quotes) / views) * 100 : 0);
+  const curEng = useProfileForEngDelta
+    ? engRateOf(
+        userInsights.views.reduce((s, d) => s + d.value, 0),
+        userInsights.totalLikes,
+        userInsights.totalReplies,
+        userInsights.totalReposts,
+        userInsights.totalQuotes,
+      )
+    : engRateOf(curViews, curLikes, curReplies, curReposts, curQuotes);
+  const prevEng = useProfileForEngDelta
+    ? engRateOf(
+        prevUserInsights.views.reduce((s, d) => s + d.value, 0),
+        prevUserInsights.totalLikes,
+        prevUserInsights.totalReplies,
+        prevUserInsights.totalReposts,
+        prevUserInsights.totalQuotes,
+      )
+    : engRateOf(prevViews, prevLikes, prevReplies, prevReposts, prevQuotes);
 
   const deltaViews = pctChange(curViews, prevViews);
   const deltaLikes = pctChange(curLikes, prevLikes);

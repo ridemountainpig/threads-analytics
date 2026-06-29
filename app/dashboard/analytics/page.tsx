@@ -53,6 +53,7 @@ import ContentTypeTimeSlotChart from "@/components/charts/content-type-time-slot
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsTabs from "@/components/dashboard/analytics-tabs";
+import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import { ExternalLink } from "lucide-react";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
@@ -76,7 +77,13 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const dateLocale = dateLocales[locale];
 
   if (!account) {
-    return <div className="text-muted-foreground p-8">{t.common.noAccount}</div>;
+    return (
+      <NoAccountNotice
+        message={t.common.noAccount}
+        help={t.common.noAccountHelp}
+        settingsLabel={t.common.settings}
+      />
+    );
   }
 
   let accessToken: string;
@@ -156,7 +163,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const bestTimeToPost = computeBestTimeToPost(posts, tz);
   const heatmap = computeDayHourHeatmap(posts, tz);
   const dailyPerformance = computeDailyPerformance(posts, userInsights.views, tz);
-  const engagementRateTrend = computeEngagementRateTrend(posts, tz);
+  const engagementRateTrend = computeEngagementRateTrend(posts, userInsights.views, tz);
   const dayOfWeek = computeDayOfWeekPerformance(posts, tz);
   const engagementBreakdown = computeEngagementBreakdownByDay(posts, tz);
   const postQualityScatter = computePostQualityScatter(posts);

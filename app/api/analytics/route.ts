@@ -127,7 +127,7 @@ export async function GET(request: NextRequest) {
     contentFormatLengthMatrix: computeContentFormatLengthMatrix(posts),
     actionFunnel: computeActionFunnel(posts),
     viralPosts: computeViralPosts(posts),
-    engagementRateTrend: computeEngagementRateTrend(posts),
+    engagementRateTrend: computeEngagementRateTrend(posts, userInsights.views),
     replyRateLeaders: computeReplyRateLeaders(posts),
     sharesTrend: computeSharesTrend(posts),
     postingConsistency: computePostingConsistency(posts, since, until),

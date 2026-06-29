@@ -621,9 +621,18 @@ export function computeViralPosts(posts: PostWithInsights[]): Array<{
 
 export function computeEngagementRateTrend(
   posts: PostWithInsights[],
+  userViews: UserViewPoint[] = [],
   tz = DEFAULT_TZ,
 ): Array<{ date: string; rate: number; rollingAvg: number }> {
   const byDate = new Map<string, AggregateBucket>();
+  // Prefer profile-level daily views as the denominator (consistent with
+  // computeDailyPerformance and the dashboard's headline engagement rate);
+  // fall back to summed post views for days the API didn't cover.
+  const viewByDate = new Map<string, number>();
+  for (const item of userViews) {
+    const date = getDateString(new Date(item.end_time), tz);
+    viewByDate.set(date, (viewByDate.get(date) ?? 0) + item.value);
+  }
 
   for (const post of posts) {
     const date = getDateString(new Date(post.timestamp), tz);
@@ -636,7 +645,7 @@ export function computeEngagementRateTrend(
     .map(([date, d]) => ({
       date,
       rate: getMetricRates({
-        views: d.totalViews,
+        views: viewByDate.get(date) ?? d.totalViews,
         likes: d.totalLikes,
         replies: d.totalReplies,
         reposts: d.totalReposts,
@@ -702,13 +711,23 @@ export function computePostingConsistency(
   tz = DEFAULT_TZ,
 ): { totalWeeks: number; weeksWithPosts: number; percentage: number } {
   const weeksWithPosts = new Set(posts.map((p) => getISOWeekString(new Date(p.timestamp), tz)));
-  const totalMs = until.getTime() - since.getTime();
-  const totalWeeks = Math.max(1, Math.round(totalMs / (7 * 24 * 60 * 60 * 1000)));
+  // Count the ISO weeks actually spanned by [since, until] using the SAME week
+  // definition as weeksWithPosts — otherwise a days/7 estimate undercounts the
+  // denominator and the percentage can exceed 100% (e.g. a 7-day window that
+  // straddles two ISO weeks). Step by whole UTC days; a daily step can't skip a
+  // 7-day week, and getISOWeekString resolves each day in the analytics tz.
+  const allWeeks = new Set<string>();
+  const cursor = new Date(since);
+  while (cursor <= until) {
+    allWeeks.add(getISOWeekString(cursor, tz));
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
+  }
+  const totalWeeks = Math.max(1, allWeeks.size);
   const weeksWithPostsCount = weeksWithPosts.size;
   return {
     totalWeeks,
     weeksWithPosts: weeksWithPostsCount,
-    percentage: Math.round((weeksWithPostsCount / totalWeeks) * 100),
+    percentage: Math.min(100, Math.round((weeksWithPostsCount / totalWeeks) * 100)),
   };
 }
 
@@ -1222,7 +1241,10 @@ function aggregateTermPerformance(
   for (const post of posts) {
     const terms = new Set(extract(post.text ?? ""));
     if (terms.size === 0) continue;
-    const rates = getMetricRates(post);
+    // Accumulate raw counts, not per-post rates, so the final rate is a pooled
+    // ratio-of-means (total engagement / total views) rather than a mean of
+    // ratios — the latter lets a few low-view posts dominate the ranking.
+    const engagement = post.likes + post.replies + post.reposts + post.quotes;
     for (const word of terms) {
       const existing = buckets.get(word) ?? {
         totalViews: 0,
@@ -1231,8 +1253,8 @@ function aggregateTermPerformance(
         count: 0,
       };
       existing.totalViews += post.views;
-      existing.totalEngagement += rates.engagementRate;
-      existing.totalShares += rates.shareRate;
+      existing.totalEngagement += engagement;
+      existing.totalShares += post.shares;
       existing.count += 1;
       buckets.set(word, existing);
     }
@@ -1244,8 +1266,12 @@ function aggregateTermPerformance(
       word,
       postCount: data.count,
       avgViews: Math.round(data.totalViews / data.count),
-      avgEngagementRate: Math.round((data.totalEngagement / data.count) * 100) / 100,
-      avgShareRate: Math.round((data.totalShares / data.count) * 100) / 100,
+      avgEngagementRate:
+        data.totalViews > 0
+          ? Math.round((data.totalEngagement / data.totalViews) * 10000) / 100
+          : 0,
+      avgShareRate:
+        data.totalViews > 0 ? Math.round((data.totalShares / data.totalViews) * 10000) / 100 : 0,
     }))
     .sort((a, b) => b.avgEngagementRate - a.avgEngagementRate)
     .slice(0, limit);
@@ -1310,17 +1336,13 @@ export function computeOptimalFrequency(
       totalPosts: 0,
       weekCount: 0,
     };
-    const rates = getMetricRates({
-      views: data.totalViews,
-      likes: data.totalLikes,
-      replies: data.totalReplies,
-      reposts: data.totalReposts,
-      quotes: data.totalQuotes,
-      shares: data.totalShares,
-    });
+    // Pool raw counts across all weeks in the range, then take one ratio at the
+    // end (ratio-of-means) instead of averaging each week's rate — equal-weight
+    // averaging lets a quiet week swing the bucket as much as a busy one.
     existing.totalViews += data.totalViews;
-    existing.totalEngagement += rates.engagementRate;
-    existing.totalShares += rates.shareRate;
+    existing.totalEngagement +=
+      data.totalLikes + data.totalReplies + data.totalReposts + data.totalQuotes;
+    existing.totalShares += data.totalShares;
     existing.totalPosts += data.count;
     existing.weekCount += 1;
     freqBuckets.set(range, existing);
@@ -1334,9 +1356,11 @@ export function computeOptimalFrequency(
       weekCount: data.weekCount,
       avgViewsPerPost: data.totalPosts > 0 ? Math.round(data.totalViews / data.totalPosts) : 0,
       engagementRate:
-        data.weekCount > 0 ? Math.round((data.totalEngagement / data.weekCount) * 100) / 100 : 0,
+        data.totalViews > 0
+          ? Math.round((data.totalEngagement / data.totalViews) * 10000) / 100
+          : 0,
       shareRate:
-        data.weekCount > 0 ? Math.round((data.totalShares / data.weekCount) * 100) / 100 : 0,
+        data.totalViews > 0 ? Math.round((data.totalShares / data.totalViews) * 10000) / 100 : 0,
     };
   });
 }
@@ -1408,12 +1432,19 @@ export function computePostingStreak(
 
   const today = getDateString(now, tz);
   const todayDate = new Date(today + "T12:00:00Z");
-  let streakFromToday = 0;
   const cursor = new Date(todayDate);
 
+  // A streak stays "active" until a full day is missed, so if nothing is posted
+  // yet today the run through yesterday should still count — start from
+  // yesterday rather than reporting 0. Step by whole UTC days from the noon-UTC
+  // anchor so the local (tz) calendar date advances exactly once per iteration.
+  if (!daysWithPosts.has(getDateString(cursor, tz))) {
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
+  }
+  let streakFromToday = 0;
   while (daysWithPosts.has(getDateString(cursor, tz))) {
     streakFromToday++;
-    cursor.setDate(cursor.getDate() - 1);
+    cursor.setUTCDate(cursor.getUTCDate() - 1);
   }
 
   return {

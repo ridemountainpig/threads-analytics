@@ -24,6 +24,7 @@ export const dictionaries = {
     common: {
       appName: "Threads Analytics",
       noAccount: "No account connected.",
+      noAccountHelp: "Go to {settings} to add your account.",
       noData: "No data",
       posts: "posts",
       views: "views",
@@ -37,6 +38,8 @@ export const dictionaries = {
       of: "of",
       accountCredentialsUnavailable:
         "Account credentials are unavailable. Please reconnect this account in Settings.",
+      errorTitle: "Something went wrong",
+      tryAgain: "Try again",
     },
     nav: {
       overview: "Overview",
@@ -77,7 +80,6 @@ export const dictionaries = {
     overview: {
       title: "Overview",
       subtitle: "Your Threads account at a glance",
-      noAccountHelp: "Go to Settings to add your account.",
       bestHours: "Best hours to post",
       bestHoursSub: "based on median views and sample confidence",
       dailyViews: "Daily Views",
@@ -316,6 +318,7 @@ export const dictionaries = {
     common: {
       appName: "Threads Analytics",
       noAccount: "尚未連接帳號。",
+      noAccountHelp: "前往{settings}新增帳號。",
       noData: "沒有資料",
       posts: "則貼文",
       views: "觀看數",
@@ -328,6 +331,8 @@ export const dictionaries = {
       all: "全部",
       of: "/",
       accountCredentialsUnavailable: "帳號憑證無法使用，請到設定重新連接此帳號。",
+      errorTitle: "發生錯誤",
+      tryAgain: "重試",
     },
     nav: {
       overview: "總覽",
@@ -368,7 +373,6 @@ export const dictionaries = {
     overview: {
       title: "總覽",
       subtitle: "快速掌握你的 Threads 帳號表現",
-      noAccountHelp: "前往設定新增帳號。",
       bestHours: "最佳發文時段",
       bestHoursSub: "根據中位數觀看與樣本可信度",
       dailyViews: "每日觀看",
@@ -599,6 +603,7 @@ export const dictionaries = {
     common: {
       appName: "Threads Analytics",
       noAccount: "アカウントが接続されていません。",
+      noAccountHelp: "{settings}からアカウントを追加してください。",
       noData: "データなし",
       posts: "投稿",
       views: "ビュー",
@@ -612,6 +617,8 @@ export const dictionaries = {
       of: "/",
       accountCredentialsUnavailable:
         "アカウント認証情報が利用できません。設定からこのアカウントを再接続してください。",
+      errorTitle: "問題が発生しました",
+      tryAgain: "再試行",
     },
     nav: {
       overview: "概要",
@@ -652,7 +659,6 @@ export const dictionaries = {
     overview: {
       title: "概要",
       subtitle: "Threads アカウントを一目で確認",
-      noAccountHelp: "設定からアカウントを追加してください。",
       bestHours: "投稿に最適な時間帯",
       bestHoursSub: "ビューの中央値とサンプル信頼度に基づく",
       dailyViews: "日次ビュー",
