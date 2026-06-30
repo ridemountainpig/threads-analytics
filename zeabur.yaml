@@ -1,0 +1,241 @@
+apiVersion: zeabur.com/v1
+kind: Template
+metadata:
+  name: Threads Analytics
+spec:
+  description: A self-hosted Threads analytics dashboard. Connect your access token and explore post performance with detailed charts and metrics.
+  icon: https://raw.githubusercontent.com/ridemountainpig/threads-analytics/refs/heads/main/public/threads-analytics-icon.png
+  coverImage: https://raw.githubusercontent.com/ridemountainpig/threads-analytics/refs/heads/main/public/dashboard.png
+  tags:
+    - Analytics
+    - Social Media
+    - Tool
+  variables:
+    - key: PUBLIC_DOMAIN
+      type: DOMAIN
+      name: Domain
+      description: The domain you want to bind to your Threads Analytics instance.
+    - key: APP_PASSWORD
+      type: STRING
+      name: App Password
+      description: Password to protect your Threads Analytics dashboard.
+    - key: TOKEN_ENCRYPTION_KEY
+      type: STRING
+      name: Token Encryption Key
+      description: "A secret key used to encrypt your Threads access token. Generate one with: openssl rand -hex 32"
+  readme: |-
+    # Threads Analytics
+
+    A self-hosted Threads analytics dashboard. Connect your access token and explore post performance with detailed charts and metrics.
+
+    ## Features
+
+    - **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, daily views chart, best posting hour recommendation, viral posts
+    - **Analytics** — 15+ charts across Performance and Content tabs
+    - **Posts** — searchable, filterable list with per-post analytics panel
+    - Multi-account support with account switching
+    - Auto-sync on configurable intervals
+    - Password-protected (single `APP_PASSWORD` env var)
+    - English / 繁體中文 / 日本語 UI
+
+    ## 🔑 Environment Variables
+
+    - `APP_PASSWORD` → Password to sign into the dashboard
+    - `TOKEN_ENCRYPTION_KEY` → Secret key to encrypt your Threads token. Generate with: `openssl rand -hex 32`
+    - `DATABASE_URL` → Auto-generated from the PostgreSQL service
+
+    ## 📖 Source
+
+    [GitHub Repository](https://github.com/ridemountainpig/threads-analytics)
+
+  services:
+    - name: PostgreSQL
+      icon: https://raw.githubusercontent.com/zeabur/service-icons/main/marketplace/postgresql.svg
+      template: PREBUILT
+      spec:
+        source:
+          image: postgres:16
+          command:
+            - docker-entrypoint.sh
+            - -c
+            - config_file=/etc/postgresql/postgresql.conf
+        ports:
+          - id: database
+            port: 5432
+            type: TCP
+        volumes:
+          - id: data
+            dir: /var/lib/postgresql/data
+        healthCheck:
+          type: TCP
+          port: database
+          initialDelaySeconds: 15
+          periodSeconds: 10
+          timeoutSeconds: 5
+          failureThreshold: 3
+        instructions:
+          - title: Connection String
+            content: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}
+          - title: PostgreSQL Connect Command
+            content: psql "postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${PORT_FORWARDED_HOSTNAME}:${DATABASE_PORT_FORWARDED_PORT}/${POSTGRES_DATABASE}"
+          - title: PostgreSQL username
+            content: ${POSTGRES_USERNAME}
+          - title: PostgreSQL password
+            content: ${POSTGRES_PASSWORD}
+          - title: PostgreSQL database
+            content: ${POSTGRES_DATABASE}
+          - title: PostgreSQL host
+            content: ${PORT_FORWARDED_HOSTNAME}
+          - title: PostgreSQL port
+            content: ${DATABASE_PORT_FORWARDED_PORT}
+        env:
+          PGDATA:
+            default: /var/lib/postgresql/data/pgdata
+          POSTGRES_DB:
+            default: threads_analytics
+          POSTGRES_USER:
+            default: postgres
+          POSTGRES_PASSWORD:
+            default: ${PASSWORD}
+            expose: true
+          POSTGRES_DATABASE:
+            default: ${POSTGRES_DB}
+            expose: true
+          POSTGRES_USERNAME:
+            default: ${POSTGRES_USER}
+            expose: true
+          POSTGRES_HOST:
+            default: ${CONTAINER_HOSTNAME}
+            expose: true
+          POSTGRES_PORT:
+            default: "5432"
+            expose: true
+          POSTGRES_CONNECTION_STRING:
+            default: postgres://${POSTGRES_USERNAME}:${POSTGRES_PASSWORD}@${POSTGRES_HOST}:${POSTGRES_PORT}/${POSTGRES_DATABASE}
+            expose: true
+          POSTGRES_URI:
+            default: ${POSTGRES_CONNECTION_STRING}
+            expose: true
+        configs:
+          - path: /etc/postgresql/postgresql.conf
+            template: |
+              # https://github.com/postgres/postgres/blob/master/src/backend/utils/misc/postgresql.conf.sample
+              listen_addresses = '*'
+              max_connections = 100
+              shared_buffers = 128MB
+              dynamic_shared_memory_type = posix
+              max_wal_size = 1GB
+              min_wal_size = 80MB
+              log_timezone = 'Etc/UTC'
+              datestyle = 'iso, mdy'
+              timezone = 'Etc/UTC'
+              lc_messages = 'en_US.utf8'
+              lc_monetary = 'en_US.utf8'
+              lc_numeric = 'en_US.utf8'
+              lc_time = 'en_US.utf8'
+              default_text_search_config = 'pg_catalog.english'
+            permission: null
+            envsubst: null
+
+    - name: threads-analytics
+      icon: https://raw.githubusercontent.com/ridemountainpig/threads-analytics/refs/heads/main/public/threads-analytics-icon.png
+      template: PREBUILT
+      domainKey: PUBLIC_DOMAIN
+      dependencies:
+        - PostgreSQL
+      spec:
+        source:
+          image: ghcr.io/ridemountainpig/threads-analytics:latest
+        ports:
+          - id: web
+            port: 3000
+            type: HTTP
+        env:
+          APP_PASSWORD:
+            default: ${APP_PASSWORD}
+          TOKEN_ENCRYPTION_KEY:
+            default: ${TOKEN_ENCRYPTION_KEY}
+          DATABASE_URL:
+            default: ${POSTGRES_CONNECTION_STRING}
+          SYNC_SCHEDULER_ENABLED:
+            default: "true"
+
+localization:
+  zh-TW:
+    description: 自架版 Threads 數據分析儀表板，連接存取權杖後即可用圖表和指標深入探索貼文表現。
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: 網域
+        description: 想要綁定到 Threads Analytics 的網域。
+      - key: APP_PASSWORD
+        type: STRING
+        name: 應用程式密碼
+        description: 用於保護 Threads Analytics 儀表板的登入密碼。
+      - key: TOKEN_ENCRYPTION_KEY
+        type: STRING
+        name: Token 加密金鑰
+        description: "用於加密 Threads 存取權杖的密鑰。請用以下指令產生：openssl rand -hex 32"
+    readme: |-
+      # Threads Analytics
+
+      自架版 Threads 數據分析儀表板，連接你的存取權杖，透過詳細的圖表與指標深入了解貼文表現。
+
+      ## 功能特色
+
+      - **總覽** — 統計卡片（瀏覽、按讚、回覆、轉發、引用、分享、互動率），含期間環比變化、每日瀏覽圖表、最佳發文時段建議、爆紅貼文
+      - **數據分析** — 橫跨「表現」與「內容」分頁的 15+ 張圖表
+      - **貼文** — 可搜尋、可篩選的貼文列表，含每篇貼文的數據面板
+      - 多帳號支援與切換
+      - 可設定自動同步間隔
+      - 密碼保護（單一 `APP_PASSWORD` 環境變數）
+      - 英文 / 繁體中文 / 日文介面
+
+      ## 🔑 環境變數
+
+      - `APP_PASSWORD` → 登入儀表板所需的密碼
+      - `TOKEN_ENCRYPTION_KEY` → 加密 Threads 權杖用的密鑰，請用 `openssl rand -hex 32` 產生
+      - `DATABASE_URL` → 由 PostgreSQL 服務自動產生
+
+      ## 📖 原始碼
+
+      [GitHub Repository](https://github.com/ridemountainpig/threads-analytics)
+  ja:
+    description: セルフホスト型の Threads アナリティクスダッシュボード。アクセストークンを接続すると、詳細なチャートと指標で投稿パフォーマンスを分析できます。
+    variables:
+      - key: PUBLIC_DOMAIN
+        type: DOMAIN
+        name: ドメイン
+        description: Threads Analytics インスタンスに紐付けたいドメイン。
+      - key: APP_PASSWORD
+        type: STRING
+        name: アプリパスワード
+        description: Threads Analytics ダッシュボードを保護するためのパスワード。
+      - key: TOKEN_ENCRYPTION_KEY
+        type: STRING
+        name: トークン暗号化キー
+        description: "Threads アクセストークンを暗号化するためのシークレットキー。次のコマンドで生成します：openssl rand -hex 32"
+    readme: |-
+      # Threads Analytics
+
+      セルフホスト型の Threads アナリティクスダッシュボード。アクセストークンを接続すると、詳細なチャートと指標で投稿パフォーマンスを分析できます。
+
+      ## 機能
+
+      - **概要** — 統計カード（ビュー、いいね、リプライ、リポスト、引用、シェア、エンゲージメント率）と前期比、日次ビューチャート、最適投稿時間の推奨、バイラル投稿
+      - **アナリティクス** — パフォーマンスとコンテンツの 2 タブにまたがる 15 種類以上のチャート
+      - **投稿** — 検索・フィルタ可能なリストと投稿ごとのアナリティクスパネル
+      - 複数アカウント対応、アカウント切り替え可能
+      - 設定可能な間隔での自動同期
+      - パスワード保護（単一の `APP_PASSWORD` 環境変数）
+      - 英語 / 繁体中文 / 日本語 UI
+
+      ## 🔑 環境変数
+
+      - `APP_PASSWORD` → ダッシュボードにサインインするためのパスワード
+      - `TOKEN_ENCRYPTION_KEY` → Threads トークンを暗号化するシークレットキー。`openssl rand -hex 32` で生成
+      - `DATABASE_URL` → PostgreSQL サービスから自動生成
+
+      ## 📖 ソース
+
+      [GitHub Repository](https://github.com/ridemountainpig/threads-analytics)

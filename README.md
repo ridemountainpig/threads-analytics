@@ -189,6 +189,15 @@ Clicking any post opens a detail panel with views, engagement rate, vs-median mu
 
 ## Deployment
 
+### One-click deploy
+
+The fastest way to get a hosted instance — both templates provision a PostgreSQL database and set the required environment variables for you:
+
+| Platform | Deploy                                                                                                                                                                          |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Railway  | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
+| Zeabur   | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                       |
+
 ### Auto-sync behavior
 
 #### Railway / Zeabur / VPS / Docker

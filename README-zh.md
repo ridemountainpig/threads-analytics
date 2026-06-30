@@ -189,6 +189,15 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 ## 部署
 
+### 一鍵部署
+
+最快取得線上實例的方式 — 兩個模板都會自動建立 PostgreSQL 資料庫並設定好必要的環境變數：
+
+| 平台    | 部署                                                                                                                                                                            |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Railway | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
+| Zeabur  | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                       |
+
 ### 自動同步行為
 
 #### Railway / Zeabur / VPS / Docker
