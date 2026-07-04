@@ -125,9 +125,11 @@ npx prisma migrate dev --name <name>  # Create a new migration
 
 ## Getting Your Threads Access Token
 
-1. Go to [developers.facebook.com](https://developers.facebook.com) and create an app with the **Threads** product
+1. Go to [developers.facebook.com](https://developers.facebook.com) and create an app with the **Access the Threads API** use case
 2. Generate an **Access Token**
 3. In the dashboard: **Settings → Add Threads Account → paste token**
+
+For a screenshot-based walkthrough, see [How to Generate a Threads Access Token](./public/token-generate-step/README.md).
 
 > Tokens are valid for 60 days. The dashboard shows an expiry warning when your token is within 30 days of expiring.
 
@@ -193,10 +195,10 @@ Clicking any post opens a detail panel with views, engagement rate, vs-median mu
 
 The fastest way to get a hosted instance — both templates provision a PostgreSQL database and set the required environment variables for you:
 
-| Platform | Deploy                                                                                                                                                                          |
-| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Platform | Deploy                                                                                                                                                                        |
+| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Railway  | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
-| Zeabur   | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                       |
+| Zeabur   | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
 
 ### Auto-sync behavior
 

@@ -125,9 +125,11 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 ## 取得 Threads Access Token
 
-1. 前往 [developers.facebook.com](https://developers.facebook.com) 建立含有 **Threads** 產品的應用程式
+1. 前往 [developers.facebook.com](https://developers.facebook.com) 建立含有 **Access the Threads API** use case 的應用程式
 2. 產生**Access Token**
 3. 在儀表板中：**設定 → 新增 Threads 帳號 → 貼上 Token**
+
+詳細圖文步驟請參考：[如何生成 Threads Access Token](./public/token-generate-step/README-zh.md)。
 
 > Token 有效期限為 60 天。當 Token 在 30 天內到期時，設定頁面會顯示警示提醒你重新連接。
 
@@ -193,10 +195,10 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 最快取得線上實例的方式 — 兩個模板都會自動建立 PostgreSQL 資料庫並設定好必要的環境變數：
 
-| 平台    | 部署                                                                                                                                                                            |
-| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 平台    | 部署                                                                                                                                                                          |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | Railway | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
-| Zeabur  | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                       |
+| Zeabur  | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
 
 ### 自動同步行為
 
