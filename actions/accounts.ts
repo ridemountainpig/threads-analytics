@@ -44,6 +44,42 @@ export async function addAccountAction(
   }
 }
 
+export async function updateTokenAction(
+  accountId: string,
+  formData: FormData,
+): Promise<{ error?: string; username?: string }> {
+  if (!(await getSession())) return { error: "Unauthorized" };
+
+  const accessToken = (formData.get("accessToken") as string)?.trim();
+  if (!accessToken) return { error: "Access token is required" };
+
+  const account = await db.threadsAccount.findUnique({ where: { id: accountId } });
+  if (!account) return { error: "Account not found" };
+
+  try {
+    const user = await getUser(accessToken);
+    if (user.id !== accountId) {
+      return { error: `This token belongs to @${user.username}, not @${account.username}` };
+    }
+
+    await db.threadsAccount.update({
+      where: { id: accountId },
+      data: {
+        username: user.username,
+        accessToken: encryptToken(accessToken),
+        expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
+      },
+    });
+
+    revalidatePath("/dashboard");
+    return { username: user.username };
+  } catch (err) {
+    if (err instanceof TokenExpiredError) return { error: "Token is invalid or expired" };
+    console.error("[updateTokenAction] unexpected error:", err);
+    return { error: "Failed to verify token. Please check and try again." };
+  }
+}
+
 export async function deleteAccountAction(accountId: string): Promise<void> {
   if (!(await getSession())) return;
 

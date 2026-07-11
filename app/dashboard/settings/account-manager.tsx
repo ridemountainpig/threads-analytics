@@ -1,11 +1,16 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { Trash2, CheckCircle2, RefreshCw, Plus, AlertTriangle } from "lucide-react";
+import { Trash2, CheckCircle2, RefreshCw, Plus, AlertTriangle, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { addAccountAction, deleteAccountAction, switchAccountAction } from "@/actions/accounts";
+import {
+  addAccountAction,
+  deleteAccountAction,
+  switchAccountAction,
+  updateTokenAction,
+} from "@/actions/accounts";
 import { toast } from "sonner";
 
 interface Account {
@@ -32,6 +37,8 @@ interface AccountManagerLabels {
   tokenExpiresIn: string;
   tokenExpiresToday: string;
   tokenExpiredLabel: string;
+  updateToken: string;
+  tokenUpdated: string;
 }
 
 function formatDate(date: string, dateLocale = "en-US") {
@@ -87,6 +94,7 @@ export default function AccountManager({
   dateLocale?: string;
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
+  const [updatingId, setUpdatingId] = useState<string | null>(null);
   const [pending, startTransition] = useTransition();
 
   function handleDelete(id: string, username: string) {
@@ -111,6 +119,18 @@ export default function AccountManager({
     });
   }
 
+  function handleUpdateToken(accountId: string, formData: FormData) {
+    startTransition(async () => {
+      const result = await updateTokenAction(accountId, formData);
+      if (result.error) {
+        toast.error(result.error);
+      } else {
+        toast.success(labels.tokenUpdated.replace("{username}", result.username ?? ""));
+        setUpdatingId(null);
+      }
+    });
+  }
+
   async function handleAdd(formData: FormData) {
     startTransition(async () => {
       const result = await addAccountAction(formData);
@@ -128,45 +148,99 @@ export default function AccountManager({
       {accounts.length > 0 && (
         <div className="space-y-3">
           {accounts.map((account) => (
-            <div
-              key={account.id}
-              className="bg-muted/30 flex min-h-16 w-full items-center justify-between gap-4 rounded-lg border px-4 py-3"
-            >
-              <div className="flex min-w-0 items-center gap-3">
-                {account.isActive && <CheckCircle2 className="size-4 shrink-0 text-green-600" />}
-                <div className="min-w-0">
-                  <div className="flex flex-wrap items-center gap-2">
-                    <p className="text-sm font-medium">@{account.username}</p>
-                    <TokenExpiryBadge expiresAt={account.expiresAt} labels={labels} />
+            <div key={account.id} className="bg-muted/30 w-full rounded-lg border">
+              <div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3">
+                <div className="flex min-w-0 items-center gap-3">
+                  {account.isActive && <CheckCircle2 className="size-4 shrink-0 text-green-600" />}
+                  <div className="min-w-0">
+                    <div className="flex flex-wrap items-center gap-2">
+                      <p className="text-sm font-medium">@{account.username}</p>
+                      <TokenExpiryBadge expiresAt={account.expiresAt} labels={labels} />
+                    </div>
+                    {account.lastSyncedAt && (
+                      <p className="text-muted-foreground text-xs" suppressHydrationWarning>
+                        {labels.lastSynced} {formatDate(account.lastSyncedAt, dateLocale)}
+                      </p>
+                    )}
                   </div>
-                  {account.lastSyncedAt && (
-                    <p className="text-muted-foreground text-xs" suppressHydrationWarning>
-                      {labels.lastSynced} {formatDate(account.lastSyncedAt, dateLocale)}
-                    </p>
-                  )}
                 </div>
-              </div>
-              <div className="flex shrink-0 items-center gap-2">
-                {!account.isActive && (
+                <div className="flex shrink-0 items-center gap-2">
+                  {!account.isActive && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleSwitch(account.id)}
+                      disabled={pending}
+                    >
+                      {labels.switch}
+                    </Button>
+                  )}
                   <Button
                     variant="ghost"
-                    size="sm"
-                    onClick={() => handleSwitch(account.id)}
+                    size="icon"
+                    className="text-muted-foreground size-8"
+                    title={labels.updateToken}
+                    onClick={() => {
+                      setUpdatingId(updatingId === account.id ? null : account.id);
+                      setShowAddForm(false);
+                    }}
                     disabled={pending}
                   >
-                    {labels.switch}
+                    <KeyRound className="size-3.5" />
                   </Button>
-                )}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-muted-foreground hover:text-destructive size-8"
-                  onClick={() => handleDelete(account.id, account.username)}
-                  disabled={pending}
-                >
-                  <Trash2 className="size-3.5" />
-                </Button>
+                  <Button
+                    variant="ghost"
+                    size="icon"
+                    className="text-muted-foreground hover:text-destructive size-8"
+                    onClick={() => handleDelete(account.id, account.username)}
+                    disabled={pending}
+                  >
+                    <Trash2 className="size-3.5" />
+                  </Button>
+                </div>
               </div>
+              {updatingId === account.id && (
+                <form
+                  action={(formData) => handleUpdateToken(account.id, formData)}
+                  className="space-y-3 border-t px-4 py-3"
+                >
+                  <div className="space-y-1.5">
+                    <Label htmlFor={`accessToken-${account.id}`} className="text-sm">
+                      {labels.accessToken}
+                    </Label>
+                    <Input
+                      id={`accessToken-${account.id}`}
+                      name="accessToken"
+                      type="password"
+                      placeholder={labels.accessTokenPlaceholder}
+                      autoFocus
+                      disabled={pending}
+                    />
+                    <p className="text-muted-foreground text-xs">{labels.tokenHelp}</p>
+                  </div>
+                  <div className="flex gap-2">
+                    <Button type="submit" size="sm" disabled={pending}>
+                      {pending ? (
+                        <>
+                          <RefreshCw className="mr-1.5 size-3 animate-spin" />
+                          {labels.verifying}
+                        </>
+                      ) : (
+                        labels.updateToken
+                      )}
+                    </Button>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => setUpdatingId(null)}
+                      disabled={pending}
+                    >
+                      {labels.cancel}
+                    </Button>
+                  </div>
+                </form>
+              )}
             </div>
           ))}
         </div>
@@ -177,7 +251,10 @@ export default function AccountManager({
           className="w-full justify-start sm:w-auto"
           variant="outline"
           size="sm"
-          onClick={() => setShowAddForm(true)}
+          onClick={() => {
+            setShowAddForm(true);
+            setUpdatingId(null);
+          }}
         >
           <Plus className="mr-1.5 size-3.5" />
           {labels.addAccount}

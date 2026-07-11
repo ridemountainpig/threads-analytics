@@ -301,6 +301,8 @@ export const dictionaries = {
       tokenExpiresIn: "Expires in {days} days",
       tokenExpiresToday: "Expires today",
       tokenExpiredLabel: "Token expired",
+      updateToken: "Update token",
+      tokenUpdated: "Updated token for @{username}",
     },
     login: {
       title: "Threads Analytics",
@@ -586,6 +588,8 @@ export const dictionaries = {
       tokenExpiresIn: "{days} 天後過期",
       tokenExpiresToday: "今天過期",
       tokenExpiredLabel: "Token 已過期",
+      updateToken: "更新 Token",
+      tokenUpdated: "已更新 @{username} 的 token",
     },
     login: {
       title: "Threads Analytics",
@@ -878,6 +882,8 @@ export const dictionaries = {
       tokenExpiresIn: "{days} 日後に期限切れ",
       tokenExpiresToday: "本日期限切れ",
       tokenExpiredLabel: "トークン期限切れ",
+      updateToken: "トークンを更新",
+      tokenUpdated: "@{username} のトークンを更新しました",
     },
     login: {
       title: "Threads Analytics",
