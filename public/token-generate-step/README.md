@@ -2,7 +2,7 @@
 
 [繁體中文](./README-zh.md) | English | [日本語](./README-ja.md)
 
-This guide follows `step-1.png` through `step-18.png` and explains how to create a Meta Developers app, add the Threads API use case, invite a Threads Tester, and generate a Threads Access Token for Threads Analytics.
+This guide walks you through 18 steps, with a screenshot for each one, to create a Meta Developers app, add the Threads API use case, invite a Threads Tester, and generate a Threads Access Token for Threads Analytics.
 
 Before you start, prepare:
 

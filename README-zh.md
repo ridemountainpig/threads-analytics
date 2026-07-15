@@ -111,7 +111,7 @@ pnpm dev
 1. 點擊側邊欄的**設定**
 2. 點擊**新增 Threads 帳號**
 3. 貼上你的 Threads Access Token（取得方式見下方）
-4. 點擊**同步**，開始抓取貼文與洞察資料
+4. 新增完成後會自動開始首次同步（可能需要幾分鐘）
 
 ### 常用指令
 
@@ -131,7 +131,7 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 詳細圖文步驟請參考：[如何生成 Threads Access Token](./public/token-generate-step/README-zh.md)。
 
-> Token 有效期限為 60 天。當 Token 在 30 天內到期時，設定頁面會顯示警示提醒你重新連接。
+> Token 有效期限為 60 天。當 Token 在 30 天內到期時，設定頁面會顯示警示提醒你重新連接。你可以隨時在設定頁面的帳號卡片上點擊**更新 Token**續期，已同步的資料會完整保留。
 
 ---
 
@@ -212,30 +212,36 @@ Vercel 不支援常駐 process，請改用 [Vercel Cron Jobs](https://vercel.com
 
 1. 在專案根目錄新增 `vercel.json`：
 
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/sync",
-      "schedule": "0 * * * *"
-    }
-  ]
-}
-```
+   ```json
+   {
+     "crons": [
+       {
+         "path": "/api/cron/sync",
+         "schedule": "0 * * * *"
+       }
+     ]
+   }
+   ```
 
-`schedule` 請對應 Settings 中設定的同步間隔（例如每小時 `0 * * * *`、每 30 分鐘 `*/30 * * * *`）。注意 Vercel 免費方案對 cron 頻率有限制。
+   `schedule` 請對應 Settings 中設定的同步間隔（例如每小時 `0 * * * *`、每 30 分鐘 `*/30 * * * *`）。注意 Vercel 免費方案對 cron 頻率有限制。
 
-1. 前往 Vercel Dashboard 的 **Settings → Environment Variables**，新增：
+2. 前往 Vercel Dashboard 的 **Settings → Environment Variables**，新增：
 
-| 變數          | 值                                         |
-| ------------- | ------------------------------------------ |
-| `CRON_SECRET` | 隨機字串，可用 `openssl rand -hex 32` 產生 |
+   | 變數          | 值                                         |
+   | ------------- | ------------------------------------------ |
+   | `CRON_SECRET` | 隨機字串，可用 `openssl rand -hex 32` 產生 |
 
-Vercel 每次執行 cron 時會自動帶上 `Authorization: Bearer <CRON_SECRET>`，`/api/cron/sync` 會用這個值驗證請求來源是否合法。
+   Vercel 每次執行 cron 時會自動帶上 `Authorization: Bearer <CRON_SECRET>`，`/api/cron/sync` 會用這個值驗證請求來源是否合法。
 
 ### Docker
 
-設定所有環境變數後執行：
+GitHub Container Registry 上有發佈好的 multi-arch（amd64/arm64）映像檔。設定所有環境變數後執行：
+
+```bash
+docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+也可以自行從原始碼建置：
 
 ```bash
 docker build -t threads-analytics .
@@ -243,3 +249,19 @@ docker run -p 3000:3000 --env-file .env.local threads-analytics
 ```
 
 Docker 映像檔在啟動時會自動執行 `prisma migrate deploy`。
+
+### 更新既有部署
+
+新版本會以更新後的 Docker 映像檔發佈。資料庫 migration 會在啟動時自動執行，因此更新只需要取得新的映像檔或程式碼：
+
+- **Docker / VPS** — 拉取最新映像檔，停掉舊 container 後用相同參數重新啟動：
+
+  ```bash
+  docker pull ghcr.io/ridemountainpig/threads-analytics:latest
+  ```
+
+- **Zeabur** — 開啟 `threads-analytics` 服務並點擊 **Redeploy**，即會拉取最新映像檔。
+- **Railway** — 在 Railway Dashboard 對服務觸發重新部署。
+- **從原始碼部署** — `git pull` 後執行 `pnpm install && pnpm build`，再以 `pnpm start` 重新啟動（會自動執行 migration）。
+
+更新過程中資料庫（貼文、洞察資料、帳號）都會完整保留。

@@ -111,7 +111,7 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with your `APP_P
 1. Go to **Settings** in the sidebar
 2. Click **Add Threads account**
 3. Paste your long-lived Threads access token (see [Getting Your Access Token](#getting-your-threads-access-token))
-4. Click **Sync** to fetch your posts and insights
+4. The first sync starts automatically and may take a few minutes
 
 ### Useful commands
 
@@ -131,7 +131,7 @@ npx prisma migrate dev --name <name>  # Create a new migration
 
 For a screenshot-based walkthrough, see [How to Generate a Threads Access Token](./public/token-generate-step/README.md).
 
-> Tokens are valid for 60 days. The dashboard shows an expiry warning when your token is within 30 days of expiring.
+> Tokens are valid for 60 days. The dashboard shows an expiry warning when your token is within 30 days of expiring. Renew anytime with the **Update token** button on the account card in Settings — your synced data is kept.
 
 ---
 
@@ -212,30 +212,36 @@ Vercel does not support long-running processes. Use [Vercel Cron Jobs](https://v
 
 1. Add a `vercel.json` to the project root:
 
-```json
-{
-  "crons": [
-    {
-      "path": "/api/cron/sync",
-      "schedule": "0 * * * *"
-    }
-  ]
-}
-```
+   ```json
+   {
+     "crons": [
+       {
+         "path": "/api/cron/sync",
+         "schedule": "0 * * * *"
+       }
+     ]
+   }
+   ```
 
-Adjust `schedule` to match the sync interval you set in Settings (e.g. `0 * * * *` for every hour, `*/30 * * * *` for every 30 minutes). Note that Vercel's free plan limits cron frequency.
+   Adjust `schedule` to match the sync interval you set in Settings (e.g. `0 * * * *` for every hour, `*/30 * * * *` for every 30 minutes). Note that Vercel's free plan limits cron frequency.
 
-1. In the Vercel dashboard go to **Settings → Environment Variables** and add:
+2. In the Vercel dashboard go to **Settings → Environment Variables** and add:
 
-| Variable      | Value                                                  |
-| ------------- | ------------------------------------------------------ |
-| `CRON_SECRET` | A random secret — generate with `openssl rand -hex 32` |
+   | Variable      | Value                                                  |
+   | ------------- | ------------------------------------------------------ |
+   | `CRON_SECRET` | A random secret — generate with `openssl rand -hex 32` |
 
-Vercel automatically injects this value as `Authorization: Bearer <CRON_SECRET>` on every cron request, and the `/api/cron/sync` route uses it to verify the call is legitimate.
+   Vercel automatically injects this value as `Authorization: Bearer <CRON_SECRET>` on every cron request, and the `/api/cron/sync` route uses it to verify the call is legitimate.
 
 ### Docker
 
-Set all environment variables, then run:
+A prebuilt multi-arch (amd64/arm64) image is published to GitHub Container Registry. Set all environment variables, then run:
+
+```bash
+docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+Or build the image from source yourself:
 
 ```bash
 docker build -t threads-analytics .
@@ -243,3 +249,19 @@ docker run -p 3000:3000 --env-file .env.local threads-analytics
 ```
 
 The Docker image runs `prisma migrate deploy` automatically on startup.
+
+### Updating an existing deployment
+
+New versions ship as updated Docker images. Database migrations run automatically on startup, so updating only requires getting the new image or code:
+
+- **Docker / VPS** — pull the latest image, then stop the old container and start a new one with the same flags:
+
+  ```bash
+  docker pull ghcr.io/ridemountainpig/threads-analytics:latest
+  ```
+
+- **Zeabur** — open the `threads-analytics` service and click **Redeploy** to pull the latest image.
+- **Railway** — trigger a redeploy of the service from the Railway dashboard.
+- **From source** — `git pull`, then `pnpm install && pnpm build` and restart with `pnpm start` (runs migrations automatically).
+
+Your database (posts, insights, accounts) is preserved across updates.

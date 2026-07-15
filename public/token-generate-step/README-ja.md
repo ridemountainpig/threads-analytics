@@ -2,7 +2,7 @@
 
 [繁體中文](./README-zh.md) | [English](./README.md) | 日本語
 
-このガイドでは、`step-1.png` から `step-18.png` までの画面に沿って、Meta Developers で App を作成し、Threads API の use case を追加し、Threads Tester を招待して、Threads Analytics で使う Threads アクセストークンを生成する手順を説明します。
+このガイドでは、各ステップのスクリーンショットとともに全 18 ステップで、Meta Developers で App を作成し、Threads API の use case を追加し、Threads Tester を招待して、Threads Analytics で使う Threads アクセストークンを生成する手順を説明します。
 
 始める前に、次のものを用意してください。
 

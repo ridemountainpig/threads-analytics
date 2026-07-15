@@ -2,7 +2,7 @@
 
 繁體中文 | [English](./README.md) | [日本語](./README-ja.md)
 
-本指南依照 `step-1.png` 到 `step-18.png` 的畫面，說明如何從 Meta Developers 建立 App、加入 Threads API use case、邀請 Threads Tester，並產生可用於 Threads Analytics 的 Threads Access Token。
+本指南以 18 個步驟搭配對應截圖，一步一步說明如何從 Meta Developers 建立 App、加入 Threads API use case、邀請 Threads Tester，並產生可用於 Threads Analytics 的 Threads Access Token。
 
 開始前請先準備：
 
