@@ -11,6 +11,7 @@ import {
   switchAccountAction,
   updateTokenAction,
 } from "@/actions/accounts";
+import { syncDataAction } from "@/actions/sync";
 import { toast } from "sonner";
 
 interface Account {
@@ -39,6 +40,13 @@ interface AccountManagerLabels {
   tokenExpiredLabel: string;
   updateToken: string;
   tokenUpdated: string;
+  firstSyncStarted: string;
+}
+
+interface SyncResultLabels {
+  tokenExpired: string;
+  failed: string;
+  synced: string;
 }
 
 function formatDate(date: string, dateLocale = "en-US") {
@@ -87,10 +95,12 @@ function TokenExpiryBadge({
 export default function AccountManager({
   accounts,
   labels,
+  syncLabels,
   dateLocale,
 }: {
   accounts: Account[];
   labels: AccountManagerLabels;
+  syncLabels: SyncResultLabels;
   dateLocale?: string;
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
@@ -131,6 +141,28 @@ export default function AccountManager({
     });
   }
 
+  // Runs outside the transition so the form frees up immediately; the loading
+  // toast tracks the sync until the server action resolves (may take minutes).
+  function startFirstSync(username: string) {
+    const toastId = toast.loading(labels.firstSyncStarted.replace("{username}", username));
+    void syncDataAction()
+      .then((result) => {
+        if (result.error === "token_expired") {
+          toast.error(syncLabels.tokenExpired, { id: toastId });
+        } else if (result.error === "sync_in_progress") {
+          // Another sync (e.g. the scheduler) is already fetching the data.
+          toast.dismiss(toastId);
+        } else if (result.error) {
+          toast.error(`${syncLabels.failed} ${result.error}`, { id: toastId });
+        } else {
+          toast.success(syncLabels.synced.replace("{count}", String(result.postsCount)), {
+            id: toastId,
+          });
+        }
+      })
+      .catch(() => toast.dismiss(toastId));
+  }
+
   async function handleAdd(formData: FormData) {
     startTransition(async () => {
       const result = await addAccountAction(formData);
@@ -139,6 +171,7 @@ export default function AccountManager({
       } else {
         toast.success(labels.connected.replace("{username}", result.username ?? ""));
         setShowAddForm(false);
+        if (result.shouldSync) startFirstSync(result.username ?? "");
       }
     });
   }

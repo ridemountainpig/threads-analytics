@@ -34,6 +34,11 @@ export default async function SettingsPage() {
           <CardContent className="space-y-4">
             <AccountManager
               labels={t.settingsPage}
+              syncLabels={{
+                tokenExpired: t.sync.tokenExpired,
+                failed: t.sync.failed,
+                synced: t.sync.synced,
+              }}
               dateLocale={dateLocales[locale]}
               accounts={accounts.map((a) => ({
                 id: a.id,

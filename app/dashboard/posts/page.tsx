@@ -7,6 +7,7 @@ import TimeRangePicker from "@/components/dashboard/time-range-picker";
 import SyncButton from "@/components/dashboard/sync-button";
 import PostList from "./post-list";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
+import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
 
@@ -47,6 +48,23 @@ export default async function PostsPage({ searchParams }: PageProps) {
         message={t.common.noAccount}
         help={t.common.noAccountHelp}
         settingsLabel={t.common.settings}
+      />
+    );
+  }
+
+  if (!account.syncState?.lastSyncedAt) {
+    return (
+      <FirstSyncNotice
+        labels={{
+          message: t.common.notSynced,
+          help: t.common.notSyncedHelp,
+          syncNow: t.common.syncNow,
+          syncing: t.sync.syncing,
+          inProgress: t.sync.inProgress,
+          tokenExpired: t.sync.tokenExpired,
+          failed: t.sync.failed,
+          synced: t.sync.synced,
+        }}
       />
     );
   }

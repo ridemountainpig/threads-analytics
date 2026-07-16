@@ -8,7 +8,7 @@ import { getUser, TokenExpiredError } from "@/lib/threads-api";
 
 export async function addAccountAction(
   formData: FormData,
-): Promise<{ error?: string; username?: string }> {
+): Promise<{ error?: string; username?: string; shouldSync?: boolean }> {
   if (!(await getSession())) return { error: "Unauthorized" };
 
   const accessToken = (formData.get("accessToken") as string)?.trim();
@@ -19,7 +19,7 @@ export async function addAccountAction(
 
     const encrypted = encryptToken(accessToken);
     const isFirst = (await db.threadsAccount.count()) === 0;
-    await db.threadsAccount.upsert({
+    const account = await db.threadsAccount.upsert({
       where: { id: user.id },
       create: {
         id: user.id,
@@ -33,10 +33,16 @@ export async function addAccountAction(
         accessToken: encrypted,
         expiresAt: new Date(Date.now() + 60 * 24 * 60 * 60 * 1000),
       },
+      include: { syncState: true },
     });
 
     revalidatePath("/dashboard");
-    return { username: user.username };
+    // Kick off the first sync from the client only when this account is the
+    // active one and has never synced — otherwise the dashboard stays empty.
+    return {
+      username: user.username,
+      shouldSync: account.isActive && !account.syncState?.lastSyncedAt,
+    };
   } catch (err) {
     if (err instanceof TokenExpiredError) return { error: "Token is invalid or expired" };
     console.error("[addAccountAction] unexpected error:", err);

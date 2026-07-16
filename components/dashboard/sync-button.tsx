@@ -23,6 +23,7 @@ interface SyncButtonProps {
     tokenExpired: string;
     failed: string;
     synced: string;
+    inProgress?: string;
     intervalInline: Record<string, string>;
   };
   dateLocale?: string;
@@ -62,6 +63,8 @@ export default function SyncButton({
       const result = await syncDataAction();
       if (result.error === "token_expired") {
         toast.error(copy.tokenExpired);
+      } else if (result.error === "sync_in_progress") {
+        toast.info(copy.inProgress ?? "A sync is already in progress. Please wait.");
       } else if (result.error) {
         toast.error(`${copy.failed} ${result.error}`);
       } else {

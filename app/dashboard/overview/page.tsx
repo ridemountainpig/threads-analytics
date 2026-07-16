@@ -13,6 +13,7 @@ import {
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
+import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
 import SyncButton from "@/components/dashboard/sync-button";
 import TimeRangePicker from "@/components/dashboard/time-range-picker";
 import DailyViewsChart from "@/components/charts/daily-views-chart";
@@ -57,6 +58,23 @@ export default async function OverviewPage({ searchParams }: PageProps) {
         message={t.common.noAccount}
         help={t.common.noAccountHelp}
         settingsLabel={t.common.settings}
+      />
+    );
+  }
+
+  if (!account.syncState?.lastSyncedAt) {
+    return (
+      <FirstSyncNotice
+        labels={{
+          message: t.common.notSynced,
+          help: t.common.notSyncedHelp,
+          syncNow: t.common.syncNow,
+          syncing: t.sync.syncing,
+          inProgress: t.sync.inProgress,
+          tokenExpired: t.sync.tokenExpired,
+          failed: t.sync.failed,
+          synced: t.sync.synced,
+        }}
       />
     );
   }

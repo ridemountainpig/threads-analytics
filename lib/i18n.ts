@@ -25,6 +25,10 @@ export const dictionaries = {
       appName: "Threads Analytics",
       noAccount: "No account connected.",
       noAccountHelp: "Go to {settings} to add your account.",
+      notSynced: "No data synced yet.",
+      notSyncedHelp:
+        "Pull your posts and insights from Threads to get started. The first sync may take a few minutes.",
+      syncNow: "Sync now",
       noData: "No data",
       posts: "posts",
       views: "views",
@@ -65,6 +69,7 @@ export const dictionaries = {
       tokenExpired: "Access token expired. Please reconnect in Settings.",
       failed: "Sync failed:",
       synced: "Synced {count} posts",
+      inProgress: "A sync is already in progress. Please wait for it to finish.",
       intervals: {
         "0": "Manual only",
         "60": "Every hour",
@@ -303,6 +308,7 @@ export const dictionaries = {
       tokenExpiredLabel: "Token expired",
       updateToken: "Update token",
       tokenUpdated: "Updated token for @{username}",
+      firstSyncStarted: "Syncing data for @{username} — this may take a few minutes.",
     },
     login: {
       title: "Threads Analytics",
@@ -321,6 +327,9 @@ export const dictionaries = {
       appName: "Threads Analytics",
       noAccount: "尚未連接帳號。",
       noAccountHelp: "前往{settings}新增帳號。",
+      notSynced: "尚未同步資料。",
+      notSyncedHelp: "先從 Threads 同步貼文與洞察資料，即可開始使用。首次同步可能需要幾分鐘。",
+      syncNow: "立即同步",
       noData: "沒有資料",
       posts: "則貼文",
       views: "觀看數",
@@ -360,6 +369,7 @@ export const dictionaries = {
       tokenExpired: "Access token 已過期，請到設定重新連接。",
       failed: "同步失敗：",
       synced: "已同步 {count} 則貼文",
+      inProgress: "同步正在進行中，請稍候完成。",
       intervals: {
         "0": "手動同步",
         "60": "每小時",
@@ -590,6 +600,7 @@ export const dictionaries = {
       tokenExpiredLabel: "Token 已過期",
       updateToken: "更新 Token",
       tokenUpdated: "已更新 @{username} 的 token",
+      firstSyncStarted: "正在同步 @{username} 的資料，可能需要幾分鐘。",
     },
     login: {
       title: "Threads Analytics",
@@ -608,6 +619,10 @@ export const dictionaries = {
       appName: "Threads Analytics",
       noAccount: "アカウントが接続されていません。",
       noAccountHelp: "{settings}からアカウントを追加してください。",
+      notSynced: "まだデータが同期されていません。",
+      notSyncedHelp:
+        "Threads から投稿とインサイトを同期して始めましょう。初回の同期には数分かかる場合があります。",
+      syncNow: "今すぐ同期",
       noData: "データなし",
       posts: "投稿",
       views: "ビュー",
@@ -648,6 +663,7 @@ export const dictionaries = {
       tokenExpired: "アクセストークンの有効期限が切れました。設定から再接続してください。",
       failed: "同期に失敗しました：",
       synced: "{count} 件の投稿を同期しました",
+      inProgress: "同期は既に実行中です。完了までお待ちください。",
       intervals: {
         "0": "手動のみ",
         "60": "1時間ごと",
@@ -884,6 +900,7 @@ export const dictionaries = {
       tokenExpiredLabel: "トークン期限切れ",
       updateToken: "トークンを更新",
       tokenUpdated: "@{username} のトークンを更新しました",
+      firstSyncStarted: "@{username} のデータを同期しています。数分かかる場合があります。",
     },
     login: {
       title: "Threads Analytics",
