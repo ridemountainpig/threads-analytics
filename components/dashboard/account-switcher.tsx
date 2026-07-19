@@ -44,7 +44,9 @@ export default function AccountSwitcher({
             disabled={account.isActive || pending}
             onClick={() => {
               if (!account.isActive) {
-                startTransition(() => switchAccountAction(account.id));
+                startTransition(async () => {
+                  await switchAccountAction(account.id);
+                });
               }
             }}
             className="flex items-center gap-2"

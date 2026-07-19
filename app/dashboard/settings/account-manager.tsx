@@ -12,7 +12,7 @@ import {
   switchAccountAction,
   updateTokenAction,
 } from "@/actions/accounts";
-import { syncDataAction } from "@/actions/sync";
+import { syncAccountAction } from "@/actions/sync";
 import { toast } from "sonner";
 
 interface Account {
@@ -121,10 +121,11 @@ export default function AccountManager({
     });
   }
 
-  function handleSwitch(id: string) {
+  function handleSwitch(id: string, username: string) {
     startTransition(async () => {
       try {
-        await switchAccountAction(id);
+        const result = await switchAccountAction(id);
+        if (result.shouldSync) startFirstSync(id, username);
       } catch {
         toast.error("Failed to switch account. Please try again.");
       }
@@ -145,9 +146,9 @@ export default function AccountManager({
 
   // Runs outside the transition so the form frees up immediately; the loading
   // toast tracks the sync until the server action resolves (may take minutes).
-  function startFirstSync(username: string) {
+  function startFirstSync(accountId: string, username: string) {
     const toastId = toast.loading(labels.firstSyncStarted.replace("{username}", username));
-    void syncDataAction()
+    void syncAccountAction(accountId)
       .then((result) => {
         if (result.error === "token_expired") {
           toast.error(syncLabels.tokenExpired, { id: toastId });
@@ -173,7 +174,9 @@ export default function AccountManager({
       } else {
         toast.success(labels.connected.replace("{username}", result.username ?? ""));
         setShowAddForm(false);
-        if (result.shouldSync) startFirstSync(result.username ?? "");
+        if (result.shouldSync && result.accountId) {
+          startFirstSync(result.accountId, result.username ?? "");
+        }
       }
     });
   }
@@ -204,7 +207,7 @@ export default function AccountManager({
                     <Button
                       variant="ghost"
                       size="sm"
-                      onClick={() => handleSwitch(account.id)}
+                      onClick={() => handleSwitch(account.id, account.username)}
                       disabled={pending}
                     >
                       {labels.switch}

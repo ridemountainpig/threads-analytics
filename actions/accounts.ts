@@ -8,7 +8,7 @@ import { getUser, TokenExpiredError } from "@/lib/threads-api";
 
 export async function addAccountAction(
   formData: FormData,
-): Promise<{ error?: string; username?: string; shouldSync?: boolean }> {
+): Promise<{ error?: string; username?: string; accountId?: string; shouldSync?: boolean }> {
   if (!(await getSession())) return { error: "Unauthorized" };
 
   const accessToken = (formData.get("accessToken") as string)?.trim();
@@ -37,11 +37,13 @@ export async function addAccountAction(
     });
 
     revalidatePath("/dashboard");
-    // Kick off the first sync from the client only when this account is the
-    // active one and has never synced — otherwise the dashboard stays empty.
+    // Kick off the first sync from the client whenever this account has never
+    // synced — even for non-active accounts, so switching to them later
+    // doesn't land on an empty dashboard.
     return {
       username: user.username,
-      shouldSync: account.isActive && !account.syncState?.lastSyncedAt,
+      accountId: account.id,
+      shouldSync: !account.syncState?.lastSyncedAt,
     };
   } catch (err) {
     if (err instanceof TokenExpiredError) return { error: "Token is invalid or expired" };
@@ -103,12 +105,21 @@ export async function deleteAccountAction(accountId: string): Promise<void> {
   revalidatePath("/dashboard");
 }
 
-export async function switchAccountAction(accountId: string): Promise<void> {
-  if (!(await getSession())) return;
+export async function switchAccountAction(accountId: string): Promise<{ shouldSync?: boolean }> {
+  if (!(await getSession())) return {};
+
+  const account = await db.threadsAccount.findUnique({
+    where: { id: accountId },
+    include: { syncState: true },
+  });
+  if (!account) return {};
 
   await db.$transaction([
     db.threadsAccount.updateMany({ data: { isActive: false } }),
     db.threadsAccount.update({ where: { id: accountId }, data: { isActive: true } }),
   ]);
   refresh();
+  // Safety net for accounts that never got a first sync (added before the
+  // auto-sync existed, or whose first sync failed).
+  return { shouldSync: !account.syncState?.lastSyncedAt };
 }
