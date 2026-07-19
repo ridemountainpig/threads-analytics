@@ -847,7 +847,7 @@ function gregorianWeekdaySunday0(ymd: string): number {
 }
 
 export function computePostingCalendar(
-  posts: PostWithInsights[],
+  posts: Array<Pick<PostWithInsights, "timestamp">>,
   since: Date,
   until: Date,
   options?: { trimEmptyEdges?: boolean },

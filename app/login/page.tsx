@@ -13,7 +13,9 @@ export default async function LoginPage({
   const authenticated = await getSession();
   const { from } = await searchParams;
   const redirectTo =
-    from && from.startsWith("/") && !from.startsWith("//") ? from : "/dashboard/overview";
+    from && from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/\\")
+      ? from
+      : "/dashboard/overview";
   if (authenticated) redirect(redirectTo);
   const { locale, t } = await getDictionary();
 

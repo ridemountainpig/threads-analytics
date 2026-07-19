@@ -121,7 +121,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   };
 
   const shouldFetchUserInsights = range !== "all";
-  const [userInsights, dbPosts] = await Promise.all([
+  const [userInsights, dbPosts, allPostTimestamps] = await Promise.all([
     shouldFetchUserInsights
       ? getUserInsights(account.id, accessToken, toUnix(since), toUnix(until)).catch(
           () => emptyUserInsights,
@@ -135,6 +135,14 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
       },
       orderBy: { timestamp: "desc" },
       take: 2000,
+    }),
+    db.post.findMany({
+      where: {
+        accountId: account.id,
+        mediaType: { not: "REPOST_FACADE" },
+      },
+      select: { timestamp: true },
+      orderBy: { timestamp: "asc" },
     }),
   ]);
 
@@ -194,13 +202,12 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const consistency = computePostingConsistency(posts, since, until, tz);
   const replyRateLeaders = computeReplyRateLeaders(posts);
   const topByEngRate = computeTopPostsByEngagementRate(posts);
+  // Posting activity covers the account's full history, independent of the selected range
   const postingCalendar = computePostingCalendar(
-    posts,
-    since,
-    until,
-    {
-      trimEmptyEdges: range === "all",
-    },
+    allPostTimestamps,
+    allPostTimestamps[0]?.timestamp ?? since,
+    new Date(),
+    undefined,
     tz,
   );
   const contentFormatLengthMatrix = computeContentFormatLengthMatrix(posts);
