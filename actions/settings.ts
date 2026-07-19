@@ -6,11 +6,6 @@ import { getSession } from "@/lib/auth";
 
 export type TimeRange = "30" | "60" | "90";
 
-export async function getSettings(): Promise<{ defaultTimeRange: TimeRange }> {
-  const setting = await db.appSettings.findUnique({ where: { key: "defaultTimeRange" } });
-  return { defaultTimeRange: (setting?.value ?? "90") as TimeRange };
-}
-
 export async function updateDefaultTimeRangeAction(value: TimeRange): Promise<void> {
   if (!(await getSession())) return;
 
@@ -23,11 +18,6 @@ export async function updateDefaultTimeRangeAction(value: TimeRange): Promise<vo
 }
 
 export type SyncInterval = string;
-
-export async function getSyncInterval(): Promise<SyncInterval> {
-  const setting = await db.appSettings.findUnique({ where: { key: "syncInterval" } });
-  return setting?.value ?? "0";
-}
 
 export async function updateSyncIntervalAction(value: SyncInterval): Promise<{ error?: string }> {
   if (!(await getSession())) return { error: "Unauthorized" };

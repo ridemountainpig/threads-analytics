@@ -3,7 +3,7 @@
 import { revalidatePath, refresh } from "next/cache";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { encryptToken, decryptToken } from "@/lib/crypto";
+import { encryptToken } from "@/lib/crypto";
 import { getUser, TokenExpiredError } from "@/lib/threads-api";
 
 export async function addAccountAction(
@@ -111,17 +111,4 @@ export async function switchAccountAction(accountId: string): Promise<void> {
     db.threadsAccount.update({ where: { id: accountId }, data: { isActive: true } }),
   ]);
   refresh();
-}
-
-export async function getActiveToken(): Promise<{ token: string; userId: string } | null> {
-  if (!(await getSession())) return null;
-
-  const account = await db.threadsAccount.findFirst({ where: { isActive: true } });
-  if (!account) return null;
-  if (account.expiresAt < new Date()) return null;
-  try {
-    return { token: decryptToken(account.accessToken), userId: account.id };
-  } catch {
-    return null;
-  }
 }

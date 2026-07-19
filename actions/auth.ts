@@ -22,8 +22,13 @@ export async function loginAction(
   const token = await createSession();
   await setSessionCookie(token);
   const redirectTo = formData.get("redirectTo") as string | null;
+  // Reject "//" and "/\" prefixes — browsers treat both as protocol-relative
+  // URLs, which would turn this into an open redirect.
   const destination =
-    redirectTo && redirectTo.startsWith("/") && !redirectTo.startsWith("//")
+    redirectTo &&
+    redirectTo.startsWith("/") &&
+    !redirectTo.startsWith("//") &&
+    !redirectTo.startsWith("/\\")
       ? redirectTo
       : "/dashboard/overview";
   redirect(destination);

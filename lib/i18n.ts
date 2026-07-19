@@ -277,7 +277,7 @@ export const dictionaries = {
       subtitle: "Manage your Threads accounts and data",
       accountsTitle: "Threads Accounts",
       accountsSub:
-        "Connect accounts, choose the active profile, and remove accounts you no longer track.",
+        "Connect accounts with a Threads long-lived access token, choose the active profile, and remove accounts you no longer track.",
       dataSync: "Data Sync",
       dataSyncSub: "Fetch posts and insights for @{username}.",
       syncHelp:
@@ -291,6 +291,9 @@ export const dictionaries = {
       accessToken: "Access Token",
       accessTokenPlaceholder: "Paste your Threads long-lived access token",
       tokenHelp: "You can get a long-lived access token from the Meta for Developers portal.",
+      tokenGuideLink: "View the step-by-step guide",
+      tokenGuideCardLink: "How to generate an access token",
+      backToSettings: "Back to Settings",
       verifying: "Verifying...",
       connect: "Connect",
       cancel: "Cancel",
@@ -570,7 +573,8 @@ export const dictionaries = {
       title: "設定",
       subtitle: "管理 Threads 帳號與資料",
       accountsTitle: "Threads 帳號",
-      accountsSub: "連接帳號、選擇啟用的個人檔案，並移除不再追蹤的帳號。",
+      accountsSub:
+        "使用 Threads 長效 access token 連接帳號、選擇啟用的個人檔案，並移除不再追蹤的帳號。",
       dataSync: "資料同步",
       dataSyncSub: "抓取 @{username} 的貼文與洞察資料。",
       syncHelp: "大型帳號可能需要一分鐘。同步完成前，儀表板會使用快取貼文指標。",
@@ -583,6 +587,9 @@ export const dictionaries = {
       accessToken: "Access Token",
       accessTokenPlaceholder: "貼上 Threads 長效 access token",
       tokenHelp: "你可以從 Meta for Developers 後台取得長效 access token。",
+      tokenGuideLink: "查看完整教學",
+      tokenGuideCardLink: "如何產生 access token",
+      backToSettings: "返回設定",
       verifying: "驗證中...",
       connect: "連接",
       cancel: "取消",
@@ -868,7 +875,7 @@ export const dictionaries = {
       subtitle: "Threads アカウントとデータを管理",
       accountsTitle: "Threads アカウント",
       accountsSub:
-        "アカウントを接続し、アクティブなプロフィールを選択し、追跡しないアカウントを削除します。",
+        "Threads の長期アクセストークンでアカウントを接続し、アクティブなプロフィールを選択し、追跡しないアカウントを削除します。",
       dataSync: "データ同期",
       dataSyncSub: "@{username} の投稿とインサイトを取得します。",
       syncHelp:
@@ -882,6 +889,9 @@ export const dictionaries = {
       accessToken: "アクセストークン",
       accessTokenPlaceholder: "Threads の長期アクセストークンを貼り付け",
       tokenHelp: "長期アクセストークンは Meta for Developers ポータルから取得できます。",
+      tokenGuideLink: "手順ガイドを見る",
+      tokenGuideCardLink: "アクセストークンの取得方法",
+      backToSettings: "設定に戻る",
       verifying: "検証中...",
       connect: "接続",
       cancel: "キャンセル",

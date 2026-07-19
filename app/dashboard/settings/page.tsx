@@ -1,6 +1,8 @@
+import Link from "next/link";
+import { BookOpen, ChevronRight } from "lucide-react";
 import { db } from "@/lib/db";
 import { getSyncIntervalCached } from "@/lib/dashboard-data";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AccountManager from "./account-manager";
 import SyncButton from "@/components/dashboard/sync-button";
 import SyncIntervalSetting from "./sync-interval-setting";
@@ -29,9 +31,20 @@ export default async function SettingsPage() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="text-base">{t.settingsPage.accountsTitle}</CardTitle>
-            <p className="text-muted-foreground text-sm">{t.settingsPage.accountsSub}</p>
+            <CardDescription>{t.settingsPage.accountsSub}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
+            <Link
+              href="/dashboard/settings/token-guide"
+              className="bg-muted/50 hover:bg-muted flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors"
+            >
+              <BookOpen className="text-muted-foreground size-4 shrink-0" />
+              <span className="min-w-0 flex-1 text-sm">
+                <span className="font-medium">{t.settingsPage.tokenGuideCardLink}</span>{" "}
+                <span className="text-muted-foreground">{t.settingsPage.tokenHelp}</span>
+              </span>
+              <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+            </Link>
             <AccountManager
               labels={t.settingsPage}
               syncLabels={{

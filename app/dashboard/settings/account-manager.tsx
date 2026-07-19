@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Link from "next/link";
 import { Trash2, CheckCircle2, RefreshCw, Plus, AlertTriangle, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -29,6 +30,7 @@ interface AccountManagerLabels {
   accessToken: string;
   accessTokenPlaceholder: string;
   tokenHelp: string;
+  tokenGuideLink: string;
   verifying: string;
   connect: string;
   cancel: string;
@@ -249,7 +251,15 @@ export default function AccountManager({
                       autoFocus
                       disabled={pending}
                     />
-                    <p className="text-muted-foreground text-xs">{labels.tokenHelp}</p>
+                    <p className="text-muted-foreground text-xs">
+                      {labels.tokenHelp}{" "}
+                      <Link
+                        href="/dashboard/settings/token-guide"
+                        className="text-foreground underline underline-offset-2"
+                      >
+                        {labels.tokenGuideLink}
+                      </Link>
+                    </p>
                   </div>
                   <div className="flex gap-2">
                     <Button type="submit" size="sm" disabled={pending}>
@@ -306,7 +316,15 @@ export default function AccountManager({
               autoFocus
               disabled={pending}
             />
-            <p className="text-muted-foreground text-xs">{labels.tokenHelp}</p>
+            <p className="text-muted-foreground text-xs">
+              {labels.tokenHelp}{" "}
+              <Link
+                href="/dashboard/settings/token-guide"
+                className="text-foreground underline underline-offset-2"
+              >
+                {labels.tokenGuideLink}
+              </Link>
+            </p>
           </div>
           <div className="flex gap-2">
             <Button type="submit" size="sm" disabled={pending}>
