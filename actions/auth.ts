@@ -4,6 +4,7 @@ import { redirect } from "next/navigation";
 import { headers } from "next/headers";
 import { verifyPassword, createSession, setSessionCookie, clearSessionCookie } from "@/lib/auth";
 import { clearLoginAttempts, consumeLoginAttempt, getClientIp } from "@/lib/login-rate-limit";
+import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 
 export async function loginAction(
   _prevState: { error?: string } | undefined,
@@ -22,16 +23,7 @@ export async function loginAction(
   const token = await createSession();
   await setSessionCookie(token);
   const redirectTo = formData.get("redirectTo") as string | null;
-  // Reject "//" and "/\" prefixes — browsers treat both as protocol-relative
-  // URLs, which would turn this into an open redirect.
-  const destination =
-    redirectTo &&
-    redirectTo.startsWith("/") &&
-    !redirectTo.startsWith("//") &&
-    !redirectTo.startsWith("/\\")
-      ? redirectTo
-      : "/dashboard/overview";
-  redirect(destination);
+  redirect(sanitizeRedirectPath(redirectTo));
 }
 
 export async function logoutAction(): Promise<void> {

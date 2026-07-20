@@ -1,5 +1,9 @@
 const BASE_URL = "https://graph.threads.net/v1.0";
 
+// Cap each request so a stalled connection to Threads can't hang forever while
+// the sync holds the Postgres advisory lock (freezing all other syncs).
+const REQUEST_TIMEOUT_MS = 20_000;
+
 export interface ThreadsUser {
   id: string;
   username: string;
@@ -42,7 +46,7 @@ async function apiGet<T>(path: string, params: Record<string, string>): Promise<
   for (const [key, value] of Object.entries(params)) {
     url.searchParams.set(key, value);
   }
-  const res = await fetch(url.toString());
+  const res = await fetch(url.toString(), { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   if (!res.ok) {
     const body = await res.text();
     try {

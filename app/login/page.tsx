@@ -1,5 +1,6 @@
 import { getSession } from "@/lib/auth";
 import { redirect } from "next/navigation";
+import { sanitizeRedirectPath } from "@/lib/safe-redirect";
 import LoginForm from "./login-form";
 import { getDictionary } from "@/lib/i18n-server";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
@@ -12,10 +13,7 @@ export default async function LoginPage({
 }) {
   const authenticated = await getSession();
   const { from } = await searchParams;
-  const redirectTo =
-    from && from.startsWith("/") && !from.startsWith("//") && !from.startsWith("/\\")
-      ? from
-      : "/dashboard/overview";
+  const redirectTo = sanitizeRedirectPath(from);
   if (authenticated) redirect(redirectTo);
   const { locale, t } = await getDictionary();
 

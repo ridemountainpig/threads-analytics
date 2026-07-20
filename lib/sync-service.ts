@@ -42,12 +42,28 @@ export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncRe
       cursor = page.nextCursor;
     } while (cursor);
 
-    // Posts older than this cutoff already have stable metrics — skip re-fetching insights
+    // Skip re-fetching insights only for posts that are BOTH older than the
+    // refresh cutoff (metrics have stabilized) AND already have at least one
+    // non-zero metric — evidence that insights were fetched successfully at
+    // least once. A post still stuck at all-zero keeps getting retried
+    // regardless of age, so a transient insights failure on the first sync
+    // can't freeze it at 0 forever.
     const insightsCutoff = new Date(Date.now() - INSIGHTS_REFRESH_DAYS * 24 * 60 * 60 * 1000);
     const stalePostIds = new Set(
       (
         await db.post.findMany({
-          where: { accountId: userId, timestamp: { lt: insightsCutoff } },
+          where: {
+            accountId: userId,
+            timestamp: { lt: insightsCutoff },
+            OR: [
+              { views: { gt: 0 } },
+              { likes: { gt: 0 } },
+              { replies: { gt: 0 } },
+              { reposts: { gt: 0 } },
+              { quotes: { gt: 0 } },
+              { shares: { gt: 0 } },
+            ],
+          },
           select: { id: true },
         })
       ).map((p) => p.id),
