@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { BookOpen, ChevronRight } from "lucide-react";
 import { db } from "@/lib/db";
-import { getSyncIntervalCached } from "@/lib/dashboard-data";
+import { getSyncIntervalCached, requireSession } from "@/lib/dashboard-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AccountManager from "./account-manager";
 import SyncButton from "@/components/dashboard/sync-button";
@@ -9,6 +9,7 @@ import SyncIntervalSetting from "./sync-interval-setting";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 
 export default async function SettingsPage() {
+  await requireSession();
   const [{ locale, t }, accounts, syncInterval] = await Promise.all([
     getDictionary(),
     db.threadsAccount.findMany({

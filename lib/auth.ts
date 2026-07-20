@@ -1,5 +1,5 @@
 import { cookies } from "next/headers";
-import { createHmac, timingSafeEqual, randomBytes } from "crypto";
+import { createHash, createHmac, timingSafeEqual, randomBytes } from "crypto";
 import { db } from "./db";
 
 const SESSION_COOKIE = "ta_session";
@@ -27,13 +27,19 @@ export async function verifyPassword(input: string): Promise<boolean> {
   }
 }
 
+// Only the hash is persisted, so a leaked DB dump can't be used to hijack
+// live sessions. The raw token exists solely in the user's cookie.
+function hashToken(token: string): string {
+  return createHash("sha256").update(token).digest("hex");
+}
+
 export async function createSession(): Promise<string> {
   const token = randomBytes(32).toString("hex");
   const now = new Date();
   await Promise.all([
     db.session.deleteMany({ where: { expiresAt: { lt: now } } }),
     db.session.create({
-      data: { token, expiresAt: new Date(now.getTime() + SESSION_DURATION_MS) },
+      data: { token: hashToken(token), expiresAt: new Date(now.getTime() + SESSION_DURATION_MS) },
     }),
   ]);
   return token;
@@ -43,10 +49,11 @@ export async function getSession(): Promise<boolean> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return false;
-  const session = await db.session.findUnique({ where: { token } });
+  const hashed = hashToken(token);
+  const session = await db.session.findUnique({ where: { token: hashed } });
   if (!session) return false;
   if (session.expiresAt < new Date()) {
-    await db.session.delete({ where: { token } });
+    await db.session.delete({ where: { token: hashed } });
     return false;
   }
   return true;
@@ -67,7 +74,7 @@ export async function clearSessionCookie(): Promise<void> {
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (token) {
-    await db.session.deleteMany({ where: { token } }).catch((err) => {
+    await db.session.deleteMany({ where: { token: hashToken(token) } }).catch((err) => {
       console.error("[auth] failed to delete session from DB", err);
     });
   }
