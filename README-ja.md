@@ -35,6 +35,7 @@ cd threads-analytics
 pnpm install
 cp .env.example .env.local # または手動で .env.local を作成
 npx prisma migrate dev --name init
+npx prisma generate
 pnpm dev
 ```
 
@@ -96,6 +97,7 @@ SYNC_SCHEDULER_ENABLED=false              # 常時稼働の環境でのみ true 
 
 ```bash
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 ### 4. 開発サーバーの起動
@@ -121,6 +123,7 @@ pnpm build        # 本番用ビルド
 pnpm start        # マイグレーションを実行して本番サーバーを起動
 npx prisma studio # データベース GUI を開く
 npx prisma migrate dev --name <name>  # 新しいマイグレーションを作成
+npx prisma generate # Prisma Client を再生成
 ```
 
 ## Threads アクセストークンの取得
