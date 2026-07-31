@@ -67,6 +67,15 @@ export function formatCompactNumber(v: number) {
   return String(v);
 }
 
-export function formatShortDate(value: string, locale?: string) {
-  return new Date(value).toLocaleDateString(locale, { month: "short", day: "numeric" });
+export function formatShortDate(value: string, locale: string, timeZone: string) {
+  // Aggregated YYYY-MM-DD values are already calendar dates in the analytics
+  // time zone, so format those as UTC date keys rather than shifting them again.
+  const isCalendarDate = /^\d{4}-\d{2}-\d{2}$/.test(value);
+  const date = new Date(isCalendarDate ? `${value}T00:00:00Z` : value);
+
+  return new Intl.DateTimeFormat(locale, {
+    month: "short",
+    day: "numeric",
+    timeZone: isCalendarDate ? "UTC" : timeZone,
+  }).format(date);
 }

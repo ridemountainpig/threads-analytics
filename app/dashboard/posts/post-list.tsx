@@ -27,6 +27,7 @@ interface PostListProps {
   currentSort: string;
   hasPagination?: boolean;
   dateLocale?: string;
+  timeZone: string;
   labels: {
     sort: string;
     date: string;
@@ -54,17 +55,35 @@ interface PostListProps {
 
 const SORT_OPTIONS = ["date", "views", "likes"] as const;
 
+function formatPostDate(
+  date: Date | string,
+  dateLocale: string,
+  timeZone: string,
+  includeTime = false,
+) {
+  return new Intl.DateTimeFormat(dateLocale, {
+    timeZone,
+    year: "numeric",
+    month: includeTime ? "short" : "numeric",
+    day: "numeric",
+    ...(includeTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+  }).format(new Date(date));
+}
+
 function PostDetail({
   post,
   medianViews,
   labels,
   dateLocale,
+  timeZone,
 }: {
   post: Post;
   medianViews: number;
   labels: PostListProps["labels"];
   dateLocale?: string;
+  timeZone: string;
 }) {
+  const locale = dateLocale ?? "en-US";
   const engRate =
     post.views > 0
       ? (((post.likes + post.replies + post.reposts + post.quotes) / post.views) * 100).toFixed(2)
@@ -86,13 +105,7 @@ function PostDetail({
         <p className="text-sm leading-relaxed">{post.text || labels.noText}</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <span className="text-muted-foreground text-sm">
-            {new Date(post.timestamp).toLocaleDateString(dateLocale, {
-              year: "numeric",
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
+            {formatPostDate(post.timestamp, locale, timeZone, true)}
           </span>
           <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs font-medium">
             {mediaTypeLabel}
@@ -115,7 +128,7 @@ function PostDetail({
       <div className="grid grid-cols-1 gap-3 py-5 sm:grid-cols-3">
         <div className="bg-muted/50 rounded-md p-4 text-center">
           <p className="text-muted-foreground text-sm">{labels.views}</p>
-          <p className="mt-1 text-2xl font-semibold">{post.views.toLocaleString()}</p>
+          <p className="mt-1 text-2xl font-semibold">{post.views.toLocaleString(locale)}</p>
         </div>
         <div className="bg-muted/50 rounded-md p-4 text-center">
           <p className="text-muted-foreground text-sm">{labels.engRate}</p>
@@ -150,7 +163,7 @@ function PostDetail({
           />
         </div>
         <p className="text-muted-foreground mt-1 text-xs">
-          {labels.medianViews ?? "Median views"}: {medianViews.toLocaleString()}
+          {labels.medianViews ?? "Median views"}: {medianViews.toLocaleString(locale)}
         </p>
       </div>
 
@@ -192,7 +205,9 @@ export default function PostList({
   hasPagination = false,
   labels,
   dateLocale,
+  timeZone,
 }: PostListProps) {
+  const locale = dateLocale ?? "en-US";
   const [selectedId, setSelectedId] = useState<string | null>(posts[0]?.id ?? null);
   const [searchQuery, setSearchQuery] = useState("");
   const [mediaFilter, setMediaFilter] = useState("");
@@ -321,10 +336,10 @@ export default function PostList({
               <p className="line-clamp-2 text-sm leading-snug">{post.text || labels.noText}</p>
               <div className="mt-2 flex flex-wrap items-center gap-2.5">
                 <span className="text-muted-foreground text-xs">
-                  {new Date(post.timestamp).toLocaleDateString(dateLocale)}
+                  {formatPostDate(post.timestamp, locale, timeZone)}
                 </span>
                 <span className="text-xs font-semibold">
-                  {post.views.toLocaleString()} {labels.views.toLowerCase()}
+                  {post.views.toLocaleString(locale)} {labels.views.toLowerCase()}
                 </span>
                 <span className="text-muted-foreground text-xs">
                   {post.likes} {labels.likes.toLowerCase()} · {post.replies}{" "}
@@ -345,6 +360,7 @@ export default function PostList({
               medianViews={medianViews}
               labels={labels}
               dateLocale={dateLocale}
+              timeZone={timeZone}
             />
           </div>
         ) : (

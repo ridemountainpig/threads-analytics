@@ -18,6 +18,7 @@ import {
 interface SharesTrendChartProps {
   data: Array<{ date: string; shares: number }>;
   dateLocale?: string;
+  timeZone: string;
   labels?: {
     date: string;
     shares: string;
@@ -25,7 +26,13 @@ interface SharesTrendChartProps {
   };
 }
 
-export default function SharesTrendChart({ data, dateLocale, labels }: SharesTrendChartProps) {
+export default function SharesTrendChart({
+  data,
+  dateLocale,
+  timeZone,
+  labels,
+}: SharesTrendChartProps) {
+  const locale = dateLocale ?? "en-US";
   const copy = labels ?? {
     date: "Date",
     shares: "Shares",
@@ -48,7 +55,7 @@ export default function SharesTrendChart({ data, dateLocale, labels }: SharesTre
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, dateLocale)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
@@ -56,8 +63,8 @@ export default function SharesTrendChart({ data, dateLocale, labels }: SharesTre
           />
           <YAxis tick={axisTick} tickLine={false} axisLine={false} width={34} />
           <Tooltip
-            formatter={(v) => [(v as number).toLocaleString(), copy.shares]}
-            labelFormatter={(v) => formatShortDate(String(v), dateLocale)}
+            formatter={(v) => [(v as number).toLocaleString(locale), copy.shares]}
+            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone)}
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}

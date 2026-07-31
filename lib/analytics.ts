@@ -136,7 +136,7 @@ function getISOWeekString(date: Date, tz: string): string {
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
-function getDateString(date: Date, tz: string): string {
+export function getDateString(date: Date, tz: string): string {
   const { year, month, day } = getLocalDateTimeParts(date, tz);
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
@@ -859,14 +859,14 @@ export function computePostingCalendar(
     byDate.set(date, (byDate.get(date) ?? 0) + 1);
   }
   const result: Array<{ date: string; count: number }> = [];
-  const cursor = new Date(since);
-  cursor.setHours(0, 0, 0, 0);
-  const end = new Date(until);
-  end.setHours(23, 59, 59, 999);
+  // Walk logical calendar-date keys in UTC so the server's own time zone cannot
+  // move either boundary or alter the number of days in the requested range.
+  const cursor = new Date(`${getDateString(since, tz)}T00:00:00Z`);
+  const end = new Date(`${getDateString(until, tz)}T00:00:00Z`);
   while (cursor <= end) {
-    const dateStr = getDateString(cursor, tz);
+    const dateStr = cursor.toISOString().slice(0, 10);
     result.push({ date: dateStr, count: byDate.get(dateStr) ?? 0 });
-    cursor.setDate(cursor.getDate() + 1);
+    cursor.setUTCDate(cursor.getUTCDate() + 1);
   }
 
   if (!options?.trimEmptyEdges || result.length === 0) {

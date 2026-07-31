@@ -26,6 +26,7 @@ import {
 interface EngagementRateChartProps {
   data: Array<{ date: string; rate: number; rollingAvg: number }>;
   dateLocale?: string;
+  timeZone: string;
   labels?: {
     dailyRate: string;
     sevenDayAvg: string;
@@ -38,8 +39,10 @@ interface EngagementRateChartProps {
 export default function EngagementRateChart({
   data,
   dateLocale,
+  timeZone,
   labels,
 }: EngagementRateChartProps) {
+  const locale = dateLocale ?? "en-US";
   const copy = labels ?? {
     dailyRate: "Daily Rate",
     sevenDayAvg: "7d Avg",
@@ -62,7 +65,7 @@ export default function EngagementRateChart({
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, dateLocale)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
             tick={axisTick}
             tickLine={false}
             axisLine={false}

@@ -34,6 +34,7 @@ interface DataPoint {
 interface Props {
   data: DataPoint[];
   dateLocale?: string;
+  timeZone: string;
   labels?: {
     likes: string;
     replies: string;
@@ -45,7 +46,8 @@ interface Props {
   };
 }
 
-export default function EngagementBreakdownChart({ data, dateLocale, labels }: Props) {
+export default function EngagementBreakdownChart({ data, dateLocale, timeZone, labels }: Props) {
+  const locale = dateLocale ?? "en-US";
   const copy = labels ?? {
     likes: "Likes",
     replies: "Replies",
@@ -70,14 +72,14 @@ export default function EngagementBreakdownChart({ data, dateLocale, labels }: P
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, dateLocale)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
           />
           <YAxis tick={compactAxisTick} tickLine={false} axisLine={false} width={34} />
           <Tooltip
-            labelFormatter={(v) => formatShortDate(String(v), dateLocale)}
+            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone)}
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}

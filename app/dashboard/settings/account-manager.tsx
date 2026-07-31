@@ -51,9 +51,9 @@ interface SyncResultLabels {
   synced: string;
 }
 
-function formatDate(date: string, dateLocale = "en-US") {
+function formatDate(date: string, dateLocale: string, timeZone: string) {
   return new Intl.DateTimeFormat(dateLocale, {
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timeZone,
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -63,11 +63,15 @@ function formatDate(date: string, dateLocale = "en-US") {
 function TokenExpiryBadge({
   expiresAt,
   labels,
+  now,
 }: {
   expiresAt: string;
   labels: Pick<AccountManagerLabels, "tokenExpiresIn" | "tokenExpiresToday" | "tokenExpiredLabel">;
+  now: string;
 }) {
-  const daysLeft = Math.ceil((new Date(expiresAt).getTime() - Date.now()) / (1000 * 60 * 60 * 24));
+  const daysLeft = Math.ceil(
+    (new Date(expiresAt).getTime() - new Date(now).getTime()) / (1000 * 60 * 60 * 24),
+  );
 
   if (daysLeft > 30) return null;
 
@@ -99,11 +103,15 @@ export default function AccountManager({
   labels,
   syncLabels,
   dateLocale,
+  timeZone,
+  now,
 }: {
   accounts: Account[];
   labels: AccountManagerLabels;
   syncLabels: SyncResultLabels;
   dateLocale?: string;
+  timeZone: string;
+  now: string;
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
@@ -193,11 +201,12 @@ export default function AccountManager({
                   <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
                       <p className="text-sm font-medium">@{account.username}</p>
-                      <TokenExpiryBadge expiresAt={account.expiresAt} labels={labels} />
+                      <TokenExpiryBadge expiresAt={account.expiresAt} labels={labels} now={now} />
                     </div>
                     {account.lastSyncedAt && (
-                      <p className="text-muted-foreground text-xs" suppressHydrationWarning>
-                        {labels.lastSynced} {formatDate(account.lastSyncedAt, dateLocale)}
+                      <p className="text-muted-foreground text-xs">
+                        {labels.lastSynced}{" "}
+                        {formatDate(account.lastSyncedAt, dateLocale ?? "en-US", timeZone)}
                       </p>
                     )}
                   </div>

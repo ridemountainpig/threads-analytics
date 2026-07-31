@@ -40,6 +40,7 @@ interface DataPoint {
 interface Props {
   data: DataPoint[];
   dateLocale?: string;
+  timeZone: string;
   labels?: {
     views: string;
     avgViewsPost: string;
@@ -49,7 +50,8 @@ interface Props {
   };
 }
 
-export default function OverallPerformanceChart({ data, dateLocale, labels }: Props) {
+export default function OverallPerformanceChart({ data, dateLocale, timeZone, labels }: Props) {
+  const locale = dateLocale ?? "en-US";
   const copy = labels ?? {
     views: "Views",
     avgViewsPost: "Avg Views / Post",
@@ -76,7 +78,7 @@ export default function OverallPerformanceChart({ data, dateLocale, labels }: Pr
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, dateLocale)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
@@ -92,11 +94,11 @@ export default function OverallPerformanceChart({ data, dateLocale, labels }: Pr
           />
           <YAxis yAxisId="posts" hide domain={[0, "dataMax + 1"]} />
           <Tooltip
-            labelFormatter={(v) => formatShortDate(String(v), dateLocale)}
+            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone)}
             formatter={(value, name) => {
               const n = Number(value);
-              if (name === copy.posts) return [n.toLocaleString(), name];
-              return [n.toLocaleString(), name];
+              if (name === copy.posts) return [n.toLocaleString(locale), name];
+              return [n.toLocaleString(locale), name];
             }}
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}

@@ -28,6 +28,7 @@ import AxisHint from "./axis-hint";
 interface DailyViewsChartProps {
   data: Array<{ end_time: string; value: number }>;
   dateLocale?: string;
+  timeZone: string;
   labels?: {
     views: string;
     sevenDayAvg: string;
@@ -45,7 +46,13 @@ function getMedian(values: number[]) {
   return sorted[mid] ?? 0;
 }
 
-export default function DailyViewsChart({ data, dateLocale, labels }: DailyViewsChartProps) {
+export default function DailyViewsChart({
+  data,
+  dateLocale,
+  timeZone,
+  labels,
+}: DailyViewsChartProps) {
+  const locale = dateLocale ?? "en-US";
   const copy = labels ?? {
     views: "Views",
     sevenDayAvg: "7d Avg",
@@ -91,7 +98,7 @@ export default function DailyViewsChart({ data, dateLocale, labels }: DailyViews
               className="inline-block h-px w-5 border-t"
               style={{ borderColor: chartColors.trend, borderTopStyle: "dashed" }}
             />
-            {baselineLabel}: {baseline.toLocaleString()}
+            {baselineLabel}: {baseline.toLocaleString(locale)}
           </span>
         )}
       </div>
@@ -100,7 +107,7 @@ export default function DailyViewsChart({ data, dateLocale, labels }: DailyViews
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="end_time"
-            tickFormatter={(value) => formatShortDate(value, dateLocale)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
             tick={axisTick}
             tickLine={false}
             axisLine={false}
@@ -116,10 +123,11 @@ export default function DailyViewsChart({ data, dateLocale, labels }: DailyViews
           <Tooltip
             formatter={(v, name) => {
               const value = Number(v);
-              if (name === copy.sevenDayAvg) return [value.toLocaleString(), copy.sevenDayAvg];
-              return [value.toLocaleString(), copy.views];
+              if (name === copy.sevenDayAvg)
+                return [value.toLocaleString(locale), copy.sevenDayAvg];
+              return [value.toLocaleString(locale), copy.views];
             }}
-            labelFormatter={(label) => formatShortDate(label as string, dateLocale)}
+            labelFormatter={(label) => formatShortDate(label as string, locale, timeZone)}
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}

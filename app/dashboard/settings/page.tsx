@@ -7,19 +7,22 @@ import AccountManager from "./account-manager";
 import SyncButton from "@/components/dashboard/sync-button";
 import SyncIntervalSetting from "./sync-interval-setting";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
+import { getServerTimezone } from "@/lib/server-timezone";
 
 export default async function SettingsPage() {
   await requireSession();
-  const [{ locale, t }, accounts, syncInterval] = await Promise.all([
+  const [{ locale, t }, accounts, syncInterval, timeZone] = await Promise.all([
     getDictionary(),
     db.threadsAccount.findMany({
       include: { syncState: true },
       orderBy: { createdAt: "asc" },
     }),
     getSyncIntervalCached(),
+    getServerTimezone(),
   ]);
 
   const activeAccount = accounts.find((a) => a.isActive);
+  const renderedAt = new Date().toISOString();
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -54,6 +57,8 @@ export default async function SettingsPage() {
                 synced: t.sync.synced,
               }}
               dateLocale={dateLocales[locale]}
+              timeZone={timeZone}
+              now={renderedAt}
               accounts={accounts.map((a) => ({
                 id: a.id,
                 username: a.username,
@@ -80,6 +85,7 @@ export default async function SettingsPage() {
                   <SyncButton
                     lastSyncedAt={activeAccount.syncState?.lastSyncedAt?.toISOString()}
                     syncInterval={syncInterval}
+                    timeZone={timeZone}
                     labels={t.sync}
                     dateLocale={dateLocales[locale]}
                   />

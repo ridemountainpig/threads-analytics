@@ -245,6 +245,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
           <SyncButton
             lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
             syncInterval={syncInterval}
+            timeZone={tz}
             labels={t.sync}
             dateLocale={dateLocale}
           />
@@ -277,6 +278,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               <OverallPerformanceChart
                 data={dailyPerformance}
                 dateLocale={dateLocale}
+                timeZone={tz}
                 labels={t.chart}
               />
             </CardContent>
@@ -337,6 +339,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 <EngagementRateChart
                   data={engagementRateTrend}
                   dateLocale={dateLocale}
+                  timeZone={tz}
                   labels={t.chart}
                 />
               </CardContent>
@@ -364,7 +367,11 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 <p className="text-muted-foreground text-xs">{t.analytics.formatLengthMatrixSub}</p>
               </CardHeader>
               <CardContent>
-                <ContentFormatLengthMatrix data={contentFormatLengthMatrix} labels={t.chart} />
+                <ContentFormatLengthMatrix
+                  data={contentFormatLengthMatrix}
+                  numberLocale={dateLocale}
+                  labels={t.chart}
+                />
               </CardContent>
             </Card>
 
@@ -394,6 +401,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               <EngagementBreakdownChart
                 data={engagementBreakdown}
                 dateLocale={dateLocale}
+                timeZone={tz}
                 labels={t.chart}
               />
             </CardContent>
@@ -526,6 +534,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               <SharesTrendChart
                 data={sharesTrend}
                 dateLocale={dateLocale}
+                timeZone={tz}
                 labels={{
                   date: t.chart.date,
                   shares: t.chart.shares,

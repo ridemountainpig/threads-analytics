@@ -17,6 +17,7 @@ interface DataPoint {
 
 interface Props {
   data: DataPoint[];
+  numberLocale?: string;
   labels?: {
     posts: string;
     avgViews: string;
@@ -57,8 +58,9 @@ interface TooltipState {
   y: number;
 }
 
-export default function ContentFormatLengthMatrix({ data, labels }: Props) {
+export default function ContentFormatLengthMatrix({ data, numberLocale, labels }: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
+  const locale = numberLocale ?? "en-US";
 
   const copy = labels ?? {
     posts: "Posts",
@@ -142,7 +144,7 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
                     )}
                   >
                     <span className="text-sm font-semibold tabular-nums">
-                      {point ? point.medianViews.toLocaleString() : "-"}
+                      {point ? point.medianViews.toLocaleString(locale) : "-"}
                     </span>
                     <span className="text-foreground/70 text-[10px]">
                       {point ? `${point.postCount} ${copy.posts}` : ""}
@@ -173,13 +175,13 @@ export default function ContentFormatLengthMatrix({ data, labels }: Props) {
           <p className="text-foreground mb-1.5 font-medium">{tooltip.label}</p>
           <div className="text-muted-foreground space-y-0.5">
             <p>
-              {medianViewsLabel}: {tooltip.point.medianViews.toLocaleString()}
+              {medianViewsLabel}: {tooltip.point.medianViews.toLocaleString(locale)}
             </p>
             <p>
-              {copy.avgViews}: {tooltip.point.avgViews.toLocaleString()}
+              {copy.avgViews}: {tooltip.point.avgViews.toLocaleString(locale)}
             </p>
             <p>
-              {p75ViewsLabel}: {tooltip.point.p75Views.toLocaleString()}
+              {p75ViewsLabel}: {tooltip.point.p75Views.toLocaleString(locale)}
             </p>
             <p>
               {hitRateLabel}: {tooltip.point.hitRate}%

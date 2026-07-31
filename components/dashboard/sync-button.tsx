@@ -15,6 +15,7 @@ const INTERVAL_LABELS: Record<string, string> = {
 interface SyncButtonProps {
   lastSyncedAt?: string | null;
   syncInterval?: string;
+  timeZone: string;
   labels?: {
     sync: string;
     syncing: string;
@@ -29,9 +30,9 @@ interface SyncButtonProps {
   dateLocale?: string;
 }
 
-function formatDateTime(date: string, dateLocale = "en-US") {
+function formatDateTime(date: string, dateLocale: string, timeZone: string) {
   return new Intl.DateTimeFormat(dateLocale, {
-    timeZone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+    timeZone,
     year: "numeric",
     month: "numeric",
     day: "numeric",
@@ -43,6 +44,7 @@ function formatDateTime(date: string, dateLocale = "en-US") {
 export default function SyncButton({
   lastSyncedAt,
   syncInterval,
+  timeZone,
   labels,
   dateLocale,
 }: SyncButtonProps) {
@@ -77,8 +79,8 @@ export default function SyncButton({
     <div className="flex shrink-0 flex-col items-end gap-1">
       <div className="flex items-center gap-3">
         {lastSyncedAt && (
-          <span className="text-muted-foreground text-xs" suppressHydrationWarning>
-            {copy.lastSynced} {formatDateTime(lastSyncedAt, dateLocale)}
+          <span className="text-muted-foreground text-xs">
+            {copy.lastSynced} {formatDateTime(lastSyncedAt, dateLocale ?? "en-US", timeZone)}
           </span>
         )}
         <Button

@@ -154,6 +154,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
           <SyncButton
             lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
             syncInterval={syncInterval}
+            timeZone={tz}
             labels={t.sync}
             dateLocale={dateLocale}
           />
@@ -166,6 +167,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
         hasPagination={totalPosts > POSTS_PER_PAGE}
         labels={t.postsPage}
         dateLocale={dateLocale}
+        timeZone={tz}
       />
       {totalPosts > POSTS_PER_PAGE && (
         <div className="flex items-center justify-between gap-3">

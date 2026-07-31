@@ -9,6 +9,7 @@ import {
   computeBestTimeToPost,
   computeTopHours,
   computeViralPosts,
+  getDateString,
   type PostWithInsights,
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -31,6 +32,15 @@ function formatHour(h: number) {
   if (h < 12) return `${h} AM`;
   if (h === 12) return "12 PM";
   return `${h - 12} PM`;
+}
+
+function formatDate(date: string, dateLocale: string, timeZone: string) {
+  return new Intl.DateTimeFormat(dateLocale, {
+    timeZone,
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).format(new Date(date));
 }
 
 function getConfidenceLabel(
@@ -189,7 +199,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     ? userInsights.views
     : Array.from(
         posts.reduce((map, p) => {
-          const date = new Date(p.timestamp).toISOString().slice(0, 10);
+          const date = getDateString(new Date(p.timestamp), tz);
           map.set(date, (map.get(date) ?? 0) + p.views);
           return map;
         }, new Map<string, number>()),
@@ -267,6 +277,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
           <SyncButton
             lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
             syncInterval={syncInterval}
+            timeZone={tz}
             labels={t.sync}
             dateLocale={dateLocale}
           />
@@ -352,7 +363,12 @@ export default async function OverviewPage({ searchParams }: PageProps) {
           <p className="text-muted-foreground text-xs">{t.overview.dailyViewsSub}</p>
         </CardHeader>
         <CardContent>
-          <DailyViewsChart data={dailyViewsData} dateLocale={dateLocale} labels={t.chart} />
+          <DailyViewsChart
+            data={dailyViewsData}
+            dateLocale={dateLocale}
+            timeZone={tz}
+            labels={t.chart}
+          />
         </CardContent>
       </Card>
 
@@ -380,7 +396,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
                       {post.multiplier}x {t.overview.median}
                     </span>
                     <span className="text-muted-foreground text-sm">
-                      {new Date(post.timestamp).toLocaleDateString(dateLocale)}
+                      {formatDate(post.timestamp, dateLocale, tz)}
                     </span>
                   </div>
                 </div>
