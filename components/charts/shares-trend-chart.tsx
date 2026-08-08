@@ -9,6 +9,7 @@ import {
   compactAxisTick,
   compactChartMargin,
   formatShortDate,
+  spansMultipleYears,
   gridProps,
   tooltipItemStyle,
   tooltipLabelStyle,
@@ -47,6 +48,8 @@ export default function SharesTrendChart({
     );
   }
 
+  const withYear = spansMultipleYears(data.map((point) => point.date));
+
   return (
     <>
       <AxisHint x={copy.date} y={copy.shares} />
@@ -55,7 +58,7 @@ export default function SharesTrendChart({
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone, { year: withYear })}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
@@ -64,7 +67,7 @@ export default function SharesTrendChart({
           <YAxis tick={axisTick} tickLine={false} axisLine={false} width={34} />
           <Tooltip
             formatter={(v) => [(v as number).toLocaleString(locale), copy.shares]}
-            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone)}
+            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone, { year: withYear })}
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}

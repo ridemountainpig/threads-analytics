@@ -18,6 +18,7 @@ import {
   compactAxisTick,
   formatCompactNumber,
   formatShortDate,
+  spansMultipleYears,
   gridProps,
   legendStyle,
   tooltipItemStyle,
@@ -67,6 +68,8 @@ export default function OverallPerformanceChart({ data, dateLocale, timeZone, la
     );
   }
 
+  const withYear = spansMultipleYears(data.map((point) => point.date));
+
   return (
     <>
       <AxisHint
@@ -78,7 +81,7 @@ export default function OverallPerformanceChart({ data, dateLocale, timeZone, la
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone, { year: withYear })}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
@@ -94,7 +97,7 @@ export default function OverallPerformanceChart({ data, dateLocale, timeZone, la
           />
           <YAxis yAxisId="posts" hide domain={[0, "dataMax + 1"]} />
           <Tooltip
-            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone)}
+            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone, { year: withYear })}
             formatter={(value, name) => {
               const n = Number(value);
               if (name === copy.posts) return [n.toLocaleString(locale), name];

@@ -16,6 +16,7 @@ import {
   compactAxisTick,
   compactChartMargin,
   formatShortDate,
+  spansMultipleYears,
   gridProps,
   legendStyle,
   tooltipItemStyle,
@@ -64,6 +65,8 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
     );
   }
 
+  const withYear = spansMultipleYears(data.map((point) => point.date));
+
   return (
     <>
       <AxisHint x={copy.date ?? "Date"} y={copy.interactions ?? "Interactions"} />
@@ -72,14 +75,14 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone, { year: withYear })}
             tick={compactAxisTick}
             tickLine={false}
             axisLine={false}
           />
           <YAxis tick={compactAxisTick} tickLine={false} axisLine={false} width={34} />
           <Tooltip
-            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone)}
+            labelFormatter={(v) => formatShortDate(String(v), locale, timeZone, { year: withYear })}
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}

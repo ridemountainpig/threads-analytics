@@ -18,6 +18,7 @@ import {
   compactChartMargin,
   formatCompactNumber,
   formatShortDate,
+  spansMultipleYears,
   gridProps,
   tooltipItemStyle,
   tooltipLabelStyle,
@@ -69,6 +70,7 @@ export default function DailyViewsChart({
     );
   }
 
+  const withYear = spansMultipleYears(data.map((point) => point.end_time));
   const baseline = getMedian(data.map((point) => point.value).filter((value) => value > 0));
   const chartData = data.map((point, index) => {
     const window = data.slice(Math.max(0, index - 6), index + 1);
@@ -107,7 +109,7 @@ export default function DailyViewsChart({
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="end_time"
-            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone, { year: withYear })}
             tick={axisTick}
             tickLine={false}
             axisLine={false}
@@ -127,7 +129,9 @@ export default function DailyViewsChart({
                 return [value.toLocaleString(locale), copy.sevenDayAvg];
               return [value.toLocaleString(locale), copy.views];
             }}
-            labelFormatter={(label) => formatShortDate(label as string, locale, timeZone)}
+            labelFormatter={(label) =>
+              formatShortDate(label as string, locale, timeZone, { year: withYear })
+            }
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}

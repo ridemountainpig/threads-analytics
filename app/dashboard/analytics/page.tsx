@@ -51,6 +51,7 @@ import KeywordAnalysisChart from "@/components/charts/keyword-analysis-chart";
 import OptimalFrequencyChart from "@/components/charts/optimal-frequency-chart";
 import ContentTypeTimeSlotChart from "@/components/charts/content-type-time-slot-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import ChartCard from "@/components/dashboard/chart-card";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsTabs from "@/components/dashboard/analytics-tabs";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
@@ -76,6 +77,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const { range, from, to } = resolved;
   const { since, until } = getTimeRange({ range, from, to }, tz);
   const dateLocale = dateLocales[locale];
+  const cardLabels = { expand: t.common.expand, close: t.common.close };
 
   if (!account) {
     return (
@@ -267,145 +269,111 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             <StatCard title={t.analytics.shareRate} value={`${shareRate}%`} />
           </div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.overallPerformance}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.overallPerformanceSub}</p>
-            </CardHeader>
-            <CardContent>
-              <OverallPerformanceChart
-                data={dailyPerformance}
-                dateLocale={dateLocale}
-                timeZone={tz}
-                labels={t.chart}
-              />
-            </CardContent>
-          </Card>
+          <ChartCard
+            title={t.analytics.overallPerformance}
+            subtitle={t.analytics.overallPerformanceSub}
+            labels={cardLabels}
+          >
+            <OverallPerformanceChart
+              data={dailyPerformance}
+              dateLocale={dateLocale}
+              timeZone={tz}
+              labels={t.chart}
+            />
+          </ChartCard>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-            <Card className="lg:col-span-3">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.postQuality}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.postQualitySub}</p>
-              </CardHeader>
-              <CardContent>
-                <PostQualityScatterChart data={postQualityScatter} labels={t.chart} />
-              </CardContent>
-            </Card>
+            <ChartCard
+              className="lg:col-span-3"
+              title={t.analytics.postQuality}
+              subtitle={t.analytics.postQualitySub}
+              labels={cardLabels}
+            >
+              <PostQualityScatterChart data={postQualityScatter} labels={t.chart} />
+            </ChartCard>
 
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.actionFunnel}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.actionFunnelSub}</p>
-              </CardHeader>
-              <CardContent>
-                <ActionFunnelChart data={actionFunnel} labels={t.chart} />
-              </CardContent>
-            </Card>
+            <ChartCard
+              className="lg:col-span-2"
+              title={t.analytics.actionFunnel}
+              subtitle={t.analytics.actionFunnelSub}
+              labels={cardLabels}
+            >
+              <ActionFunnelChart data={actionFunnel} labels={t.chart} />
+            </ChartCard>
           </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.bestTime}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.bestTimeSub}</p>
-              </CardHeader>
-              <CardContent>
-                <HourlyBreakdownChart
-                  heatmap={heatmap}
-                  bestTimeToPost={bestTimeToPost}
-                  dateLocale={dateLocale}
-                  labels={t.chart}
-                />
-              </CardContent>
-            </Card>
+            <ChartCard
+              title={t.analytics.bestTime}
+              subtitle={t.analytics.bestTimeSub}
+              labels={cardLabels}
+            >
+              <HourlyBreakdownChart
+                heatmap={heatmap}
+                bestTimeToPost={bestTimeToPost}
+                dateLocale={dateLocale}
+                labels={t.chart}
+              />
+            </ChartCard>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.engagementTrend}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.engagementTrendSub}</p>
-              </CardHeader>
-              <CardContent>
-                <EngagementRateChart
-                  data={engagementRateTrend}
-                  dateLocale={dateLocale}
-                  timeZone={tz}
-                  labels={t.chart}
-                />
-              </CardContent>
-            </Card>
-
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.bestDay}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.bestDaySub}</p>
-              </CardHeader>
-              <CardContent>
-                <DayOfWeekChart data={dayOfWeek} labels={t.chart} />
-              </CardContent>
-            </Card>
-          </div>
-
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
-            <Card className="lg:col-span-3">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.formatLengthMatrix}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.formatLengthMatrixSub}</p>
-              </CardHeader>
-              <CardContent>
-                <ContentFormatLengthMatrix
-                  data={contentFormatLengthMatrix}
-                  numberLocale={dateLocale}
-                  labels={t.chart}
-                />
-              </CardContent>
-            </Card>
-
-            <Card className="lg:col-span-2">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.engagementBreakdownPie}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">
-                  {t.analytics.engagementBreakdownPieSub}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <EngagementBreakdownPieChart data={engagementBreakdownPie} labels={t.chart} />
-              </CardContent>
-            </Card>
-          </div>
-
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.engagementBreakdown}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.engagementBreakdownSub}</p>
-            </CardHeader>
-            <CardContent>
-              <EngagementBreakdownChart
-                data={engagementBreakdown}
+            <ChartCard
+              title={t.analytics.engagementTrend}
+              subtitle={t.analytics.engagementTrendSub}
+              labels={cardLabels}
+            >
+              <EngagementRateChart
+                data={engagementRateTrend}
                 dateLocale={dateLocale}
                 timeZone={tz}
                 labels={t.chart}
               />
-            </CardContent>
-          </Card>
+            </ChartCard>
+
+            <ChartCard
+              title={t.analytics.bestDay}
+              subtitle={t.analytics.bestDaySub}
+              labels={cardLabels}
+            >
+              <DayOfWeekChart data={dayOfWeek} labels={t.chart} />
+            </ChartCard>
+          </div>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <ChartCard
+              className="lg:col-span-3"
+              title={t.analytics.formatLengthMatrix}
+              subtitle={t.analytics.formatLengthMatrixSub}
+              labels={cardLabels}
+            >
+              <ContentFormatLengthMatrix
+                data={contentFormatLengthMatrix}
+                numberLocale={dateLocale}
+                labels={t.chart}
+              />
+            </ChartCard>
+
+            <ChartCard
+              className="lg:col-span-2"
+              title={t.analytics.engagementBreakdownPie}
+              subtitle={t.analytics.engagementBreakdownPieSub}
+              labels={cardLabels}
+            >
+              <EngagementBreakdownPieChart data={engagementBreakdownPie} labels={t.chart} />
+            </ChartCard>
+          </div>
+
+          <ChartCard
+            title={t.analytics.engagementBreakdown}
+            subtitle={t.analytics.engagementBreakdownSub}
+            labels={cardLabels}
+          >
+            <EngagementBreakdownChart
+              data={engagementBreakdown}
+              dateLocale={dateLocale}
+              timeZone={tz}
+              labels={t.chart}
+            />
+          </ChartCard>
         </TabsContent>
 
         {/* ── CONTENT TAB ── */}
@@ -481,126 +449,98 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
           />
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.contentTypePerformance}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">
-                  {t.analytics.contentTypePerformanceSub}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <ContentTypeChart data={contentTypeAnalysis} labels={t.chart} />
-              </CardContent>
-            </Card>
+            <ChartCard
+              title={t.analytics.contentTypePerformance}
+              subtitle={t.analytics.contentTypePerformanceSub}
+              labels={cardLabels}
+            >
+              <ContentTypeChart data={contentTypeAnalysis} labels={t.chart} />
+            </ChartCard>
 
-            <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                  {t.analytics.postLengthAnalysis}
-                </CardTitle>
-                <p className="text-muted-foreground text-xs">{t.analytics.postLengthAnalysisSub}</p>
-                <p className="text-muted-foreground text-xs">
-                  {t.analytics.postLengthAnalysisSub2}
-                </p>
-              </CardHeader>
-              <CardContent>
-                <PostLengthChart data={postLengthAnalysis} labels={t.chart} />
-              </CardContent>
-            </Card>
+            <ChartCard
+              title={t.analytics.postLengthAnalysis}
+              subtitle={
+                <>
+                  <span className="block">{t.analytics.postLengthAnalysisSub}</span>
+                  <span className="block">{t.analytics.postLengthAnalysisSub2}</span>
+                </>
+              }
+              labels={cardLabels}
+            >
+              <PostLengthChart data={postLengthAnalysis} labels={t.chart} />
+            </ChartCard>
           </div>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.publishingFrequency}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.publishingFrequencySub}</p>
-            </CardHeader>
-            <CardContent>
-              <WeeklyFrequencyChart data={weeklyFrequency} labels={t.chart} />
-            </CardContent>
-          </Card>
+          <ChartCard
+            title={t.analytics.publishingFrequency}
+            subtitle={t.analytics.publishingFrequencySub}
+            labels={cardLabels}
+          >
+            <WeeklyFrequencyChart data={weeklyFrequency} labels={t.chart} />
+          </ChartCard>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.sharesTrend}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.sharesTrendSub}</p>
-            </CardHeader>
-            <CardContent>
-              <SharesTrendChart
-                data={sharesTrend}
-                dateLocale={dateLocale}
-                timeZone={tz}
-                labels={{
-                  date: t.chart.date,
-                  shares: t.chart.shares,
-                  empty: t.analytics.sharesTrendEmpty,
-                }}
-              />
-            </CardContent>
-          </Card>
+          <ChartCard
+            title={t.analytics.sharesTrend}
+            subtitle={t.analytics.sharesTrendSub}
+            labels={cardLabels}
+          >
+            <SharesTrendChart
+              data={sharesTrend}
+              dateLocale={dateLocale}
+              timeZone={tz}
+              labels={{
+                date: t.chart.date,
+                shares: t.chart.shares,
+                empty: t.analytics.sharesTrendEmpty,
+              }}
+            />
+          </ChartCard>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.keywordAnalysis}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.keywordAnalysisSub}</p>
-            </CardHeader>
-            <CardContent>
-              <KeywordAnalysisChart
-                data={keywordAnalysis}
-                labels={{
-                  posts: t.chart.posts,
-                  avgViews: t.chart.avgViews,
-                  engagementRate: t.chart.engagementRate,
-                  shareRate: t.chart.shareRate,
-                }}
-              />
-            </CardContent>
-          </Card>
+          <ChartCard
+            title={t.analytics.keywordAnalysis}
+            subtitle={t.analytics.keywordAnalysisSub}
+            labels={cardLabels}
+          >
+            <KeywordAnalysisChart
+              data={keywordAnalysis}
+              labels={{
+                posts: t.chart.posts,
+                avgViews: t.chart.avgViews,
+                engagementRate: t.chart.engagementRate,
+                shareRate: t.chart.shareRate,
+              }}
+            />
+          </ChartCard>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.optimalFrequency}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.optimalFrequencySub}</p>
-            </CardHeader>
-            <CardContent>
-              <OptimalFrequencyChart
-                data={optimalFrequency}
-                labels={{
-                  range: t.chart.range,
-                  postsPerWeek: t.analytics.postsPerWeek,
-                  avgViewsPost: t.chart.avgViewsPost,
-                  engagementRate: t.chart.engagementRate,
-                  shareRate: t.chart.shareRate,
-                  weeks: t.chart.week,
-                }}
-              />
-            </CardContent>
-          </Card>
+          <ChartCard
+            title={t.analytics.optimalFrequency}
+            subtitle={t.analytics.optimalFrequencySub}
+            labels={cardLabels}
+          >
+            <OptimalFrequencyChart
+              data={optimalFrequency}
+              labels={{
+                range: t.chart.range,
+                postsPerWeek: t.analytics.postsPerWeek,
+                avgViewsPost: t.chart.avgViewsPost,
+                engagementRate: t.chart.engagementRate,
+                shareRate: t.chart.shareRate,
+                weeks: t.chart.week,
+              }}
+            />
+          </ChartCard>
 
-          <Card>
-            <CardHeader className="pb-2">
-              <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
-                {t.analytics.contentTypeTimeSlot}
-              </CardTitle>
-              <p className="text-muted-foreground text-xs">{t.analytics.contentTypeTimeSlotSub}</p>
-            </CardHeader>
-            <CardContent>
-              <ContentTypeTimeSlotChart
-                data={contentTypeTimeSlot}
-                dateLocale={dateLocale}
-                labels={t.chart}
-              />
-            </CardContent>
-          </Card>
+          <ChartCard
+            title={t.analytics.contentTypeTimeSlot}
+            subtitle={t.analytics.contentTypeTimeSlotSub}
+            labels={cardLabels}
+          >
+            <ContentTypeTimeSlotChart
+              data={contentTypeTimeSlot}
+              dateLocale={dateLocale}
+              labels={t.chart}
+            />
+          </ChartCard>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             {/* Top by Engagement Rate */}

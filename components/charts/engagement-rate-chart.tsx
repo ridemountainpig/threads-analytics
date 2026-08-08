@@ -16,6 +16,7 @@ import {
   chartColors,
   compactChartMargin,
   formatShortDate,
+  spansMultipleYears,
   gridProps,
   legendStyle,
   tooltipItemStyle,
@@ -57,6 +58,8 @@ export default function EngagementRateChart({
     );
   }
 
+  const withYear = spansMultipleYears(data.map((point) => point.date));
+
   return (
     <>
       <AxisHint x={copy.date ?? "Date"} y={copy.engagementRate ?? "Engagement Rate"} />
@@ -65,7 +68,7 @@ export default function EngagementRateChart({
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, locale, timeZone)}
+            tickFormatter={(value) => formatShortDate(value, locale, timeZone, { year: withYear })}
             tick={axisTick}
             tickLine={false}
             axisLine={false}

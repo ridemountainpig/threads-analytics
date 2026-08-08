@@ -44,6 +44,8 @@ export const dictionaries = {
         "Account credentials are unavailable. Please reconnect this account in Settings.",
       errorTitle: "Something went wrong",
       tryAgain: "Try again",
+      expand: "Expand",
+      close: "Close",
     },
     nav: {
       overview: "Overview",
@@ -347,6 +349,8 @@ export const dictionaries = {
       accountCredentialsUnavailable: "帳號憑證無法使用，請到設定重新連接此帳號。",
       errorTitle: "發生錯誤",
       tryAgain: "重試",
+      expand: "放大",
+      close: "關閉",
     },
     nav: {
       overview: "總覽",
@@ -645,6 +649,8 @@ export const dictionaries = {
         "アカウント認証情報が利用できません。設定からこのアカウントを再接続してください。",
       errorTitle: "問題が発生しました",
       tryAgain: "再試行",
+      expand: "拡大",
+      close: "閉じる",
     },
     nav: {
       overview: "概要",

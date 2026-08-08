@@ -67,15 +67,36 @@ export function formatCompactNumber(v: number) {
   return String(v);
 }
 
-export function formatShortDate(value: string, locale: string, timeZone: string) {
+export function formatShortDate(
+  value: string,
+  locale: string,
+  timeZone: string,
+  options?: { year?: boolean },
+) {
   // Aggregated YYYY-MM-DD values are already calendar dates in the analytics
   // time zone, so format those as UTC date keys rather than shifting them again.
   const isCalendarDate = /^\d{4}-\d{2}-\d{2}$/.test(value);
   const date = new Date(isCalendarDate ? `${value}T00:00:00Z` : value);
 
   return new Intl.DateTimeFormat(locale, {
+    year: options?.year ? "numeric" : undefined,
     month: "short",
     day: "numeric",
     timeZone: isCalendarDate ? "UTC" : timeZone,
   }).format(date);
+}
+
+// Whether a set of date values crosses more than one calendar year. When it
+// does, charts should show the year so month/day labels aren't ambiguous
+// (e.g. the "全部" / all-time range spanning multiple years).
+export function spansMultipleYears(values: Array<string | null | undefined>) {
+  const years = new Set<string>();
+  for (const value of values) {
+    if (!value) continue;
+    const year =
+      /^(\d{4})-\d{2}-\d{2}/.exec(value)?.[1] ?? String(new Date(value).getUTCFullYear());
+    years.add(year);
+    if (years.size > 1) return true;
+  }
+  return false;
 }
