@@ -28,6 +28,11 @@ import {
   computeOptimalFrequency,
   computeContentTypeTimeSlot,
   computePostingStreak,
+  computeViewsTrend,
+  computeViewsDistribution,
+  computeShareLeaders,
+  computeTextFeatureComparison,
+  computePostingGapAnalysis,
   type PostWithInsights,
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -50,6 +55,10 @@ import EngagementBreakdownPieChart from "@/components/charts/engagement-breakdow
 import KeywordAnalysisChart from "@/components/charts/keyword-analysis-chart";
 import OptimalFrequencyChart from "@/components/charts/optimal-frequency-chart";
 import ContentTypeTimeSlotChart from "@/components/charts/content-type-time-slot-chart";
+import ViewsTrendChart from "@/components/charts/views-trend-chart";
+import ViewsDistributionChart from "@/components/charts/views-distribution-chart";
+import TextFeatureComparison from "@/components/charts/text-feature-comparison";
+import PostingGapChart from "@/components/charts/posting-gap-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChartCard from "@/components/dashboard/chart-card";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -196,6 +205,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const engagementBreakdown = computeEngagementBreakdownByDay(posts, tz);
   const postQualityScatter = computePostQualityScatter(posts);
   const actionFunnel = computeActionFunnel(posts);
+  const viewsTrend = computeViewsTrend(posts, tz);
+  const viewsDistribution = computeViewsDistribution(posts);
 
   // Content metrics
   const contentTypeAnalysis = computeContentTypeAnalysis(posts);
@@ -204,6 +215,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const consistency = computePostingConsistency(posts, since, until, tz);
   const replyRateLeaders = computeReplyRateLeaders(posts);
   const topByEngRate = computeTopPostsByEngagementRate(posts);
+  const shareLeaders = computeShareLeaders(posts);
+  const textFeatureComparison = computeTextFeatureComparison(posts);
+  const postingGapAnalysis = computePostingGapAnalysis(posts, tz);
   // Posting activity covers the account's full history, independent of the selected range
   const postingCalendar = computePostingCalendar(
     allPostTimestamps,
@@ -281,6 +295,48 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               labels={t.chart}
             />
           </ChartCard>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+            <ChartCard
+              className="lg:col-span-3"
+              title={t.analytics.viewsTrend}
+              subtitle={t.analytics.viewsTrendSub}
+              labels={cardLabels}
+            >
+              <ViewsTrendChart
+                data={viewsTrend}
+                dateLocale={dateLocale}
+                labels={{
+                  posts: t.chart.posts,
+                  medianViews: t.chart.medianViews,
+                  avgViews: t.chart.avgViews,
+                  p75Views: t.chart.p75Views,
+                  week: t.chart.week,
+                  month: t.chart.month,
+                  noData: t.chart.noData,
+                }}
+              />
+            </ChartCard>
+
+            <ChartCard
+              className="lg:col-span-2"
+              title={t.analytics.viewsDistribution}
+              subtitle={t.analytics.viewsDistributionSub}
+              labels={cardLabels}
+            >
+              <ViewsDistributionChart
+                data={viewsDistribution}
+                numberLocale={dateLocale}
+                labels={{
+                  views: t.chart.views,
+                  posts: t.chart.posts,
+                  viewRange: t.chart.viewRange,
+                  ofPosts: t.chart.ofPosts,
+                  noData: t.chart.noData,
+                }}
+              />
+            </ChartCard>
+          </div>
 
           <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
             <ChartCard
@@ -512,23 +568,47 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             />
           </ChartCard>
 
-          <ChartCard
-            title={t.analytics.optimalFrequency}
-            subtitle={t.analytics.optimalFrequencySub}
-            labels={cardLabels}
-          >
-            <OptimalFrequencyChart
-              data={optimalFrequency}
-              labels={{
-                range: t.chart.range,
-                postsPerWeek: t.analytics.postsPerWeek,
-                avgViewsPost: t.chart.avgViewsPost,
-                engagementRate: t.chart.engagementRate,
-                shareRate: t.chart.shareRate,
-                weeks: t.chart.week,
-              }}
-            />
-          </ChartCard>
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+            <ChartCard
+              title={t.analytics.optimalFrequency}
+              subtitle={t.analytics.optimalFrequencySub}
+              labels={cardLabels}
+            >
+              <OptimalFrequencyChart
+                data={optimalFrequency}
+                labels={{
+                  range: t.chart.range,
+                  postsPerWeek: t.analytics.postsPerWeek,
+                  avgViewsPost: t.chart.avgViewsPost,
+                  engagementRate: t.chart.engagementRate,
+                  shareRate: t.chart.shareRate,
+                  weeks: t.chart.week,
+                }}
+              />
+            </ChartCard>
+
+            <ChartCard
+              title={t.analytics.postingGap}
+              subtitle={t.analytics.postingGapSub}
+              labels={cardLabels}
+            >
+              <PostingGapChart
+                data={postingGapAnalysis}
+                labels={{
+                  gapDays: t.chart.gapDays,
+                  gapBuckets: t.chart.gapBuckets,
+                  posts: t.chart.posts,
+                  medianViews: t.chart.medianViews,
+                  avgViews: t.chart.avgViews,
+                  engagementRate: t.chart.engagementRate,
+                  hitRate: t.chart.hitRate,
+                  confidence: t.chart.confidence,
+                  confidenceLevels: t.chart.confidenceLevels,
+                  noData: t.chart.noData,
+                }}
+              />
+            </ChartCard>
+          </div>
 
           <ChartCard
             title={t.analytics.contentTypeTimeSlot}
@@ -633,6 +713,75 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 </CardContent>
               </Card>
             )}
+
+            {/* Share-Rate Leaders */}
+            {shareLeaders.length > 0 && (
+              <Card>
+                <CardHeader className="pb-2">
+                  <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                    {t.analytics.shareLeaders}
+                  </CardTitle>
+                  <p className="text-muted-foreground text-xs">{t.analytics.shareLeadersSub}</p>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                  {shareLeaders.map((post, i) => (
+                    <div
+                      key={post.id}
+                      className="flex items-start gap-3 border-b py-2 last:border-0"
+                    >
+                      <span className="text-muted-foreground w-5 shrink-0 text-sm font-medium">
+                        {i + 1}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <p className="line-clamp-2 text-sm">{post.text}</p>
+                        <div className="mt-1 flex items-center gap-3">
+                          <span className="text-primary text-xs font-medium">
+                            {post.shareRate}% {t.analytics.shareRateInline}
+                          </span>
+                          <span className="text-muted-foreground text-xs">
+                            {post.shares} {t.common.shares} · {post.views.toLocaleString()}{" "}
+                            {t.common.views}
+                          </span>
+                        </div>
+                      </div>
+                      {post.permalink && (
+                        <a
+                          href={post.permalink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-muted-foreground hover:text-foreground shrink-0"
+                        >
+                          <ExternalLink className="size-3.5" />
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            )}
+
+            {/* Content Feature Comparison */}
+            <ChartCard
+              title={t.analytics.textFeatures}
+              subtitle={t.analytics.textFeaturesSub}
+              labels={cardLabels}
+            >
+              <TextFeatureComparison
+                data={textFeatureComparison}
+                numberLocale={dateLocale}
+                labels={{
+                  withLink: t.chart.withLink,
+                  withoutLink: t.chart.withoutLink,
+                  withQuestion: t.chart.withQuestion,
+                  withoutQuestion: t.chart.withoutQuestion,
+                  medianViews: t.chart.medianViews,
+                  engagementRate: t.chart.engagementRate,
+                  replyRate: t.chart.replyRate,
+                  posts: t.chart.posts,
+                  noData: t.chart.noData,
+                }}
+              />
+            </ChartCard>
           </div>
         </TabsContent>
       </AnalyticsTabs>

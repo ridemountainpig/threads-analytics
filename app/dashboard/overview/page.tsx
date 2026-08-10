@@ -9,6 +9,7 @@ import {
   computeBestTimeToPost,
   computeTopHours,
   computeViralPosts,
+  getBaselineMedianViews,
   getDateString,
   type PostWithInsights,
 } from "@/lib/analytics";
@@ -245,13 +246,17 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       )
     : engRateOf(prevViews, prevLikes, prevReplies, prevReposts, prevQuotes);
 
+  const curMedianViews = getBaselineMedianViews(dbPosts);
+  const prevMedianViews = getBaselineMedianViews(prevDbPosts);
+
   const deltaViews = pctChange(curViews, prevViews);
   const deltaLikes = pctChange(curLikes, prevLikes);
   const deltaReplies = pctChange(curReplies, prevReplies);
-  const deltaReposts = pctChange(curReposts, prevReposts);
-  const deltaQuotes = pctChange(curQuotes, prevQuotes);
+  const deltaRepostsQuotes = pctChange(curReposts + curQuotes, prevReposts + prevQuotes);
   const deltaShares = pctChange(curShares, prevShares);
   const deltaEngRate = pctChange(curEng, prevEng);
+  const deltaPosts = pctChange(dbPosts.length, prevDbPosts.length);
+  const deltaMedianViews = pctChange(curMedianViews, prevMedianViews);
   const viralPosts = computeViralPosts(posts);
   const bestTimeToPost = computeBestTimeToPost(posts, tz);
   const topHours = computeTopHours(bestTimeToPost);
@@ -309,11 +314,29 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       )}
 
       {/* Stat Cards */}
-      <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-7">
+      <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
           title={t.overview.totalViews}
           value={totalViews}
           delta={deltaViews}
+          deltaLabel={t.overview.vsPrev}
+        />
+        <StatCard
+          title={t.overview.totalPosts}
+          value={dbPosts.length}
+          delta={deltaPosts}
+          deltaLabel={t.overview.vsPrev}
+        />
+        <StatCard
+          title={t.overview.medianViews}
+          value={curMedianViews}
+          delta={deltaMedianViews}
+          deltaLabel={t.overview.vsPrev}
+        />
+        <StatCard
+          title={t.overview.engRate}
+          value={`${engagementRate.toFixed(2)}%`}
+          delta={deltaEngRate}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
@@ -329,27 +352,15 @@ export default async function OverviewPage({ searchParams }: PageProps) {
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
-          title={t.overview.reposts}
-          value={totalReposts}
-          delta={deltaReposts}
-          deltaLabel={t.overview.vsPrev}
-        />
-        <StatCard
-          title={t.overview.quotes}
-          value={totalQuotes}
-          delta={deltaQuotes}
+          title={t.overview.repostsQuotes}
+          value={totalReposts + totalQuotes}
+          delta={deltaRepostsQuotes}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.shares}
           value={totalShares}
           delta={deltaShares}
-          deltaLabel={t.overview.vsPrev}
-        />
-        <StatCard
-          title={t.overview.engRate}
-          value={`${engagementRate.toFixed(2)}%`}
-          delta={deltaEngRate}
           deltaLabel={t.overview.vsPrev}
         />
       </div>

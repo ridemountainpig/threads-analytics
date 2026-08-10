@@ -136,6 +136,11 @@ function getISOWeekString(date: Date, tz: string): string {
   return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
 }
 
+function getMonthString(date: Date, tz: string): string {
+  const { year, month } = getLocalDateTimeParts(date, tz);
+  return `${year}-${String(month).padStart(2, "0")}`;
+}
+
 export function getDateString(date: Date, tz: string): string {
   const { year, month, day } = getLocalDateTimeParts(date, tz);
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
@@ -206,7 +211,7 @@ function getDistributionStats(
   };
 }
 
-function getBaselineMedianViews(posts: PostWithInsights[]) {
+export function getBaselineMedianViews(posts: Array<Pick<PostWithInsights, "views">>) {
   return getMedian(posts.map((post) => post.views).filter((views) => views > 0));
 }
 
@@ -1398,6 +1403,310 @@ export function computeContentTypeTimeSlot(
     avgViews: bucket.count > 0 ? Math.round(bucket.totalViews / bucket.count) : 0,
     confidence: getConfidence(bucket.count),
   }));
+}
+
+export interface ViewsTrendPoint {
+  period: string;
+  postCount: number;
+  medianViews: number;
+  avgViews: number;
+  p75Views: number;
+}
+
+export interface ViewsTrendResult {
+  granularity: "week" | "month";
+  points: ViewsTrendPoint[];
+}
+
+// Beyond this many distinct weeks, a weekly series is too noisy to answer
+// "is the account growing?" — roll up to months instead.
+const VIEWS_TREND_MAX_WEEKS = 16;
+
+export function computeViewsTrend(posts: PostWithInsights[], tz = DEFAULT_TZ): ViewsTrendResult {
+  const weekKeys = new Set(posts.map((post) => getISOWeekString(new Date(post.timestamp), tz)));
+  const granularity: ViewsTrendResult["granularity"] =
+    weekKeys.size > VIEWS_TREND_MAX_WEEKS ? "month" : "week";
+  const keyOf =
+    granularity === "month"
+      ? (date: Date) => getMonthString(date, tz)
+      : (date: Date) => getISOWeekString(date, tz);
+
+  const buckets = new Map<string, AggregateBucket>();
+  for (const post of posts) {
+    const key = keyOf(new Date(post.timestamp));
+    const existing = buckets.get(key) ?? emptyBucket();
+    addPostToBucket(existing, post);
+    buckets.set(key, existing);
+  }
+
+  const points = Array.from(buckets.entries())
+    .map(([period, data]) => ({
+      period,
+      postCount: data.count,
+      medianViews: getMedian(data.views),
+      avgViews: data.count > 0 ? Math.round(data.totalViews / data.count) : 0,
+      p75Views: getPercentile(data.views, 0.75),
+    }))
+    .sort((a, b) => a.period.localeCompare(b.period));
+
+  return { granularity, points };
+}
+
+export interface ViewsDistributionPoint {
+  bucket: string;
+  count: number;
+  percentage: number;
+}
+
+export interface ViewsMilestonePoint {
+  threshold: number;
+  count: number;
+  percentage: number;
+}
+
+export interface ViewsDistributionResult {
+  totalPosts: number;
+  buckets: ViewsDistributionPoint[];
+  milestones: ViewsMilestonePoint[];
+}
+
+// Bucket boundaries and milestones adapt to each account's view scale, snapped
+// to a 1 / 2.5 / 5 ladder so labels stay readable ("250", "1k", "2.5k", ...).
+const VIEW_THRESHOLD_LADDER: number[] = Array.from({ length: 8 }, (_, exp) =>
+  [1, 2.5, 5].map((step) => step * 10 ** (exp + 1)),
+)
+  .flat()
+  .map(Math.round);
+
+function snapToLadder(value: number): number {
+  if (value <= VIEW_THRESHOLD_LADDER[0]!) return VIEW_THRESHOLD_LADDER[0]!;
+  return VIEW_THRESHOLD_LADDER.reduce((best, rung) =>
+    Math.abs(Math.log(rung) - Math.log(value)) < Math.abs(Math.log(best) - Math.log(value))
+      ? rung
+      : best,
+  );
+}
+
+function nextLadderRung(value: number): number {
+  return (
+    VIEW_THRESHOLD_LADDER.find((rung) => rung > value) ??
+    VIEW_THRESHOLD_LADDER[VIEW_THRESHOLD_LADDER.length - 1]!
+  );
+}
+
+function viewsQuantile(sortedViews: number[], q: number): number {
+  const index = Math.min(sortedViews.length - 1, Math.floor(q * sortedViews.length));
+  return sortedViews[index] ?? 0;
+}
+
+function formatViewsLabel(value: number): string {
+  if (value >= 1_000_000) return `${value / 1_000_000}m`;
+  if (value >= 1_000) return `${value / 1_000}k`;
+  return String(value);
+}
+
+export function computeViewsDistribution(posts: PostWithInsights[]): ViewsDistributionResult {
+  const total = posts.length;
+  const pct = (count: number) => (total > 0 ? Math.round((count / total) * 1000) / 10 : 0);
+  if (total === 0) return { totalPosts: 0, buckets: [], milestones: [] };
+
+  const sortedViews = posts.map((post) => post.views).sort((a, b) => a - b);
+
+  const boundaries = [
+    ...new Set(
+      [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875].map((q) =>
+        snapToLadder(viewsQuantile(sortedViews, q)),
+      ),
+    ),
+  ].sort((a, b) => a - b);
+
+  const counts = Array.from({ length: boundaries.length + 1 }, () => 0);
+  for (const post of posts) {
+    const index = boundaries.findIndex((boundary) => post.views <= boundary);
+    counts[index === -1 ? boundaries.length : index] += 1;
+  }
+
+  const bucketLabel = (index: number): string => {
+    if (index === boundaries.length) return `${formatViewsLabel(boundaries[index - 1]!)}+`;
+    if (index === 0) return `0-${formatViewsLabel(boundaries[0]!)}`;
+    const prev = boundaries[index - 1]!;
+    const lower = prev < 1_000 ? String(prev + 1) : formatViewsLabel(prev);
+    return `${lower}-${formatViewsLabel(boundaries[index]!)}`;
+  };
+
+  // Milestones track the "nice" thresholds closest to the top 50% / 25% / 10%
+  // of this account's posts, bumped up the ladder when quantiles collide.
+  const milestoneThresholds: number[] = [];
+  for (const q of [0.5, 0.75, 0.9]) {
+    let threshold = snapToLadder(viewsQuantile(sortedViews, q));
+    const last = milestoneThresholds[milestoneThresholds.length - 1];
+    if (last !== undefined && threshold <= last) threshold = nextLadderRung(last);
+    milestoneThresholds.push(threshold);
+  }
+
+  return {
+    totalPosts: total,
+    buckets: counts.map((count, index) => ({
+      bucket: bucketLabel(index),
+      count,
+      percentage: pct(count),
+    })),
+    milestones: milestoneThresholds.map((threshold) => {
+      const count = posts.filter((post) => post.views >= threshold).length;
+      return { threshold, count, percentage: pct(count) };
+    }),
+  };
+}
+
+export function computeShareLeaders(posts: PostWithInsights[]): Array<{
+  id: string;
+  text: string;
+  timestamp: string;
+  shareRate: number;
+  shares: number;
+  views: number;
+  permalink: string;
+}> {
+  const minViews = getRateRankingMinViews(posts);
+  return posts
+    .filter((p) => p.views >= minViews && p.shares > 0)
+    .map((p) => ({
+      id: p.id,
+      text: p.text,
+      timestamp: p.timestamp.toISOString(),
+      shareRate: Math.round((p.shares / p.views) * 10000) / 100,
+      shares: p.shares,
+      views: p.views,
+      permalink: p.permalink,
+    }))
+    .sort((a, b) => b.shareRate - a.shareRate)
+    .slice(0, 5);
+}
+
+export interface TextFeatureStats {
+  postCount: number;
+  medianViews: number;
+  engagementRate: number;
+  replyRate: number;
+  shareRate: number;
+}
+
+export interface TextFeatureComparisonPoint {
+  feature: "link" | "question";
+  withFeature: TextFeatureStats;
+  withoutFeature: TextFeatureStats;
+}
+
+const hasLink = (text: string) => /https?:\/\//i.test(text);
+const hasQuestion = (text: string) => text.includes("?") || text.includes("？");
+
+export function computeTextFeatureComparison(
+  posts: PostWithInsights[],
+): TextFeatureComparisonPoint[] {
+  const statsFor = (subset: PostWithInsights[]): TextFeatureStats => {
+    const bucket = emptyBucket();
+    for (const post of subset) addPostToBucket(bucket, post);
+    const rates = getMetricRates({
+      views: bucket.totalViews,
+      likes: bucket.totalLikes,
+      replies: bucket.totalReplies,
+      reposts: bucket.totalReposts,
+      quotes: bucket.totalQuotes,
+      shares: bucket.totalShares,
+    });
+    return {
+      postCount: bucket.count,
+      medianViews: getMedian(bucket.views),
+      engagementRate: rates.engagementRate,
+      replyRate: rates.replyRate,
+      shareRate: rates.shareRate,
+    };
+  };
+
+  const features: Array<{
+    feature: TextFeatureComparisonPoint["feature"];
+    test: (text: string) => boolean;
+  }> = [
+    { feature: "link", test: hasLink },
+    { feature: "question", test: hasQuestion },
+  ];
+
+  return features.map(({ feature, test }) => ({
+    feature,
+    withFeature: statsFor(posts.filter((p) => test(p.text ?? ""))),
+    withoutFeature: statsFor(posts.filter((p) => !test(p.text ?? ""))),
+  }));
+}
+
+export type PostingGapBucket = "0" | "1" | "2-3" | "4-7" | "8+";
+
+export interface PostingGapPoint {
+  gap: PostingGapBucket;
+  postCount: number;
+  medianViews: number;
+  avgViews: number;
+  engagementRate: number;
+  hitRate: number;
+  confidence: ConfidenceLevel;
+}
+
+/**
+ * Buckets each post by how many calendar days passed since the previous post
+ * ("0" = another post the same day, "1" = posted the next day, i.e. a
+ * consecutive-day streak), then compares reach across buckets. The first post
+ * in the range has no gap and is skipped.
+ */
+export function computePostingGapAnalysis(
+  posts: PostWithInsights[],
+  tz = DEFAULT_TZ,
+): PostingGapPoint[] {
+  if (posts.length < 2) return [];
+  const baselineMedianViews = getBaselineMedianViews(posts);
+  const sorted = [...posts].sort((a, b) => a.timestamp.getTime() - b.timestamp.getTime());
+
+  const GAPS: PostingGapBucket[] = ["0", "1", "2-3", "4-7", "8+"];
+  const buckets = new Map<PostingGapBucket, AggregateBucket>(GAPS.map((g) => [g, emptyBucket()]));
+
+  for (let i = 1; i < sorted.length; i++) {
+    const prevDay = getDateString(new Date(sorted[i - 1].timestamp), tz);
+    const curDay = getDateString(new Date(sorted[i].timestamp), tz);
+    const diffDays = Math.round(
+      (Date.parse(`${curDay}T00:00:00Z`) - Date.parse(`${prevDay}T00:00:00Z`)) / 86400000,
+    );
+    const key: PostingGapBucket =
+      diffDays <= 0
+        ? "0"
+        : diffDays === 1
+          ? "1"
+          : diffDays <= 3
+            ? "2-3"
+            : diffDays <= 7
+              ? "4-7"
+              : "8+";
+    addPostToBucket(buckets.get(key)!, sorted[i]);
+  }
+
+  return GAPS.map((gap) => {
+    const data = buckets.get(gap)!;
+    const stats = getDistributionStats(data, baselineMedianViews);
+    const rates = getMetricRates({
+      views: data.totalViews,
+      likes: data.totalLikes,
+      replies: data.totalReplies,
+      reposts: data.totalReposts,
+      quotes: data.totalQuotes,
+      shares: data.totalShares,
+    });
+    return {
+      gap,
+      postCount: data.count,
+      medianViews: stats.medianViews,
+      avgViews: stats.avgViews,
+      hitRate: stats.hitRate,
+      confidence: stats.confidence,
+      engagementRate: rates.engagementRate,
+    };
+  }).filter((point) => point.postCount > 0);
 }
 
 export interface PostingStreak {

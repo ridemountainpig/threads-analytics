@@ -1,6 +1,7 @@
 "use client";
 
 import { Fragment, useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
 
@@ -167,29 +168,31 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
         </div>
       </div>
 
-      {tooltip && (
-        <div
-          className="bg-popover border-border pointer-events-none fixed z-50 rounded border px-3 py-2 text-xs shadow-md"
-          style={{ top: tooltip.y + 14, left: tooltip.x + 14 }}
-        >
-          <p className="text-foreground mb-1.5 font-medium">{tooltip.label}</p>
-          <div className="text-muted-foreground space-y-0.5">
-            <p>
-              {medianViewsLabel}: {tooltip.point.medianViews.toLocaleString()}
-            </p>
-            <p>
-              {copy.avgViews}: {tooltip.point.avgViews.toLocaleString()}
-            </p>
-            <p>
-              {copy.posts}: {tooltip.point.postCount}
-            </p>
-            <p>
-              {confidenceLabel}:{" "}
-              {copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence}
-            </p>
-          </div>
-        </div>
-      )}
+      {tooltip &&
+        createPortal(
+          <div
+            className="bg-popover border-border pointer-events-none fixed z-50 rounded border px-3 py-2 text-xs shadow-md"
+            style={{ top: tooltip.y + 14, left: tooltip.x + 14 }}
+          >
+            <p className="text-foreground mb-1.5 font-medium">{tooltip.label}</p>
+            <div className="text-muted-foreground space-y-0.5">
+              <p>
+                {medianViewsLabel}: {tooltip.point.medianViews.toLocaleString()}
+              </p>
+              <p>
+                {copy.avgViews}: {tooltip.point.avgViews.toLocaleString()}
+              </p>
+              <p>
+                {copy.posts}: {tooltip.point.postCount}
+              </p>
+              <p>
+                {confidenceLabel}:{" "}
+                {copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence}
+              </p>
+            </div>
+          </div>,
+          document.body,
+        )}
     </>
   );
 }

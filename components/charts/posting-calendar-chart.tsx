@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
 import { expandPostingCalendarSeries } from "@/lib/posting-calendar-expand";
@@ -168,15 +169,17 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
         ))}
       </div>
 
-      {tooltip && (
-        <div
-          className="bg-popover border-border pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-2 rounded border px-2 py-1 text-[11px] shadow-sm"
-          style={{ left: tooltip.x, top: tooltip.y }}
-        >
-          {utcNoonFromYmd(tooltip.date).toLocaleDateString(dateLocale, { timeZone: "UTC" })} -{" "}
-          {tooltip.count} {copy.posts ?? "Posts"}
-        </div>
-      )}
+      {tooltip &&
+        createPortal(
+          <div
+            className="bg-popover border-border pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-2 rounded border px-2 py-1 text-[11px] shadow-sm"
+            style={{ left: tooltip.x, top: tooltip.y }}
+          >
+            {utcNoonFromYmd(tooltip.date).toLocaleDateString(dateLocale, { timeZone: "UTC" })} -{" "}
+            {tooltip.count} {copy.posts ?? "Posts"}
+          </div>,
+          document.body,
+        )}
 
       <div className="mt-2 flex items-center justify-end gap-1">
         <span className="text-muted-foreground text-[9px]">{copy.less}</span>
