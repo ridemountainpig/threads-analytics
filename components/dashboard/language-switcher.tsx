@@ -2,17 +2,16 @@
 
 import { useRouter } from "next/navigation";
 import { useTransition } from "react";
-import { Languages } from "lucide-react";
+import { Check, ChevronDown, Languages } from "lucide-react";
 import { setLocaleAction } from "@/actions/locale";
-import { isLocale, localeNames, locales, type Locale } from "@/lib/i18n";
+import { localeNames, locales, type Locale } from "@/lib/i18n";
 import { cn } from "@/lib/utils";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 interface LanguageSwitcherProps {
   locale: Locale;
@@ -32,36 +31,43 @@ export default function LanguageSwitcher({ locale, compact }: LanguageSwitcherPr
   }
 
   return (
-    <Select
-      value={locale}
-      onValueChange={(nextLocale) => {
-        if (isLocale(nextLocale)) setLocale(nextLocale);
-      }}
-      disabled={pending}
-    >
-      <SelectTrigger
-        size="sm"
+    <DropdownMenu>
+      <DropdownMenuTrigger
         aria-label="Language"
+        disabled={pending}
         className={cn(
+          "flex items-center outline-none focus:outline-none disabled:opacity-50",
           compact
-            ? "bg-muted/70 min-w-20 border-0 text-xs font-medium shadow-none"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/50 aria-expanded:bg-accent aria-expanded:text-accent-foreground h-auto w-full justify-start gap-2.5 rounded-md border-0 bg-transparent px-3 py-2 text-sm font-normal shadow-none *:data-[slot=select-value]:min-w-0 *:data-[slot=select-value]:flex-1",
+            ? "bg-muted/70 hover:bg-muted data-[popup-open]:bg-muted h-7 min-w-20 gap-1.5 rounded-md px-2.5 text-xs font-medium"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50 data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground w-full gap-2.5 rounded-md px-3 py-2 text-sm",
         )}
       >
         <Languages
           className={cn("shrink-0", compact ? "text-muted-foreground size-3.5" : "size-4")}
         />
-        <SelectValue>
-          {(value) => (isLocale(value) ? localeNames[value] : localeNames[locale])}
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent align={compact ? "end" : "start"} className={cn(compact && "min-w-24")}>
+        <span className="min-w-0 flex-1 truncate text-left">{localeNames[locale]}</span>
+        <ChevronDown
+          className={cn(
+            "shrink-0 opacity-50",
+            compact ? "text-muted-foreground size-3.5" : "size-4",
+          )}
+        />
+      </DropdownMenuTrigger>
+      <DropdownMenuContent align={compact ? "end" : "start"} className="min-w-40">
         {locales.map((item) => (
-          <SelectItem key={item} value={item} label={localeNames[item]}>
-            {localeNames[item]}
-          </SelectItem>
+          <DropdownMenuItem
+            key={item}
+            disabled={item === locale || pending}
+            onClick={() => setLocale(item)}
+            className="flex items-center gap-2"
+          >
+            <Check
+              className={cn("size-3.5 shrink-0", item === locale ? "opacity-100" : "opacity-0")}
+            />
+            <span className="truncate">{localeNames[item]}</span>
+          </DropdownMenuItem>
         ))}
-      </SelectContent>
-    </Select>
+      </DropdownMenuContent>
+    </DropdownMenu>
   );
 }

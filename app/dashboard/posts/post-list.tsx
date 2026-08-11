@@ -1,9 +1,27 @@
 "use client";
 
-import { useState, useMemo, useEffect, useRef } from "react";
+import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ExternalLink, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ExternalLink, Search } from "lucide-react";
 import { cn } from "@/lib/utils";
+
+type TextFeature = "question" | "link";
+
+interface FeatureDelta {
+  feature: TextFeature;
+  deltaPct: number | null;
+  withMedian: number;
+  withoutMedian: number;
+  withCount: number;
+}
+
+interface MetricRateMedians {
+  likes: number;
+  replies: number;
+  reposts: number;
+  quotes: number;
+  shares: number;
+}
 
 interface Post {
   id: string;
@@ -17,14 +35,23 @@ interface Post {
   reposts: number;
   quotes: number;
   shares: number;
-  viewsVsMedian: number;
+  typeMedianViews: number;
+  viewsVsTypeMedian: number;
   viewPercentile: number;
+  engRatePercentile: number | null;
 }
 
 interface PostListProps {
   posts: Post[];
   medianViews: number;
+  metricRateMedians: MetricRateMedians;
+  engagementRateMedian: number;
+  features: FeatureDelta[];
   currentSort: string;
+  currentDir: string;
+  currentQuery: string;
+  currentType: string;
+  availableTypes: string[];
   hasPagination?: boolean;
   dateLocale?: string;
   timeZone: string;
@@ -40,8 +67,16 @@ interface PostListProps {
     engRate: string;
     vsAvgViews: string;
     vsMedianViews?: string;
+    vsTypeMedian?: string;
     viewPercentile?: string;
+    engRatePercentile?: string;
     medianViews?: string;
+    medianEngRate?: string;
+    medianShort?: string;
+    vsMedian?: string;
+    textFeatures?: string;
+    featureQuestion?: string;
+    featureLink?: string;
     engagementBreakdown: string;
     selectPost: string;
     reposts: string;
@@ -50,10 +85,16 @@ interface PostListProps {
     mediaTypes?: Record<string, string>;
     searchPlaceholder?: string;
     allTypes?: string;
+    ascending?: string;
+    descending?: string;
   };
 }
 
-const SORT_OPTIONS = ["date", "views", "likes"] as const;
+const hasLink = (text: string) => /https?:\/\//i.test(text);
+const hasQuestion = (text: string) => /[?？]/.test(text);
+
+const SORT_OPTIONS = ["date", "views", "likes", "replies", "shares", "engRate"] as const;
+type SortOption = (typeof SORT_OPTIONS)[number];
 
 function formatPostDate(
   date: Date | string,
@@ -70,26 +111,58 @@ function formatPostDate(
   }).format(new Date(date));
 }
 
+function PercentileBar({ label, percentile }: { label: string; percentile: number | null }) {
+  return (
+    <div>
+      <div className="mb-2 flex items-center justify-between gap-3">
+        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          {label}
+        </p>
+        <span className="text-sm font-semibold tabular-nums">
+          {percentile === null ? "—" : `P${percentile}`}
+        </span>
+      </div>
+      <div className="bg-muted h-2.5 overflow-hidden rounded-full">
+        <div className="bg-primary h-full rounded-full" style={{ width: `${percentile ?? 0}%` }} />
+      </div>
+    </div>
+  );
+}
+
 function PostDetail({
   post,
   medianViews,
+  metricRateMedians,
+  engagementRateMedian,
+  features,
   labels,
   dateLocale,
   timeZone,
 }: {
   post: Post;
   medianViews: number;
+  metricRateMedians: MetricRateMedians;
+  engagementRateMedian: number;
+  features: FeatureDelta[];
   labels: PostListProps["labels"];
   dateLocale?: string;
   timeZone: string;
 }) {
   const locale = dateLocale ?? "en-US";
-  const engRate =
-    post.views > 0
-      ? (((post.likes + post.replies + post.reposts + post.quotes) / post.views) * 100).toFixed(2)
-      : "0.00";
-  const totalEngagement = post.likes + post.replies + post.reposts + post.quotes + post.shares;
+  // Engagement excludes shares, matching the app-wide rate (see getMetricRates).
+  const engagement = post.likes + post.replies + post.reposts + post.quotes;
+  const engRate = post.views > 0 ? ((engagement / post.views) * 100).toFixed(2) : "0.00";
   const mediaTypeLabel = labels.mediaTypes?.[post.mediaType] ?? post.mediaType;
+  const featureLabels: Record<TextFeature, string> = {
+    question: labels.featureQuestion ?? "Question",
+    link: labels.featureLink ?? "Link",
+  };
+  // Only surface features this post actually has, with the range-wide insight.
+  const activeFeatures = features.filter(
+    (f) =>
+      (f.feature === "question" && hasQuestion(post.text)) ||
+      (f.feature === "link" && hasLink(post.text)),
+  );
   const engagementMetrics = [
     { key: "likes" as const, label: labels.likes, color: "bg-primary" },
     { key: "replies" as const, label: labels.replies, color: "bg-emerald-500" },
@@ -97,6 +170,7 @@ function PostDetail({
     { key: "quotes" as const, label: labels.quotes, color: "bg-violet-500" },
     { key: "shares" as const, label: labels.shares, color: "bg-sky-500" },
   ];
+  const maxMetric = Math.max(1, ...engagementMetrics.map(({ key }) => post[key]));
 
   return (
     <div className="divide-y">
@@ -136,47 +210,90 @@ function PostDetail({
         </div>
         <div className="bg-muted/50 rounded-md p-4 text-center">
           <p className="text-muted-foreground text-sm">
-            {labels.vsMedianViews ?? labels.vsAvgViews}
+            {labels.vsTypeMedian ?? labels.vsMedianViews ?? labels.vsAvgViews}
           </p>
           <p
             className={cn(
               "mt-1 text-2xl font-semibold",
-              post.viewsVsMedian >= 1 ? "text-green-600" : "text-red-500",
+              post.viewsVsTypeMedian >= 1 ? "text-green-600" : "text-red-500",
             )}
           >
-            {post.viewsVsMedian}x
+            {post.viewsVsTypeMedian}x
+          </p>
+          <p className="text-muted-foreground mt-0.5 text-xs">
+            {mediaTypeLabel} · {post.typeMedianViews.toLocaleString(locale)}
           </p>
         </div>
       </div>
 
-      <div className="pb-5">
-        <div className="mb-2 flex items-center justify-between gap-3">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
-            {labels.viewPercentile ?? "View Percentile"}
-          </p>
-          <span className="mt-8 text-sm font-semibold tabular-nums">P{post.viewPercentile}</span>
-        </div>
-        <div className="bg-muted h-2.5 overflow-hidden rounded-full">
-          <div
-            className="bg-primary h-full rounded-full"
-            style={{ width: `${post.viewPercentile}%` }}
-          />
-        </div>
-        <p className="text-muted-foreground mt-1 text-xs">
+      {/* Percentiles: reach and engagement rate against the whole range */}
+      <div className="space-y-4 py-5">
+        <PercentileBar
+          label={labels.viewPercentile ?? "View Percentile"}
+          percentile={post.viewPercentile}
+        />
+        <PercentileBar
+          label={labels.engRatePercentile ?? "Eng. Rate Percentile"}
+          percentile={post.engRatePercentile}
+        />
+        <p className="text-muted-foreground text-xs">
           {labels.medianViews ?? "Median views"}: {medianViews.toLocaleString(locale)}
+          {" · "}
+          {labels.medianEngRate ?? "Median eng. rate"}: {engagementRateMedian}%
         </p>
       </div>
 
-      {/* Engagement breakdown */}
+      {/* Text features present in this post, with their range-wide reach delta */}
+      {activeFeatures.length > 0 && (
+        <div className="py-5">
+          <p className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+            {labels.textFeatures ?? "Text Features"}
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {activeFeatures.map((f) => (
+              <span
+                key={f.feature}
+                className="bg-muted flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+              >
+                {featureLabels[f.feature]}
+                {f.deltaPct !== null && (
+                  <span
+                    className={cn(
+                      "font-semibold tabular-nums",
+                      f.deltaPct >= 0 ? "text-green-600" : "text-red-500",
+                    )}
+                  >
+                    {f.deltaPct >= 0 ? "+" : ""}
+                    {f.deltaPct}%
+                  </span>
+                )}
+              </span>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* Engagement breakdown, each rate flagged against the account median */}
       <div className="py-5">
-        <p className="text-muted-foreground mb-4 text-xs font-semibold tracking-wider uppercase">
-          {labels.engagementBreakdown}
-        </p>
+        <div className="mb-4 flex items-center justify-between gap-2">
+          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+            {labels.engagementBreakdown}
+          </p>
+          {/* Legend: the per-row arrow compares this post's rate to the account median */}
+          <span className="text-muted-foreground flex shrink-0 items-center gap-0.5 text-[11px]">
+            <ChevronUp className="size-3 text-green-600" />
+            <ChevronDown className="size-3" />
+            {labels.vsMedian ?? "vs median"}
+          </span>
+        </div>
         <div className="space-y-3">
           {engagementMetrics.map(({ key, label, color }) => {
             const value = post[key];
-            const pct = totalEngagement > 0 ? (value / totalEngagement) * 100 : 0;
+            const pct = (value / maxMetric) * 100;
             const viewRate = post.views > 0 ? (value / post.views) * 100 : 0;
+            const median = metricRateMedians[key];
+            const diff = viewRate - median;
+            const medianTip = `${labels.medianShort ?? "Median"} ${median}%`;
             return (
               <div key={key} className="flex items-center gap-3">
                 <span className="text-muted-foreground w-16 shrink-0 text-sm">{label}</span>
@@ -186,8 +303,21 @@ function PostDetail({
                     style={{ width: `${pct}%` }}
                   />
                 </div>
-                <span className="w-20 shrink-0 text-right text-sm font-semibold tabular-nums">
+                <span
+                  title={medianTip}
+                  className="flex w-24 shrink-0 items-center justify-end gap-0.5 text-right text-sm font-semibold tabular-nums"
+                >
                   {value} · {viewRate.toFixed(1)}%
+                  {diff > 0.005 ? (
+                    <ChevronUp className="size-3.5 text-green-600" aria-label={medianTip} />
+                  ) : diff < -0.005 ? (
+                    <ChevronDown
+                      className="text-muted-foreground size-3.5"
+                      aria-label={medianTip}
+                    />
+                  ) : (
+                    <span className="inline-block size-3.5" />
+                  )}
                 </span>
               </div>
             );
@@ -201,54 +331,113 @@ function PostDetail({
 export default function PostList({
   posts,
   medianViews,
+  metricRateMedians,
+  engagementRateMedian,
+  features,
   currentSort,
+  currentDir,
+  currentQuery,
+  currentType,
+  availableTypes,
   hasPagination = false,
   labels,
   dateLocale,
   timeZone,
 }: PostListProps) {
   const locale = dateLocale ?? "en-US";
-  const [selectedId, setSelectedId] = useState<string | null>(posts[0]?.id ?? null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [mediaFilter, setMediaFilter] = useState("");
-  const listScrollRef = useRef<HTMLDivElement>(null);
-  const detailScrollRef = useRef<HTMLDivElement>(null);
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
+  const [selectedId, setSelectedId] = useState<string | null>(() => {
+    const fromUrl = searchParams.get("post");
+    if (fromUrl && posts.some((p) => p.id === fromUrl)) return fromUrl;
+    return posts[0]?.id ?? null;
+  });
+  const [searchQuery, setSearchQuery] = useState(currentQuery);
+  const lastPushedQuery = useRef(currentQuery);
+  const listScrollRef = useRef<HTMLDivElement>(null);
+  const detailScrollRef = useRef<HTMLDivElement>(null);
+
+  // When the visible page changes (pagination/sort/filter), keep the current
+  // selection if it's still present, otherwise fall back to the first post.
   useEffect(() => {
+    setSelectedId((prev) => (posts.some((p) => p.id === prev) ? prev : (posts[0]?.id ?? null)));
     if (listScrollRef.current) listScrollRef.current.scrollTop = 0;
     if (detailScrollRef.current) detailScrollRef.current.scrollTop = 0;
-    setSelectedId(posts[0]?.id ?? null);
   }, [posts]);
 
-  function setSort(sort: string) {
+  // Debounced server-side search: filtering must span every page, not just the
+  // 50 posts currently loaded.
+  useEffect(() => {
+    if (searchQuery === currentQuery) return;
+    const handle = setTimeout(() => {
+      lastPushedQuery.current = searchQuery;
+      const params = new URLSearchParams(searchParams.toString());
+      if (searchQuery) params.set("q", searchQuery);
+      else params.delete("q");
+      params.delete("page");
+      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+    }, 350);
+    return () => clearTimeout(handle);
+  }, [searchQuery, currentQuery, searchParams, pathname, router]);
+
+  // Sync the input when the query changes from outside (e.g. back/forward).
+  useEffect(() => {
+    if (currentQuery !== lastPushedQuery.current) {
+      lastPushedQuery.current = currentQuery;
+      setSearchQuery(currentQuery);
+    }
+  }, [currentQuery]);
+
+  function pushParams(mutate: (params: URLSearchParams) => void) {
     const params = new URLSearchParams(searchParams.toString());
-    params.set("sort", sort);
+    mutate(params);
     params.delete("page");
-    router.push(`${pathname}?${params.toString()}`);
+    router.push(`${pathname}?${params.toString()}`, { scroll: false });
   }
 
-  const mediaTypes = useMemo(() => {
-    const types = new Set(posts.map((p) => p.mediaType));
-    return Array.from(types).sort();
-  }, [posts]);
-
-  const filteredPosts = useMemo(() => {
-    return posts.filter((p) => {
-      const matchesSearch =
-        !searchQuery || p.text.toLowerCase().includes(searchQuery.toLowerCase());
-      const matchesMedia = !mediaFilter || p.mediaType === mediaFilter;
-      return matchesSearch && matchesMedia;
+  function setSort(sort: SortOption) {
+    pushParams((params) => {
+      if (sort === "date") params.delete("sort");
+      else params.set("sort", sort);
     });
-  }, [posts, searchQuery, mediaFilter]);
-
-  const selectedPost = filteredPosts.find((p) => p.id === selectedId) ?? filteredPosts[0] ?? null;
-
-  if (!posts.length) {
-    return <div className="text-muted-foreground p-8 text-center text-sm">{labels.noPosts}</div>;
   }
+
+  function toggleDir() {
+    const next = currentDir === "asc" ? "desc" : "asc";
+    pushParams((params) => {
+      if (next === "desc") params.delete("dir");
+      else params.set("dir", "asc");
+    });
+  }
+
+  function setMediaFilter(type: string) {
+    pushParams((params) => {
+      if (!type) params.delete("type");
+      else params.set("type", type);
+    });
+  }
+
+  function selectPost(id: string) {
+    setSelectedId(id);
+    if (typeof window !== "undefined") {
+      const params = new URLSearchParams(window.location.search);
+      params.set("post", id);
+      window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    }
+  }
+
+  const sortLabels: Record<SortOption, string> = {
+    date: labels.date,
+    views: labels.views,
+    likes: labels.likes,
+    replies: labels.replies,
+    shares: labels.shares,
+    engRate: labels.engRate,
+  };
+
+  const selectedPost = posts.find((p) => p.id === selectedId) ?? posts[0] ?? null;
 
   return (
     <div
@@ -273,9 +462,21 @@ export default function PostList({
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
-                {labels[value]}
+                {sortLabels[value]}
               </button>
             ))}
+            <button
+              onClick={toggleDir}
+              title={currentDir === "asc" ? labels.ascending : labels.descending}
+              aria-label={currentDir === "asc" ? labels.ascending : labels.descending}
+              className="bg-muted text-muted-foreground hover:bg-muted/80 flex h-7 items-center justify-center rounded px-2 transition-colors"
+            >
+              {currentDir === "asc" ? (
+                <ArrowUp className="size-3.5" />
+              ) : (
+                <ArrowDown className="size-3.5" />
+              )}
+            </button>
           </div>
           {/* Search + media type filter */}
           <div className="flex flex-wrap items-center gap-2">
@@ -290,24 +491,24 @@ export default function PostList({
               />
             </div>
           </div>
-          {mediaTypes.length > 1 && (
+          {availableTypes.length > 1 && (
             <div className="flex flex-wrap items-center gap-1.5">
               <button
                 onClick={() => setMediaFilter("")}
                 className={`rounded px-2 py-0.5 text-xs transition-colors ${
-                  mediaFilter === ""
+                  currentType === ""
                     ? "bg-primary text-primary-foreground"
                     : "bg-muted text-muted-foreground hover:bg-muted/80"
                 }`}
               >
                 {labels.allTypes ?? "All"}
               </button>
-              {mediaTypes.map((type) => (
+              {availableTypes.map((type) => (
                 <button
                   key={type}
                   onClick={() => setMediaFilter(type)}
                   className={`rounded px-2 py-0.5 text-xs transition-colors ${
-                    mediaFilter === type
+                    currentType === type
                       ? "bg-primary text-primary-foreground"
                       : "bg-muted text-muted-foreground hover:bg-muted/80"
                   }`}
@@ -321,13 +522,13 @@ export default function PostList({
 
         {/* Post list */}
         <div ref={listScrollRef} className="flex-1 overflow-y-auto">
-          {filteredPosts.length === 0 ? (
+          {posts.length === 0 ? (
             <div className="text-muted-foreground p-6 text-center text-sm">{labels.noPosts}</div>
           ) : null}
-          {filteredPosts.map((post) => (
+          {posts.map((post) => (
             <div
               key={post.id}
-              onClick={() => setSelectedId(post.id)}
+              onClick={() => selectPost(post.id)}
               className={cn(
                 "hover:bg-accent/50 cursor-pointer border-b px-4 py-3.5 transition-colors last:border-b-0",
                 selectedId === post.id && "bg-accent",
@@ -358,6 +559,9 @@ export default function PostList({
             <PostDetail
               post={selectedPost}
               medianViews={medianViews}
+              metricRateMedians={metricRateMedians}
+              engagementRateMedian={engagementRateMedian}
+              features={features}
               labels={labels}
               dateLocale={dateLocale}
               timeZone={timeZone}

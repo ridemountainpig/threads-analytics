@@ -8,6 +8,10 @@ export const metadata: Metadata = {
   title: "Threads Analytics",
   description: "Self-hosted Threads analytics dashboard",
   applicationName: "Threads Analytics",
+  robots: {
+    index: false,
+    follow: false,
+  },
   appleWebApp: {
     capable: true,
     title: "Threads Analytics",
