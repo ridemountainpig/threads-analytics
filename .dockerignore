@@ -16,3 +16,4 @@ coverage
 *.tsbuildinfo
 lib/generated
 README*.md
+website
