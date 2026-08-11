@@ -26,6 +26,17 @@ export async function generateMetadata({
   if (!isLocale(locale)) notFound();
   const copy = getDictionary(locale);
 
+  // Pre-rendered by scripts/og/generate-og-images.tsx (`pnpm og:generate`)
+  // instead of an opengraph-image route: request-time rendering depends on the
+  // host's sharp build, which broke SVG rasterization in production.
+  const ogImage = {
+    url: `/og/${locale}.png`,
+    width: 1200,
+    height: 630,
+    alt: "Threads Analytics",
+    type: "image/png",
+  };
+
   return {
     metadataBase: new URL(siteConfig.url),
     title: copy.metadata.title,
@@ -47,11 +58,13 @@ export async function generateMetadata({
       url: `/${locale}`,
       title: copy.metadata.title,
       description: copy.metadata.description,
+      images: [ogImage],
     },
     twitter: {
       card: "summary_large_image",
       title: copy.metadata.title,
       description: copy.metadata.description,
+      images: [ogImage],
     },
   };
 }

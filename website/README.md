@@ -29,6 +29,19 @@ Production builds fail when it is missing, non-HTTPS, localhost, or an `example.
 `NEXT_PUBLIC_SITE_URL` remains supported for existing deployments, but `SITE_URL` is preferred
 because the value is only consumed on the server.
 
+## Open Graph images
+
+The per-locale Open Graph images in `public/og/` are pre-rendered rather than generated at
+request time, because `next/og` rasterizes through the host's `sharp` build and some hosting
+providers ship one without SVG support. After changing the hero copy or the design in
+`scripts/og/generate-og-images.tsx`, regenerate them and commit the result:
+
+```bash
+pnpm og:generate
+```
+
+Generation needs network access — satori downloads CJK font subsets for `zh-TW` and `ja`.
+
 ## Commands
 
 ```bash
@@ -36,6 +49,7 @@ pnpm dev
 pnpm lint
 pnpm build
 pnpm start
+pnpm og:generate
 ```
 
 This project is deployed independently from the dashboard Docker image. The repository root `.dockerignore` excludes the entire `website` directory.

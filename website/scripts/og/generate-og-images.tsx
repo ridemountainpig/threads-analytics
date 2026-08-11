@@ -1,10 +1,22 @@
+// Generates the static Open Graph images served from public/og/.
+//
+// The images used to be rendered at request time by an
+// app/[locale]/opengraph-image.tsx route, but next/og rasterizes satori's SVG
+// through sharp whenever sharp is importable, and some hosting providers ship
+// a sharp/libvips build without SVG support ("Input buffer contains
+// unsupported image format"). Pre-rendering locally keeps the result
+// independent of the deploy host.
+//
+// Re-run with `pnpm og:generate` whenever the hero copy or the design below
+// changes, and commit the updated PNGs. Requires network access: satori
+// fetches CJK font subsets for the zh-TW and ja images.
+import { mkdir, writeFile } from "node:fs/promises";
+import { join } from "node:path";
 import { ImageResponse } from "next/og";
-import { brandCurvePath } from "@/lib/brand-curve";
-import { getDictionary, isLocale } from "@/lib/i18n";
+import { brandCurvePath } from "../../lib/brand-curve";
+import { getDictionary, locales, type Locale } from "../../lib/i18n";
 
-export const alt = "Threads Analytics";
-export const size = { width: 1200, height: 630 };
-export const contentType = "image/png";
+const size = { width: 1200, height: 630 };
 
 const openGraphCurve = (
   <svg
@@ -90,9 +102,8 @@ const openGraphCurve = (
   </svg>
 );
 
-export default async function OpenGraphImage({ params }: { params: Promise<{ locale: string }> }) {
-  const { locale } = await params;
-  const copy = getDictionary(isLocale(locale) ? locale : "en");
+function renderOpenGraphImage(locale: Locale) {
+  const copy = getDictionary(locale);
 
   return new ImageResponse(
     <div
@@ -213,3 +224,22 @@ export default async function OpenGraphImage({ params }: { params: Promise<{ loc
     size,
   );
 }
+
+async function main() {
+  // Run via `pnpm og:generate` so cwd is the website root.
+  const outputDir = join(process.cwd(), "public/og");
+  await mkdir(outputDir, { recursive: true });
+
+  for (const locale of locales) {
+    const image = renderOpenGraphImage(locale);
+    const buffer = Buffer.from(await image.arrayBuffer());
+    const outputPath = join(outputDir, `${locale}.png`);
+    await writeFile(outputPath, buffer);
+    console.log(`wrote ${outputPath} (${buffer.length} bytes)`);
+  }
+}
+
+main().catch((error) => {
+  console.error(error);
+  process.exitCode = 1;
+});
