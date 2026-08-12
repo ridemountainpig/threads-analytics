@@ -55,6 +55,11 @@ export const dictionaries = {
       signOut: "Sign out",
       switchAccount: "Switch account",
     },
+    updateBanner: {
+      newImageAvailable: "A new version of Threads Analytics is available.",
+      howToUpdate: "See how to update",
+      dismiss: "Dismiss",
+    },
     timeRange: {
       all: "All",
       custom: "Custom",
@@ -406,6 +411,11 @@ export const dictionaries = {
       signOut: "登出",
       switchAccount: "切換帳號",
     },
+    updateBanner: {
+      newImageAvailable: "Threads Analytics 有新版本可以更新。",
+      howToUpdate: "查看更新方式",
+      dismiss: "關閉",
+    },
     timeRange: {
       all: "全部",
       custom: "自訂",
@@ -749,6 +759,11 @@ export const dictionaries = {
       settings: "設定",
       signOut: "サインアウト",
       switchAccount: "アカウントを切り替え",
+    },
+    updateBanner: {
+      newImageAvailable: "Threads Analytics の新しいバージョンが利用可能です。",
+      howToUpdate: "更新方法を見る",
+      dismiss: "閉じる",
     },
     timeRange: {
       all: "すべて",
