@@ -83,7 +83,9 @@ export function VercelAgentDemo({
           <code className="agent-approval-tool">{copy.approvalTool}</code>
           <p>{copy.approvalDesc}</p>
           <div className="agent-approval-actions">
-            <span className={step >= 5 ? "agent-approval-allow is-selected" : "agent-approval-allow"}>
+            <span
+              className={step >= 5 ? "agent-approval-allow is-selected" : "agent-approval-allow"}
+            >
               <Check aria-hidden="true" strokeWidth={2.4} />
               {copy.approvalAllow}
             </span>

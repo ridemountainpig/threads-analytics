@@ -159,11 +159,7 @@ export default async function ZeaburAgentDeployPage({
                     {copy.cta.secondary}
                   </Link>
                 </div>
-                <AgentCtaOthers
-                  locale={locale}
-                  label={copy.cta.others}
-                  current="zeabur-agent"
-                />
+                <AgentCtaOthers locale={locale} label={copy.cta.others} current="zeabur-agent" />
               </div>
             </div>
           </div>

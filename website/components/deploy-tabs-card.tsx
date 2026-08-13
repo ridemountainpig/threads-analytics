@@ -61,12 +61,7 @@ export function DeployTabsCard({
         </div>
 
         {tab === "template" ? (
-          <a
-            href={templateHref}
-            target="_blank"
-            rel="noreferrer"
-            className="deploy-tab-action"
-          >
+          <a href={templateHref} target="_blank" rel="noreferrer" className="deploy-tab-action">
             <span className="deploy-tab-action-text">{copy.action}</span>
             <span className="deploy-tab-action-chip" aria-hidden="true">
               <ArrowUpRight className="deploy-tab-action-arrow" strokeWidth={2} />

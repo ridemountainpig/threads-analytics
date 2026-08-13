@@ -1,3 +1,7 @@
+import "server-only";
+
+import { railwayTemplate, zeaburTemplate } from "./links";
+
 function resolveSiteUrl() {
   const configuredUrl = (process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL)?.trim();
 
@@ -45,10 +49,6 @@ function resolveSiteUrl() {
 
   return parsedUrl.origin;
 }
-
-// Canonical template links, also embedded in the agent prompts in lib/i18n.ts.
-const railwayTemplate = "https://railway.com/deploy/zibjsX?referralCode=vPBCb4";
-const zeaburTemplate = "https://zeabur.com/templates/XLGQAD?referralCode=ridemountainpig";
 
 export const siteConfig = {
   name: "Threads Analytics",

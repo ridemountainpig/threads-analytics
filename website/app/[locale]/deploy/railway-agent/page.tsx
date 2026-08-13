@@ -185,11 +185,7 @@ export default async function RailwayAgentDeployPage({
                     {copy.cta.secondary}
                   </Link>
                 </div>
-                <AgentCtaOthers
-                  locale={locale}
-                  label={copy.cta.others}
-                  current="railway-agent"
-                />
+                <AgentCtaOthers locale={locale} label={copy.cta.others} current="railway-agent" />
               </div>
             </div>
           </div>

@@ -177,11 +177,7 @@ export default async function VercelAgentDeployPage({
                     {copy.cta.secondary}
                   </Link>
                 </div>
-                <AgentCtaOthers
-                  locale={locale}
-                  label={copy.cta.others}
-                  current="vercel-agent"
-                />
+                <AgentCtaOthers locale={locale} label={copy.cta.others} current="vercel-agent" />
               </div>
             </div>
           </div>

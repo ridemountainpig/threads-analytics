@@ -52,12 +52,7 @@ export function AgentHeroActions({
           <Copy aria-hidden="true" strokeWidth={2} />
         )}
       </button>
-      <a
-        href={openHref}
-        target="_blank"
-        rel="noreferrer"
-        className="button button-secondary"
-      >
+      <a href={openHref} target="_blank" rel="noreferrer" className="button button-secondary">
         {copy.openCta}
         <ArrowUpRight aria-hidden="true" strokeWidth={2} />
       </a>

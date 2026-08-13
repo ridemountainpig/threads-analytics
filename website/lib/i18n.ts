@@ -1,5 +1,5 @@
 import { vercelAgentPrompt } from "./agent-prompts";
-import { siteConfig } from "./site";
+import { railwayTemplate, zeaburTemplate } from "./links";
 
 export const locales = ["en", "zh-TW", "ja"] as const;
 
@@ -264,7 +264,7 @@ export const dictionaries = {
       prompt: {
         label: "AGENT PROMPT",
         hint: "Send copies the prompt and opens zeabur.com — paste it into the agent box there.",
-        text: `Help me deploy this Threads Analytics template (${siteConfig.zeabur}) and ask me for the password during deployment.`,
+        text: `Help me deploy this Threads Analytics template (${zeaburTemplate}) and ask me for the password during deployment.`,
         copy: "Copy",
         copied: "Copied",
         send: "Copy the prompt and open Zeabur Agent",
@@ -302,9 +302,9 @@ export const dictionaries = {
         working: "Working…",
         workedForA: "Worked for 38s",
         workedForB: "Worked for 42s",
-        lineOne: "I'll look up this template first to see what it deploys and what settings it needs.",
-        lineTwo:
-          "You're logged in with one server available: Tokyo, Japan. I'll deploy there.",
+        lineOne:
+          "I'll look up this template first to see what it deploys and what settings it needs.",
+        lineTwo: "You're logged in with one server available: Tokyo, Japan. I'll deploy there.",
         setupTitle: "Here's what the template sets up:",
         setupItems: [
           "PostgreSQL 16 with a persistent volume for your analytics data",
@@ -362,8 +362,7 @@ export const dictionaries = {
         installLabel: "STEP 1 · INSTALL PROMPT",
         installText: "install railway agent tools using railway.com",
         deployLabel: "STEP 2 · DEPLOY PROMPT",
-        deployText:
-          `Help me deploy this Threads Analytics template (${siteConfig.railwayTemplate}) and ask me for the password during deployment.`,
+        deployText: `Help me deploy this Threads Analytics template (${railwayTemplate}) and ask me for the password during deployment.`,
         copy: "Copy",
         copied: "Copied",
         hint: "Paste each prompt into your own coding agent — any agent with terminal access works.",
@@ -830,7 +829,7 @@ export const dictionaries = {
       prompt: {
         label: "AGENT PROMPT",
         hint: "按送出會複製 Prompt 並開啟 zeabur.com，貼進頁面上的 Agent 輸入框即可。",
-        text: `幫我部署這個 Threads Analytics 模板（${siteConfig.zeabur}），並在部署過程中詢問我要設定的密碼。`,
+        text: `幫我部署這個 Threads Analytics 模板（${zeaburTemplate}），並在部署過程中詢問我要設定的密碼。`,
         copy: "複製",
         copied: "已複製",
         send: "複製 Prompt 並開啟 Zeabur Agent",
@@ -916,8 +915,7 @@ export const dictionaries = {
         installLabel: "步驟 1 · 安裝 PROMPT",
         installText: "install railway agent tools using railway.com",
         deployLabel: "步驟 2 · 部署 PROMPT",
-        deployText:
-          `幫我部署這個 Threads Analytics 模板（${siteConfig.railwayTemplate}），並在部署過程中詢問我要設定的密碼。`,
+        deployText: `幫我部署這個 Threads Analytics 模板（${railwayTemplate}），並在部署過程中詢問我要設定的密碼。`,
         copy: "複製",
         copied: "已複製",
         hint: "把兩段 Prompt 依序貼進你自己的 Coding Agent——只要能執行終端機指令的 Agent 都可以。",
@@ -962,8 +960,7 @@ export const dictionaries = {
           "Railway CLI 與 Agent Skill，隨時可以部署",
           "Railway MCP Server 已設定給這個 Agent",
         ],
-        passwordQuestion:
-          "Railway 需要模板必填的 APP_PASSWORD。你想用什麼密碼登入儀表板？",
+        passwordQuestion: "Railway 需要模板必填的 APP_PASSWORD。你想用什麼密碼登入儀表板？",
         chips: ["幫我設定一組強密碼", "我自己輸入密碼", "之後再自己設定"],
         progress: ["產生憑證", "部署 Threads Analytics 與 PostgreSQL", "執行資料庫遷移"],
         deployDone:
@@ -1369,7 +1366,7 @@ export const dictionaries = {
       prompt: {
         label: "AGENT PROMPT",
         hint: "送信を押すとプロンプトをコピーしてzeabur.comを開きます。ページのエージェント入力欄に貼り付けてください。",
-        text: `このThreads Analyticsテンプレート（${siteConfig.zeabur}）をデプロイしてください。デプロイ中にパスワードを私に確認してください。`,
+        text: `このThreads Analyticsテンプレート（${zeaburTemplate}）をデプロイしてください。デプロイ中にパスワードを私に確認してください。`,
         copy: "コピー",
         copied: "コピー済み",
         send: "プロンプトをコピーしてZeabur Agentを開く",
@@ -1408,7 +1405,8 @@ export const dictionaries = {
         workedForA: "38秒で完了",
         workedForB: "42秒で完了",
         lineOne: "まずこのテンプレートを確認し、何をデプロイし、どの設定が必要かを調べます。",
-        lineTwo: "ログイン済みで、利用可能なサーバーが1台あります：東京（日本）。ここにデプロイします。",
+        lineTwo:
+          "ログイン済みで、利用可能なサーバーが1台あります：東京（日本）。ここにデプロイします。",
         setupTitle: "このテンプレートが構築するもの：",
         setupItems: [
           "分析データを保存する永続ボリューム付きPostgreSQL 16",
@@ -1416,11 +1414,7 @@ export const dictionaries = {
         ],
         passwordQuestion:
           "1つだけ確認させてください。ダッシュボードのログインパスワードはどうしますか？",
-        chips: [
-          "強力なパスワードを生成して",
-          "自分で入力する",
-          "後でダッシュボードから設定する",
-        ],
+        chips: ["強力なパスワードを生成して", "自分で入力する", "後でダッシュボードから設定する"],
         progress: [
           "認証情報を生成",
           "サーバーにプロジェクトを作成",
@@ -1437,7 +1431,8 @@ export const dictionaries = {
       },
       cta: {
         title: "次は、あなたの番です。",
-        description: "プロンプトをコピーしてZeabur Agentを開けば、数分でダッシュボードが手に入ります。",
+        description:
+          "プロンプトをコピーしてZeabur Agentを開けば、数分でダッシュボードが手に入ります。",
         primary: "Zeabur Agentを開く",
         secondary: "他のデプロイ方法へ戻る",
         others: "他のプラットフォーム",
@@ -1466,8 +1461,7 @@ export const dictionaries = {
         installLabel: "STEP 1 · インストール用プロンプト",
         installText: "install railway agent tools using railway.com",
         deployLabel: "STEP 2 · デプロイ用プロンプト",
-        deployText:
-          `このThreads Analyticsテンプレート（${siteConfig.railwayTemplate}）をデプロイしてください。デプロイ中にパスワードを私に確認してください。`,
+        deployText: `このThreads Analyticsテンプレート（${railwayTemplate}）をデプロイしてください。デプロイ中にパスワードを私に確認してください。`,
         copy: "コピー",
         copied: "コピー済み",
         hint: "2つのプロンプトを順番に自分のコーディングエージェントへ貼り付けてください。ターミナルを実行できるエージェントなら何でも使えます。",
