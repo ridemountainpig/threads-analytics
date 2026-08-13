@@ -64,6 +64,7 @@ import ChartCard from "@/components/dashboard/chart-card";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsTabs from "@/components/dashboard/analytics-tabs";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
+import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
 import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
 import { ExternalLink } from "lucide-react";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
@@ -93,6 +94,16 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
       <NoAccountNotice
         message={t.common.noAccount}
         help={t.common.noAccountHelp}
+        settingsLabel={t.common.settings}
+      />
+    );
+  }
+
+  if (account.expiresAt < new Date()) {
+    return (
+      <TokenExpiredNotice
+        message={t.common.tokenExpired}
+        help={t.common.tokenExpiredHelp}
         settingsLabel={t.common.settings}
       />
     );

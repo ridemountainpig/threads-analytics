@@ -10,6 +10,7 @@ import TimeRangePicker from "@/components/dashboard/time-range-picker";
 import SyncButton from "@/components/dashboard/sync-button";
 import PostList from "./post-list";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
+import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
 import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
@@ -64,6 +65,16 @@ export default async function PostsPage({ searchParams }: PageProps) {
       <NoAccountNotice
         message={t.common.noAccount}
         help={t.common.noAccountHelp}
+        settingsLabel={t.common.settings}
+      />
+    );
+  }
+
+  if (account.expiresAt < new Date()) {
+    return (
+      <TokenExpiredNotice
+        message={t.common.tokenExpired}
+        help={t.common.tokenExpiredHelp}
         settingsLabel={t.common.settings}
       />
     );

@@ -25,6 +25,8 @@ export const dictionaries = {
       appName: "Threads Analytics",
       noAccount: "No account connected.",
       noAccountHelp: "Go to {settings} to add your account.",
+      tokenExpired: "Access token has expired.",
+      tokenExpiredHelp: "Go to {settings} to reconnect your Threads account.",
       notSynced: "No data synced yet.",
       notSyncedHelp:
         "Pull your posts and insights from Threads to get started. The first sync may take a few minutes.",
@@ -383,6 +385,8 @@ export const dictionaries = {
       appName: "Threads Analytics",
       noAccount: "尚未連接帳號。",
       noAccountHelp: "前往{settings}新增帳號。",
+      tokenExpired: "Access token 已過期。",
+      tokenExpiredHelp: "前往{settings}重新連接你的 Threads 帳號。",
       notSynced: "尚未同步資料。",
       notSyncedHelp: "先從 Threads 同步貼文與洞察資料，即可開始使用。首次同步可能需要幾分鐘。",
       syncNow: "立即同步",
@@ -730,6 +734,8 @@ export const dictionaries = {
       appName: "Threads Analytics",
       noAccount: "アカウントが接続されていません。",
       noAccountHelp: "{settings}からアカウントを追加してください。",
+      tokenExpired: "アクセストークンの有効期限が切れました。",
+      tokenExpiredHelp: "{settings}から Threads アカウントを再接続してください。",
       notSynced: "まだデータが同期されていません。",
       notSyncedHelp:
         "Threads から投稿とインサイトを同期して始めましょう。初回の同期には数分かかる場合があります。",
