@@ -25,4 +25,14 @@ function Railway(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export { Railway, Zeabur };
+// currentColor so the triangle follows its context: dark ink in the light
+// deploy cards, white inside the dark agent-demo chat.
+function Vercel(props: SVGProps<SVGSVGElement>) {
+  return (
+    <svg {...props} viewBox="0 0 76 65">
+      <path d="M37.59.25l36.95 64H.64l36.95-64z" fill="currentColor" />
+    </svg>
+  );
+}
+
+export { Railway, Vercel, Zeabur };

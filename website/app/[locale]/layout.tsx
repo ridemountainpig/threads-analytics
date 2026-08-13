@@ -1,6 +1,7 @@
 import type { Metadata, Viewport } from "next";
 import { notFound } from "next/navigation";
 import { getDictionary, isLocale, locales } from "@/lib/i18n";
+import { localizedPageMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
 import "@/app/globals.css";
 
@@ -26,46 +27,19 @@ export async function generateMetadata({
   if (!isLocale(locale)) notFound();
   const copy = getDictionary(locale);
 
-  // Pre-rendered by scripts/og/generate-og-images.tsx (`pnpm og:generate`)
-  // instead of an opengraph-image route: request-time rendering depends on the
-  // host's sharp build, which broke SVG rasterization in production.
-  const ogImage = {
-    url: `/og/${locale}.png`,
-    width: 1200,
-    height: 630,
-    alt: "Threads Analytics",
-    type: "image/png",
-  };
-
+  // OG images are pre-rendered by scripts/og/generate-og-images.tsx
+  // (`pnpm og:generate`) instead of an opengraph-image route: request-time
+  // rendering depends on the host's sharp build, which broke SVG
+  // rasterization in production.
   return {
     metadataBase: new URL(siteConfig.url),
-    title: copy.metadata.title,
-    description: copy.metadata.description,
     applicationName: siteConfig.name,
-    alternates: {
-      canonical: `/${locale}`,
-      languages: {
-        en: "/en",
-        "zh-TW": "/zh-TW",
-        ja: "/ja",
-        "x-default": "/en",
-      },
-    },
-    openGraph: {
-      type: "website",
-      siteName: siteConfig.name,
-      locale: locale === "zh-TW" ? "zh_TW" : locale === "ja" ? "ja_JP" : "en_US",
-      url: `/${locale}`,
+    ...localizedPageMetadata({
+      locale,
+      path: "",
       title: copy.metadata.title,
       description: copy.metadata.description,
-      images: [ogImage],
-    },
-    twitter: {
-      card: "summary_large_image",
-      title: copy.metadata.title,
-      description: copy.metadata.description,
-      images: [ogImage],
-    },
+    }),
   };
 }
 

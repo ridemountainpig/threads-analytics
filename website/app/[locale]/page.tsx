@@ -1,17 +1,20 @@
-import Image from "next/image";
 import { notFound } from "next/navigation";
+import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { AnalyticsDemo } from "@/components/analytics-demo";
 import { ClosingCurves } from "@/components/closing-curves";
-import { Railway, Zeabur } from "@/components/deployment-logos";
+import { DeployTabsCard } from "@/components/deploy-tabs-card";
+import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
 import { FeatureGrid } from "@/components/feature-grid";
 import { HeroCurve } from "@/components/hero-curve";
 import { HeroVisual } from "@/components/hero-visual";
 import { OriginPostVisual } from "@/components/origin-post-visual";
 import { ProductPreview } from "@/components/product-preview";
+import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { Threads } from "@/components/threads-logo";
+import { AnchorScrollController } from "@/components/anchor-scroll-controller";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
 import { getDictionary, isLocale, type Locale } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
@@ -59,6 +62,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         }}
       />
       <ViewportRevealController />
+      <AnchorScrollController />
       <SiteHeader locale={locale} copy={copy.nav} />
       <main>
         <section className="hero-section" id="product">
@@ -202,34 +206,45 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               />
             </div>
             <div className="deploy-grid" data-reveal="stagger" data-reveal-delay="1">
-              <a href={siteConfig.railway} target="_blank" rel="noreferrer" className="deploy-card">
-                <span className="deploy-card-topline">
-                  <span className="deploy-eyebrow">{copy.deploy.railway.eyebrow}</span>
+              <DeployTabsCard
+                copy={copy.deploy.railway}
+                templateHref={siteConfig.railway}
+                walkthroughHref={`/${locale}/deploy/railway-agent`}
+                brandMark={
                   <span className="deploy-brand-mark deploy-brand-mark-railway" aria-hidden="true">
                     <Railway focusable="false" />
                   </span>
-                </span>
-                <strong>{copy.deploy.railway.title}</strong>
-                <p>{copy.deploy.railway.body}</p>
-                <span className="deploy-action">
-                  {copy.deploy.railway.action}
-                  <ArrowUpRight aria-hidden="true" strokeWidth={2} />
-                </span>
-              </a>
-              <a href={siteConfig.zeabur} target="_blank" rel="noreferrer" className="deploy-card">
-                <span className="deploy-card-topline">
-                  <span className="deploy-eyebrow">{copy.deploy.zeabur.eyebrow}</span>
+                }
+              />
+              <DeployTabsCard
+                copy={copy.deploy.zeabur}
+                templateHref={siteConfig.zeabur}
+                walkthroughHref={`/${locale}/deploy/zeabur-agent`}
+                brandMark={
                   <span className="deploy-brand-mark deploy-brand-mark-zeabur" aria-hidden="true">
                     <Zeabur focusable="false" />
                   </span>
+                }
+              />
+              <Link
+                href={`/${locale}/deploy/vercel-agent`}
+                className="deploy-card deploy-card-vercel"
+              >
+                <span className="deploy-card-topline">
+                  <span className="deploy-eyebrow">{copy.deploy.vercel.eyebrow}</span>
+                  <span className="deploy-brand-mark deploy-brand-mark-vercel" aria-hidden="true">
+                    <Vercel focusable="false" />
+                  </span>
                 </span>
-                <strong>{copy.deploy.zeabur.title}</strong>
-                <p>{copy.deploy.zeabur.body}</p>
-                <span className="deploy-action">
-                  {copy.deploy.zeabur.action}
-                  <ArrowUpRight aria-hidden="true" strokeWidth={2} />
+                <strong>{copy.deploy.vercel.title}</strong>
+                <p>{copy.deploy.vercel.body}</p>
+                <span className="deploy-tab-action">
+                  <span className="deploy-tab-action-text">{copy.deploy.vercel.action}</span>
+                  <span className="deploy-tab-action-chip" aria-hidden="true">
+                    <ArrowUpRight className="deploy-tab-action-arrow" strokeWidth={2} />
+                  </span>
                 </span>
-              </a>
+              </Link>
               <a
                 href={siteConfig.package}
                 target="_blank"
@@ -288,47 +303,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
         </section>
       </main>
 
-      <footer className="site-footer">
-        <div className="site-shell footer-grid render-deferred" data-reveal="stagger">
-          <div className="footer-brand">
-            <div className="brand-link">
-              <Image
-                src="/media/threads-analytics-icon.png"
-                alt=""
-                width={28}
-                height={28}
-                className="brand-icon"
-              />
-              <span>Threads Analytics</span>
-            </div>
-            <p>{copy.footer.description}</p>
-          </div>
-          <div>
-            <strong>{copy.footer.product}</strong>
-            <a href="#demo">{copy.footer.liveDemo}</a>
-            <a href="#features">{copy.footer.featureOverview}</a>
-            <a href="#deploy">{copy.footer.deployment}</a>
-          </div>
-          <div>
-            <strong>{copy.footer.resources}</strong>
-            <a href={siteConfig.github} target="_blank" rel="noreferrer">
-              {copy.footer.source}
-            </a>
-            <a href={`${siteConfig.github}#readme`} target="_blank" rel="noreferrer">
-              {copy.footer.readme}
-            </a>
-          </div>
-        </div>
-        <div className="site-shell footer-bottom" data-reveal="fade" data-reveal-delay="1">
-          <span>© {new Date().getFullYear()} Threads Analytics</span>
-          <span className="footer-credit">
-            Built by{" "}
-            <a href={siteConfig.creator} target="_blank" rel="noreferrer">
-              Yen Cheng
-            </a>
-          </span>
-        </div>
-      </footer>
+      <SiteFooter locale={locale} copy={copy.footer} />
     </>
   );
 }

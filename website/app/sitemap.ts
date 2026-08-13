@@ -3,20 +3,21 @@ import { locales } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const languageAlternates = {
-    en: `${siteConfig.url}/en`,
-    "zh-TW": `${siteConfig.url}/zh-TW`,
-    ja: `${siteConfig.url}/ja`,
-    "x-default": `${siteConfig.url}/en`,
-  };
-
+  const routes = ["", "/deploy/railway-agent", "/deploy/zeabur-agent", "/deploy/vercel-agent"];
   const lastModified = new Date();
 
-  return locales.map((locale) => ({
-    url: `${siteConfig.url}/${locale}`,
-    lastModified,
-    alternates: {
-      languages: languageAlternates,
-    },
-  }));
+  return routes.flatMap((route) =>
+    locales.map((locale) => ({
+      url: `${siteConfig.url}/${locale}${route}`,
+      lastModified,
+      alternates: {
+        languages: {
+          en: `${siteConfig.url}/en${route}`,
+          "zh-TW": `${siteConfig.url}/zh-TW${route}`,
+          ja: `${siteConfig.url}/ja${route}`,
+          "x-default": `${siteConfig.url}/en${route}`,
+        },
+      },
+    })),
+  );
 }

@@ -1,3 +1,6 @@
+import { vercelAgentPrompt } from "./agent-prompts";
+import { siteConfig } from "./site";
+
 export const locales = ["en", "zh-TW", "ja"] as const;
 
 export type Locale = (typeof locales)[number];
@@ -213,13 +216,25 @@ export const dictionaries = {
         eyebrow: "ONE-CLICK",
         title: "Deploy on Railway",
         body: "App, PostgreSQL, and required environment variables in one guided flow.",
+        templateTab: "One-click",
+        agentTab: "For your agent",
         action: "Open Railway template",
+        agentAction: "Deploy with your agent",
       },
       zeabur: {
         eyebrow: "ONE-CLICK",
         title: "Deploy on Zeabur",
         body: "Start the service and database together, then connect your Threads token.",
+        templateTab: "One-click",
+        agentTab: "For your agent",
         action: "Open Zeabur template",
+        agentAction: "Deploy with Zeabur Agent",
+      },
+      vercel: {
+        eyebrow: "AGENT DEPLOY",
+        title: "Deploy on Vercel",
+        body: "Your coding agent drives Vercel MCP end to end: project, Neon Postgres, sensitive variables, and a verified production deploy.",
+        action: "Deploy with your agent",
       },
       docker: {
         eyebrow: "BRING YOUR OWN SERVER",
@@ -227,6 +242,328 @@ export const dictionaries = {
         body: "Run the multi-architecture image anywhere with a PostgreSQL connection.",
         action: "View GitHub package",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
+      },
+    },
+    zeaburAgentDeploy: {
+      metadata: {
+        title: "Deploy with Zeabur Agent — one prompt, zero setup | Threads Analytics",
+        description:
+          "Copy one prompt and let Zeabur's AI agent deploy Threads Analytics for you: PostgreSQL, encryption keys, app password, and a public URL — no manual configuration.",
+      },
+      hero: {
+        kicker: "DEPLOY / ZEABUR AGENT",
+        lineOne: "One prompt.",
+        lineTwo: "The agent does the rest.",
+        description:
+          "Zeabur Agent reads the template, provisions PostgreSQL, generates the encryption key, asks for your dashboard password, and hands back a live URL. You only copy a prompt.",
+        copyCta: "Copy the agent prompt",
+        copiedCta: "Prompt copied",
+        openCta: "Open Zeabur Agent",
+        note: "About 2 minutes · No YAML, no environment variables",
+      },
+      prompt: {
+        label: "AGENT PROMPT",
+        hint: "Send copies the prompt and opens zeabur.com — paste it into the agent box there.",
+        text: `Help me deploy this Threads Analytics template (${siteConfig.zeabur}) and ask me for the password during deployment.`,
+        copy: "Copy",
+        copied: "Copied",
+        send: "Copy the prompt and open Zeabur Agent",
+      },
+      steps: {
+        kicker: "01 / THREE STEPS",
+        title: "From prompt to dashboard in three steps.",
+        description:
+          "No YAML, no environment variables, no database setup. The agent handles configuration; you make one decision — your password.",
+        items: [
+          {
+            index: "01",
+            title: "Copy the prompt",
+            body: "Use the button above — the prompt already includes the template link and tells the agent to ask for your password.",
+          },
+          {
+            index: "02",
+            title: "Paste it into Zeabur Agent",
+            body: "Open zeabur.com, sign in, and paste the prompt into the “Ask Zeabur Agent to deploy…” box at the bottom of the page.",
+          },
+          {
+            index: "03",
+            title: "Pick a password, get your URL",
+            body: "The agent generates credentials, deploys PostgreSQL and the dashboard, and replies with your live URL and login password.",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / WATCH IT RUN",
+        title: "What the conversation actually looks like.",
+        description:
+          "A replay of a real Zeabur Agent deployment — the same messages, choices, and result you'll see in your own chat.",
+        windowTitle: "ZEABUR AGENT",
+        status: "REPLAY",
+        working: "Working…",
+        workedForA: "Worked for 38s",
+        workedForB: "Worked for 42s",
+        lineOne: "I'll look up this template first to see what it deploys and what settings it needs.",
+        lineTwo:
+          "You're logged in with one server available: Tokyo, Japan. I'll deploy there.",
+        setupTitle: "Here's what the template sets up:",
+        setupItems: [
+          "PostgreSQL 16 with a persistent volume for your analytics data",
+          "threads-analytics dashboard, exposed on a public domain",
+        ],
+        passwordQuestion:
+          "One thing I need from you: what password do you want for signing into the dashboard?",
+        chips: [
+          "Generate a strong password for me",
+          "I'll type my own password",
+          "I'll set it myself in the dashboard later",
+        ],
+        progress: [
+          "Generating credentials",
+          "Creating the project on your server",
+          "Deploying the template",
+          "Verifying both services",
+        ],
+        doneTitle: "Your Threads Analytics dashboard is deployed.",
+        urlLabel: "URL",
+        passwordLabel: "Your login password",
+        passwordNote:
+          "Save it to your password manager — you can change it later in the APP_PASSWORD variable.",
+        replay: "Replay deployment",
+        disclaimer: "Simulated replay · your run will look the same",
+      },
+      cta: {
+        title: "Ready to run it yourself?",
+        description: "Copy the prompt, open Zeabur Agent, and your dashboard is minutes away.",
+        primary: "Open Zeabur Agent",
+        secondary: "Back to all deploy options",
+        others: "OTHER PLATFORMS",
+      },
+    },
+    railwayAgentDeploy: {
+      metadata: {
+        title: "Deploy with your coding agent on Railway | Threads Analytics",
+        description:
+          "Two prompts and your own coding agent — Claude Code, Codex, or any agent — deploys Threads Analytics on Railway: PostgreSQL, migrations, app password, and a public URL.",
+      },
+      hero: {
+        kicker: "DEPLOY / RAILWAY AGENT",
+        lineOne: "Two prompts.",
+        lineTwo: "Your own agent does the rest.",
+        description:
+          "First prompt installs Railway's agent tools into the coding agent you already use — Claude Code, Codex, Cursor. Second prompt hands it the template: it provisions PostgreSQL, runs migrations, asks for your password, and generates a public URL.",
+        copyCta: "Copy the install prompt",
+        copiedCta: "Prompt copied",
+        openCta: "View Railway for Agents",
+        note: "About 5 minutes · Two prompts, no YAML",
+        worksWith: "WORKS WITH",
+        moreAgents: "+ more",
+      },
+      prompts: {
+        installLabel: "STEP 1 · INSTALL PROMPT",
+        installText: "install railway agent tools using railway.com",
+        deployLabel: "STEP 2 · DEPLOY PROMPT",
+        deployText:
+          `Help me deploy this Threads Analytics template (${siteConfig.railwayTemplate}) and ask me for the password during deployment.`,
+        copy: "Copy",
+        copied: "Copied",
+        hint: "Paste each prompt into your own coding agent — any agent with terminal access works.",
+      },
+      steps: {
+        kicker: "01 / THREE STEPS",
+        title: "From two prompts to a live dashboard.",
+        description:
+          "No YAML, no environment variables, no dashboard clicking. Your agent drives the Railway CLI; you make one decision — your password.",
+        items: [
+          {
+            index: "01",
+            title: "Install the Railway tools",
+            body: "Send the install prompt to your agent. It sets up the Railway CLI, agent skill, and MCP server — one time, for every future deploy.",
+          },
+          {
+            index: "02",
+            title: "Send the deploy prompt",
+            body: "The prompt already includes the template link and tells the agent to ask for your dashboard password during the deployment.",
+          },
+          {
+            index: "03",
+            title: "Pick a password, get your URL",
+            body: "The agent deploys PostgreSQL and the dashboard, runs migrations, generates a public domain, and replies with your live URL.",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / WATCH IT RUN",
+        title: "What the conversation actually looks like.",
+        description:
+          "A replay of a real deployment driven from Codex — the same flow works in Claude Code or any agent with the Railway tools installed.",
+        windowTitle: "YOUR CODING AGENT",
+        status: "REPLAY",
+        working: "Working…",
+        workedForA: "Worked for 42s",
+        workedForB: "Worked for 2m 34s",
+        workedForC: "Worked for 2m 2s",
+        workedForD: "Worked for 1m 5s",
+        toolsTitle: "Railway agent tools are installed and healthy:",
+        toolsItems: [
+          "Railway CLI and agent skill, ready for deployments",
+          "Railway MCP server configured for this agent",
+        ],
+        passwordQuestion:
+          "Railway is waiting for the template's required APP_PASSWORD. What password would you like for signing into the dashboard?",
+        chips: [
+          "Help me set a strong password",
+          "I'll type my own password",
+          "I'll set it myself later",
+        ],
+        progress: [
+          "Generating credentials",
+          "Deploying Threads Analytics + PostgreSQL",
+          "Running database migrations",
+        ],
+        deployDone:
+          "Deployment completed — both services report SUCCESS. The template has no public domain yet, so the app currently runs only inside Railway's network.",
+        domainPrompt: "help me generate the domain",
+        doneTitle: "Your Threads Analytics dashboard is live.",
+        urlLabel: "URL",
+        passwordLabel: "Your login password",
+        passwordNote:
+          "Save it to your password manager — you can change it later in the APP_PASSWORD variable.",
+        replay: "Replay deployment",
+        disclaimer: "Simulated replay · your run will look the same",
+      },
+      cta: {
+        title: "Ready to hand it to your agent?",
+        description:
+          "Copy the install prompt, open your coding agent, and your dashboard is two prompts away.",
+        primary: "View Railway for Agents",
+        secondary: "Back to all deploy options",
+        others: "OTHER PLATFORMS",
+      },
+    },
+    vercelAgentDeploy: {
+      metadata: {
+        title: "Deploy with your coding agent on Vercel | Threads Analytics",
+        description:
+          "One prompt and your coding agent — Claude Code, Codex, or any agent with Vercel MCP — deploys Threads Analytics on Vercel: Neon Postgres, sensitive variables, daily cron, and a verified production URL.",
+      },
+      hero: {
+        kicker: "DEPLOY / VERCEL AGENT",
+        lineOne: "One prompt.",
+        lineTwo: "Vercel MCP does the rest.",
+        description:
+          "The prompt is the whole runbook: your agent drives Vercel MCP for every deployment step, opens the dashboard only for Neon and Sensitive variables, pauses for you to sign in, and verifies the production deploy before reporting back.",
+        copyCta: "Copy the agent prompt",
+        copiedCta: "Prompt copied",
+        openCta: "View Vercel MCP docs",
+        note: "About 10 minutes · One prompt, guardrails included",
+        worksWith: "WORKS WITH",
+        moreAgents: "+ more",
+      },
+      prompt: {
+        label: "AGENT PROMPT",
+        text: vercelAgentPrompt,
+        copy: "Copy",
+        copied: "Copied",
+        hint: "Paste it into any coding agent with Vercel MCP connected and browser control — it pauses and waits for you to sign in to Vercel.",
+        more: "Show full prompt",
+        less: "Collapse prompt",
+      },
+      steps: {
+        kicker: "01 / THREE STEPS",
+        title: "One prompt, one sign-in, one password.",
+        description:
+          "The prompt encodes the entire deployment spec — tool boundaries, Neon settings, secret handling, verification. Your agent follows it; you appear exactly twice.",
+        items: [
+          {
+            index: "01",
+            title: "Copy the prompt",
+            body: "It pins every detail: the prebuilt OCI image, the daily cron schedule, Neon in the matching region, and which secret values may never be printed.",
+          },
+          {
+            index: "02",
+            title: "Sign in when the browser opens",
+            body: "Vercel MCP handles the project and deployments. For Neon storage and Sensitive variables the agent opens the dashboard and waits for your sign-in.",
+          },
+          {
+            index: "03",
+            title: "Set a password, get your URL",
+            body: "Once the database is connected, the agent asks for APP_PASSWORD, creates a fresh Production deployment, and verifies migrations and the login page.",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / WATCH IT RUN",
+        title: "What the conversation actually looks like.",
+        description:
+          "A replay of a real run in Claude Code — Vercel MCP for every deployment step, the browser only for Neon and Sensitive variables, and a pause before any dashboard change.",
+        windowTitle: "YOUR CODING AGENT",
+        status: "REPLAY",
+        working: "Working…",
+        workedForA: "Worked for 2m 27s",
+        workedForB: "Worked for 4m 9s",
+        workedForC: "Worked for 4m 15s",
+        promptMore: "Show more",
+        planLine:
+          "I'll use Vercel MCP for every supported Vercel operation and the browser only for the dashboard-only steps. First I'll create the two deployment files, then bootstrap the project.",
+        approvalTitle: "Tool permission request",
+        approvalTool: "vercel-mcp · deploy_to_vercel",
+        approvalDesc:
+          "Bootstrap project threads-analytics with Dockerfile.vercel and the daily cron — Preview, no secrets.",
+        approvalAllow: "Allow",
+        approvalDeny: "Deny",
+        toolBadge: "VERCEL MCP",
+        toolLine: "Project threads-analytics created — Preview bootstrap, region iad1",
+        pauseLine:
+          "Neon and Sensitive variables aren't exposed by Vercel MCP, so I've opened the Vercel dashboard. Please sign in if needed, then reply that you're ready — I won't change anything before that.",
+        signedIn: "signed in and ready",
+        browserLabel: "BROWSER",
+        browserUrl: "vercel.com/storage",
+        browserTitle: "Browse Storage",
+        browserProvider: "Neon · Serverless Postgres",
+        browserSpecs: [
+          { label: "Plan", value: "Free" },
+          { label: "Region", value: "iad1 · Washington, D.C." },
+          { label: "Environments", value: "Production · Preview" },
+          { label: "Variable prefix", value: "DATABASE" },
+        ],
+        browserCta: "Continue",
+        setupTitle: "Dashboard setup is complete:",
+        setupItems: [
+          "Neon connected — DATABASE_URL on Production and Preview, value never displayed",
+          "TOKEN_ENCRYPTION_KEY and CRON_SECRET stored as Sensitive variables",
+        ],
+        passwordQuestion:
+          "Please provide your chosen APP_PASSWORD. I'll store it as a Sensitive variable for Production and Preview without repeating or exposing it.",
+        chips: [
+          "Help me generate a strong password",
+          "I'll type my own password",
+          "I'll set it myself later",
+        ],
+        progress: [
+          "Storing APP_PASSWORD as a Sensitive variable",
+          "Verifying all four variables on Production and Preview",
+          "Creating a fresh Production deployment via Vercel MCP",
+          "Prisma migrations applied — deployment READY",
+          "Login page returns HTTP 200 · no runtime errors",
+        ],
+        doneTitle: "Deployment completed and verified.",
+        urlLabel: "Production URL",
+        metaLabel: "Final state",
+        metaItems: ["READY", "Hobby plan", "Region iad1", "Cron 0 0 * * *"],
+        passwordLabel: "APP_PASSWORD",
+        passwordValue: "Copied to your clipboard",
+        passwordNote:
+          "Save it to your password manager, then sign in, add your Threads token, and run the first sync.",
+        replay: "Replay deployment",
+        disclaimer: "Simulated replay · condensed from a real run",
+      },
+      cta: {
+        title: "Ready to hand it to your agent?",
+        description:
+          "Copy the prompt, make sure Vercel MCP is connected, and your dashboard deploys itself.",
+        primary: "View Vercel MCP docs",
+        secondary: "Back to all deploy options",
+        others: "OTHER PLATFORMS",
       },
     },
     finalCta: {
@@ -439,25 +776,332 @@ export const dictionaries = {
       kicker: "05 / 掌握自己的環境",
       title: "幾分鐘，部署好你的專屬儀表板。",
       description:
-        "使用一鍵模板，或自己執行 Container。官方網站完全獨立，可部署的 image 只包含分析產品。",
+        "使用一鍵模板，或自己執行 Container。官方網站完全獨立，可部署的 Image 只包含分析產品。",
       railway: {
         eyebrow: "一鍵部署",
         title: "部署到 Railway",
         body: "在同一個引導流程裡完成 App、PostgreSQL 與必要環境變數。",
+        templateTab: "一鍵部署",
+        agentTab: "交給 Agent",
         action: "開啟 Railway 模板",
+        agentAction: "用你的 Agent 部署",
       },
       zeabur: {
         eyebrow: "一鍵部署",
         title: "部署到 Zeabur",
         body: "一起啟動服務和資料庫，接著連接你的 Threads Token。",
+        templateTab: "一鍵部署",
+        agentTab: "交給 Agent",
         action: "開啟 Zeabur 模板",
+        agentAction: "用 Zeabur Agent 部署",
+      },
+      vercel: {
+        eyebrow: "AGENT 部署",
+        title: "部署到 Vercel",
+        body: "讓你的 Coding Agent 全程操作 Vercel MCP：建立專案、Neon Postgres、機密環境變數，一路驗證到正式部署。",
+        action: "用你的 Agent 部署",
       },
       docker: {
         eyebrow: "使用自己的伺服器",
         title: "Docker / VPS",
-        body: "在任何地方執行多架構 image，只需要準備 PostgreSQL 連線。",
+        body: "在任何地方執行多架構 Image，只需要準備 PostgreSQL 連線。",
         action: "查看 GitHub Package",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
+      },
+    },
+    zeaburAgentDeploy: {
+      metadata: {
+        title: "用 Zeabur Agent 一句話完成部署 | Threads Analytics",
+        description:
+          "複製一段 Prompt，讓 Zeabur AI Agent 自動部署 Threads Analytics：PostgreSQL、加密金鑰、登入密碼與公開網址，全程不用手動設定。",
+      },
+      hero: {
+        kicker: "部署 / ZEABUR AGENT",
+        lineOne: "一段 Prompt，",
+        // ⁠ (word joiner) 防止 text-wrap: balance 從「交給」中間斷行。
+        lineTwo: "剩下的交⁠給 Agent。",
+        description:
+          "Zeabur Agent 會讀取模板、建立 PostgreSQL、產生加密金鑰、詢問你的儀表板密碼，最後回傳一個可以直接登入的網址。你要做的只有複製貼上。",
+        copyCta: "複製 Agent Prompt",
+        copiedCta: "已複製 Prompt",
+        openCta: "開啟 Zeabur Agent",
+        note: "大約 2 分鐘 · 不用 YAML、不用環境變數",
+      },
+      prompt: {
+        label: "AGENT PROMPT",
+        hint: "按送出會複製 Prompt 並開啟 zeabur.com，貼進頁面上的 Agent 輸入框即可。",
+        text: `幫我部署這個 Threads Analytics 模板（${siteConfig.zeabur}），並在部署過程中詢問我要設定的密碼。`,
+        copy: "複製",
+        copied: "已複製",
+        send: "複製 Prompt 並開啟 Zeabur Agent",
+      },
+      steps: {
+        kicker: "01 / 三個步驟",
+        title: "從 Prompt 到儀⁠表⁠板，只要三步。",
+        description:
+          "沒有 YAML、沒有環境變數、不用自己建資料庫。設定交給 Agent，你只需要決定一件事：登入密碼。",
+        items: [
+          {
+            index: "01",
+            title: "複製 Prompt",
+            body: "用上面的按鈕複製。Prompt 已包含模板連結，也會提醒 Agent 在部署時跟你確認密碼。",
+          },
+          {
+            index: "02",
+            title: "貼給 Zeabur Agent",
+            body: "打開 zeabur.com 並登入，把 Prompt 貼進頁面下方的「Ask Zeabur Agent to deploy…」輸入框送出。",
+          },
+          {
+            index: "03",
+            title: "選好密碼，拿到網址",
+            body: "Agent 會產生憑證、部署 PostgreSQL 和儀表板，最後回覆你的網址與登入密碼。",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / 實際看一次",
+        title: "整段對話，長這個樣子。",
+        description:
+          "重播一次真實的 Zeabur Agent 部署過程：你會看到的訊息、選項和結果，和自己操作時一模一樣。",
+        windowTitle: "ZEABUR AGENT",
+        status: "REPLAY",
+        working: "執行中…",
+        workedForA: "執行了 38 秒",
+        workedForB: "執行了 42 秒",
+        lineOne: "我先查看這個模板，確認它會部署什麼、需要哪些設定。",
+        lineTwo: "你已登入，有一台可用的伺服器：東京（日本）。我會部署在這裡。",
+        setupTitle: "這個模板會建立：",
+        setupItems: [
+          "PostgreSQL 16，附持久化磁碟保存你的分析資料",
+          "threads-analytics 儀表板，公開網域可直接存取",
+        ],
+        passwordQuestion: "需要你決定一件事：你想用什麼密碼登入儀表板？",
+        chips: ["幫我產生一組強密碼", "我自己輸入密碼", "之後再到儀表板設定"],
+        progress: ["產生憑證", "在你的伺服器建立專案", "部署模板", "確認兩個服務都啟動"],
+        doneTitle: "你的 Threads Analytics 儀表板部署完成。",
+        urlLabel: "網址",
+        passwordLabel: "你的登入密碼",
+        passwordNote: "請馬上存進密碼管理工具——之後也可以在 APP_PASSWORD 變數修改。",
+        replay: "重播部署過程",
+        disclaimer: "模擬重播 · 實際流程相同",
+      },
+      cta: {
+        title: "換你部署一次了。",
+        description: "複製 Prompt、開啟 Zeabur Agent，幾分鐘後就有自己的儀表板。",
+        primary: "開啟 Zeabur Agent",
+        secondary: "回到所有部署方式",
+        others: "其他部署平台",
+      },
+    },
+    railwayAgentDeploy: {
+      metadata: {
+        title: "用你的 Coding Agent 部署到 Railway | Threads Analytics",
+        description:
+          "兩段 Prompt，讓你自己的 Coding Agent（Claude Code、Codex 等）在 Railway 部署 Threads Analytics：PostgreSQL、資料庫遷移、登入密碼與公開網址，一次完成。",
+      },
+      hero: {
+        kicker: "部署 / RAILWAY AGENT",
+        lineOne: "兩段 Prompt，",
+        lineTwo: "剩下的交⁠給你的 Agent。",
+        description:
+          "第一段 Prompt 把 Railway 的 Agent 工具裝進你平常用的 Coding Agent——Claude Code、Codex、Cursor 都可以。第二段把模板交給它：自動建立 PostgreSQL、執行遷移、詢問你的密碼，最後產生公開網址。",
+        copyCta: "複製安裝 Prompt",
+        copiedCta: "已複製 Prompt",
+        openCta: "查看 Railway for Agents",
+        note: "大約 5 分鐘 · 兩段 Prompt，不用 YAML",
+        worksWith: "支援的 AGENT",
+        moreAgents: "還有更多",
+      },
+      prompts: {
+        installLabel: "步驟 1 · 安裝 PROMPT",
+        installText: "install railway agent tools using railway.com",
+        deployLabel: "步驟 2 · 部署 PROMPT",
+        deployText:
+          `幫我部署這個 Threads Analytics 模板（${siteConfig.railwayTemplate}），並在部署過程中詢問我要設定的密碼。`,
+        copy: "複製",
+        copied: "已複製",
+        hint: "把兩段 Prompt 依序貼進你自己的 Coding Agent——只要能執行終端機指令的 Agent 都可以。",
+      },
+      steps: {
+        kicker: "01 / 三個步驟",
+        title: "從兩段 Prompt 到上線的儀⁠表⁠板。",
+        description:
+          "沒有 YAML、沒有環境變數、不用點部署後台。你的 Agent 會操作 Railway CLI，你只需要決定一件事：登入密碼。",
+        items: [
+          {
+            index: "01",
+            title: "安裝 Railway 工具",
+            body: "把安裝 Prompt 傳給你的 Agent，它會設定好 Railway CLI、Agent Skill 和 MCP Server——只要裝一次，之後每次部署都能用。",
+          },
+          {
+            index: "02",
+            title: "送出部署 Prompt",
+            body: "Prompt 已包含模板連結，也會提醒 Agent 在部署過程中跟你確認儀表板密碼。",
+          },
+          {
+            index: "03",
+            title: "選好密碼，拿到網址",
+            body: "Agent 會部署 PostgreSQL 和儀表板、執行資料庫遷移、產生公開網域，最後回覆你的網址。",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / 實際看一次",
+        title: "整段對話，長這個樣子。",
+        description:
+          "重播一次用 Codex 完成的真實部署——裝好 Railway 工具後，在 Claude Code 或任何 Agent 裡流程都一樣。",
+        windowTitle: "YOUR CODING AGENT",
+        status: "REPLAY",
+        working: "執行中…",
+        workedForA: "執行了 42 秒",
+        workedForB: "執行了 2 分 34 秒",
+        workedForC: "執行了 2 分 2 秒",
+        workedForD: "執行了 1 分 5 秒",
+        toolsTitle: "Railway Agent 工具已安裝完成：",
+        toolsItems: [
+          "Railway CLI 與 Agent Skill，隨時可以部署",
+          "Railway MCP Server 已設定給這個 Agent",
+        ],
+        passwordQuestion:
+          "Railway 需要模板必填的 APP_PASSWORD。你想用什麼密碼登入儀表板？",
+        chips: ["幫我設定一組強密碼", "我自己輸入密碼", "之後再自己設定"],
+        progress: ["產生憑證", "部署 Threads Analytics 與 PostgreSQL", "執行資料庫遷移"],
+        deployDone:
+          "部署完成——兩個服務都回報 SUCCESS。模板還沒有公開網域，目前只能在 Railway 內部網路存取。",
+        domainPrompt: "幫我產生公開網域",
+        doneTitle: "你的 Threads Analytics 儀表板上線了。",
+        urlLabel: "網址",
+        passwordLabel: "你的登入密碼",
+        passwordNote: "請馬上存進密碼管理工具——之後也可以在 APP_PASSWORD 變數修改。",
+        replay: "重播部署過程",
+        disclaimer: "模擬重播 · 實際流程相同",
+      },
+      cta: {
+        title: "換你的 Agent 上場了。",
+        description: "複製安裝 Prompt、打開你的 Coding Agent，兩段 Prompt 後就有自己的儀表板。",
+        primary: "查看 Railway for Agents",
+        secondary: "回到所有部署方式",
+        others: "其他部署平台",
+      },
+    },
+    vercelAgentDeploy: {
+      metadata: {
+        title: "用你的 Coding Agent 部署到 Vercel | Threads Analytics",
+        description:
+          "一段 Prompt，讓你的 Coding Agent（Claude Code、Codex 或任何接上 Vercel MCP 的 Agent）在 Vercel 部署 Threads Analytics：Neon Postgres、機密環境變數、每日 Cron，以及驗證完成的正式網址。",
+      },
+      hero: {
+        kicker: "部署 / VERCEL AGENT",
+        lineOne: "一段 Prompt，",
+        lineTwo: "剩下交⁠給 Vercel MCP。",
+        description:
+          "這段 Prompt 就是完整的部署手冊：Agent 用 Vercel MCP 執行所有部署操作，只在設定 Neon 與 Sensitive 變數時開啟儀表板並暫停等你登入，最後驗證完 Production 部署才回報結果。",
+        copyCta: "複製 Agent Prompt",
+        copiedCta: "已複製 Prompt",
+        openCta: "查看 Vercel MCP 文件",
+        note: "大約 10 分鐘 · 一段 Prompt，內建防護規則",
+        worksWith: "支援的 AGENT",
+        moreAgents: "還有更多",
+      },
+      prompt: {
+        label: "AGENT PROMPT",
+        text: vercelAgentPrompt,
+        copy: "複製",
+        copied: "已複製",
+        hint: "貼進任何接上 Vercel MCP、可操作瀏覽器的 Coding Agent——需要登入 Vercel 時它會暫停等你。",
+        more: "展開完整 Prompt",
+        less: "收合 Prompt",
+      },
+      steps: {
+        kicker: "01 / 三個步驟",
+        title: "一段 Prompt、一次登入、一組密碼。",
+        description:
+          "Prompt 已寫好整份部署規格——工具邊界、Neon 設定、機密處理與驗證流程。Agent 照著執行，你只需要出場兩次。",
+        items: [
+          {
+            index: "01",
+            title: "複製 Prompt",
+            body: "所有細節都固定好了：預先建置的 OCI Image、每日 Cron、對齊部署區域的 Neon，以及絕不顯示機密值的規則。",
+          },
+          {
+            index: "02",
+            title: "瀏覽器開啟時登入",
+            body: "專案與部署都由 Vercel MCP 處理。Neon 儲存體與 Sensitive 變數需要儀表板，Agent 會開啟瀏覽器並暫停等你登入。",
+          },
+          {
+            index: "03",
+            title: "設定密碼，拿到網址",
+            body: "資料庫連接完成後，Agent 會詢問 APP_PASSWORD，建立全新的 Production 部署，並驗證 Migration 與登入頁。",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / 實際看一次",
+        title: "整段對話，長這個樣子。",
+        description:
+          "重播一次在 Claude Code 完成的真實部署——部署操作全部走 Vercel MCP，瀏覽器只用來設定 Neon 與 Sensitive 變數，改動儀表板前都會先暫停等你確認。",
+        windowTitle: "YOUR CODING AGENT",
+        status: "REPLAY",
+        working: "執行中…",
+        workedForA: "執行了 2 分 27 秒",
+        workedForB: "執行了 4 分 9 秒",
+        workedForC: "執行了 4 分 15 秒",
+        promptMore: "顯示較多",
+        planLine:
+          "我會用 Vercel MCP 執行所有支援的 Vercel 操作，瀏覽器只用在儀表板限定的步驟。先建立兩個部署檔案，再初始化專案。",
+        approvalTitle: "工具權限請求",
+        approvalTool: "vercel-mcp · deploy_to_vercel",
+        approvalDesc:
+          "以 Dockerfile.vercel 與每日 Cron 初始化 threads-analytics 專案——Preview，不含任何機密。",
+        approvalAllow: "允許",
+        approvalDeny: "拒絕",
+        toolBadge: "VERCEL MCP",
+        toolLine: "已建立專案 threads-analytics——Preview 初始化，區域 iad1",
+        pauseLine:
+          "Neon 與 Sensitive 變數不在 Vercel MCP 的能力範圍，所以我開啟了 Vercel 儀表板。需要的話請先登入，完成後回覆我——在那之前我不會做任何變更。",
+        signedIn: "已登入，可以繼續",
+        browserLabel: "瀏覽器",
+        browserUrl: "vercel.com/storage",
+        browserTitle: "Browse Storage",
+        browserProvider: "Neon · Serverless Postgres",
+        browserSpecs: [
+          { label: "方案", value: "Free" },
+          { label: "區域", value: "iad1 · 華盛頓特區" },
+          { label: "環境", value: "Production · Preview" },
+          { label: "變數前綴", value: "DATABASE" },
+        ],
+        browserCta: "Continue",
+        setupTitle: "儀表板設定完成：",
+        setupItems: [
+          "Neon 已連接——DATABASE_URL 套用到 Production 與 Preview，全程不顯示值",
+          "TOKEN_ENCRYPTION_KEY 與 CRON_SECRET 已存成 Sensitive 變數",
+        ],
+        passwordQuestion:
+          "請提供你要的 APP_PASSWORD。我會把它存成 Production 與 Preview 的 Sensitive 變數，不會重複或顯示出來。",
+        chips: ["幫我產生一組強密碼", "我自己輸入密碼", "之後再自己設定"],
+        progress: [
+          "把 APP_PASSWORD 存成 Sensitive 變數",
+          "驗證 Production 與 Preview 的四個變數",
+          "透過 Vercel MCP 建立全新的 Production 部署",
+          "Prisma Migration 完成——部署狀態 READY",
+          "登入頁回應 HTTP 200 · 沒有執行期錯誤",
+        ],
+        doneTitle: "部署完成並通過驗證。",
+        urlLabel: "Production 網址",
+        metaLabel: "最終狀態",
+        metaItems: ["READY", "Hobby 方案", "區域 iad1", "Cron 0 0 * * *"],
+        passwordLabel: "APP_PASSWORD",
+        passwordValue: "已複製到你的剪貼簿",
+        passwordNote: "請馬上存進密碼管理工具，接著登入、加入你的 Threads Token，執行第一次同步。",
+        replay: "重播部署過程",
+        disclaimer: "模擬重播 · 濃縮自真實部署",
+      },
+      cta: {
+        title: "換你的 Agent 上場了。",
+        description: "複製 Prompt、確認 Vercel MCP 已連接，儀表板就會自己部署完成。",
+        primary: "查看 Vercel MCP 文件",
+        secondary: "回到所有部署方式",
+        others: "其他部署平台",
       },
     },
     finalCta: {
@@ -677,13 +1321,25 @@ export const dictionaries = {
         eyebrow: "ワンクリック",
         title: "Railwayへデプロイ",
         body: "App、PostgreSQL、必要な環境変数を一つのガイドで設定します。",
+        templateTab: "ワンクリック",
+        agentTab: "エージェント",
         action: "Railwayテンプレートを開く",
+        agentAction: "自分のエージェントでデプロイ",
       },
       zeabur: {
         eyebrow: "ワンクリック",
         title: "Zeaburへデプロイ",
         body: "サービスとデータベースを同時に起動し、Threads Tokenを接続します。",
+        templateTab: "ワンクリック",
+        agentTab: "エージェント",
         action: "Zeaburテンプレートを開く",
+        agentAction: "Zeabur Agentでデプロイ",
+      },
+      vercel: {
+        eyebrow: "エージェントデプロイ",
+        title: "Vercelへデプロイ",
+        body: "コーディングエージェントがVercel MCPを最後まで操作。プロジェクト、Neon Postgres、機密変数、検証済みの本番デプロイまで自動です。",
+        action: "自分のエージェントでデプロイ",
       },
       docker: {
         eyebrow: "自分のサーバーで",
@@ -691,6 +1347,319 @@ export const dictionaries = {
         body: "PostgreSQL接続を用意すれば、マルチアーキテクチャimageをどこでも実行できます。",
         action: "GitHub Packageを見る",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
+      },
+    },
+    zeaburAgentDeploy: {
+      metadata: {
+        title: "Zeabur Agentでプロンプト1つデプロイ | Threads Analytics",
+        description:
+          "プロンプトをコピーするだけで、Zeabur AIエージェントがThreads Analyticsをデプロイ。PostgreSQL、暗号化キー、パスワード、公開URLまで自動で設定します。",
+      },
+      hero: {
+        kicker: "デプロイ / ZEABUR AGENT",
+        lineOne: "プ⁠ロ⁠ン⁠プ⁠トは1つ。",
+        lineTwo: "残りはエ⁠ー⁠ジ⁠ェ⁠ン⁠トが。",
+        description:
+          "Zeabur Agentがテンプレートを読み取り、PostgreSQLを作成し、暗号化キーを生成し、ログインパスワードを確認して、最後に公開URLを返します。あなたはコピーして貼るだけです。",
+        copyCta: "エージェント用プロンプトをコピー",
+        copiedCta: "コピーしました",
+        openCta: "Zeabur Agentを開く",
+        note: "所要時間は約2分 · YAMLも環境変数も不要",
+      },
+      prompt: {
+        label: "AGENT PROMPT",
+        hint: "送信を押すとプロンプトをコピーしてzeabur.comを開きます。ページのエージェント入力欄に貼り付けてください。",
+        text: `このThreads Analyticsテンプレート（${siteConfig.zeabur}）をデプロイしてください。デプロイ中にパスワードを私に確認してください。`,
+        copy: "コピー",
+        copied: "コピー済み",
+        send: "プロンプトをコピーしてZeabur Agentを開く",
+      },
+      steps: {
+        kicker: "01 / 3ステップ",
+        title: "プ⁠ロ⁠ン⁠プ⁠トからダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ドま⁠で、3ス⁠テ⁠ッ⁠プ。",
+        description:
+          "YAMLも環境変数もデータベース設定も不要。設定はエージェントに任せて、あなたが決めるのはパスワードだけです。",
+        items: [
+          {
+            index: "01",
+            title: "プロンプトをコピー",
+            body: "上のボタンでコピーします。テンプレートのリンクと、パスワードを確認する指示があらかじめ含まれています。",
+          },
+          {
+            index: "02",
+            title: "Zeabur Agentに貼り付け",
+            body: "zeabur.comを開いてサインインし、ページ下部の「Ask Zeabur Agent to deploy…」入力欄にプロンプトを貼り付けます。",
+          },
+          {
+            index: "03",
+            title: "パスワードを決めてURLを受け取る",
+            body: "エージェントが認証情報を生成し、PostgreSQLとダッシュボードをデプロイして、URLとログインパスワードを返信します。",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / 実際の流れ",
+        title: "会話は、こんなふうに進みます。",
+        description:
+          "実際のZeabur Agentデプロイのリプレイです。あなたのチャットでも同じメッセージ、同じ選択肢、同じ結果が表示されます。",
+        windowTitle: "ZEABUR AGENT",
+        status: "REPLAY",
+        working: "実行中…",
+        workedForA: "38秒で完了",
+        workedForB: "42秒で完了",
+        lineOne: "まずこのテンプレートを確認し、何をデプロイし、どの設定が必要かを調べます。",
+        lineTwo: "ログイン済みで、利用可能なサーバーが1台あります：東京（日本）。ここにデプロイします。",
+        setupTitle: "このテンプレートが構築するもの：",
+        setupItems: [
+          "分析データを保存する永続ボリューム付きPostgreSQL 16",
+          "公開ドメインで使えるthreads-analyticsダッシュボード",
+        ],
+        passwordQuestion:
+          "1つだけ確認させてください。ダッシュボードのログインパスワードはどうしますか？",
+        chips: [
+          "強力なパスワードを生成して",
+          "自分で入力する",
+          "後でダッシュボードから設定する",
+        ],
+        progress: [
+          "認証情報を生成",
+          "サーバーにプロジェクトを作成",
+          "テンプレートをデプロイ",
+          "2つのサービスを確認",
+        ],
+        doneTitle: "Threads Analyticsダッシュボードのデプロイが完了しました。",
+        urlLabel: "URL",
+        passwordLabel: "ログインパスワード",
+        passwordNote:
+          "今すぐパスワードマネージャーに保存してください。後からAPP_PASSWORD変数で変更できます。",
+        replay: "デプロイをもう一度再生",
+        disclaimer: "シミュレーションによる再現 · 実際の流れと同じです",
+      },
+      cta: {
+        title: "次は、あなたの番です。",
+        description: "プロンプトをコピーしてZeabur Agentを開けば、数分でダッシュボードが手に入ります。",
+        primary: "Zeabur Agentを開く",
+        secondary: "他のデプロイ方法へ戻る",
+        others: "他のプラットフォーム",
+      },
+    },
+    railwayAgentDeploy: {
+      metadata: {
+        title: "自分のコーディングエージェントでRailwayへデプロイ | Threads Analytics",
+        description:
+          "2つのプロンプトで、Claude CodeやCodexなど自分のエージェントがThreads AnalyticsをRailwayへデプロイ。PostgreSQL、マイグレーション、パスワード、公開URLまで自動です。",
+      },
+      hero: {
+        kicker: "デプロイ / RAILWAY AGENT",
+        lineOne: "プ⁠ロ⁠ン⁠プ⁠トは2つ。",
+        lineTwo: "残りは自分のエ⁠ー⁠ジ⁠ェ⁠ン⁠トが。",
+        description:
+          "最初のプロンプトで、普段使っているコーディングエージェント（Claude Code、Codex、Cursorなど）にRailwayのエージェントツールをインストール。次のプロンプトでテンプレートを渡せば、PostgreSQLの作成、マイグレーション、パスワード確認、公開URLの発行まで自動で進みます。",
+        copyCta: "インストール用プロンプトをコピー",
+        copiedCta: "コピーしました",
+        openCta: "Railway for Agentsを見る",
+        note: "所要時間は約5分 · プロンプト2つ、YAML不要",
+        worksWith: "対応エージェント",
+        moreAgents: "ほか多数",
+      },
+      prompts: {
+        installLabel: "STEP 1 · インストール用プロンプト",
+        installText: "install railway agent tools using railway.com",
+        deployLabel: "STEP 2 · デプロイ用プロンプト",
+        deployText:
+          `このThreads Analyticsテンプレート（${siteConfig.railwayTemplate}）をデプロイしてください。デプロイ中にパスワードを私に確認してください。`,
+        copy: "コピー",
+        copied: "コピー済み",
+        hint: "2つのプロンプトを順番に自分のコーディングエージェントへ貼り付けてください。ターミナルを実行できるエージェントなら何でも使えます。",
+      },
+      steps: {
+        kicker: "01 / 3ステップ",
+        title: "2つのプ⁠ロ⁠ン⁠プ⁠トから、稼働中のダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ドへ。",
+        description:
+          "YAMLも環境変数もダッシュボード操作も不要。エージェントがRailway CLIを操作し、あなたが決めるのはパスワードだけです。",
+        items: [
+          {
+            index: "01",
+            title: "Railwayツールをインストール",
+            body: "インストール用プロンプトをエージェントに送ると、Railway CLI、エージェントスキル、MCPサーバーが設定されます。一度きりで、以降のデプロイでも使えます。",
+          },
+          {
+            index: "02",
+            title: "デプロイ用プロンプトを送信",
+            body: "プロンプトにはテンプレートのリンクと、デプロイ中にパスワードを確認する指示があらかじめ含まれています。",
+          },
+          {
+            index: "03",
+            title: "パスワードを決めてURLを受け取る",
+            body: "エージェントがPostgreSQLとダッシュボードをデプロイし、マイグレーションを実行して、公開ドメインを発行し、URLを返信します。",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / 実際の流れ",
+        title: "会話は、こんなふうに進みます。",
+        description:
+          "Codexで実行した実際のデプロイのリプレイです。Railwayツールをインストールすれば、Claude Codeでもほかのエージェントでも同じ流れになります。",
+        windowTitle: "YOUR CODING AGENT",
+        status: "REPLAY",
+        working: "実行中…",
+        workedForA: "42秒で完了",
+        workedForB: "2分34秒で完了",
+        workedForC: "2分2秒で完了",
+        workedForD: "1分5秒で完了",
+        toolsTitle: "Railwayエージェントツールの準備ができました：",
+        toolsItems: [
+          "Railway CLIとエージェントスキル、デプロイ可能",
+          "このエージェント用にRailway MCPサーバーを設定済み",
+        ],
+        passwordQuestion:
+          "テンプレート必須のAPP_PASSWORDが必要です。ダッシュボードのログインパスワードはどうしますか？",
+        chips: ["強力なパスワードを設定して", "自分で入力する", "後で自分で設定する"],
+        progress: [
+          "認証情報を生成",
+          "Threads AnalyticsとPostgreSQLをデプロイ",
+          "データベースマイグレーションを実行",
+        ],
+        deployDone:
+          "デプロイ完了 — 両サービスともSUCCESSです。テンプレートに公開ドメインはまだないため、現在はRailwayの内部ネットワークのみで動作しています。",
+        domainPrompt: "公開ドメインを発行して",
+        doneTitle: "Threads Analyticsダッシュボードが公開されました。",
+        urlLabel: "URL",
+        passwordLabel: "ログインパスワード",
+        passwordNote:
+          "今すぐパスワードマネージャーに保存してください。後からAPP_PASSWORD変数で変更できます。",
+        replay: "デプロイをもう一度再生",
+        disclaimer: "シミュレーションによる再現 · 実際の流れと同じです",
+      },
+      cta: {
+        title: "次は、あなたのエージェントの番です。",
+        description:
+          "インストール用プロンプトをコピーしてエージェントを開けば、プロンプト2つでダッシュボードが手に入ります。",
+        primary: "Railway for Agentsを見る",
+        secondary: "他のデプロイ方法へ戻る",
+        others: "他のプラットフォーム",
+      },
+    },
+    vercelAgentDeploy: {
+      metadata: {
+        title: "自分のコーディングエージェントでVercelへデプロイ | Threads Analytics",
+        description:
+          "1つのプロンプトで、Claude CodeやCodexなどVercel MCPを接続したエージェントがThreads AnalyticsをVercelへデプロイ。Neon Postgres、機密変数、毎日のCron、検証済みの本番URLまで自動です。",
+      },
+      hero: {
+        kicker: "デプロイ / VERCEL AGENT",
+        lineOne: "プ⁠ロ⁠ン⁠プ⁠トは1つ。",
+        lineTwo: "残りはVercel MCPが。",
+        description:
+          "このプロンプトはデプロイ手順書そのものです。エージェントはデプロイ操作をすべてVercel MCPで行い、Neonと機密変数の設定時だけダッシュボードを開いてサインインを待ち、本番デプロイを検証してから結果を報告します。",
+        copyCta: "エージェント用プロンプトをコピー",
+        copiedCta: "コピーしました",
+        openCta: "Vercel MCPのドキュメントを見る",
+        note: "所要時間は約10分 · プロンプト1つ、ガードレール込み",
+        worksWith: "対応エージェント",
+        moreAgents: "ほか多数",
+      },
+      prompt: {
+        label: "AGENT PROMPT",
+        text: vercelAgentPrompt,
+        copy: "コピー",
+        copied: "コピー済み",
+        hint: "Vercel MCPを接続し、ブラウザを操作できるコーディングエージェントに貼り付けてください。Vercelへのサインインが必要になると一時停止します。",
+        more: "プロンプト全文を表示",
+        less: "折りたたむ",
+      },
+      steps: {
+        kicker: "01 / 3ステップ",
+        title: "プ⁠ロ⁠ン⁠プ⁠ト1つ、サ⁠イ⁠ン⁠イ⁠ン1回、パ⁠ス⁠ワ⁠ー⁠ド1つ。",
+        description:
+          "プロンプトにはデプロイ仕様のすべてが含まれています。ツールの境界、Neonの設定、シークレットの扱い、検証手順。エージェントがそれに従い、あなたの出番は2回だけです。",
+        items: [
+          {
+            index: "01",
+            title: "プロンプトをコピー",
+            body: "ビルド済みOCIイメージ、毎日のCron、デプロイリージョンに合わせたNeon、シークレットを表示しないルールまで、すべて固定済みです。",
+          },
+          {
+            index: "02",
+            title: "ブラウザが開いたらサインイン",
+            body: "プロジェクトとデプロイはVercel MCPが担当。NeonストレージとSensitive変数はダッシュボードが必要なため、エージェントがブラウザを開いて待機します。",
+          },
+          {
+            index: "03",
+            title: "パスワードを決めてURLを受け取る",
+            body: "データベース接続後、エージェントがAPP_PASSWORDを確認し、新しいProductionデプロイを作成して、マイグレーションとログインページを検証します。",
+          },
+        ],
+      },
+      demo: {
+        kicker: "02 / 実際の流れ",
+        title: "会話は、こんなふうに進みます。",
+        description:
+          "Claude Codeで実行した実際のデプロイのリプレイです。デプロイ操作はすべてVercel MCP、ブラウザはNeonと機密変数の設定のみに使い、ダッシュボードを変更する前には必ず一時停止します。",
+        windowTitle: "YOUR CODING AGENT",
+        status: "REPLAY",
+        working: "実行中…",
+        workedForA: "2分27秒で完了",
+        workedForB: "4分9秒で完了",
+        workedForC: "4分15秒で完了",
+        promptMore: "もっと見る",
+        planLine:
+          "サポートされているVercel操作はすべてVercel MCPで行い、ブラウザはダッシュボード限定の手順のみに使います。まず2つのデプロイファイルを作成し、プロジェクトを初期化します。",
+        approvalTitle: "ツール権限のリクエスト",
+        approvalTool: "vercel-mcp · deploy_to_vercel",
+        approvalDesc:
+          "Dockerfile.vercelと毎日のCronでthreads-analyticsプロジェクトを初期化 — Preview、シークレットなし。",
+        approvalAllow: "許可",
+        approvalDeny: "拒否",
+        toolBadge: "VERCEL MCP",
+        toolLine: "プロジェクトthreads-analyticsを作成 — Preview初期化、リージョンiad1",
+        pauseLine:
+          "Neonと機密変数はVercel MCPでは操作できないため、Vercelダッシュボードを開きました。必要ならサインインして、準備ができたら返信してください。それまで何も変更しません。",
+        signedIn: "サインインしました、続けてください",
+        browserLabel: "ブラウザ",
+        browserUrl: "vercel.com/storage",
+        browserTitle: "Browse Storage",
+        browserProvider: "Neon · Serverless Postgres",
+        browserSpecs: [
+          { label: "プラン", value: "Free" },
+          { label: "リージョン", value: "iad1 · ワシントンD.C." },
+          { label: "環境", value: "Production · Preview" },
+          { label: "変数プレフィックス", value: "DATABASE" },
+        ],
+        browserCta: "Continue",
+        setupTitle: "ダッシュボードの設定が完了しました：",
+        setupItems: [
+          "Neonを接続 — DATABASE_URLをProductionとPreviewに適用、値は表示しません",
+          "TOKEN_ENCRYPTION_KEYとCRON_SECRETをSensitive変数として保存",
+        ],
+        passwordQuestion:
+          "APP_PASSWORDを教えてください。ProductionとPreviewのSensitive変数として保存し、以後表示や再掲はしません。",
+        chips: ["強力なパスワードを生成して", "自分で入力する", "後で自分で設定する"],
+        progress: [
+          "APP_PASSWORDをSensitive変数として保存",
+          "ProductionとPreviewの4つの変数を検証",
+          "Vercel MCPで新しいProductionデプロイを作成",
+          "Prismaマイグレーション完了 — デプロイはREADY",
+          "ログインページがHTTP 200 · ランタイムエラーなし",
+        ],
+        doneTitle: "デプロイが完了し、検証も通りました。",
+        urlLabel: "Production URL",
+        metaLabel: "最終ステータス",
+        metaItems: ["READY", "Hobbyプラン", "リージョンiad1", "Cron 0 0 * * *"],
+        passwordLabel: "APP_PASSWORD",
+        passwordValue: "クリップボードにコピー済み",
+        passwordNote:
+          "今すぐパスワードマネージャーに保存し、サインインしてThreadsトークンを追加、最初の同期を実行してください。",
+        replay: "デプロイをもう一度再生",
+        disclaimer: "シミュレーションによる再現 · 実際の実行を凝縮",
+      },
+      cta: {
+        title: "次は、あなたのエージェントの番です。",
+        description:
+          "プロンプトをコピーし、Vercel MCPの接続を確認すれば、ダッシュボードは自動ででき上がります。",
+        primary: "Vercel MCPのドキュメントを見る",
+        secondary: "他のデプロイ方法へ戻る",
+        others: "他のプラットフォーム",
       },
     },
     finalCta: {

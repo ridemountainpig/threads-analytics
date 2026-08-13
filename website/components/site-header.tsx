@@ -1,8 +1,8 @@
 import Image from "next/image";
 import Link from "next/link";
-import { Check, ChevronDown, Languages } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
-import { localeNames, locales, type Dictionary, type Locale } from "@/lib/i18n";
+import { LanguageMenu } from "@/components/language-menu";
+import type { Dictionary, Locale } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
 
 export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary["nav"] }) {
@@ -22,35 +22,14 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
         </Link>
 
         <nav className="desktop-nav" aria-label="Primary navigation">
-          <a href="#product">{copy.product}</a>
-          <a href="#demo">{copy.demo}</a>
-          <a href="#features">{copy.features}</a>
-          <a href="#deploy">{copy.deploy}</a>
+          <a href={`/${locale}#product`}>{copy.product}</a>
+          <a href={`/${locale}#demo`}>{copy.demo}</a>
+          <a href={`/${locale}#features`}>{copy.features}</a>
+          <a href={`/${locale}#deploy`}>{copy.deploy}</a>
         </nav>
 
         <div className="header-actions">
-          <details className="language-menu">
-            <summary aria-label="Change language">
-              <Languages className="language-icon" aria-hidden="true" strokeWidth={1.9} />
-              <span className="language-label">{localeNames[locale]}</span>
-              <ChevronDown className="language-chevron" aria-hidden="true" strokeWidth={2} />
-            </summary>
-            <div className="language-popover">
-              {locales.map((item) => (
-                <Link
-                  key={item}
-                  href={`/${item}`}
-                  hrefLang={item}
-                  aria-current={item === locale ? "page" : undefined}
-                >
-                  {localeNames[item]}
-                  {item === locale ? (
-                    <Check className="language-current" aria-hidden="true" strokeWidth={2.2} />
-                  ) : null}
-                </Link>
-              ))}
-            </div>
-          </details>
+          <LanguageMenu locale={locale} />
           <a className="header-github" href={siteConfig.github} target="_blank" rel="noreferrer">
             <FaGithub className="github-icon" aria-hidden="true" />
             <span>{copy.github}</span>

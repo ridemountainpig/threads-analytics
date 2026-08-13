@@ -46,13 +46,20 @@ function resolveSiteUrl() {
   return parsedUrl.origin;
 }
 
+// Canonical template links, also embedded in the agent prompts in lib/i18n.ts.
+const railwayTemplate = "https://railway.com/deploy/zibjsX?referralCode=vPBCb4";
+const zeaburTemplate = "https://zeabur.com/templates/XLGQAD?referralCode=ridemountainpig";
+
 export const siteConfig = {
   name: "Threads Analytics",
   url: resolveSiteUrl(),
   github: "https://github.com/ridemountainpig/threads-analytics",
   package: "https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics",
   creator: "https://yencheng.dev/",
-  railway:
-    "https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic",
-  zeabur: "https://zeabur.com/templates/XLGQAD",
+  railway: `${railwayTemplate}&utm_medium=integration&utm_source=template&utm_campaign=generic`,
+  railwayTemplate,
+  railwayAgent: "https://railway.com/agents",
+  zeabur: zeaburTemplate,
+  zeaburAgent: "https://zeabur.com",
+  vercelAgent: "https://vercel.com/docs/agent-resources/vercel-mcp",
 } as const;

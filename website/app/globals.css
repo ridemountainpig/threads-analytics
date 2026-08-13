@@ -65,13 +65,26 @@ summary:focus-visible {
 }
 
 ::selection {
-  background: var(--accent);
-  color: white;
+  background: #ffd8ea;
+  color: var(--ink);
 }
 
 .site-shell {
   width: min(calc(100% - 48px), var(--site-width));
   margin-inline: auto;
+}
+
+/* Visually hidden but exposed to assistive technology. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
 }
 
 .site-header {
@@ -353,9 +366,13 @@ summary:focus-visible {
   transition: color 160ms ease;
 }
 
-.desktop-nav a:hover,
-.site-footer a:hover {
+.desktop-nav a:hover {
   color: var(--accent);
+}
+
+/* Matches .button-ghost:hover — the "star on GitHub" pink. */
+.site-footer a:hover {
+  color: #ffd8ea;
 }
 
 .header-actions {
@@ -498,8 +515,8 @@ summary:focus-visible {
 
 .header-github:hover {
   transform: translateY(-1px);
-  background: var(--accent-strong);
-  box-shadow: 0 8px 20px rgba(82, 43, 118, 0.18);
+  background: #c65091;
+  box-shadow: 0 8px 20px rgba(236, 125, 188, 0.28);
 }
 
 .header-github:active {
@@ -719,11 +736,13 @@ summary:focus-visible {
   background: rgba(255, 255, 255, 0.45);
 }
 
+/* Pink hover to match .button-ghost:hover, with darker text for the
+   light background. */
 .button-secondary:hover {
-  border-color: rgba(124, 61, 219, 0.5);
-  background: var(--paper-strong);
-  color: var(--accent-strong);
-  box-shadow: 0 8px 20px rgba(52, 31, 67, 0.08);
+  border-color: rgba(243, 160, 202, 0.72);
+  background: rgba(236, 125, 188, 0.09);
+  color: #c65091;
+  box-shadow: 0 8px 20px rgba(236, 125, 188, 0.14);
 }
 
 .hero-note {
@@ -4284,7 +4303,11 @@ a.deploy-card:hover .deploy-action svg {
   transform: translate(2px, -2px);
 }
 
+/* Four cards: the three provider cards share the top row and the Docker code
+   card stretches underneath, where the pull command has room to breathe. */
 .deploy-card-code {
+  grid-column: 1 / -1;
+  min-height: 250px;
   background: var(--ink);
   color: white;
 }
@@ -4332,6 +4355,10 @@ a.deploy-card-code:hover {
   padding: 9px;
 }
 
+.deploy-brand-mark-vercel {
+  padding: 12px;
+}
+
 a.deploy-card:hover .deploy-brand-mark {
   transform: translateY(-1px) scale(1.03);
   border-color: rgba(124, 61, 219, 0.28);
@@ -4365,7 +4392,7 @@ a.deploy-card:active .deploy-brand-mark {
 }
 
 a.deploy-card-code:hover .deploy-package-link {
-  color: white;
+  color: #ffd8ea;
 }
 
 a.deploy-card-code:hover .deploy-package-link svg:last-child {
@@ -4575,7 +4602,7 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 }
 
 .footer-credit a:hover {
-  color: var(--accent-pink);
+  color: #ffd8ea;
 }
 
 @keyframes header-enter {
@@ -4811,8 +4838,9 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
+  /* Two columns fit the four cards as a clean 2×2, so Docker rejoins the grid. */
   .deploy-card-code {
-    grid-column: span 2;
+    grid-column: auto;
     min-height: 260px;
   }
 }
@@ -5579,6 +5607,1763 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 @media (max-width: 780px) {
   .feature-grid.render-deferred {
     contain-intrinsic-size: auto 2780px;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+   Agent deploy — tabbed deploy cards + /deploy/*-agent walkthrough pages
+--------------------------------------------------------------------------- */
+
+/* Tabbed cards (Railway, Zeabur) hold two links (template + agent guide), so
+   unlike their siblings the card itself is not an anchor; mirror the hover
+   treatment. */
+.deploy-card-tabbed:hover {
+  transform: translateY(-2px);
+  border-color: rgba(124, 61, 219, 0.55);
+  background: var(--paper-strong);
+  box-shadow: 0 15px 36px rgba(45, 29, 57, 0.1);
+}
+
+.deploy-card-tabbed:hover .deploy-brand-mark {
+  transform: translateY(-1px) scale(1.03);
+  border-color: rgba(124, 61, 219, 0.28);
+  background: white;
+}
+
+/* Tab switcher inside a deploy card: one-click template vs. agent prompt. */
+.deploy-switch {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-top: auto;
+  padding-top: 28px;
+}
+
+.deploy-tabs {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.deploy-tabs button {
+  padding: 4px 2px 8px;
+  border: 0;
+  background: transparent;
+  color: var(--ink-soft);
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+  transition: color 160ms ease;
+}
+
+.deploy-tabs button:hover {
+  color: var(--ink);
+}
+
+.deploy-tabs button.is-active {
+  color: var(--ink);
+  font-weight: 660;
+}
+
+.deploy-tab-divider {
+  width: 1px;
+  height: 14px;
+  margin: 0 8px;
+  background: var(--rule-strong);
+}
+
+/* Flat text action kept in the card's language, dressed up with an underline
+   that draws in and a circled arrow badge that fills on hover. Hover is
+   color-only, in the same pink family as .site-footer a:hover (#ffd8ea is
+   that pink's on-dark variant; --accent-pink is the on-light one). */
+.deploy-tab-action {
+  display: inline-flex;
+  align-self: flex-start;
+  align-items: center;
+  gap: 10px;
+  color: var(--ink);
+  font-size: 14px;
+  font-weight: 620;
+  letter-spacing: -0.012em;
+  animation: deploy-tab-action-in 300ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* #f3abd3 = --accent-pink lightened toward white (65/35 mix), spelled out as
+   a literal because color-mix inside these declarations doesn't survive the
+   CSS build for every property. */
+.deploy-tab-action-text {
+  padding-bottom: 2px;
+  background-image: linear-gradient(#f3abd3, #f3abd3);
+  background-repeat: no-repeat;
+  background-position: 0 100%;
+  background-size: 0% 1px;
+  transition: background-size 240ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.deploy-tab-action:hover .deploy-tab-action-text {
+  background-size: 100% 1px;
+}
+
+.deploy-tab-action-chip {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid rgba(124, 61, 219, 0.3);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
+  color: var(--accent-strong);
+  transition:
+    color 180ms ease,
+    background-color 180ms ease,
+    border-color 180ms ease;
+}
+
+.deploy-tab-action:hover .deploy-tab-action-chip {
+  border-color: #f3abd3;
+  background: #f3abd3;
+  color: white;
+}
+
+.deploy-tab-action-arrow {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+/* Vercel card: same action style, but the whole card is the link — no tab
+   switch above it, so the action anchors itself to the bottom and the hover
+   effect follows the card instead of the (non-interactive) action span. */
+.deploy-card-vercel .deploy-tab-action {
+  margin-top: auto;
+  padding-top: 30px;
+  animation: none;
+}
+
+a.deploy-card-vercel:hover .deploy-tab-action-text {
+  background-size: 100% 1px;
+}
+
+a.deploy-card-vercel:hover .deploy-tab-action-chip {
+  border-color: #f3abd3;
+  background: #f3abd3;
+  color: white;
+}
+
+@keyframes deploy-tab-action-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 5px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+/* Railway agent page: the hero side stacks two prompt cards (install +
+   deploy); the shared hint sits once below the stack. */
+.agent-prompt-stack {
+  display: grid;
+  gap: 16px;
+}
+
+/* One blinking caret is an invitation; two is noise — keep it on the deploy
+   prompt only, the one the user acts on last. */
+.agent-prompt-stack .agent-prompt-card:first-child .agent-prompt-text::after {
+  display: none;
+}
+
+/* The "deploy" crumb in the agent hero kicker links back to the homepage
+   deploy section; keep it looking like the rest of the kicker until hover. */
+.agent-kicker-link {
+  color: inherit;
+  text-decoration: none;
+  transition: color 160ms ease;
+}
+
+.agent-kicker-link:hover {
+  color: var(--accent);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+/* Brand chip in the agent hero kicker, sized down from .deploy-brand-mark. */
+.agent-hero-brandmark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  padding: 7px;
+  border: 1px solid var(--rule);
+  border-radius: 9px;
+  background: rgba(255, 255, 255, 0.74);
+  box-shadow: 0 4px 10px rgba(45, 29, 57, 0.05);
+}
+
+.agent-hero-brandmark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+.agent-hero-brandmark-zeabur {
+  padding: 6px;
+}
+
+.agent-hero-brandmark-vercel {
+  padding: 8px;
+}
+
+/* "Works with" row under the Railway hero note: the coding agents that can
+   drive the deploy once the Railway tools are installed. */
+.agent-works {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.agent-works-label {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+}
+
+.agent-works-chips {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.agent-works-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 6px 13px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--paper-strong) 82%, transparent);
+  color: var(--ink);
+  font-size: 12px;
+  font-weight: 560;
+  letter-spacing: -0.01em;
+}
+
+.agent-works-chip svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.agent-works-chip-claude svg {
+  color: #d97757;
+}
+
+.agent-works-chip-more {
+  color: var(--ink-soft);
+}
+
+.agent-hero-section {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 88px 0 108px;
+  border-bottom: 1px solid var(--rule);
+  background: radial-gradient(circle at 88% 8%, rgba(158, 91, 239, 0.09), transparent 34%);
+}
+
+/* Brand curve behind the prompt card, echoing the homepage hero. */
+.agent-hero-section .hero-curve {
+  top: 30px;
+  right: max(-150px, calc((100vw - 1660px) / 2));
+  width: min(780px, 55vw);
+  height: 580px;
+  opacity: 0.58;
+}
+
+.agent-hero-grid {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1.04fr) minmax(0, 0.96fr);
+  gap: 72px;
+  align-items: center;
+}
+
+.agent-hero-copy h1 {
+  margin: 26px 0 0;
+  font-size: clamp(44px, 5.4vw, 76px);
+  font-weight: 590;
+  letter-spacing: -0.046em;
+  line-height: 1;
+}
+
+.agent-hero-copy h1 span,
+.agent-hero-copy h1 em {
+  display: block;
+  text-wrap: balance;
+}
+
+.agent-hero-copy h1 em {
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 0.08em;
+  background: linear-gradient(
+    102deg,
+    var(--accent-strong) 0%,
+    var(--accent) 46%,
+    var(--accent-pink) 100%
+  );
+  background-clip: text;
+  color: transparent;
+  font-style: normal;
+  font-weight: 570;
+  letter-spacing: -0.042em;
+  line-height: 1.05;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.agent-hero-copy .hero-description {
+  margin-top: 28px;
+  font-size: clamp(17px, 1.6vw, 20px);
+}
+
+.agent-hero-side {
+  position: relative;
+  min-width: 0;
+}
+
+/* Soft aurora glow drifting behind the prompt card. */
+.agent-hero-side::before {
+  content: "";
+  position: absolute;
+  z-index: 0;
+  inset: -10% -6%;
+  pointer-events: none;
+  background:
+    radial-gradient(closest-side at 30% 24%, rgba(255, 177, 138, 0.32), transparent),
+    radial-gradient(closest-side at 76% 36%, rgba(236, 125, 188, 0.26), transparent),
+    radial-gradient(closest-side at 54% 80%, rgba(158, 91, 239, 0.28), transparent);
+  filter: blur(36px);
+}
+
+.agent-prompt-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 22px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  background: var(--night-panel);
+  color: white;
+  box-shadow: 0 28px 72px rgba(66, 40, 86, 0.18);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.agent-prompt-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 34px 84px rgba(66, 40, 86, 0.26);
+}
+
+.agent-prompt-topline {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.agent-prompt-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.58);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.agent-prompt-label svg {
+  width: 13px;
+  height: 13px;
+  color: var(--accent-pink);
+}
+
+.agent-prompt-copy {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  padding: 0 13px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 600;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.agent-prompt-copy svg {
+  width: 13px;
+  height: 13px;
+}
+
+/* Overlays the resting and "copied" labels in one grid cell so a copy
+   button always keeps the wider label's width — no jump on swap. */
+.label-swap {
+  display: inline-grid;
+}
+
+.label-swap > span {
+  grid-area: 1 / 1;
+  justify-self: center;
+  white-space: nowrap;
+}
+
+.label-swap > .is-ghost {
+  visibility: hidden;
+}
+
+.agent-prompt-copy:hover {
+  border-color: rgba(158, 91, 239, 0.7);
+  background: rgba(158, 91, 239, 0.2);
+  transform: translateY(-1px);
+}
+
+.agent-prompt-copy:active {
+  transform: scale(0.95);
+}
+
+.agent-prompt-copy.is-copied {
+  border-color: rgba(94, 227, 154, 0.5);
+  background: rgba(94, 227, 154, 0.14);
+  color: #5ee39a;
+  animation: agent-copied-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes agent-copied-pop {
+  0% {
+    transform: scale(0.9);
+  }
+
+  55% {
+    transform: scale(1.06);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+/* Mimics the agent input bar on zeabur.com — white surface, orange send button. */
+.agent-prompt-input {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 14px 12px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 9px;
+  background: #fdfcfb;
+  box-shadow: 0 16px 40px rgba(0, 0, 0, 0.3);
+}
+
+.agent-prompt-text {
+  margin: 0;
+  color: #37323d;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  line-height: 1.8;
+  overflow-wrap: anywhere;
+  user-select: all;
+}
+
+/* Blinking caret sells the "already typed into the box" illusion. */
+.agent-prompt-text::after {
+  content: "";
+  display: inline-block;
+  width: 2px;
+  height: 1.1em;
+  margin-left: 3px;
+  border-radius: 1px;
+  vertical-align: -0.18em;
+  background: #f0502e;
+  animation: agent-caret-blink 1.15s step-end infinite;
+}
+
+@keyframes agent-caret-blink {
+  0%,
+  100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: 0;
+  }
+}
+
+.agent-prompt-inputrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.agent-prompt-domain {
+  color: rgba(55, 50, 61, 0.42);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.06em;
+}
+
+.agent-prompt-send {
+  position: relative;
+  display: inline-flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: #f0502e;
+  color: white;
+  transition:
+    background-color 160ms ease,
+    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.agent-prompt-send::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  animation: agent-send-pulse 3.4s 1.8s ease-out infinite;
+}
+
+@keyframes agent-send-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(240, 80, 46, 0.42);
+  }
+
+  32%,
+  100% {
+    box-shadow: 0 0 0 11px rgba(240, 80, 46, 0);
+  }
+}
+
+.agent-prompt-send svg {
+  width: 16px;
+  height: 16px;
+}
+
+.agent-prompt-send:hover {
+  background: #d9401f;
+  transform: translateY(-1px);
+}
+
+.agent-prompt-send:active {
+  transform: scale(0.94);
+}
+
+/* Runbook-length prompt (Vercel): preserve line breaks, drop the typed-in
+   caret, and clamp the white box behind a fade until expanded — then grow
+   it and scroll in place instead of growing the page. */
+.agent-prompt-card-long .agent-prompt-text {
+  max-height: 300px;
+  font-size: 12px;
+  line-height: 1.7;
+  white-space: pre-wrap;
+}
+
+.agent-prompt-card-long .agent-prompt-text::after {
+  display: none;
+}
+
+.agent-prompt-input.is-clamped .agent-prompt-text {
+  overflow: hidden;
+  mask-image: linear-gradient(180deg, black calc(100% - 76px), transparent);
+}
+
+.agent-prompt-input.is-scrollable .agent-prompt-text {
+  max-height: min(560px, 62vh);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 8px;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(55, 50, 61, 0.32) transparent;
+}
+
+.agent-prompt-expand {
+  display: inline-flex;
+  align-items: center;
+  align-self: flex-start;
+  gap: 6px;
+  padding: 0;
+  border: none;
+  background: none;
+  color: var(--accent);
+  cursor: pointer;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.07em;
+}
+
+.agent-prompt-expand svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 200ms ease;
+}
+
+.agent-prompt-expand[aria-expanded="true"] svg {
+  transform: rotate(180deg);
+}
+
+.agent-prompt-hint {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.45);
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.agent-steps-section {
+  padding: 124px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.agent-steps-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.agent-step-card {
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  padding: 26px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 13px;
+  background: color-mix(in srgb, var(--paper-strong) 90%, transparent);
+  transition:
+    transform 180ms ease,
+    border-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.agent-step-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 2px;
+  background: linear-gradient(90deg, #ffb18a, #ec7dbc 48%, #9e5bef);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+
+.agent-step-card:hover {
+  transform: translateY(-2px);
+  border-color: rgba(124, 61, 219, 0.45);
+  box-shadow: 0 15px 36px rgba(45, 29, 57, 0.08);
+}
+
+.agent-step-card:hover::before {
+  opacity: 1;
+}
+
+.agent-step-index {
+  position: absolute;
+  top: 16px;
+  right: 20px;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  background-clip: text;
+  color: transparent;
+  font-family: var(--mono);
+  font-size: 46px;
+  font-weight: 640;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  opacity: 0.34;
+  transition:
+    opacity 200ms ease,
+    transform 200ms ease;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.agent-step-card:hover .agent-step-index {
+  transform: translateY(-2px);
+  opacity: 0.72;
+}
+
+.agent-step-card strong {
+  margin-top: 30px;
+  padding-right: 58px;
+  font-size: 21px;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+}
+
+.agent-step-card p {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.agent-demo-section {
+  overflow: hidden;
+  padding: 124px 0;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  background:
+    radial-gradient(circle at 14% 12%, rgba(158, 91, 239, 0.11), transparent 32%), var(--night);
+  color: white;
+}
+
+.agent-demo {
+  max-width: 860px;
+  margin-inline: auto;
+  overflow: hidden;
+  border: 1px solid var(--night-rule);
+  border-radius: 16px;
+  background: var(--night-panel);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.3);
+}
+
+.agent-demo-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  min-height: 48px;
+  padding: 0 18px;
+  border-bottom: 1px solid var(--night-rule);
+  color: rgba(255, 255, 255, 0.45);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+}
+
+.agent-demo-title {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.62);
+  letter-spacing: 0.09em;
+}
+
+.agent-demo-title svg {
+  width: 12px;
+  height: 12px;
+  color: var(--accent-pink);
+}
+
+.agent-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  height: 560px;
+  padding: 28px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  scrollbar-color: rgba(255, 255, 255, 0.16) transparent;
+}
+
+.agent-bubble-user {
+  align-self: flex-end;
+  max-width: 82%;
+  padding: 13px 17px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 16px 16px 5px 16px;
+  background: rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 13.5px;
+  line-height: 1.65;
+  overflow-wrap: anywhere;
+}
+
+.agent-msg {
+  max-width: 86%;
+  margin: 0;
+  color: rgba(255, 255, 255, 0.88);
+  font-size: 14px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.agent-working {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.52);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.05em;
+}
+
+.agent-working svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+}
+
+.agent-working.is-done {
+  color: rgba(255, 255, 255, 0.42);
+}
+
+.agent-spinner {
+  animation: agent-spin 900ms linear infinite;
+}
+
+@keyframes agent-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.agent-setup-card {
+  max-width: 86%;
+  padding: 16px 18px;
+  border: 1px solid var(--night-rule);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.agent-setup-card strong {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.agent-setup-card ul {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-setup-card li {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.74);
+  font-size: 13px;
+  line-height: 1.55;
+}
+
+.agent-setup-card li svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  margin-top: 2px;
+  color: var(--accent-pink);
+}
+
+.agent-chips {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 480px;
+}
+
+.agent-chip {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 12px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 10px;
+  background: rgba(255, 255, 255, 0.02);
+  color: rgba(255, 255, 255, 0.78);
+  font-size: 13px;
+  transition:
+    border-color 200ms ease,
+    background-color 200ms ease,
+    color 200ms ease;
+}
+
+.agent-chip svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  opacity: 0.5;
+}
+
+.agent-chip.is-selected {
+  border-color: rgba(158, 91, 239, 0.75);
+  background: rgba(158, 91, 239, 0.16);
+  color: white;
+  box-shadow: 0 0 18px rgba(158, 91, 239, 0.22);
+  animation: agent-chip-select 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.agent-chip.is-selected svg {
+  opacity: 1;
+  color: var(--accent-pink);
+}
+
+@keyframes agent-chip-select {
+  0% {
+    transform: scale(0.97);
+  }
+
+  55% {
+    transform: scale(1.015);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.agent-progress {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+  width: 100%;
+  max-width: 440px;
+  margin: 0;
+  padding: 16px 18px;
+  border: 1px solid var(--night-rule);
+  border-radius: 12px;
+  background: rgba(0, 0, 0, 0.24);
+  list-style: none;
+}
+
+.agent-progress li {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+}
+
+.agent-progress li svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+.agent-progress li.is-done {
+  color: rgba(255, 255, 255, 0.5);
+}
+
+.agent-progress li.is-done svg {
+  color: #5ee39a;
+  animation: agent-check-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+@keyframes agent-check-pop {
+  0% {
+    transform: scale(0.4);
+  }
+
+  60% {
+    transform: scale(1.25);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}
+
+.agent-result-card {
+  max-width: 86%;
+  padding: 20px 22px;
+  border: 1px solid rgba(94, 227, 154, 0.28);
+  border-radius: 14px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(94, 227, 154, 0.09), transparent 52%),
+    rgba(255, 255, 255, 0.02);
+}
+
+.agent-result-card > strong {
+  display: block;
+  font-size: 15.5px;
+  font-weight: 620;
+  letter-spacing: -0.014em;
+}
+
+.agent-result-row {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 15px;
+}
+
+.agent-result-label {
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--mono);
+  font-size: 9.5px;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.agent-result-url {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  color: #d3aaff;
+  font-size: 13.5px;
+  font-weight: 560;
+  overflow-wrap: anywhere;
+}
+
+.agent-result-url svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.agent-result-password {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  max-width: 100%;
+  padding: 11px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.22);
+  border-radius: 9px;
+  background: rgba(0, 0, 0, 0.32);
+  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.03em;
+  overflow-wrap: anywhere;
+}
+
+.agent-result-password svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--accent-peach);
+}
+
+.agent-result-card > p {
+  margin: 14px 0 0;
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Vercel demo: the pasted runbook prompt, clamped like the real chat UI. */
+.agent-bubble-prompt p {
+  margin: 0;
+  max-height: 150px;
+  overflow: hidden;
+  white-space: pre-wrap;
+  mask-image: linear-gradient(180deg, black 45%, transparent 98%);
+}
+
+.agent-bubble-more {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  margin-top: 8px;
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.agent-bubble-more svg {
+  width: 12px;
+  height: 12px;
+}
+
+/* MCP permission request, mimicking a coding agent's tool-approval prompt.
+   The amber border cools down once the request is approved. */
+.agent-approval-card {
+  width: 100%;
+  max-width: 480px;
+  padding: 16px 18px;
+  border: 1px solid rgba(255, 177, 138, 0.38);
+  border-radius: 12px;
+  background:
+    radial-gradient(circle at 0% 0%, rgba(255, 177, 138, 0.08), transparent 55%),
+    rgba(255, 255, 255, 0.02);
+  transition: border-color 300ms ease;
+}
+
+.agent-approval-card.is-approved {
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+.agent-approval-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.6);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.agent-approval-head svg {
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+  color: var(--accent-peach);
+}
+
+.agent-approval-tool {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  margin-top: 11px;
+  padding: 7px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 8px;
+  background: rgba(0, 0, 0, 0.3);
+  color: rgba(255, 255, 255, 0.88);
+  font-family: var(--mono);
+  font-size: 12px;
+  overflow-wrap: anywhere;
+}
+
+.agent-approval-card > p {
+  margin: 10px 0 0;
+  color: rgba(255, 255, 255, 0.66);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.agent-approval-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin-top: 14px;
+}
+
+.agent-approval-allow,
+.agent-approval-deny {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  padding: 7px 15px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12.5px;
+  font-weight: 580;
+}
+
+.agent-approval-allow svg {
+  width: 13px;
+  height: 13px;
+  flex: 0 0 auto;
+  opacity: 0.6;
+}
+
+.agent-approval-allow.is-selected {
+  border-color: rgba(158, 91, 239, 0.75);
+  background: rgba(158, 91, 239, 0.16);
+  color: white;
+  box-shadow: 0 0 18px rgba(158, 91, 239, 0.22);
+  animation: agent-chip-select 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.agent-approval-allow.is-selected svg {
+  opacity: 1;
+  color: var(--accent-pink);
+}
+
+/* Compact "this step ran through Vercel MCP" line. */
+.agent-tool-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  width: fit-content;
+  max-width: 86%;
+  padding: 9px 14px;
+  border: 1px dashed rgba(255, 255, 255, 0.18);
+  border-radius: 10px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12.5px;
+}
+
+.agent-tool-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+}
+
+.agent-tool-badge svg {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+}
+
+/* Mini browser window: the dashboard-only Neon step rendered as a light
+   webpage inside the dark chat, echoing the in-app browser pane. */
+.agent-browser-card {
+  width: 100%;
+  max-width: 480px;
+  overflow: hidden;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 13px;
+  background: #fdfcfb;
+  color: #241c2e;
+  box-shadow: 0 22px 54px rgba(0, 0, 0, 0.4);
+}
+
+.agent-browser-bar {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 10px 14px;
+  border-bottom: 1px solid rgba(36, 28, 46, 0.1);
+  background: rgba(36, 28, 46, 0.04);
+}
+
+.agent-browser-url {
+  display: inline-flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 0;
+  overflow: hidden;
+  padding: 5px 12px;
+  border: 1px solid rgba(36, 28, 46, 0.08);
+  border-radius: 999px;
+  background: white;
+  color: #4f4a58;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.agent-browser-url svg {
+  width: 11px;
+  height: 11px;
+  flex: 0 0 auto;
+  color: #1f9d63;
+}
+
+.agent-browser-badge {
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: #241c2e;
+  color: white;
+  font-family: var(--mono);
+  font-size: 8.5px;
+  letter-spacing: 0.09em;
+}
+
+.agent-browser-body {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 16px 18px 18px;
+}
+
+.agent-browser-body > strong {
+  font-size: 13.5px;
+  font-weight: 640;
+  letter-spacing: -0.01em;
+}
+
+.agent-browser-provider {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 11px 14px;
+  border: 1px solid rgba(124, 61, 219, 0.4);
+  border-radius: 10px;
+  background: rgba(124, 61, 219, 0.06);
+  font-size: 13px;
+  font-weight: 580;
+}
+
+.agent-browser-provider > svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: var(--accent);
+}
+
+.agent-browser-provider-name {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.agent-browser-provider-name svg {
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+  color: #00b077;
+}
+
+.agent-browser-specs {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.agent-browser-specs li {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 14px;
+  font-size: 12px;
+}
+
+.agent-browser-specs span {
+  color: #6f6a78;
+}
+
+.agent-browser-specs b {
+  font-weight: 600;
+  text-align: right;
+}
+
+.agent-browser-cta {
+  align-self: flex-end;
+  padding: 7px 18px;
+  border-radius: 8px;
+  background: #241c2e;
+  color: white;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* Deployment facts on the Vercel result card: READY badge first. */
+.agent-result-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.agent-result-meta span {
+  padding: 4px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  letter-spacing: 0.03em;
+}
+
+.agent-result-meta span:first-child {
+  border-color: rgba(94, 227, 154, 0.4);
+  color: #5ee39a;
+}
+
+.agent-demo-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--night-rule);
+  background: rgba(255, 255, 255, 0.018);
+}
+
+.agent-demo-disclaimer {
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+}
+
+.agent-replay {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 32px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  cursor: pointer;
+  font-size: 12px;
+  font-weight: 580;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    background-color 160ms ease,
+    opacity 160ms ease;
+}
+
+.agent-replay svg {
+  width: 13px;
+  height: 13px;
+  transition: transform 320ms ease;
+}
+
+.agent-replay:hover {
+  border-color: rgba(158, 91, 239, 0.7);
+  background: rgba(158, 91, 239, 0.16);
+  color: white;
+}
+
+.agent-replay:hover svg {
+  transform: rotate(120deg);
+}
+
+.agent-cta-section {
+  padding: 116px 0 132px;
+}
+
+.agent-cta {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  padding: 92px 44px 100px;
+  border: 1px solid rgba(0, 0, 0, 0.34);
+  border-radius: 28px;
+  background:
+    radial-gradient(circle at 12% 10%, rgba(255, 177, 138, 0.13), transparent 30%),
+    radial-gradient(circle at 86% 22%, rgba(236, 125, 188, 0.14), transparent 32%),
+    radial-gradient(circle at 68% 88%, rgba(158, 91, 239, 0.13), transparent 38%),
+    var(--night-panel);
+  color: white;
+  text-align: center;
+  box-shadow: 0 36px 90px rgba(66, 40, 86, 0.26);
+}
+
+.agent-cta::before {
+  content: "";
+  position: absolute;
+  z-index: 1;
+  top: 0;
+  right: 0;
+  left: 0;
+  height: 1px;
+  background: linear-gradient(
+    90deg,
+    transparent 4%,
+    rgba(255, 177, 138, 0.62) 27%,
+    rgba(236, 125, 188, 0.74) 53%,
+    rgba(158, 91, 239, 0.62) 76%,
+    transparent 96%
+  );
+}
+
+.agent-cta .closing-curves {
+  top: -30px;
+  right: -150px;
+  width: min(640px, 68%);
+  height: calc(100% + 60px);
+  opacity: 0.6;
+}
+
+.agent-cta-inner {
+  position: relative;
+  z-index: 1;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.agent-cta h2 {
+  margin: 0;
+  font-size: clamp(36px, 4.2vw, 58px);
+  font-weight: 570;
+  letter-spacing: -0.044em;
+  line-height: 1.06;
+  text-wrap: balance;
+}
+
+.agent-cta-inner > p {
+  max-width: 560px;
+  margin: 22px auto 0;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 17px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.agent-cta .hero-actions {
+  justify-content: center;
+}
+
+/* Cross-links to the sibling agent deploy pages under the closing CTA. */
+.agent-cta-others {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 36px;
+}
+
+.agent-cta-others-label {
+  color: rgba(255, 255, 255, 0.55);
+  font-family: var(--mono);
+  font-size: 9px;
+  letter-spacing: 0.09em;
+}
+
+.agent-cta-other {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 14px 6px 7px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 12.5px;
+  font-weight: 580;
+  letter-spacing: -0.01em;
+  transition:
+    border-color 160ms ease,
+    background-color 160ms ease,
+    color 160ms ease,
+    transform 160ms ease;
+}
+
+.agent-cta-other:hover {
+  border-color: rgba(158, 91, 239, 0.7);
+  background: rgba(158, 91, 239, 0.16);
+  color: white;
+  transform: translateY(-1px);
+}
+
+/* The brand marks are dark-on-light artwork, so each sits on a small light
+   chip — same treatment as .agent-hero-brandmark. */
+.agent-cta-other-mark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  padding: 5px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.92);
+  color: #241c2e;
+}
+
+.agent-cta-other-mark svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .agent-hero-copy .section-kicker {
+    animation: hero-enter 1000ms 80ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .agent-hero-copy h1 span {
+    animation: hero-enter 1200ms 170ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .agent-hero-copy h1 em {
+    animation: hero-enter 1250ms 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .agent-hero-copy .hero-description {
+    animation: hero-enter 1100ms 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .agent-hero-copy .hero-actions {
+    animation: hero-enter 1000ms 510ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .agent-hero-copy .hero-note {
+    animation: hero-enter 950ms 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .agent-hero-side {
+    animation: hero-enter 1150ms 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  }
+
+  .agent-hero-side::before {
+    animation: agent-glow-drift 11s ease-in-out infinite alternate;
+  }
+
+  .agent-chat > * {
+    animation: agent-step-in 480ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+
+  .agent-bubble-user {
+    transform-origin: right bottom;
+    animation-name: agent-bubble-in;
+  }
+
+  .agent-result-card {
+    animation: agent-result-in 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  }
+}
+
+@keyframes agent-glow-drift {
+  from {
+    transform: translate3d(-2%, -1.5%, 0) scale(0.98);
+  }
+
+  to {
+    transform: translate3d(2.5%, 2%, 0) scale(1.05);
+  }
+}
+
+@keyframes agent-step-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 14px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes agent-bubble-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 12px, 0) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@keyframes agent-result-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 16px, 0) scale(0.975);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0) scale(1);
+  }
+}
+
+@media (max-width: 1000px) {
+  .agent-hero-grid {
+    grid-template-columns: 1fr;
+    gap: 52px;
+  }
+
+  .agent-hero-section .hero-curve {
+    display: none;
+  }
+
+  .agent-steps-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .agent-hero-section {
+    padding: 60px 0 84px;
+  }
+
+  .agent-steps-section,
+  .agent-demo-section {
+    padding: 92px 0;
+  }
+
+  .agent-deploy-banner {
+    grid-template-columns: auto minmax(0, 1fr);
+    row-gap: 18px;
+    padding: 22px;
+  }
+
+  .agent-deploy-banner .deploy-action {
+    grid-column: 2;
+    justify-self: start;
+  }
+
+  .agent-chat {
+    height: 500px;
+    padding: 20px;
+  }
+
+  .agent-msg,
+  .agent-setup-card,
+  .agent-result-card {
+    max-width: 100%;
+  }
+
+  .agent-bubble-user {
+    max-width: 92%;
+  }
+
+  .agent-cta-section {
+    padding: 92px 0 104px;
+  }
+
+  .agent-cta {
+    padding: 68px 26px 76px;
+    border-radius: 22px;
+  }
+
+  .agent-cta .closing-curves {
+    opacity: 0.4;
+  }
+}
+
+@media (max-width: 480px) {
+  .agent-demo-bar {
+    grid-template-columns: 1fr auto;
+  }
+
+  .agent-demo-bar .window-dots {
+    display: none;
+  }
+
+  .agent-demo-title {
+    justify-self: start;
+  }
+
+  .agent-demo-footer {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .agent-cta .hero-actions .button {
+    width: 100%;
   }
 }
 

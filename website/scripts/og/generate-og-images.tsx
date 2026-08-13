@@ -10,9 +10,11 @@
 // Re-run with `pnpm og:generate` whenever the hero copy or the design below
 // changes, and commit the updated PNGs. Requires network access: satori
 // fetches CJK font subsets for the zh-TW and ja images.
-import { mkdir, writeFile } from "node:fs/promises";
+import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
+import type { ReactElement } from "react";
 import { ImageResponse } from "next/og";
+import { Railway, Vercel, Zeabur } from "../../components/deployment-logos";
 import { brandCurvePath } from "../../lib/brand-curve";
 import { getDictionary, locales, type Locale } from "../../lib/i18n";
 
@@ -102,9 +104,36 @@ const openGraphCurve = (
   </svg>
 );
 
-function renderOpenGraphImage(locale: Locale) {
-  const copy = getDictionary(locale);
+const arrowGlyph = (
+  <svg
+    aria-hidden="true"
+    width="18"
+    height="18"
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="2.2"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+  >
+    <path d="M7 7h10v10" />
+    <path d="M7 17 17 7" />
+  </svg>
+);
 
+function renderOpenGraphImage({
+  brandIconSrc,
+  headline,
+  description,
+  footerLeft,
+  footerRight,
+}: {
+  brandIconSrc: string;
+  headline: string;
+  description: string;
+  footerLeft: ReactElement | string;
+  footerRight: ReactElement | string;
+}) {
   return new ImageResponse(
     <div
       style={{
@@ -131,33 +160,9 @@ function renderOpenGraphImage(locale: Locale) {
           fontWeight: 700,
         }}
       >
-        <div
-          style={{
-            width: 30,
-            height: 30,
-            borderRadius: 8,
-            background: "#171023",
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            color: "#ee83c0",
-          }}
-        >
-          <svg
-            aria-hidden="true"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M7 7h10v10" />
-            <path d="M7 17 17 7" />
-          </svg>
-        </div>
+        {/* Same brand icon the site header uses; the PNG carries its own
+            rounded dark background, so no wrapper box. */}
+        <img src={brandIconSrc} width={36} height={36} />
         Threads Analytics
       </div>
       <div
@@ -173,7 +178,7 @@ function renderOpenGraphImage(locale: Locale) {
           fontWeight: 650,
         }}
       >
-        {`${copy.hero.lineOne} ${copy.hero.lineTwo}`}
+        {headline}
       </div>
       <div
         style={{
@@ -187,7 +192,7 @@ function renderOpenGraphImage(locale: Locale) {
           lineHeight: 1.45,
         }}
       >
-        {copy.metadata.description}
+        {description}
       </div>
       <div
         style={{
@@ -196,46 +201,119 @@ function renderOpenGraphImage(locale: Locale) {
           right: 72,
           bottom: 64,
           left: 72,
+          alignItems: "center",
           justifyContent: "space-between",
           fontSize: 19,
           color: "#77736d",
         }}
       >
-        <span>15+ ANALYSES · SELF-HOSTED</span>
-        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
-          OPEN SOURCE
-          <svg
-            aria-hidden="true"
-            width="18"
-            height="18"
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth="2.2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M7 7h10v10" />
-            <path d="M7 17 17 7" />
-          </svg>
-        </span>
+        {footerLeft}
+        {footerRight}
       </div>
     </div>,
     size,
   );
 }
 
+type OgVariant = {
+  // `ogImageSet` naming from lib/metadata.ts: written to
+  // public/og/<prefix>-<locale>.png; "" means public/og/<locale>.png (home).
+  prefix: string;
+  render: (locale: Locale, brandIconSrc: string) => ImageResponse;
+};
+
+const variants: OgVariant[] = [
+  {
+    prefix: "",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale);
+      return renderOpenGraphImage({
+        brandIconSrc,
+        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>15+ ANALYSES · SELF-HOSTED</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+            OPEN SOURCE
+            {arrowGlyph}
+          </span>
+        ),
+      });
+    },
+  },
+  {
+    prefix: "railway-agent",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale).railwayAgentDeploy;
+      return renderOpenGraphImage({
+        brandIconSrc,
+        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 12, color: "#191121" }}>
+            <Railway width={26} height={26} />
+            Railway
+          </span>
+        ),
+      });
+    },
+  },
+  {
+    prefix: "zeabur-agent",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale).zeaburAgentDeploy;
+      return renderOpenGraphImage({
+        brandIconSrc,
+        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 12, color: "#191121" }}>
+            <Zeabur width={30} height={23} />
+            Zeabur
+          </span>
+        ),
+      });
+    },
+  },
+  {
+    prefix: "vercel-agent",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale).vercelAgentDeploy;
+      return renderOpenGraphImage({
+        brandIconSrc,
+        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 12, color: "#191121" }}>
+            <Vercel width={26} height={23} />
+            Vercel
+          </span>
+        ),
+      });
+    },
+  },
+];
+
 async function main() {
   // Run via `pnpm og:generate` so cwd is the website root.
+  const iconBuffer = await readFile(join(process.cwd(), "public/media/threads-analytics-icon.png"));
+  const brandIconSrc = `data:image/png;base64,${iconBuffer.toString("base64")}`;
+
   const outputDir = join(process.cwd(), "public/og");
   await mkdir(outputDir, { recursive: true });
 
-  for (const locale of locales) {
-    const image = renderOpenGraphImage(locale);
-    const buffer = Buffer.from(await image.arrayBuffer());
-    const outputPath = join(outputDir, `${locale}.png`);
-    await writeFile(outputPath, buffer);
-    console.log(`wrote ${outputPath} (${buffer.length} bytes)`);
+  for (const variant of variants) {
+    for (const locale of locales) {
+      const image = variant.render(locale, brandIconSrc);
+      const buffer = Buffer.from(await image.arrayBuffer());
+      const fileName = variant.prefix ? `${variant.prefix}-${locale}.png` : `${locale}.png`;
+      const outputPath = join(outputDir, fileName);
+      await writeFile(outputPath, buffer);
+      console.log(`wrote ${outputPath} (${buffer.length} bytes)`);
+    }
   }
 }
 
