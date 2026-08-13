@@ -35,6 +35,7 @@ cd threads-analytics
 pnpm install
 cp .env.example .env.local # or create .env.local manually
 npx prisma migrate dev --name init
+npx prisma generate
 pnpm dev
 ```
 
@@ -96,6 +97,7 @@ SYNC_SCHEDULER_ENABLED=false              # set true only on long-running deploy
 
 ```bash
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 ### 4. Start the dev server
@@ -121,6 +123,7 @@ pnpm build        # Build for production
 pnpm start        # Run migrations and start production server
 npx prisma studio # Open database GUI
 npx prisma migrate dev --name <name>  # Create a new migration
+npx prisma generate # Regenerate the Prisma Client
 ```
 
 ## Getting Your Threads Access Token
