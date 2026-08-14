@@ -68,6 +68,7 @@ export default function EngagementRateChart({
   const { granularity, setGranularity, showToggle } = useGranularity(
     data.map((point) => point.date),
     timeZone,
+    "engagement-rate",
   );
 
   if (!data.length) {

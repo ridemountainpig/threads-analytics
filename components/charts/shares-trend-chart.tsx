@@ -57,6 +57,7 @@ export default function SharesTrendChart({
   const { granularity, setGranularity, showToggle } = useGranularity(
     data.map((point) => point.date),
     timeZone,
+    "shares-trend",
   );
 
   if (!data.length) {

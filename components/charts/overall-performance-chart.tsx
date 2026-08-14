@@ -106,6 +106,7 @@ export default function OverallPerformanceChart({ data, dateLocale, timeZone, la
   const { granularity, setGranularity, showToggle } = useGranularity(
     data.map((point) => point.date),
     timeZone,
+    "overall-performance",
   );
 
   if (!data.length) {

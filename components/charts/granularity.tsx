@@ -106,19 +106,46 @@ export function formatBucketTooltipLabel(
   return `${formatShortDate(bucket, locale, timeZone, options)} – ${formatShortDate(endKey, locale, timeZone, options)}`;
 }
 
-// Granularity defaults from the data's span and resets when the span changes
-// (e.g. the user picks another time range), while manual choices stick within
-// a range. The toggle only appears once aggregation has an effect.
-export function useGranularity(dates: string[], timeZone: string) {
+const STORAGE_PREFIX = "chart-granularity:";
+
+function isGranularity(value: string | null): value is Granularity {
+  return value === "day" || value === "week" || value === "month";
+}
+
+// Granularity defaults from the data's span; an explicit pick is stored per
+// chart (storageKey) so it survives reloads, independently for each chart.
+// Charts without a stored pick keep following the span-based default. The
+// stored value is read after mount so server and client render the same
+// initial markup. The toggle only appears once aggregation has an effect;
+// while it is hidden the span-based default wins so short ranges always
+// render daily.
+export function useGranularity(dates: string[], timeZone: string, storageKey?: string) {
   const span = useMemo(() => calendarSpanDays(dates, timeZone), [dates, timeZone]);
   const preferred = defaultGranularity(span);
-  const [granularity, setGranularity] = useState<Granularity>(preferred);
+  const [choice, setChoice] = useState<Granularity | null>(null);
 
   useEffect(() => {
-    setGranularity(preferred);
-  }, [preferred]);
+    if (!storageKey) return;
+    try {
+      const stored = window.localStorage.getItem(STORAGE_PREFIX + storageKey);
+      if (isGranularity(stored)) setChoice(stored);
+    } catch {
+      // localStorage unavailable (e.g. blocked storage) — keep the default.
+    }
+  }, [storageKey]);
 
-  return { granularity, setGranularity, showToggle: span > 92 };
+  const setGranularity = (next: Granularity) => {
+    setChoice(next);
+    if (!storageKey) return;
+    try {
+      window.localStorage.setItem(STORAGE_PREFIX + storageKey, next);
+    } catch {
+      // Persisting is best-effort; the in-session choice still applies.
+    }
+  };
+
+  const showToggle = span > 92;
+  return { granularity: showToggle && choice ? choice : preferred, setGranularity, showToggle };
 }
 
 export interface GranularityLabels {

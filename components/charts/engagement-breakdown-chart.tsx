@@ -74,6 +74,7 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
   const { granularity, setGranularity, showToggle } = useGranularity(
     data.map((point) => point.date),
     timeZone,
+    "engagement-breakdown",
   );
 
   if (!data.length) {

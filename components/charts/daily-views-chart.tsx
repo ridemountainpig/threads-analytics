@@ -79,6 +79,7 @@ export default function DailyViewsChart({
   const { granularity, setGranularity, showToggle } = useGranularity(
     data.map((point) => point.end_time),
     timeZone,
+    "daily-views",
   );
 
   if (!data.length) {
