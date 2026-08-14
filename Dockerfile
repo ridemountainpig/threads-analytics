@@ -1,3 +1,7 @@
+# Passed by docker-publish.yml so the running image can tell which commit it is.
+ARG GIT_COMMIT_SHA
+ARG IMAGE_REPOSITORY
+
 FROM node:20-alpine AS base
 RUN npm install -g pnpm
 
@@ -16,6 +20,11 @@ RUN pnpm build
 FROM base AS runner
 WORKDIR /app
 ENV NODE_ENV=production
+
+ARG GIT_COMMIT_SHA
+ARG IMAGE_REPOSITORY
+ENV GIT_COMMIT_SHA=$GIT_COMMIT_SHA
+ENV IMAGE_REPOSITORY=$IMAGE_REPOSITORY
 
 COPY --from=builder /app/public ./public
 COPY --from=builder /app/.next/standalone ./
