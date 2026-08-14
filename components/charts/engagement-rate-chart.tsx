@@ -15,7 +15,6 @@ import {
   axisTick,
   chartColors,
   compactChartMargin,
-  formatShortDate,
   spansMultipleYears,
   gridProps,
   legendStyle,
@@ -23,9 +22,16 @@ import {
   tooltipLabelStyle,
   tooltipStyle,
 } from "./chart-style";
+import {
+  GranularityToggle,
+  aggregateByGranularity,
+  formatBucketLabel,
+  formatBucketTooltipLabel,
+  useGranularity,
+} from "./granularity";
 
 interface EngagementRateChartProps {
-  data: Array<{ date: string; rate: number; rollingAvg: number }>;
+  data: Array<{ date: string; rate: number; rollingAvg: number; views?: number }>;
   dateLocale?: string;
   timeZone: string;
   labels?: {
@@ -34,6 +40,9 @@ interface EngagementRateChartProps {
     date?: string;
     engagementRate?: string;
     noData?: string;
+    granularityDay?: string;
+    granularityWeek?: string;
+    granularityMonth?: string;
   };
 }
 
@@ -49,6 +58,17 @@ export default function EngagementRateChart({
     sevenDayAvg: "7d Avg",
     noData: "No data",
   };
+  const granularityLabels = {
+    day: copy.granularityDay ?? "Day",
+    week: copy.granularityWeek ?? "Week",
+    month: copy.granularityMonth ?? "Month",
+  };
+  const rateLabel = copy.engagementRate ?? "Engagement Rate";
+
+  const { granularity, setGranularity, showToggle } = useGranularity(
+    data.map((point) => point.date),
+    timeZone,
+  );
 
   if (!data.length) {
     return (
@@ -58,17 +78,54 @@ export default function EngagementRateChart({
     );
   }
 
-  const withYear = spansMultipleYears(data.map((point) => point.date));
+  const isDaily = granularity === "day";
+  // Aggregated buckets carry the views-weighted engagement rate, matching how
+  // the dashboard's headline rate is computed.
+  const series = isDaily
+    ? data
+    : aggregateByGranularity(
+        data,
+        granularity,
+        timeZone,
+        (point) => point.date,
+        (items, bucket) => {
+          const totalViews = items.reduce((sum, item) => sum + (item.views ?? 0), 0);
+          const rate =
+            totalViews > 0
+              ? items.reduce((sum, item) => sum + item.rate * (item.views ?? 0), 0) / totalViews
+              : items.reduce((sum, item) => sum + item.rate, 0) / Math.max(1, items.length);
+          return {
+            date: bucket,
+            rate: Math.round(rate * 100) / 100,
+            rollingAvg: 0,
+            views: totalViews,
+          };
+        },
+      );
+
+  const withYear = spansMultipleYears(series.map((point) => point.date));
+  const seriesName = isDaily ? copy.dailyRate : rateLabel;
 
   return (
     <>
-      <AxisHint x={copy.date ?? "Date"} y={copy.engagementRate ?? "Engagement Rate"} />
+      <div className="flex items-start justify-between gap-2">
+        <AxisHint x={copy.date ?? "Date"} y={rateLabel} />
+        {showToggle && (
+          <GranularityToggle
+            value={granularity}
+            onChange={setGranularity}
+            labels={granularityLabels}
+          />
+        )}
+      </div>
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={data} margin={compactChartMargin}>
+        <LineChart data={series} margin={compactChartMargin}>
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
-            tickFormatter={(value) => formatShortDate(value, locale, timeZone, { year: withYear })}
+            tickFormatter={(value) =>
+              formatBucketLabel(String(value), granularity, locale, timeZone, { year: withYear })
+            }
             tick={axisTick}
             tickLine={false}
             axisLine={false}
@@ -84,8 +141,13 @@ export default function EngagementRateChart({
           <Tooltip
             formatter={(v, name) => [
               `${(v as number).toFixed(2)}%`,
-              name === copy.dailyRate || name === "rate" ? copy.dailyRate : copy.sevenDayAvg,
+              name === copy.sevenDayAvg ? copy.sevenDayAvg : seriesName,
             ]}
+            labelFormatter={(label) =>
+              formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
+                year: withYear,
+              })
+            }
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
             labelStyle={tooltipLabelStyle}
@@ -98,18 +160,20 @@ export default function EngagementRateChart({
             strokeWidth={1.5}
             dot={{ r: 2, fill: chartColors.engagement }}
             activeDot={{ r: 4 }}
-            name={copy.dailyRate}
+            name={seriesName}
           />
-          <Line
-            type="monotone"
-            dataKey="rollingAvg"
-            stroke={chartColors.trend}
-            strokeWidth={1.5}
-            dot={{ r: 2, fill: chartColors.trend }}
-            activeDot={{ r: 4 }}
-            strokeDasharray="4 2"
-            name={copy.sevenDayAvg}
-          />
+          {isDaily && (
+            <Line
+              type="monotone"
+              dataKey="rollingAvg"
+              stroke={chartColors.trend}
+              strokeWidth={1.5}
+              dot={{ r: 2, fill: chartColors.trend }}
+              activeDot={{ r: 4 }}
+              strokeDasharray="4 2"
+              name={copy.sevenDayAvg}
+            />
+          )}
         </LineChart>
       </ResponsiveContainer>
     </>

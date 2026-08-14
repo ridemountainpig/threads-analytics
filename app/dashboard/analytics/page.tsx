@@ -369,7 +369,20 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </ChartCard>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-3">
+          <ChartCard
+            title={t.analytics.engagementTrend}
+            subtitle={t.analytics.engagementTrendSub}
+            labels={cardLabels}
+          >
+            <EngagementRateChart
+              data={engagementRateTrend}
+              dateLocale={dateLocale}
+              timeZone={tz}
+              labels={t.chart}
+            />
+          </ChartCard>
+
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
             <ChartCard
               title={t.analytics.bestTime}
               subtitle={t.analytics.bestTimeSub}
@@ -379,19 +392,6 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 heatmap={heatmap}
                 bestTimeToPost={bestTimeToPost}
                 dateLocale={dateLocale}
-                labels={t.chart}
-              />
-            </ChartCard>
-
-            <ChartCard
-              title={t.analytics.engagementTrend}
-              subtitle={t.analytics.engagementTrendSub}
-              labels={cardLabels}
-            >
-              <EngagementRateChart
-                data={engagementRateTrend}
-                dateLocale={dateLocale}
-                timeZone={tz}
                 labels={t.chart}
               />
             </ChartCard>
@@ -559,6 +559,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 date: t.chart.date,
                 shares: t.chart.shares,
                 empty: t.analytics.sharesTrendEmpty,
+                granularityDay: t.chart.granularityDay,
+                granularityWeek: t.chart.granularityWeek,
+                granularityMonth: t.chart.granularityMonth,
               }}
             />
           </ChartCard>

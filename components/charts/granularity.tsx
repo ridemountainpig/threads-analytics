@@ -1,0 +1,159 @@
+"use client";
+
+import { useEffect, useMemo, useState } from "react";
+import { cn } from "@/lib/utils";
+import { formatShortDate } from "./chart-style";
+
+export type Granularity = "day" | "week" | "month";
+
+// Data dates arrive either as ISO timestamps (API user insights) or as
+// YYYY-MM-DD calendar dates already resolved in the analytics time zone.
+export function toCalendarDate(value: string, timeZone: string): string {
+  if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date(value));
+}
+
+function utcDate(dateKey: string): Date {
+  return new Date(`${dateKey}T00:00:00Z`);
+}
+
+// ≤ ~3 months of data reads fine daily, up to ~a year weekly, beyond that
+// monthly — thresholds carry a few days of slack so the 90d / 1y range
+// presets land on the granularity users expect.
+export function defaultGranularity(span: number): Granularity {
+  if (span <= 92) return "day";
+  if (span <= 370) return "week";
+  return "month";
+}
+
+function calendarSpanDays(dates: string[], timeZone: string): number {
+  if (dates.length < 2) return dates.length;
+  let first = "";
+  let last = "";
+  for (const value of dates) {
+    const key = toCalendarDate(value, timeZone);
+    if (!first || key < first) first = key;
+    if (!last || key > last) last = key;
+  }
+  return Math.round((utcDate(last).getTime() - utcDate(first).getTime()) / 86_400_000) + 1;
+}
+
+// Bucket key is the period's first calendar day (YYYY-MM-DD), so existing
+// date formatters keep working on aggregated series.
+export function bucketStart(dateKey: string, granularity: Granularity): string {
+  if (granularity === "day") return dateKey;
+  if (granularity === "month") return `${dateKey.slice(0, 7)}-01`;
+  const date = utcDate(dateKey);
+  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
+  return date.toISOString().slice(0, 10);
+}
+
+export function aggregateByGranularity<T, R>(
+  data: T[],
+  granularity: Granularity,
+  timeZone: string,
+  getDate: (item: T) => string,
+  fold: (items: T[], bucket: string) => R,
+): R[] {
+  const buckets = new Map<string, T[]>();
+  for (const item of data) {
+    const key = bucketStart(toCalendarDate(getDate(item), timeZone), granularity);
+    const existing = buckets.get(key);
+    if (existing) existing.push(item);
+    else buckets.set(key, [item]);
+  }
+  return Array.from(buckets.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .map(([bucket, items]) => fold(items, bucket));
+}
+
+export function formatBucketLabel(
+  bucket: string,
+  granularity: Granularity,
+  locale: string,
+  timeZone: string,
+  options?: { year?: boolean },
+) {
+  if (granularity === "month") {
+    return new Intl.DateTimeFormat(locale, {
+      month: "short",
+      year: options?.year ? "numeric" : undefined,
+      timeZone: "UTC",
+    }).format(utcDate(bucket));
+  }
+  return formatShortDate(bucket, locale, timeZone, options);
+}
+
+// Tooltip label for a weekly bucket: "Aug 4 – Aug 10".
+export function formatBucketTooltipLabel(
+  bucket: string,
+  granularity: Granularity,
+  locale: string,
+  timeZone: string,
+  options?: { year?: boolean },
+) {
+  if (granularity !== "week") {
+    return formatBucketLabel(bucket, granularity, locale, timeZone, options);
+  }
+  const end = utcDate(bucket);
+  end.setUTCDate(end.getUTCDate() + 6);
+  const endKey = end.toISOString().slice(0, 10);
+  return `${formatShortDate(bucket, locale, timeZone, options)} – ${formatShortDate(endKey, locale, timeZone, options)}`;
+}
+
+// Granularity defaults from the data's span and resets when the span changes
+// (e.g. the user picks another time range), while manual choices stick within
+// a range. The toggle only appears once aggregation has an effect.
+export function useGranularity(dates: string[], timeZone: string) {
+  const span = useMemo(() => calendarSpanDays(dates, timeZone), [dates, timeZone]);
+  const preferred = defaultGranularity(span);
+  const [granularity, setGranularity] = useState<Granularity>(preferred);
+
+  useEffect(() => {
+    setGranularity(preferred);
+  }, [preferred]);
+
+  return { granularity, setGranularity, showToggle: span > 92 };
+}
+
+export interface GranularityLabels {
+  day: string;
+  week: string;
+  month: string;
+}
+
+export function GranularityToggle({
+  value,
+  onChange,
+  labels,
+}: {
+  value: Granularity;
+  onChange: (granularity: Granularity) => void;
+  labels: GranularityLabels;
+}) {
+  const options: Granularity[] = ["day", "week", "month"];
+  return (
+    <div className="border-border inline-flex items-center gap-0.5 rounded-md border p-0.5">
+      {options.map((option) => (
+        <button
+          key={option}
+          type="button"
+          onClick={() => onChange(option)}
+          className={cn(
+            "rounded-[5px] px-2.5 py-1 text-xs leading-4 transition-colors",
+            value === option
+              ? "bg-muted text-foreground font-medium"
+              : "text-muted-foreground hover:text-foreground",
+          )}
+        >
+          {labels[option]}
+        </button>
+      ))}
+    </div>
+  );
+}

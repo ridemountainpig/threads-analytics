@@ -17,13 +17,19 @@ import {
   chartColors,
   compactChartMargin,
   formatCompactNumber,
-  formatShortDate,
   spansMultipleYears,
   gridProps,
   tooltipItemStyle,
   tooltipLabelStyle,
   tooltipStyle,
 } from "./chart-style";
+import {
+  GranularityToggle,
+  aggregateByGranularity,
+  formatBucketLabel,
+  formatBucketTooltipLabel,
+  useGranularity,
+} from "./granularity";
 import AxisHint from "./axis-hint";
 
 interface DailyViewsChartProps {
@@ -36,6 +42,9 @@ interface DailyViewsChartProps {
     baseline?: string;
     date?: string;
     noData?: string;
+    granularityDay?: string;
+    granularityWeek?: string;
+    granularityMonth?: string;
   };
 }
 
@@ -61,6 +70,16 @@ export default function DailyViewsChart({
     noData: "No data",
   };
   const baselineLabel = copy.baseline ?? "Baseline";
+  const granularityLabels = {
+    day: copy.granularityDay ?? "Day",
+    week: copy.granularityWeek ?? "Week",
+    month: copy.granularityMonth ?? "Month",
+  };
+
+  const { granularity, setGranularity, showToggle } = useGranularity(
+    data.map((point) => point.end_time),
+    timeZone,
+  );
 
   if (!data.length) {
     return (
@@ -70,10 +89,25 @@ export default function DailyViewsChart({
     );
   }
 
-  const withYear = spansMultipleYears(data.map((point) => point.end_time));
-  const baseline = getMedian(data.map((point) => point.value).filter((value) => value > 0));
-  const chartData = data.map((point, index) => {
-    const window = data.slice(Math.max(0, index - 6), index + 1);
+  const isDaily = granularity === "day";
+  const series = isDaily
+    ? data
+    : aggregateByGranularity(
+        data,
+        granularity,
+        timeZone,
+        (point) => point.end_time,
+        (items, bucket) => ({
+          end_time: bucket,
+          value: items.reduce((sum, item) => sum + item.value, 0),
+        }),
+      );
+
+  const withYear = spansMultipleYears(series.map((point) => point.end_time));
+  const baseline = getMedian(series.map((point) => point.value).filter((value) => value > 0));
+  const chartData = series.map((point, index) => {
+    if (!isDaily) return point;
+    const window = series.slice(Math.max(0, index - 6), index + 1);
     const rollingAvg =
       window.reduce((sum, item) => sum + item.value, 0) / Math.max(1, window.length);
     return {
@@ -84,16 +118,24 @@ export default function DailyViewsChart({
 
   return (
     <>
-      <AxisHint x={copy.date ?? "Date"} y={`${copy.views} / ${copy.sevenDayAvg}`} />
+      <AxisHint
+        x={copy.date ?? "Date"}
+        y={isDaily ? `${copy.views} / ${copy.sevenDayAvg}` : copy.views}
+      />
       <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-3 text-[11px]">
         <span className="inline-flex items-center gap-1">
           <span className="bg-muted-foreground inline-block h-2.5 w-2.5 rounded-[2px]" />
           {copy.views}
         </span>
-        <span className="inline-flex items-center gap-1">
-          <span className="inline-block h-px w-5" style={{ backgroundColor: chartColors.views }} />
-          {copy.sevenDayAvg}
-        </span>
+        {isDaily && (
+          <span className="inline-flex items-center gap-1">
+            <span
+              className="inline-block h-px w-5"
+              style={{ backgroundColor: chartColors.views }}
+            />
+            {copy.sevenDayAvg}
+          </span>
+        )}
         {baseline > 0 && (
           <span className="inline-flex items-center gap-1">
             <span
@@ -103,13 +145,24 @@ export default function DailyViewsChart({
             {baselineLabel}: {baseline.toLocaleString(locale)}
           </span>
         )}
+        {showToggle && (
+          <span className="ml-auto">
+            <GranularityToggle
+              value={granularity}
+              onChange={setGranularity}
+              labels={granularityLabels}
+            />
+          </span>
+        )}
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart data={chartData} margin={compactChartMargin}>
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="end_time"
-            tickFormatter={(value) => formatShortDate(value, locale, timeZone, { year: withYear })}
+            tickFormatter={(value) =>
+              formatBucketLabel(String(value), granularity, locale, timeZone, { year: withYear })
+            }
             tick={axisTick}
             tickLine={false}
             axisLine={false}
@@ -130,7 +183,9 @@ export default function DailyViewsChart({
               return [value.toLocaleString(locale), copy.views];
             }}
             labelFormatter={(label) =>
-              formatShortDate(label as string, locale, timeZone, { year: withYear })
+              formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
+                year: withYear,
+              })
             }
             contentStyle={tooltipStyle}
             itemStyle={tooltipItemStyle}
@@ -146,14 +201,16 @@ export default function DailyViewsChart({
             radius={barRadius}
             maxBarSize={20}
           />
-          <Line
-            type="monotone"
-            dataKey="rollingAvg"
-            name={copy.sevenDayAvg}
-            stroke={chartColors.views}
-            strokeWidth={1.8}
-            dot={false}
-          />
+          {isDaily && (
+            <Line
+              type="monotone"
+              dataKey="rollingAvg"
+              name={copy.sevenDayAvg}
+              stroke={chartColors.views}
+              strokeWidth={1.8}
+              dot={false}
+            />
+          )}
         </ComposedChart>
       </ResponsiveContainer>
     </>

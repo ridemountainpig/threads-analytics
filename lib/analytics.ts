@@ -628,7 +628,7 @@ export function computeEngagementRateTrend(
   posts: PostWithInsights[],
   userViews: UserViewPoint[] = [],
   tz = DEFAULT_TZ,
-): Array<{ date: string; rate: number; rollingAvg: number }> {
+): Array<{ date: string; rate: number; rollingAvg: number; views: number }> {
   const byDate = new Map<string, AggregateBucket>();
   // Prefer profile-level daily views as the denominator (consistent with
   // computeDailyPerformance and the dashboard's headline engagement rate);
@@ -647,17 +647,21 @@ export function computeEngagementRateTrend(
   }
 
   const daily = Array.from(byDate.entries())
-    .map(([date, d]) => ({
-      date,
-      rate: getMetricRates({
-        views: viewByDate.get(date) ?? d.totalViews,
-        likes: d.totalLikes,
-        replies: d.totalReplies,
-        reposts: d.totalReposts,
-        quotes: d.totalQuotes,
-        shares: d.totalShares,
-      }).engagementRate,
-    }))
+    .map(([date, d]) => {
+      const views = viewByDate.get(date) ?? d.totalViews;
+      return {
+        date,
+        views,
+        rate: getMetricRates({
+          views,
+          likes: d.totalLikes,
+          replies: d.totalReplies,
+          reposts: d.totalReposts,
+          quotes: d.totalQuotes,
+          shares: d.totalShares,
+        }).engagementRate,
+      };
+    })
     .sort((a, b) => a.date.localeCompare(b.date));
 
   // 7-day rolling average
