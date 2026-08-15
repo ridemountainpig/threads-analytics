@@ -1,10 +1,23 @@
 import "server-only";
 
 import { db } from "@/lib/db";
+import { Prisma } from "@/lib/generated/prisma";
 import { decryptToken } from "@/lib/crypto";
-import { getPosts, getPostInsights, TokenExpiredError } from "@/lib/threads-api";
+import {
+  DEMOGRAPHICS_MIN_FOLLOWERS,
+  getPosts,
+  getPostInsights,
+  getFollowerDemographics,
+  getFollowersCount,
+  TokenExpiredError,
+} from "@/lib/threads-api";
+import { DEFAULT_TZ, getDateString } from "@/lib/analytics";
+import { dateKeyToUtcDate } from "@/lib/followers";
 
 const INSIGHTS_REFRESH_DAYS = 30;
+
+/** Spacing between retries when a day's demographics fetch came back empty. */
+const DEMOGRAPHICS_RETRY_INTERVAL_MS = 6 * 60 * 60 * 1000;
 
 export interface SyncResult {
   postsCount?: number;
@@ -16,6 +29,86 @@ interface SyncAccount {
   id: string;
   accessToken: string;
   expiresAt: Date;
+}
+
+/**
+ * Records the follower count (and demographics, when the profile qualifies) as
+ * one row per calendar day. The API can't report either metric for a past date,
+ * so a day missed here is lost for good.
+ *
+ * Audience metrics move by a handful of people per day, so this runs at most
+ * once per calendar day no matter how often posts are synced: a day that is
+ * already complete costs zero requests. Post syncing can therefore be as
+ * frequent as the user likes without spending quota on the audience.
+ *
+ * Syncs also run from cron, where the browser's time-zone cookie isn't
+ * available, so days are bucketed by DEFAULT_TZ to keep the series consistent
+ * no matter what triggered the sync.
+ */
+async function captureFollowerSnapshot(accountId: string, accessToken: string): Promise<void> {
+  const date = dateKeyToUtcDate(getDateString(new Date(), DEFAULT_TZ));
+
+  let existing: { followersCount: number; demographics: unknown; capturedAt: Date } | null = null;
+  try {
+    existing = await db.followerSnapshot.findUnique({
+      where: { accountId_date: { accountId, date } },
+      select: { followersCount: true, demographics: true, capturedAt: true },
+    });
+  } catch {
+    // Treated as "not captured yet" — worst case today's reading is taken again.
+  }
+
+  // Demographics need the profile to be over the API's threshold; under it, a
+  // row with just the count is as complete as the day can get.
+  const demographicsPossible =
+    existing === null || existing.followersCount >= DEMOGRAPHICS_MIN_FOLLOWERS;
+  // A failed demographics fetch is worth retrying — losing the day entirely to
+  // one bad response would be worse — but not on every sync, or an hourly post
+  // schedule would spend four requests an hour retrying a broken call.
+  const retryDue =
+    existing !== null &&
+    Date.now() - existing.capturedAt.getTime() >= DEMOGRAPHICS_RETRY_INTERVAL_MS;
+  const demographicsMissing = existing !== null && existing.demographics === null;
+  if (existing !== null && !(demographicsMissing && demographicsPossible && retryDue)) return;
+
+  // Only re-read the count when there is no row yet; an existing row's count
+  // stands for the day, so a retry for demographics costs no extra request.
+  const followersCount =
+    existing?.followersCount ?? (await getFollowersCount(accountId, accessToken));
+  if (followersCount === null) return;
+
+  const demographics =
+    followersCount >= DEMOGRAPHICS_MIN_FOLLOWERS
+      ? await getFollowerDemographics(accountId, accessToken)
+      : null;
+
+  // Prisma types Json columns as InputJsonValue, which a named interface never
+  // structurally satisfies; the shape is validated on read by parseDemographics.
+  const demographicsJson = demographics as unknown as Prisma.InputJsonValue;
+
+  try {
+    await db.followerSnapshot.upsert({
+      where: { accountId_date: { accountId, date } },
+      create: {
+        accountId,
+        date,
+        followersCount,
+        ...(demographics ? { demographics: demographicsJson } : {}),
+      },
+      // Demographics are only written when this run actually fetched them, so a
+      // failed fetch can't blank out a good earlier snapshot.
+      update: {
+        followersCount,
+        capturedAt: new Date(),
+        ...(demographics ? { demographics: demographicsJson } : {}),
+      },
+    });
+  } catch (err) {
+    console.warn(
+      `[sync] follower snapshot failed for ${accountId}:`,
+      err instanceof Error ? err.message : err,
+    );
+  }
 }
 
 export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncResult> {
@@ -118,6 +211,8 @@ export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncRe
       );
       synced += withInsights.length;
     }
+
+    await captureFollowerSnapshot(userId, accessToken);
 
     await db.syncState.upsert({
       where: { accountId: userId },

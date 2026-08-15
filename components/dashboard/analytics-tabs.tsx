@@ -4,12 +4,17 @@ import { useCallback, useLayoutEffect, useState } from "react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import { Tabs } from "@/components/ui/tabs";
 
-export type AnalyticsTabValue = "performance" | "content";
+export type AnalyticsTabValue = "performance" | "content" | "audience";
+
+const TAB_VALUES: readonly AnalyticsTabValue[] = ["performance", "content", "audience"];
+
+function isTabValue(value: string | null): value is AnalyticsTabValue {
+  return value !== null && (TAB_VALUES as readonly string[]).includes(value);
+}
 
 function tabFromParams(params: URLSearchParams): AnalyticsTabValue | null {
   const t = params.get("tab");
-  if (t === "content" || t === "performance") return t;
-  return null;
+  return isTabValue(t) ? t : null;
 }
 
 /** Prefer the real location bar — useSearchParams() can be empty on first paint (static/SSR). */
@@ -43,7 +48,7 @@ export default function AnalyticsTabs({
   const onValueChange = useCallback(
     (next: string | number | null) => {
       const raw = next != null ? String(next) : "";
-      const v: AnalyticsTabValue = raw === "content" ? "content" : "performance";
+      const v: AnalyticsTabValue = isTabValue(raw) ? raw : "performance";
       setValue(v);
       const params = paramsFromBrowser(searchParams);
       params.set("tab", v);

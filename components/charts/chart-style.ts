@@ -16,6 +16,21 @@ export const chartColors = {
   tooltipFg: "var(--popover-foreground)",
 } as const;
 
+// Categorical slots for charts that plot several entities at once. Assign in
+// order and never cycle — a sixth series folds into "other" or gets its own
+// chart instead. Defined per theme in globals.css, where the two sets were
+// validated against their own surfaces.
+export const seriesColors = [
+  "var(--series-1)",
+  "var(--series-2)",
+  "var(--series-3)",
+  "var(--series-4)",
+  "var(--series-5)",
+] as const;
+
+/** Warm pole for signed values, against seriesColors[0] as the cool pole. */
+export const negativeColor = "var(--series-negative)";
+
 export const chartMargin = { top: 8, right: 12, left: 0, bottom: 0 };
 
 export const compactChartMargin = { top: 6, right: 10, left: 0, bottom: 0 };

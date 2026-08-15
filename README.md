@@ -24,6 +24,7 @@
 - [Getting Your Threads Access Token](#getting-your-threads-access-token)
 - [Analytics Reference](#analytics-reference)
 - [Deployment](#deployment)
+  - [Updating an existing deployment](#updating-an-existing-deployment)
 
 ---
 
@@ -44,8 +45,8 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with `APP_PASSWO
 
 ## Features
 
-- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, daily views chart, best posting hour recommendation, viral posts
-- **Analytics** — 15+ charts across **Performance** and **Content** tabs
+- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts
+- **Analytics** — 25+ charts across **Performance**, **Content**, and **Audience** tabs
 - **Posts** — searchable, filterable list with per-post analytics panel
 - Multi-account support with account switching
 - Auto-sync on configurable intervals
@@ -137,16 +138,20 @@ For a screenshot-based walkthrough, see [How to Generate a Threads Access Token]
 
 ## Analytics Reference
 
+> The time-series charts (Views Trend, Overall Performance, Engagement Rate Trend, Engagement Breakdown, Shares Over Time, Reach Growth Trend) each switch between **day / week / month** granularity, and each remembers its own choice.
+
 ### Overview
 
 | Section         | What it shows                                                                                                                                                                |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | **Stat Cards**  | Total views, likes, replies, reposts, quotes, shares, and engagement rate for the selected period. Each card shows a `+/−%` delta vs the previous period of the same length. |
 | **Best Hours**  | Top 2–3 posting hours ranked by median views, with a confidence indicator based on sample size.                                                                              |
-| **Daily Views** | Daily view counts with a 7-day rolling average and your personal median as a baseline.                                                                                       |
+| **Views Trend** | Views by day, week, or month, with your personal median as a baseline.                                                                                                       |
 | **Top Posts**   | Posts that exceeded the median view count, ranked by their multiplier (e.g. `3.2× median`).                                                                                  |
 
 ### Analytics — Performance tab
+
+Stats at the top of the tab: **Total Views**, **Avg Views / Day**, **Eng. Rate**, **Share Rate**.
 
 | Chart                         | What it shows                                                                                                                                           |
 | ----------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -158,7 +163,9 @@ For a screenshot-based walkthrough, see [How to Generate a Threads Access Token]
 | **Best Day of Week**          | Median views, engagement rate, and post count by weekday.                                                                                               |
 | **Format × Length Matrix**    | 2-D heatmap comparing every combination of content format and post length against your median reach.                                                    |
 | **Engagement Type Breakdown** | Pie chart of the proportion of likes, replies, reposts, quotes, and shares.                                                                             |
-| **Engagement Breakdown**      | Stacked daily chart of likes, replies, reposts, and quotes over time.                                                                                   |
+| **Engagement Breakdown**      | Stacked chart of likes, replies, reposts, and quotes over time.                                                                                         |
+| **Reach Growth Trend**        | Median and average views per post over time — is the account's reach growing?                                                                           |
+| **Views Distribution**        | How posts spread across view ranges, with hit rates for each milestone (1k, 5k, 10k…).                                                                  |
 
 ### Analytics — Content tab
 
@@ -176,6 +183,21 @@ Stat metrics at the top of the tab: **Posting Consistency** (% of weeks with at 
 | **Content Type by Time Slot**           | Best posting hour for each content format based on median views.                                                                 |
 | **Top by Engagement Rate**              | Highest-engagement posts ranked by (likes + replies + reposts + quotes) ÷ views.                                                 |
 | **Reply-Rate Leaders**                  | Posts ranked by replies ÷ views — your best conversation starters.                                                               |
+| **Share-Rate Leaders**                  | Posts ranked by shares ÷ views — your most save-worthy content.                                                                  |
+| **Posting Gap vs Performance**          | Median views by days since your previous post — does posting daily beat taking a break?                                          |
+| **Content Feature Comparison**          | Posts with and without links, and with and without questions, compared side by side.                                             |
+
+### Analytics — Audience tab
+
+Stats at the top of the tab: **Followers**, **Net Growth** (with `+/−%`), **Avg / Day**, **Days Tracked**.
+
+| Chart                     | What it shows                                                                                                                                                               |
+| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Follower Growth**       | Follower count over time, one point per synced day; the tooltip carries that day's change.                                                                                  |
+| **Follower Demographics** | One distribution per breakdown — country, city, age, gender — with a marker on each bar for the baseline date and both a head-count and a percentage-point delta.           |
+| **Composition Trend**     | Each group's share as a change in percentage points from the baseline date, top 5 movers per breakdown. Composition shifts too slowly for absolute shares to show anything. |
+
+> Threads only reports `followers_count` and `follower_demographics` as of right now — both reject `since` / `until` — so history can't be backfilled and builds up one row per day. Audience metrics are captured **at most once per calendar day**, however often posts are synced, so a frequent post schedule costs no extra API quota here. Demographics additionally require the profile to have at least 100 followers. Pick the two dates to compare with the date selectors; only days that were actually captured are offered.
 
 ### Posts page
 
@@ -263,5 +285,6 @@ New versions ship as updated Docker images. Database migrations run automaticall
 - **Zeabur** — open the `threads-analytics` service and click **Redeploy** to pull the latest image.
 - **Railway** — trigger a redeploy of the service from the Railway dashboard.
 - **From source** — `git pull`, then `pnpm install && pnpm build` and restart with `pnpm start` (runs migrations automatically).
+- **Vercel** — push the new version. Vercel never runs `pnpm start`, so migrations run at build time through the `vercel-build` script (`prisma migrate deploy && next build`), which Vercel prefers over `build` when present.
 
 Your database (posts, insights, accounts) is preserved across updates.

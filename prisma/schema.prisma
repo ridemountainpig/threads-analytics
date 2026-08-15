@@ -15,14 +15,15 @@ model Session {
 }
 
 model ThreadsAccount {
-  id          String     @id
-  username    String
-  accessToken String
-  expiresAt   DateTime   @db.Timestamptz(3)
-  createdAt   DateTime   @default(now()) @db.Timestamptz(3)
-  isActive    Boolean    @default(false)
-  posts       Post[]
-  syncState   SyncState?
+  id                String             @id
+  username          String
+  accessToken       String
+  expiresAt         DateTime           @db.Timestamptz(3)
+  createdAt         DateTime           @default(now()) @db.Timestamptz(3)
+  isActive          Boolean            @default(false)
+  posts             Post[]
+  syncState         SyncState?
+  followerSnapshots FollowerSnapshot[]
 }
 
 model Post {
@@ -45,6 +46,23 @@ model Post {
   @@index([accountId, views])
   @@index([accountId, likes])
   @@index([accountId, mediaType])
+}
+
+// followers_count and follower_demographics are lifetime snapshots: the Threads
+// API rejects since/until on them and only ever reports "right now". History can
+// therefore never be backfilled — it only exists because each sync writes one
+// row per local calendar day here.
+model FollowerSnapshot {
+  accountId      String
+  account        ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  date           DateTime       @db.Date
+  followersCount Int
+  // { country: [{ key, value }], city: [...], age: [...], gender: [...] }
+  // Null until the profile crosses the API's 100-follower threshold.
+  demographics   Json?
+  capturedAt     DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@id([accountId, date])
 }
 
 model SyncState {

@@ -8,6 +8,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "vercel-build": "prisma migrate deploy && next build",
     "start": "prisma migrate deploy && next start",
     "format": "prettier --write .",
     "format:check": "prettier --check ."

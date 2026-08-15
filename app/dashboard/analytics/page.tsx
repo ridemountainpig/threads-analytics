@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { Prisma } from "@/lib/generated/prisma";
 import { decryptToken } from "@/lib/crypto";
 import { getUserInsights } from "@/lib/threads-api";
 import type { UserInsights } from "@/lib/threads-api";
@@ -33,6 +34,8 @@ import {
   computeShareLeaders,
   computeTextFeatureComparison,
   computePostingGapAnalysis,
+  getDateString,
+  DEFAULT_TZ,
   type PostWithInsights,
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -62,7 +65,26 @@ import PostingGapChart from "@/components/charts/posting-gap-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChartCard from "@/components/dashboard/chart-card";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import AnalyticsTabs from "@/components/dashboard/analytics-tabs";
+import AnalyticsTabs, { type AnalyticsTabValue } from "@/components/dashboard/analytics-tabs";
+import FollowerTrendChart from "@/components/charts/follower-trend-chart";
+import FollowerDemographicsChart from "@/components/charts/follower-demographics-chart";
+import {
+  compareDemographics,
+  computeDemographicTrend,
+  computeFollowerTrend,
+  dateKeyToUtcDate,
+  utcDateToKey,
+  hasDemographicData,
+  parseDemographics,
+  summarizeFollowerGrowth,
+  type DemographicBreakdown,
+  type DemographicSlice,
+  type DemographicTrendResult,
+} from "@/lib/followers";
+import DemographicTrendChart from "@/components/charts/demographic-trend-chart";
+import DemographicDatePicker from "@/components/dashboard/demographic-date-picker";
+import { buildDemographicLabels } from "@/lib/demographic-labels";
+import { DEMOGRAPHIC_BREAKDOWNS, DEMOGRAPHICS_MIN_FOLLOWERS } from "@/lib/threads-api";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
 import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
@@ -71,12 +93,41 @@ import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
 
 interface PageProps {
-  searchParams: Promise<{ range?: string; from?: string; to?: string; tab?: string }>;
+  searchParams: Promise<{
+    range?: string;
+    from?: string;
+    to?: string;
+    tab?: string;
+    /** Demographic comparison endpoints, as YYYY-MM-DD snapshot dates. */
+    dFrom?: string;
+    dTo?: string;
+  }>;
+}
+
+/** How many of the most recent snapshots the comparison spans by default. */
+const DEFAULT_COMPARISON_SPAN = 90;
+
+/** Snapshot dates are calendar dates stored at UTC midnight — format them as such. */
+function formatSnapshotDate(date: Date, dateLocale: string) {
+  return new Intl.DateTimeFormat(dateLocale, {
+    timeZone: "UTC",
+    year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).format(date);
 }
 
 export default async function AnalyticsPage({ searchParams }: PageProps) {
-  const { range: rangeParam, from: fromParam, to: toParam, tab: tabParam } = await searchParams;
-  const activeTab = tabParam === "content" ? "content" : "performance";
+  const {
+    range: rangeParam,
+    from: fromParam,
+    to: toParam,
+    tab: tabParam,
+    dFrom: dFromParam,
+    dTo: dToParam,
+  } = await searchParams;
+  const activeTab: AnalyticsTabValue =
+    tabParam === "content" || tabParam === "audience" ? tabParam : "performance";
   const [{ locale, t }, account, syncInterval, tz, resolved] = await Promise.all([
     getDictionary(),
     getActiveAccount(),
@@ -142,8 +193,23 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     totalQuotes: 0,
   };
 
+  // Follower snapshots are stored as calendar dates (UTC midnight), so the range
+  // instants are reduced to date keys before comparing. The reduction uses
+  // DEFAULT_TZ — the same zone captureFollowerSnapshot buckets days by — because
+  // using the viewer's zone would put "today" on a different calendar day than
+  // the row that was just written, dropping the newest point from the chart.
+  const sinceDate = dateKeyToUtcDate(getDateString(since, DEFAULT_TZ));
+  const untilDate = dateKeyToUtcDate(getDateString(until, DEFAULT_TZ));
+
   const shouldFetchUserInsights = range !== "all";
-  const [userInsights, dbPosts, allPostTimestamps] = await Promise.all([
+  const [
+    userInsights,
+    dbPosts,
+    allPostTimestamps,
+    followerSnapshots,
+    demographicDates,
+    latestSnapshot,
+  ] = await Promise.all([
     shouldFetchUserInsights
       ? getUserInsights(account.id, accessToken, toUnix(since), toUnix(until)).catch(
           () => emptyUserInsights,
@@ -166,7 +232,62 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
       select: { timestamp: true },
       orderBy: { timestamp: "asc" },
     }),
+    db.followerSnapshot.findMany({
+      where: { accountId: account.id, date: { gte: sinceDate, lte: untilDate } },
+      select: { date: true, followersCount: true },
+      orderBy: { date: "asc" },
+    }),
+    // Dates only, so the picker can offer exactly the days that have data. The
+    // demographics payloads are fetched afterwards for the chosen window alone.
+    db.followerSnapshot.findMany({
+      where: { accountId: account.id, demographics: { not: Prisma.DbNull } },
+      select: { date: true },
+      orderBy: { date: "asc" },
+    }),
+    // Separates "nothing captured yet" from "captured, but under the
+    // demographics threshold", so the empty state can say which one it is.
+    db.followerSnapshot.findFirst({
+      where: { accountId: account.id },
+      select: { followersCount: true },
+      orderBy: { date: "desc" },
+    }),
   ]);
+
+  // The demographic comparison is driven by two explicitly chosen snapshot dates
+  // rather than the time-range picker: these metrics are point-in-time readings,
+  // and only days that were actually captured can be compared.
+  const demographicDateKeys = demographicDates.map((snapshot) => utcDateToKey(snapshot.date));
+  const isAvailable = (key: string | undefined): key is string =>
+    key !== undefined && demographicDateKeys.includes(key);
+  const currentDateKey = isAvailable(dToParam)
+    ? dToParam
+    : demographicDateKeys[demographicDateKeys.length - 1];
+  // Default to a bounded window rather than all of history: the payload below
+  // carries one demographics blob per day in range, and defaulting to "every
+  // snapshot ever" would grow the cost of every page load forever. Picking an
+  // older baseline explicitly still works — the picker offers every date.
+  let baselineDateKey = isAvailable(dFromParam)
+    ? dFromParam
+    : demographicDateKeys[Math.max(0, demographicDateKeys.length - DEFAULT_COMPARISON_SPAN)];
+  if (baselineDateKey && currentDateKey && baselineDateKey > currentDateKey) {
+    baselineDateKey = currentDateKey;
+  }
+
+  const windowDemographicSnapshots =
+    baselineDateKey && currentDateKey
+      ? await db.followerSnapshot.findMany({
+          where: {
+            accountId: account.id,
+            demographics: { not: Prisma.DbNull },
+            date: {
+              gte: dateKeyToUtcDate(baselineDateKey),
+              lte: dateKeyToUtcDate(currentDateKey),
+            },
+          },
+          select: { date: true, demographics: true },
+          orderBy: { date: "asc" },
+        })
+      : [];
 
   const posts: PostWithInsights[] = dbPosts.map((p) => ({
     id: p.id,
@@ -245,6 +366,59 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const contentTypeTimeSlot = computeContentTypeTimeSlot(posts, tz);
   const postingStreak = computePostingStreak(posts, tz);
 
+  // Audience metrics
+  const followerTrend = computeFollowerTrend(followerSnapshots);
+  const followerGrowth = summarizeFollowerGrowth(followerTrend);
+  // Prefer the range's own snapshots so the headline figures and the comparison
+  // describe the same two dates; fall back to the last capture of any date when
+  // the range contains none.
+  const currentDemographicSnapshot =
+    windowDemographicSnapshots[windowDemographicSnapshots.length - 1] ?? null;
+  const baselineDemographicSnapshot =
+    windowDemographicSnapshots.length >= 2 ? (windowDemographicSnapshots[0] ?? null) : null;
+  const demographics = parseDemographics(currentDemographicSnapshot?.demographics);
+  const baselineDemographics = parseDemographics(baselineDemographicSnapshot?.demographics);
+  // Distinguishes the three reasons demographics can be missing: no snapshot at
+  // all, a snapshot from a profile under the API's threshold, or a snapshot
+  // whose demographics fetch hasn't landed yet.
+  const demographicsEmptyMessage = !latestSnapshot
+    ? t.analytics.followerEmpty
+    : latestSnapshot.followersCount < DEMOGRAPHICS_MIN_FOLLOWERS
+      ? t.analytics.demographicsEmpty
+      : t.analytics.demographicsPending;
+  const demographicSlices = DEMOGRAPHIC_BREAKDOWNS.reduce(
+    (acc, breakdown) => {
+      acc[breakdown] = demographics
+        ? compareDemographics(demographics[breakdown], baselineDemographics?.[breakdown] ?? null)
+        : [];
+      return acc;
+    },
+    {} as Record<DemographicBreakdown, DemographicSlice[]>,
+  );
+  const demographicTrends = DEMOGRAPHIC_BREAKDOWNS.reduce(
+    (acc, breakdown) => {
+      acc[breakdown] = computeDemographicTrend(windowDemographicSnapshots, breakdown);
+      return acc;
+    },
+    {} as Record<DemographicBreakdown, DemographicTrendResult>,
+  );
+  const hasDemographicTrend = DEMOGRAPHIC_BREAKDOWNS.some(
+    (breakdown) => demographicTrends[breakdown].keys.length > 0,
+  );
+  // Country names come from Intl.DisplayNames, whose ICU data differs between
+  // Node and the browser, so they are resolved here and passed down as strings.
+  const demographicKeyLabels = DEMOGRAPHIC_BREAKDOWNS.reduce(
+    (acc, breakdown) => {
+      const keys = [
+        ...demographicSlices[breakdown].map((slice) => slice.key),
+        ...demographicTrends[breakdown].keys,
+      ];
+      acc[breakdown] = buildDemographicLabels(keys, breakdown, locale, t.chart.genderLabels);
+      return acc;
+    },
+    {} as Record<DemographicBreakdown, Record<string, string>>,
+  );
+
   const totalShares = posts.reduce((sum, p) => sum + p.shares, 0);
   const totalQuotes = posts.reduce((sum, p) => sum + p.quotes, 0);
   const totalReposts = posts.reduce((sum, p) => sum + p.reposts, 0);
@@ -283,6 +457,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
         <TabsList>
           <TabsTrigger value="performance">{t.analytics.performance}</TabsTrigger>
           <TabsTrigger value="content">{t.analytics.content}</TabsTrigger>
+          <TabsTrigger value="audience">{t.analytics.audience}</TabsTrigger>
         </TabsList>
 
         {/* ── PERFORMANCE TAB ── */}
@@ -797,6 +972,163 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               />
             </ChartCard>
           </div>
+        </TabsContent>
+
+        {/* ── AUDIENCE TAB ── */}
+        <TabsContent value="audience" className="mt-4 space-y-4">
+          {followerGrowth ? (
+            <>
+              <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
+                <StatCard title={t.analytics.followers} value={followerGrowth.current} />
+                <StatCard
+                  title={t.analytics.followerNet}
+                  value={`${followerGrowth.net > 0 ? "+" : ""}${followerGrowth.net.toLocaleString(dateLocale)}`}
+                  delta={followerGrowth.netPct}
+                  deltaLabel={t.analytics.followerNetSub}
+                />
+                <StatCard
+                  title={t.analytics.followerAvgPerDay}
+                  value={`${followerGrowth.avgPerDay > 0 ? "+" : ""}${followerGrowth.avgPerDay.toLocaleString(dateLocale)}`}
+                />
+                <StatCard title={t.analytics.followerTrackedDays} value={followerGrowth.days} />
+              </div>
+
+              <ChartCard
+                title={t.analytics.followerTrend}
+                subtitle={t.analytics.followerTrendSub}
+                labels={cardLabels}
+              >
+                <FollowerTrendChart
+                  data={followerTrend}
+                  dateLocale={dateLocale}
+                  timeZone={tz}
+                  labels={{
+                    followers: t.chart.followers,
+                    dailyChange: t.chart.dailyChange,
+                    date: t.chart.date,
+                    noData: t.chart.noData,
+                  }}
+                />
+              </ChartCard>
+            </>
+          ) : (
+            <Card>
+              <CardHeader className="pb-2">
+                <CardTitle className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+                  {t.analytics.followerTrend}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <p className="text-muted-foreground text-sm">{t.analytics.followerEmpty}</p>
+              </CardContent>
+            </Card>
+          )}
+
+          {hasDemographicData(demographics) ? (
+            <div className="space-y-3">
+              {/* Left-aligned under the heading: the page header already carries a
+                  right-aligned time-range control for a different scope, and two
+                  right-aligned date controls read as one group. */}
+              <div className="flex flex-col gap-2.5">
+                <div>
+                  <h2 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+                    {t.analytics.demographics}
+                  </h2>
+                  <p className="text-muted-foreground text-xs">{t.analytics.demographicsSub}</p>
+                </div>
+                {demographicDateKeys.length > 1 && baselineDateKey && currentDateKey && (
+                  <DemographicDatePicker
+                    // Newest first: the recent end of the history is what gets
+                    // picked, and it would otherwise sit at the bottom of a list
+                    // that grows by a row a day.
+                    options={[...demographicDates].reverse().map((snapshot) => ({
+                      value: utcDateToKey(snapshot.date),
+                      label: formatSnapshotDate(snapshot.date, dateLocale),
+                    }))}
+                    baseline={baselineDateKey}
+                    current={currentDateKey}
+                    labels={{
+                      baseline: t.chart.baselineDate,
+                      current: t.chart.compareDate,
+                    }}
+                  />
+                )}
+              </div>
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                {DEMOGRAPHIC_BREAKDOWNS.filter(
+                  (breakdown) => demographicSlices[breakdown].length > 0,
+                ).map((breakdown) => (
+                  <ChartCard key={breakdown} title={t.chart[breakdown]} labels={cardLabels}>
+                    <FollowerDemographicsChart
+                      data={demographicSlices[breakdown]}
+                      keyLabels={demographicKeyLabels[breakdown]}
+                      dateLocale={dateLocale}
+                      compareDates={
+                        baselineDemographicSnapshot && currentDemographicSnapshot
+                          ? {
+                              from: formatSnapshotDate(
+                                baselineDemographicSnapshot.date,
+                                dateLocale,
+                              ),
+                              to: formatSnapshotDate(currentDemographicSnapshot.date, dateLocale),
+                            }
+                          : undefined
+                      }
+                      labels={{
+                        noData: t.chart.noData,
+                        pointSuffix: t.chart.pointSuffix,
+                        baselineMarker: t.chart.baselineMarker,
+                        compare: t.analytics.demographicsCompare,
+                      }}
+                    />
+                  </ChartCard>
+                ))}
+              </div>
+
+              {hasDemographicTrend && (
+                <>
+                  <div className="pt-2">
+                    <h2 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+                      {t.analytics.demographicsTrend}
+                    </h2>
+                    <p className="text-muted-foreground text-xs">
+                      {t.analytics.demographicsTrendSub}
+                    </p>
+                  </div>
+                  <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    {DEMOGRAPHIC_BREAKDOWNS.filter(
+                      (breakdown) => demographicTrends[breakdown].keys.length > 0,
+                    ).map((breakdown) => (
+                      <ChartCard key={breakdown} title={t.chart[breakdown]} labels={cardLabels}>
+                        <DemographicTrendChart
+                          keys={demographicTrends[breakdown].keys}
+                          rows={demographicTrends[breakdown].rows}
+                          keyLabels={demographicKeyLabels[breakdown]}
+                          dateLocale={dateLocale}
+                          timeZone={tz}
+                          labels={{
+                            date: t.chart.date,
+                            shareChange: t.chart.shareChange,
+                            noData: t.chart.noData,
+                            pointSuffix: t.chart.pointSuffix,
+                            baseline: t.chart.baselineDate,
+                          }}
+                        />
+                      </ChartCard>
+                    ))}
+                  </div>
+                </>
+              )}
+            </div>
+          ) : (
+            <ChartCard
+              title={t.analytics.demographics}
+              subtitle={t.analytics.demographicsSub}
+              labels={cardLabels}
+            >
+              <p className="text-muted-foreground text-sm">{demographicsEmptyMessage}</p>
+            </ChartCard>
+          )}
         </TabsContent>
       </AnalyticsTabs>
     </div>

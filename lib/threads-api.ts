@@ -34,6 +34,38 @@ export interface UserInsights {
   totalQuotes: number;
 }
 
+export type DemographicBreakdown = "country" | "city" | "age" | "gender";
+
+export const DEMOGRAPHIC_BREAKDOWNS: readonly DemographicBreakdown[] = [
+  "country",
+  "city",
+  "age",
+  "gender",
+];
+
+export interface DemographicEntry {
+  key: string;
+  value: number;
+}
+
+export interface DemographicBreakdownData {
+  /**
+   * Sum of every entry the API returned, taken before `entries` is truncated —
+   * shares must be computed against the real total, not against the stored top
+   * slice, or a long tail silently inflates every percentage.
+   */
+  total: number;
+  entries: DemographicEntry[];
+}
+
+export type FollowerDemographics = Record<DemographicBreakdown, DemographicBreakdownData>;
+
+/** The API refuses follower_demographics below this follower count. */
+export const DEMOGRAPHICS_MIN_FOLLOWERS = 100;
+
+/** Keeps one snapshot's JSON bounded — city/country tails are long and unread. */
+const DEMOGRAPHIC_ENTRY_LIMIT = 50;
+
 export class TokenExpiredError extends Error {
   constructor(message: string) {
     super(message);
@@ -155,6 +187,95 @@ export async function getPostInsights(
     );
     return null;
   }
+}
+
+export async function getFollowersCount(
+  userId: string,
+  accessToken: string,
+): Promise<number | null> {
+  interface FollowersResponse {
+    data: Array<{ name: string; total_value?: { value: number } }>;
+  }
+
+  try {
+    const data = await apiGet<FollowersResponse>(`/${userId}/threads_insights`, {
+      metric: "followers_count",
+      access_token: accessToken,
+    });
+    const metric = (data.data ?? []).find((d) => d.name === "followers_count");
+    return metric?.total_value?.value ?? null;
+  } catch (err) {
+    if (err instanceof TokenExpiredError) throw err;
+    console.warn(
+      `[threads-api] getFollowersCount failed for ${userId}:`,
+      err instanceof Error ? err.message : err,
+    );
+    return null;
+  }
+}
+
+/**
+ * Fetches follower_demographics once per breakdown — the API takes exactly one
+ * `breakdown` value per call. Returns null when every breakdown fails (most
+ * often: the profile is under DEMOGRAPHICS_MIN_FOLLOWERS), and otherwise
+ * whatever subset came back, so one bad dimension can't discard the rest.
+ */
+export async function getFollowerDemographics(
+  userId: string,
+  accessToken: string,
+): Promise<FollowerDemographics | null> {
+  interface DemographicsResponse {
+    data: Array<{
+      name: string;
+      total_value?: {
+        breakdowns?: Array<{
+          dimension_keys?: string[];
+          results?: Array<{ dimension_values?: string[]; value?: number }>;
+        }>;
+      };
+    }>;
+  }
+
+  const fetchBreakdown = async (
+    breakdown: DemographicBreakdown,
+  ): Promise<DemographicBreakdownData | null> => {
+    try {
+      const data = await apiGet<DemographicsResponse>(`/${userId}/threads_insights`, {
+        metric: "follower_demographics",
+        breakdown,
+        access_token: accessToken,
+      });
+      const metric = (data.data ?? []).find((d) => d.name === "follower_demographics");
+      const results = metric?.total_value?.breakdowns?.[0]?.results ?? [];
+      const all = results
+        // One breakdown per request means one dimension value per result, but
+        // joining keeps multi-dimension responses readable instead of dropping
+        // everything past the first.
+        .map((r) => ({ key: (r.dimension_values ?? []).join(", "), value: r.value ?? 0 }))
+        .filter((entry) => entry.key !== "")
+        .sort((a, b) => b.value - a.value);
+      return {
+        total: all.reduce((sum, entry) => sum + entry.value, 0),
+        entries: all.slice(0, DEMOGRAPHIC_ENTRY_LIMIT),
+      };
+    } catch (err) {
+      if (err instanceof TokenExpiredError) throw err;
+      console.warn(
+        `[threads-api] getFollowerDemographics(${breakdown}) failed for ${userId}:`,
+        err instanceof Error ? err.message : err,
+      );
+      return null;
+    }
+  };
+
+  const results = await Promise.all(DEMOGRAPHIC_BREAKDOWNS.map(fetchBreakdown));
+  if (results.every((entries) => entries === null)) return null;
+
+  const demographics = {} as FollowerDemographics;
+  DEMOGRAPHIC_BREAKDOWNS.forEach((breakdown, i) => {
+    demographics[breakdown] = results[i] ?? { total: 0, entries: [] };
+  });
+  return demographics;
 }
 
 export async function getUserInsights(
