@@ -27,7 +27,10 @@ export function TokenExpiredNotice({ message, help, settingsLabel }: TokenExpire
         <h2 className="font-heading text-lg font-medium">{heading}</h2>
         <p className="text-muted-foreground mx-auto max-w-xs text-sm text-balance">{helpText}</p>
       </div>
-      <Link href="/dashboard/settings" className={buttonVariants({ size: "lg" })}>
+      <Link
+        href="/dashboard/settings"
+        className={buttonVariants({ size: "lg", className: "rounded-full" })}
+      >
         {settingsLabel}
         <ArrowRight data-icon="inline-end" />
       </Link>

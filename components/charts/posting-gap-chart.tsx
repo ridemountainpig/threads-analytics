@@ -9,11 +9,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   axisTick,
   barRadius,
   chartColors,
@@ -21,10 +21,9 @@ import {
   compactChartMargin,
   formatCompactNumber,
   gridProps,
-  legendStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 type GapBucket = "0" | "1" | "2-3" | "4-7" | "8+";
 
@@ -60,7 +59,14 @@ const DEFAULT_BUCKET_LABELS: Record<GapBucket, string> = {
   "8+": "8+ days",
 };
 
+const CONFIDENCE_OPACITY: Record<"low" | "medium" | "high", number> = {
+  low: 0.35,
+  medium: 0.65,
+  high: 1,
+};
+
 export default function PostingGapChart({ data, labels }: PostingGapChartProps) {
+  const motion = useChartMotion();
   const copy = labels ?? {
     gapDays: "Days Since Last Post",
     gapBuckets: DEFAULT_BUCKET_LABELS,
@@ -74,11 +80,7 @@ export default function PostingGapChart({ data, labels }: PostingGapChartProps) 
   };
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={240} />;
   }
 
   const bucketLabel = (gap: GapBucket) => copy.gapBuckets[gap] ?? gap;
@@ -86,6 +88,13 @@ export default function PostingGapChart({ data, labels }: PostingGapChartProps) 
   return (
     <>
       <AxisHint x={copy.gapDays} y={`${copy.medianViews} / ${copy.engagementRate}`} />
+      <ChartLegend
+        className="mb-2"
+        items={[
+          { label: copy.medianViews, color: chartColors.views, shape: "dot" },
+          { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
+        ]}
+      />
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart data={data} margin={compactChartMargin}>
           <CartesianGrid {...gridProps} />
@@ -115,54 +124,46 @@ export default function PostingGapChart({ data, labels }: PostingGapChartProps) 
             width={38}
           />
           <Tooltip
+            cursor={lineCursor}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as PostingGapChartProps["data"][number];
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>{bucketLabel(point.gap)}</p>
-                  <p>
-                    {copy.posts}: {point.postCount.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.medianViews}: {point.medianViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.avgViews}: {point.avgViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.engagementRate}: {point.engagementRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {copy.hitRate}: {point.hitRate}%
-                  </p>
-                  <p className="text-muted-foreground">
-                    {copy.confidence}:{" "}
-                    {copy.confidenceLevels?.[point.confidence] ?? point.confidence}
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={bucketLabel(point.gap)}
+                  subtitle={`${copy.confidence}: ${
+                    copy.confidenceLevels?.[point.confidence] ?? point.confidence
+                  }`}
+                  rows={[
+                    {
+                      label: copy.medianViews,
+                      value: point.medianViews.toLocaleString(),
+                      color: chartColors.views,
+                    },
+                    { label: copy.avgViews, value: point.avgViews.toLocaleString() },
+                    {
+                      label: copy.engagementRate,
+                      value: `${point.engagementRate.toFixed(2)}%`,
+                      color: chartColors.engagement,
+                    },
+                    { label: copy.hitRate, value: `${point.hitRate}%` },
+                    { label: copy.posts, value: point.postCount.toLocaleString(), muted: true },
+                  ]}
+                />
               );
             }}
           />
-          <Legend iconSize={10} wrapperStyle={legendStyle} />
           <Bar
             yAxisId="views"
             dataKey="medianViews"
             name={copy.medianViews}
             fill={chartColors.views}
             radius={barRadius}
-            maxBarSize={40}
+            maxBarSize={36}
+            {...motion}
           >
             {data.map((entry) => (
-              <Cell
-                key={entry.gap}
-                fillOpacity={
-                  entry.confidence === "low" ? 0.4 : entry.confidence === "medium" ? 0.7 : 1
-                }
-              />
+              <Cell key={entry.gap} fillOpacity={CONFIDENCE_OPACITY[entry.confidence]} />
             ))}
           </Bar>
           <Line
@@ -171,8 +172,10 @@ export default function PostingGapChart({ data, labels }: PostingGapChartProps) 
             dataKey="engagementRate"
             name={copy.engagementRate}
             stroke={chartColors.engagement}
-            strokeWidth={2}
-            dot={{ r: 3, fill: chartColors.engagement }}
+            strokeWidth={1.8}
+            dot={{ r: 2.5, fill: chartColors.engagement, strokeWidth: 0 }}
+            activeDot={activeDot(chartColors.engagement)}
+            {...motion}
           />
         </ComposedChart>
       </ResponsiveContainer>

@@ -4,8 +4,8 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RefreshCw, ArrowRight, TriangleAlert } from "lucide-react";
-import { Button } from "@/components/ui/button";
 import { syncDataAction } from "@/actions/sync";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -96,21 +96,22 @@ export default function SyncButton({
     <div className="flex max-w-full min-w-0 flex-col items-end gap-1">
       <div className="flex max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1">
         {lastSyncedAt && (
-          <span className="text-muted-foreground text-xs">
+          <span className="text-muted-foreground text-xs tabular-nums">
             {copy.lastSynced} {formatDateTime(lastSyncedAt, dateLocale ?? "en-US", timeZone)}
           </span>
         )}
         <div className="group relative">
-          <Button
-            variant="outline"
-            size="sm"
-            className="h-7 px-2.5 text-xs"
+          <button
+            type="button"
             onClick={handleSync}
             disabled={pending}
+            className="bg-tint/12 text-tint hover:bg-tint/18 inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
           >
-            <RefreshCw className={`mr-1.5 size-3.5 ${pending ? "animate-spin" : ""}`} />
+            <RefreshCw
+              className={`size-3.5 ${pending ? "animate-spin motion-reduce:animate-none" : ""}`}
+            />
             {pending ? copy.syncing : copy.sync}
-          </Button>
+          </button>
           {isStale && (
             <>
               {/* Tap target for touch devices; desktop can also just hover the button. */}
@@ -120,7 +121,7 @@ export default function SyncButton({
                 onClick={() => setStaleOpen((open) => !open)}
                 className="absolute -top-2 -right-2 z-20 hidden size-5 items-center justify-center sm:flex"
               >
-                <span className="absolute size-2.5 animate-ping rounded-full bg-amber-500/60" />
+                <span className="absolute size-2.5 animate-ping rounded-full bg-amber-500/60 motion-reduce:animate-none" />
                 <span className="relative size-2.5 rounded-full bg-amber-500" />
               </button>
               {staleOpen && (
@@ -131,13 +132,19 @@ export default function SyncButton({
                 />
               )}
               {/* pt-2 keeps the gap inside the hover area so the popover doesn't
-                  close while the cursor travels from the button to the card. */}
-              <div
-                className={`absolute top-full right-0 z-20 pt-2 ${
-                  staleOpen ? "block" : "hidden group-hover:block"
-                }`}
-              >
-                <div className="border-border bg-popover text-popover-foreground w-64 rounded-md border p-3 text-left shadow-md">
+                  close while the cursor travels from the button to the card.
+                  The card materializes — fades and scales from its top-right
+                  anchor — rather than snapping in; while hidden it's
+                  visibility:hidden so the empty space can't catch hovers. */}
+              <div className="pointer-events-none absolute top-full right-0 z-20 pt-2">
+                <div
+                  className={cn(
+                    "border-foreground/10 bg-popover/85 text-popover-foreground reduce-transparency:bg-popover reduce-transparency:backdrop-blur-none more-contrast:border-foreground/25 pointer-events-auto w-64 origin-top-right rounded-xl border p-3 text-left shadow-[0_12px_32px_-8px_color-mix(in_oklch,var(--foreground)_30%,transparent)] backdrop-blur-xl transition-[opacity,scale,visibility] duration-200 ease-out motion-reduce:scale-100 motion-reduce:transition-[opacity,visibility]",
+                    staleOpen
+                      ? "visible scale-100 opacity-100"
+                      : "invisible scale-95 opacity-0 group-hover:visible group-hover:scale-100 group-hover:opacity-100",
+                  )}
+                >
                   <p className="text-xs font-medium">
                     {copy.staleNotice?.replace("{days}", String(staleDays))}
                   </p>
@@ -146,7 +153,7 @@ export default function SyncButton({
                     <Link
                       href="/dashboard/settings"
                       onClick={() => setStaleOpen(false)}
-                      className="text-primary hover:text-primary/80 mt-2 inline-flex items-center gap-1 text-xs font-medium"
+                      className="text-tint mt-2 inline-flex items-center gap-1 text-xs font-medium hover:opacity-80"
                     >
                       {copy.goToSettings}
                       <ArrowRight className="size-3" />
@@ -162,7 +169,7 @@ export default function SyncButton({
       {/* No hover on touch screens, so small viewports get an inline banner instead
           of the dot + popover. */}
       {isStale && (
-        <div className="mt-1 w-full rounded-md border border-amber-500/30 bg-amber-500/5 p-3 text-left sm:hidden">
+        <div className="mt-1 w-full rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-left sm:hidden">
           <div className="flex items-start gap-2">
             <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-500" />
             <div className="min-w-0">
@@ -173,7 +180,7 @@ export default function SyncButton({
               {copy.goToSettings && !onSettingsPage && (
                 <Link
                   href="/dashboard/settings"
-                  className="text-primary hover:text-primary/80 mt-1.5 inline-flex items-center gap-1 text-xs font-medium"
+                  className="text-tint mt-1.5 inline-flex items-center gap-1 text-xs font-medium hover:opacity-80"
                 >
                   {copy.goToSettings}
                   <ArrowRight className="size-3" />

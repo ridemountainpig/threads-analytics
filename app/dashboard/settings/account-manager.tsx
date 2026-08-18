@@ -4,6 +4,14 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { Trash2, CheckCircle2, RefreshCw, Plus, AlertTriangle, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { Collapse } from "@/components/ui/collapse";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -36,7 +44,11 @@ interface AccountManagerLabels {
   cancel: string;
   removed: string;
   connected: string;
-  removeConfirm: string;
+  remove: string;
+  removeConfirmTitle: string;
+  removeConfirmBody: string;
+  removeFailed: string;
+  switchFailed: string;
   tokenExpiresIn: string;
   tokenExpiresToday: string;
   tokenExpiredLabel: string;
@@ -86,7 +98,7 @@ function TokenExpiryBadge({
 
   return (
     <span
-      className={`inline-flex items-center gap-1 rounded px-1.5 py-0.5 text-xs font-medium ${
+      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium ${
         isExpired || isCritical
           ? "bg-destructive/10 text-destructive"
           : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
@@ -115,16 +127,23 @@ export default function AccountManager({
 }) {
   const [showAddForm, setShowAddForm] = useState(false);
   const [updatingId, setUpdatingId] = useState<string | null>(null);
+  // Account queued for removal — confirmed through an in-app dialog rather
+  // than the browser's confirm(), keeping the destructive step on-brand and
+  // its focus handling accessible.
+  const [removeTarget, setRemoveTarget] = useState<Account | null>(null);
   const [pending, startTransition] = useTransition();
 
-  function handleDelete(id: string, username: string) {
-    if (!confirm(labels.removeConfirm.replace("{username}", username))) return;
+  function confirmRemove() {
+    const target = removeTarget;
+    if (!target) return;
     startTransition(async () => {
       try {
-        await deleteAccountAction(id);
-        toast.success(labels.removed.replace("{username}", username));
+        await deleteAccountAction(target.id);
+        toast.success(labels.removed.replace("{username}", target.username));
       } catch {
-        toast.error("Failed to remove account. Please try again.");
+        toast.error(labels.removeFailed);
+      } finally {
+        setRemoveTarget(null);
       }
     });
   }
@@ -135,7 +154,7 @@ export default function AccountManager({
         const result = await switchAccountAction(id);
         if (result.shouldSync) startFirstSync(id, username);
       } catch {
-        toast.error("Failed to switch account. Please try again.");
+        toast.error(labels.switchFailed);
       }
     });
   }
@@ -194,7 +213,7 @@ export default function AccountManager({
       {accounts.length > 0 && (
         <div className="space-y-3">
           {accounts.map((account) => (
-            <div key={account.id} className="bg-muted/30 w-full rounded-lg border">
+            <div key={account.id} className="bg-muted/40 w-full rounded-xl">
               <div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3">
                 <div className="flex min-w-0 items-center gap-3">
                   {account.isActive && <CheckCircle2 className="size-4 shrink-0 text-green-600" />}
@@ -211,11 +230,14 @@ export default function AccountManager({
                     )}
                   </div>
                 </div>
+                {/* Row controls follow the dashboard capsule grammar: gray
+                    capsule for the secondary action, round ghost icon wells. */}
                 <div className="flex shrink-0 items-center gap-2">
                   {!account.isActive && (
                     <Button
-                      variant="ghost"
+                      variant="secondary"
                       size="sm"
+                      className="rounded-full"
                       onClick={() => handleSwitch(account.id, account.username)}
                       disabled={pending}
                     >
@@ -225,7 +247,7 @@ export default function AccountManager({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-muted-foreground size-8"
+                    className="text-muted-foreground size-8 rounded-full"
                     title={labels.updateToken}
                     onClick={() => {
                       setUpdatingId(updatingId === account.id ? null : account.id);
@@ -238,15 +260,16 @@ export default function AccountManager({
                   <Button
                     variant="ghost"
                     size="icon"
-                    className="text-muted-foreground hover:text-destructive size-8"
-                    onClick={() => handleDelete(account.id, account.username)}
+                    className="text-muted-foreground hover:text-destructive size-8 rounded-full"
+                    title={labels.remove}
+                    onClick={() => setRemoveTarget(account)}
                     disabled={pending}
                   >
                     <Trash2 className="size-3.5" />
                   </Button>
                 </div>
               </div>
-              {updatingId === account.id && (
+              <Collapse open={updatingId === account.id}>
                 <form
                   action={(formData) => handleUpdateToken(account.id, formData)}
                   className="space-y-3 border-t px-4 py-3"
@@ -267,14 +290,14 @@ export default function AccountManager({
                       {labels.tokenHelp}{" "}
                       <Link
                         href="/dashboard/settings/token-guide"
-                        className="text-foreground underline underline-offset-2"
+                        className="text-tint underline underline-offset-2 hover:opacity-80"
                       >
                         {labels.tokenGuideLink}
                       </Link>
                     </p>
                   </div>
                   <div className="flex gap-2">
-                    <Button type="submit" size="sm" disabled={pending}>
+                    <Button type="submit" size="sm" className="rounded-full" disabled={pending}>
                       {pending ? (
                         <>
                           <RefreshCw className="mr-1.5 size-3 animate-spin" />
@@ -288,6 +311,7 @@ export default function AccountManager({
                       type="button"
                       variant="ghost"
                       size="sm"
+                      className="rounded-full"
                       onClick={() => setUpdatingId(null)}
                       disabled={pending}
                     >
@@ -295,72 +319,119 @@ export default function AccountManager({
                     </Button>
                   </div>
                 </form>
-              )}
+              </Collapse>
             </div>
           ))}
         </div>
       )}
 
-      {!showAddForm ? (
-        <Button
-          className="w-full justify-start sm:w-auto"
-          variant="outline"
-          size="sm"
-          onClick={() => {
-            setShowAddForm(true);
-            setUpdatingId(null);
-          }}
-        >
-          <Plus className="mr-1.5 size-3.5" />
-          {labels.addAccount}
-        </Button>
-      ) : (
-        <form action={handleAdd} className="w-full space-y-3 rounded-lg border p-4">
-          <div className="space-y-1.5">
-            <Label htmlFor="accessToken" className="text-sm">
-              {labels.accessToken}
-            </Label>
-            <Input
-              id="accessToken"
-              name="accessToken"
-              type="password"
-              placeholder={labels.accessTokenPlaceholder}
-              autoFocus
-              disabled={pending}
-            />
-            <p className="text-muted-foreground text-xs">
-              {labels.tokenHelp}{" "}
-              <Link
-                href="/dashboard/settings/token-guide"
-                className="text-foreground underline underline-offset-2"
+      <div>
+        {/* iOS Settings "Add Account" grammar: a list row in the same
+            rounded-xl family as the account rows and the token-guide link
+            above — full row height meets the 44pt touch target, unlike a
+            capsule stretched into a thin bar. */}
+        {!showAddForm && (
+          <button
+            type="button"
+            onClick={() => {
+              setShowAddForm(true);
+              setUpdatingId(null);
+            }}
+            className="bg-muted/40 hover:bg-muted/70 focus-visible:ring-ring/50 flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-[background-color,transform] duration-150 outline-none focus-visible:ring-3 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+          >
+            <Plus className="text-muted-foreground size-4 shrink-0" />
+            {labels.addAccount}
+          </button>
+        )}
+        <Collapse open={showAddForm}>
+          <form action={handleAdd} className="bg-muted/40 w-full space-y-3 rounded-xl p-4">
+            <div className="space-y-1.5">
+              <Label htmlFor="accessToken" className="text-sm">
+                {labels.accessToken}
+              </Label>
+              <Input
+                id="accessToken"
+                name="accessToken"
+                type="password"
+                placeholder={labels.accessTokenPlaceholder}
+                autoFocus
+                disabled={pending}
+              />
+              <p className="text-muted-foreground text-xs">
+                {labels.tokenHelp}{" "}
+                <Link
+                  href="/dashboard/settings/token-guide"
+                  className="text-tint underline underline-offset-2 hover:opacity-80"
+                >
+                  {labels.tokenGuideLink}
+                </Link>
+              </p>
+            </div>
+            <div className="flex gap-2">
+              <Button type="submit" size="sm" className="rounded-full" disabled={pending}>
+                {pending ? (
+                  <>
+                    <RefreshCw className="mr-1.5 size-3 animate-spin" />
+                    {labels.verifying}
+                  </>
+                ) : (
+                  labels.connect
+                )}
+              </Button>
+              <Button
+                type="button"
+                variant="ghost"
+                size="sm"
+                className="rounded-full"
+                onClick={() => setShowAddForm(false)}
+                disabled={pending}
               >
-                {labels.tokenGuideLink}
-              </Link>
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button type="submit" size="sm" disabled={pending}>
-              {pending ? (
-                <>
-                  <RefreshCw className="mr-1.5 size-3 animate-spin" />
-                  {labels.verifying}
-                </>
-              ) : (
-                labels.connect
-              )}
-            </Button>
+                {labels.cancel}
+              </Button>
+            </div>
+          </form>
+        </Collapse>
+      </div>
+
+      {/* Destructive confirmation: focus lands on Cancel, the destructive
+          action is styled as such and never the default. */}
+      <Dialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+        <DialogContent showCloseButton={false} className="max-w-sm">
+          <DialogHeader>
+            <DialogTitle>
+              {labels.removeConfirmTitle.replace("{username}", removeTarget?.username ?? "")}
+            </DialogTitle>
+            <DialogDescription>{labels.removeConfirmBody}</DialogDescription>
+          </DialogHeader>
+          <div className="flex justify-end gap-2">
             <Button
               type="button"
               variant="ghost"
-              size="sm"
-              onClick={() => setShowAddForm(false)}
+              className="rounded-full"
+              onClick={() => setRemoveTarget(null)}
               disabled={pending}
             >
               {labels.cancel}
             </Button>
+            <Button
+              type="button"
+              variant="destructive"
+              className="rounded-full"
+              onClick={confirmRemove}
+              disabled={pending}
+            >
+              {pending ? (
+                <>
+                  <RefreshCw className="mr-1.5 size-3.5 animate-spin" />
+                  {labels.remove}
+                </>
+              ) : (
+                labels.remove
+              )}
+            </Button>
           </div>
-        </form>
-      )}
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

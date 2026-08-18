@@ -1,16 +1,18 @@
 "use client";
 
-import { Bar, BarChart, CartesianGrid, ResponsiveContainer, Tooltip, XAxis, YAxis } from "recharts";
-import AxisHint from "./axis-hint";
 import {
-  axisTick,
-  chartColors,
-  compactChartMargin,
-  formatCompactNumber,
-  gridProps,
-  tooltipLabelStyle,
-  tooltipStyle,
-} from "./chart-style";
+  Bar,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip,
+  XAxis,
+  YAxis,
+} from "recharts";
+import AxisHint from "./axis-hint";
+import { axisTick, barCursor, chartColors, formatCompactNumber, gridProps } from "./chart-style";
+import { ChartEmptyState, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   action: "Views" | "Likes" | "Replies" | "Reposts" | "Quotes" | "Shares";
@@ -45,6 +47,7 @@ function getActionLabel(action: DataPoint["action"], labels?: Props["labels"]) {
 }
 
 export default function ActionFunnelChart({ data, labels }: Props) {
+  const motion = useChartMotion();
   const conversionLabel = labels?.conversionRate ?? "Rate from Views";
   const chartData = data.map((point) => ({
     ...point,
@@ -52,18 +55,18 @@ export default function ActionFunnelChart({ data, labels }: Props) {
   }));
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-[220px] items-center justify-center text-sm">
-        {labels?.noData ?? "No data"}
-      </div>
-    );
+    return <ChartEmptyState label={labels?.noData ?? "No data"} height={220} />;
   }
 
   return (
     <>
       <AxisHint x={labels?.count ?? "Count"} y={labels?.action ?? "Action"} />
       <ResponsiveContainer width="100%" height={260}>
-        <BarChart data={chartData} layout="vertical" margin={compactChartMargin}>
+        <BarChart
+          data={chartData}
+          layout="vertical"
+          margin={{ top: 4, right: 44, left: 0, bottom: 0 }}
+        >
           <CartesianGrid {...gridProps} horizontal={false} vertical />
           <XAxis
             type="number"
@@ -81,32 +84,54 @@ export default function ActionFunnelChart({ data, labels }: Props) {
             width={72}
           />
           <Tooltip
+            cursor={barCursor}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as (typeof chartData)[number];
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>{point.label}</p>
-                  <p>{point.value.toLocaleString()}</p>
-                  {point.action !== "Views" && (
-                    <p className="text-muted-foreground">
-                      {conversionLabel}: {point.rate.toFixed(2)}%
-                    </p>
-                  )}
-                </div>
+                <ChartTooltip
+                  title={point.label}
+                  rows={[
+                    {
+                      label: labels?.count ?? "Count",
+                      value: point.value.toLocaleString(),
+                      color: chartColors.views,
+                    },
+                    ...(point.action !== "Views"
+                      ? [
+                          {
+                            label: conversionLabel,
+                            value: `${point.rate.toFixed(2)}%`,
+                            muted: true,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
               );
             }}
           />
           <Bar
             dataKey="value"
-            fill={chartColors.engagement}
-            fillOpacity={0.82}
-            radius={[0, 3, 3, 0]}
-            maxBarSize={22}
-          />
+            fill={chartColors.views}
+            fillOpacity={0.8}
+            radius={[0, 5, 5, 0]}
+            maxBarSize={20}
+            {...motion}
+          >
+            {/* Values sit at each bar's end, so the drop-off reads without hovering. */}
+            <LabelList
+              dataKey="value"
+              position="right"
+              offset={8}
+              formatter={(value) => formatCompactNumber(Number(value ?? 0))}
+              style={{
+                fill: "var(--muted-foreground)",
+                fontSize: 10,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            />
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </>

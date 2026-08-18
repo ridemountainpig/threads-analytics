@@ -2,15 +2,8 @@
 
 import { useMemo, useState, useTransition } from "react";
 import { updateSyncIntervalAction } from "@/actions/settings";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { Collapse } from "@/components/ui/collapse";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 const PRESET_VALUES = ["0", "60", "360", "1440"] as const;
@@ -91,62 +84,69 @@ export default function SyncIntervalSetting({ currentInterval, labels }: Props) 
     if (value !== CUSTOM_VALUE) saveInterval(value);
   }
 
+  // Presets laid out as capsule chips — every choice visible at a glance,
+  // matching the filter-chip grammar used across the dashboard.
+  // Spacing for the custom row lives inside the Collapse (pt-3 on its
+  // content), so the gap grows and shrinks with the row instead of jumping
+  // when the row unmounts.
   return (
-    <div className="grid grid-cols-1 items-center gap-3 md:grid-cols-[240px_minmax(0,1fr)]">
-      <div>
-        <Select value={selected} onValueChange={handleSelect} disabled={pending}>
-          <SelectTrigger className="h-9 w-full">
-            <SelectValue>
-              {(value) =>
-                value === CUSTOM_VALUE ? copy.customInterval : (copy.intervals[value] ?? value)
-              }
-            </SelectValue>
-          </SelectTrigger>
-          <SelectContent align="start">
-            {OPTIONS.map((opt) => (
-              <SelectItem key={opt.value} value={opt.value} label={copy.intervals[opt.value]}>
-                {copy.intervals[opt.value]}
-              </SelectItem>
-            ))}
-            <SelectItem value={CUSTOM_VALUE} label={copy.customInterval}>
-              {copy.customInterval}
-            </SelectItem>
-          </SelectContent>
-        </Select>
-
-        {selected === CUSTOM_VALUE && (
-          <div className="flex gap-2">
-            <div className="relative min-w-0 flex-1">
-              <Input
-                type="number"
-                min={1}
-                max={10080}
-                step={1}
-                inputMode="numeric"
-                value={customMinutes}
-                onChange={(event) => setCustomMinutes(event.target.value)}
-                disabled={pending}
-                className="h-9 pr-20"
-              />
-              <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs">
-                {copy.minutes}
-              </span>
-            </div>
-            <Button
-              type="button"
-              variant="outline"
-              size="sm"
-              className="h-9"
-              onClick={() => saveInterval(customMinutes)}
-              disabled={pending}
-            >
-              {copy.apply}
-            </Button>
-          </div>
-        )}
+    <div>
+      <div className="flex flex-wrap items-center gap-1.5">
+        {[...OPTIONS.map((opt) => opt.value), CUSTOM_VALUE].map((value) => (
+          <button
+            key={value}
+            type="button"
+            onClick={() => handleSelect(value)}
+            disabled={pending}
+            className={cn(
+              "inline-flex h-7 items-center rounded-full px-3 text-xs transition-[background-color,color,transform] duration-150 active:scale-[0.96] disabled:opacity-60 motion-reduce:transition-none motion-reduce:active:scale-100",
+              selected === value
+                ? "bg-primary text-primary-foreground font-medium"
+                : "bg-muted/70 text-foreground/70 hover:text-foreground",
+            )}
+          >
+            {value === CUSTOM_VALUE ? copy.customInterval : (copy.intervals[value] ?? value)}
+          </button>
+        ))}
       </div>
 
-      <p className="text-muted-foreground text-sm leading-relaxed">
+      {/* Custom minutes: the same recessed-capsule field + filled Apply pair
+          as the time-range picker's custom dates, so "type a value, apply it"
+          looks identical everywhere. */}
+      <Collapse open={selected === CUSTOM_VALUE}>
+        <div className="flex max-w-xs items-center gap-2 pt-3 pb-0.5">
+          <div className="relative min-w-0 flex-1">
+            <input
+              type="number"
+              min={1}
+              max={10080}
+              step={1}
+              inputMode="numeric"
+              value={customMinutes}
+              onChange={(event) => setCustomMinutes(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === "Enter") saveInterval(customMinutes);
+              }}
+              disabled={pending}
+              aria-label={copy.customInterval}
+              className="bg-muted/70 focus-visible:ring-ring/40 h-7 w-full [appearance:textfield] rounded-full py-1 pr-16 pl-3 text-xs tabular-nums transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 disabled:opacity-60 motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+            />
+            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+              {copy.minutes}
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={() => saveInterval(customMinutes)}
+            disabled={pending}
+            className="bg-primary text-primary-foreground h-7 shrink-0 rounded-full px-3 text-xs font-medium transition-[background-color,transform] duration-150 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
+          >
+            {copy.apply}
+          </button>
+        </div>
+      </Collapse>
+
+      <p className="text-muted-foreground mt-3 text-sm leading-relaxed">
         {savedInterval === "0"
           ? copy.manualHelp
           : copy.autoHelp.replace("{interval}", intervalLabel.toLowerCase())}

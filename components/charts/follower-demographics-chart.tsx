@@ -1,4 +1,5 @@
-import { seriesColors } from "./chart-style";
+import { chartColors } from "./chart-style";
+import { ChartEmptyState } from "./chart-chrome";
 import type { DemographicSlice } from "@/lib/followers";
 
 interface FollowerDemographicsChartProps {
@@ -31,9 +32,11 @@ function formatSigned(value: number, locale: string) {
  *  edge and reads as a rendering artifact rather than as a baseline. */
 const MARKER_MIN_TRAVEL = 0.015;
 
+// Same green/red steps as the StatCard delta badges, so "up vs the previous
+// period" is one color everywhere in the dashboard.
 function changeClass(value: number) {
-  if (value > 0) return "text-green-600 dark:text-green-500";
-  if (value < 0) return "text-red-500";
+  if (value > 0) return "text-green-700 dark:text-green-400";
+  if (value < 0) return "text-red-600 dark:text-red-400";
   return "text-muted-foreground";
 }
 
@@ -53,11 +56,7 @@ export default function FollowerDemographicsChart({
   };
 
   if (data.length === 0) {
-    return (
-      <div className="text-muted-foreground flex h-32 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={128} />;
   }
 
   const max = Math.max(...data.map((slice) => slice.value), 1);
@@ -79,13 +78,13 @@ export default function FollowerDemographicsChart({
   // bottom, and carries a surface-coloured ring so it stays legible whether it
   // lands on the filled portion or on the empty track.
   const bar = (slice: DemographicSlice) => (
-    <div className="relative h-3.5 min-w-0 flex-1">
-      <div className="bg-muted h-full overflow-hidden rounded-full">
+    <div className="relative h-3 min-w-0 flex-1">
+      <div className="bg-muted/60 h-full overflow-hidden rounded-full">
         <div
           className="h-full rounded-full"
           style={{
             width: `${Math.max(2, Math.round((slice.value / max) * 100))}%`,
-            backgroundColor: seriesColors[0],
+            backgroundColor: chartColors.followers,
           }}
         />
       </div>
@@ -124,16 +123,19 @@ export default function FollowerDemographicsChart({
           return (
             <div
               key={slice.key}
-              className="grid grid-cols-[minmax(4rem,7rem)_1fr] items-center gap-3"
+              className="grid grid-cols-[minmax(4rem,9rem)_1fr] items-center gap-3"
             >
-              <p className="truncate text-sm" title={label}>
+              <p className="truncate text-[13px] leading-5 font-medium" title={label}>
                 {label}
               </p>
               {hasComparison ? (
                 <div className="min-w-0">
                   <div className="flex items-center">{bar(slice)}</div>
-                  <p className="text-muted-foreground mt-1 text-xs tabular-nums">
-                    {slice.value.toLocaleString(locale)} · {slice.share.toFixed(1)}%
+                  <p className="text-muted-foreground mt-1 text-[11px] leading-4 tabular-nums">
+                    <span className="text-foreground font-medium">
+                      {slice.value.toLocaleString(locale)}
+                    </span>{" "}
+                    · {slice.share.toFixed(1)}%
                     {slice.valueChange !== undefined && slice.shareChange !== undefined && (
                       <>
                         {" · "}
@@ -149,10 +151,13 @@ export default function FollowerDemographicsChart({
                   </p>
                 </div>
               ) : (
-                <div className="flex min-w-0 items-center gap-2">
+                <div className="flex min-w-0 items-center gap-2.5">
                   {bar(slice)}
                   <span className="text-muted-foreground w-24 shrink-0 text-right text-xs tabular-nums">
-                    {slice.value.toLocaleString(locale)} · {slice.share.toFixed(1)}%
+                    <span className="text-foreground font-medium">
+                      {slice.value.toLocaleString(locale)}
+                    </span>{" "}
+                    · {slice.share.toFixed(1)}%
                   </span>
                 </div>
               )}

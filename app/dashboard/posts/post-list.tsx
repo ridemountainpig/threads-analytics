@@ -2,8 +2,43 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ExternalLink, Search } from "lucide-react";
+import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ExternalLink, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { chartColors, chartPalette } from "@/components/charts/chart-style";
+
+// Capsule filter chip shared by the sort row and media-type row: filled when
+// selected, instant pressed-state feedback, consistent with chart filters.
+function FilterChip({
+  selected,
+  onClick,
+  title,
+  children,
+  size = "sm",
+}: {
+  selected: boolean;
+  onClick: () => void;
+  title?: string;
+  children: React.ReactNode;
+  size?: "sm" | "xs";
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      title={title}
+      aria-label={title}
+      className={cn(
+        "inline-flex items-center rounded-full text-xs transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+        size === "sm" ? "h-7 px-3" : "h-6 px-2.5",
+        selected
+          ? "bg-primary text-primary-foreground font-medium"
+          : "bg-muted/70 text-foreground/70 hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
 
 type TextFeature = "question" | "link";
 
@@ -84,6 +119,7 @@ interface PostListProps {
     shares: string;
     mediaTypes?: Record<string, string>;
     searchPlaceholder?: string;
+    clearSearch?: string;
     allTypes?: string;
     ascending?: string;
     descending?: string;
@@ -111,19 +147,32 @@ function formatPostDate(
   }).format(new Date(date));
 }
 
-function PercentileBar({ label, percentile }: { label: string; percentile: number | null }) {
+function PercentileBar({
+  label,
+  percentile,
+  color,
+}: {
+  label: string;
+  percentile: number | null;
+  color: string;
+}) {
   return (
     <div>
-      <div className="mb-2 flex items-center justify-between gap-3">
-        <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+      <div className="mb-2 flex items-baseline justify-between gap-3">
+        <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
           {label}
         </p>
         <span className="text-sm font-semibold tabular-nums">
           {percentile === null ? "—" : `P${percentile}`}
         </span>
       </div>
-      <div className="bg-muted h-2.5 overflow-hidden rounded-full">
-        <div className="bg-primary h-full rounded-full" style={{ width: `${percentile ?? 0}%` }} />
+      <div className="bg-muted relative h-2 overflow-hidden rounded-full">
+        <div
+          className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+          style={{ width: `${percentile ?? 0}%`, backgroundColor: color }}
+        />
+        {/* Hairline tick at P50 anchors the fill against the account median. */}
+        <div aria-hidden className="bg-foreground/20 absolute inset-y-0 left-1/2 w-px" />
       </div>
     </div>
   );
@@ -163,25 +212,27 @@ function PostDetail({
       (f.feature === "question" && hasQuestion(post.text)) ||
       (f.feature === "link" && hasLink(post.text)),
   );
+  // Same semantic hues as the analytics charts, so "likes" is the same pink
+  // everywhere in the app.
   const engagementMetrics = [
-    { key: "likes" as const, label: labels.likes, color: "bg-primary" },
-    { key: "replies" as const, label: labels.replies, color: "bg-emerald-500" },
-    { key: "reposts" as const, label: labels.reposts, color: "bg-amber-500" },
-    { key: "quotes" as const, label: labels.quotes, color: "bg-violet-500" },
-    { key: "shares" as const, label: labels.shares, color: "bg-sky-500" },
+    { key: "likes" as const, label: labels.likes, color: chartColors.likes },
+    { key: "replies" as const, label: labels.replies, color: chartColors.reply },
+    { key: "reposts" as const, label: labels.reposts, color: chartColors.repost },
+    { key: "quotes" as const, label: labels.quotes, color: chartColors.quote },
+    { key: "shares" as const, label: labels.shares, color: chartColors.share },
   ];
   const maxMetric = Math.max(1, ...engagementMetrics.map(({ key }) => post[key]));
 
   return (
-    <div className="divide-y">
-      {/* Post content */}
+    <div className="divide-border/60 divide-y">
+      {/* Post content — the hero of the panel, set a step larger */}
       <div className="pb-5">
-        <p className="text-sm leading-relaxed">{post.text || labels.noText}</p>
+        <p className="text-[15px] leading-relaxed">{post.text || labels.noText}</p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
-          <span className="text-muted-foreground text-sm">
+          <span className="text-muted-foreground text-sm tabular-nums">
             {formatPostDate(post.timestamp, locale, timeZone, true)}
           </span>
-          <span className="bg-muted text-muted-foreground rounded px-2 py-0.5 text-xs font-medium">
+          <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
             {mediaTypeLabel}
           </span>
           {post.permalink && (
@@ -189,7 +240,7 @@ function PostDetail({
               href={post.permalink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-muted-foreground hover:text-foreground flex items-center gap-1 text-sm"
+              className="text-tint flex items-center gap-1 text-sm hover:opacity-80"
             >
               <ExternalLink className="size-3.5" />
               {labels.viewOnThreads}
@@ -198,30 +249,55 @@ function PostDetail({
         </div>
       </div>
 
-      {/* Key stats */}
-      <div className="grid grid-cols-1 gap-3 py-5 sm:grid-cols-3">
-        <div className="bg-muted/50 rounded-md p-4 text-center">
-          <p className="text-muted-foreground text-sm">{labels.views}</p>
-          <p className="mt-1 text-2xl font-semibold">{post.views.toLocaleString(locale)}</p>
+      {/* Key stats: an App Store-style stat strip — captions above, big
+          tabular figures below, hairlines between instead of gray boxes */}
+      <div className="divide-border/60 grid grid-cols-1 divide-y py-5 sm:grid-cols-3 sm:divide-x sm:divide-y-0">
+        <div className="py-3 first:pt-0 last:pb-0 sm:px-6 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+          <p className="text-muted-foreground text-[11px] leading-4 font-semibold tracking-[0.08em] uppercase">
+            {labels.views}
+          </p>
+          <p className="mt-1.5 text-2xl leading-7 font-semibold tracking-[-0.01em] tabular-nums">
+            {post.views.toLocaleString(locale)}
+          </p>
         </div>
-        <div className="bg-muted/50 rounded-md p-4 text-center">
-          <p className="text-muted-foreground text-sm">{labels.engRate}</p>
-          <p className="mt-1 text-2xl font-semibold">{engRate}%</p>
+        <div className="py-3 first:pt-0 last:pb-0 sm:px-6 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+          <p className="text-muted-foreground text-[11px] leading-4 font-semibold tracking-[0.08em] uppercase">
+            {labels.engRate}
+          </p>
+          <p className="mt-1.5 text-2xl leading-7 font-semibold tracking-[-0.01em] tabular-nums">
+            {engRate}%
+          </p>
         </div>
-        <div className="bg-muted/50 rounded-md p-4 text-center">
-          <p className="text-muted-foreground text-sm">
+        <div className="py-3 first:pt-0 last:pb-0 sm:px-6 sm:py-0 sm:first:pl-0 sm:last:pr-0">
+          <p className="text-muted-foreground text-[11px] leading-4 font-semibold tracking-[0.08em] uppercase">
             {labels.vsTypeMedian ?? labels.vsMedianViews ?? labels.vsAvgViews}
           </p>
-          <p
-            className={cn(
-              "mt-1 text-2xl font-semibold",
-              post.viewsVsTypeMedian >= 1 ? "text-green-600" : "text-red-500",
-            )}
-          >
-            {post.viewsVsTypeMedian}x
-          </p>
-          <p className="text-muted-foreground mt-0.5 text-xs">
-            {mediaTypeLabel} · {post.typeMedianViews.toLocaleString(locale)}
+          <p className="mt-1.5 flex items-baseline gap-2">
+            <span
+              className={cn(
+                "text-2xl leading-7 font-semibold tracking-[-0.01em] tabular-nums",
+                post.viewsVsTypeMedian >= 1
+                  ? "text-green-700 dark:text-green-400"
+                  : "text-red-600 dark:text-red-400",
+              )}
+            >
+              <svg
+                aria-hidden
+                width="9"
+                height="9"
+                viewBox="0 0 8 8"
+                className={cn(
+                  "mr-1 inline-block shrink-0",
+                  post.viewsVsTypeMedian < 1 && "rotate-180",
+                )}
+              >
+                <path d="M4 0.5 L7.5 6.5 L0.5 6.5 Z" fill="currentColor" />
+              </svg>
+              {post.viewsVsTypeMedian}x
+            </span>
+            <span className="text-muted-foreground text-[11px] leading-4 tabular-nums">
+              {mediaTypeLabel} · {post.typeMedianViews.toLocaleString(locale)}
+            </span>
           </p>
         </div>
       </div>
@@ -231,12 +307,14 @@ function PostDetail({
         <PercentileBar
           label={labels.viewPercentile ?? "View Percentile"}
           percentile={post.viewPercentile}
+          color={chartPalette.blue}
         />
         <PercentileBar
           label={labels.engRatePercentile ?? "Eng. Rate Percentile"}
           percentile={post.engRatePercentile}
+          color={chartPalette.green}
         />
-        <p className="text-muted-foreground text-xs">
+        <p className="text-muted-foreground text-xs tabular-nums">
           {labels.medianViews ?? "Median views"}: {medianViews.toLocaleString(locale)}
           {" · "}
           {labels.medianEngRate ?? "Median eng. rate"}: {engagementRateMedian}%
@@ -246,21 +324,23 @@ function PostDetail({
       {/* Text features present in this post, with their range-wide reach delta */}
       {activeFeatures.length > 0 && (
         <div className="py-5">
-          <p className="text-muted-foreground mb-3 text-xs font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground mb-3 text-[11px] font-semibold tracking-[0.08em] uppercase">
             {labels.textFeatures ?? "Text Features"}
           </p>
           <div className="flex flex-wrap gap-2">
             {activeFeatures.map((f) => (
               <span
                 key={f.feature}
-                className="bg-muted flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium"
+                className="bg-muted/70 flex items-center gap-1.5 rounded-full py-1 pr-1.5 pl-2.5 text-xs font-medium"
               >
                 {featureLabels[f.feature]}
                 {f.deltaPct !== null && (
                   <span
                     className={cn(
-                      "font-semibold tabular-nums",
-                      f.deltaPct >= 0 ? "text-green-600" : "text-red-500",
+                      "rounded-full px-1.5 py-0.5 text-[11px] leading-4 font-semibold tabular-nums",
+                      f.deltaPct >= 0
+                        ? "bg-green-600/10 text-green-700 dark:bg-green-500/15 dark:text-green-400"
+                        : "bg-red-500/10 text-red-600 dark:bg-red-500/15 dark:text-red-400",
                     )}
                   >
                     {f.deltaPct >= 0 ? "+" : ""}
@@ -276,7 +356,7 @@ function PostDetail({
       {/* Engagement breakdown, each rate flagged against the account median */}
       <div className="py-5">
         <div className="mb-4 flex items-center justify-between gap-2">
-          <p className="text-muted-foreground text-xs font-semibold tracking-wider uppercase">
+          <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
             {labels.engagementBreakdown}
           </p>
           {/* Legend: the per-row arrow compares this post's rate to the account median */}
@@ -297,22 +377,26 @@ function PostDetail({
             return (
               <div key={key} className="flex items-center gap-3">
                 <span className="text-muted-foreground w-16 shrink-0 text-sm">{label}</span>
-                <div className="bg-muted h-2.5 flex-1 overflow-hidden rounded-full">
+                <div className="bg-muted/60 h-2 flex-1 overflow-hidden rounded-full">
                   <div
-                    className={cn("h-full rounded-full transition-all", color)}
-                    style={{ width: `${pct}%` }}
+                    className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                    style={{ width: `${pct}%`, backgroundColor: color }}
                   />
                 </div>
                 <span
                   title={medianTip}
-                  className="flex w-24 shrink-0 items-center justify-end gap-0.5 text-right text-sm font-semibold tabular-nums"
+                  className="flex w-24 shrink-0 items-baseline justify-end gap-0.5 text-right tabular-nums"
                 >
-                  {value} · {viewRate.toFixed(1)}%
+                  <span className="text-sm font-semibold">{value.toLocaleString(locale)}</span>
+                  <span className="text-muted-foreground text-xs">· {viewRate.toFixed(1)}%</span>
                   {diff > 0.005 ? (
-                    <ChevronUp className="size-3.5 text-green-600" aria-label={medianTip} />
+                    <ChevronUp
+                      className="size-3.5 self-center text-green-600"
+                      aria-label={medianTip}
+                    />
                   ) : diff < -0.005 ? (
                     <ChevronDown
-                      className="text-muted-foreground size-3.5"
+                      className="text-muted-foreground size-3.5 self-center"
                       aria-label={medianTip}
                     />
                   ) : (
@@ -356,6 +440,7 @@ export default function PostList({
   });
   const [searchQuery, setSearchQuery] = useState(currentQuery);
   const lastPushedQuery = useRef(currentQuery);
+  const searchInputRef = useRef<HTMLInputElement>(null);
   const listScrollRef = useRef<HTMLDivElement>(null);
   const detailScrollRef = useRef<HTMLDivElement>(null);
 
@@ -442,7 +527,7 @@ export default function PostList({
   return (
     <div
       className={cn(
-        "flex min-h-[520px] flex-col gap-0 overflow-hidden rounded-lg border lg:flex-row",
+        "ring-foreground/10 flex min-h-[520px] flex-col gap-0 overflow-hidden rounded-xl ring-1 lg:flex-row",
         hasPagination ? "lg:h-[calc(100vh-13rem)]" : "lg:h-[calc(100vh-10rem)]",
       )}
     >
@@ -450,26 +535,22 @@ export default function PostList({
       <div className="flex max-h-[45vh] shrink-0 flex-col border-b lg:max-h-none lg:w-[40%] lg:border-r lg:border-b-0">
         {/* Sort controls */}
         <div className="space-y-2 border-b px-4 py-2.5">
-          <div className="flex flex-wrap items-center gap-2">
-            <span className="text-muted-foreground text-sm">{labels.sort}</span>
+          <div className="flex flex-wrap items-center gap-1.5">
+            <span className="text-muted-foreground mr-0.5 text-xs">{labels.sort}</span>
             {SORT_OPTIONS.map((value) => (
-              <button
+              <FilterChip
                 key={value}
+                selected={currentSort === value}
                 onClick={() => setSort(value)}
-                className={`rounded px-2.5 py-1 text-sm transition-colors ${
-                  currentSort === value
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
               >
                 {sortLabels[value]}
-              </button>
+              </FilterChip>
             ))}
             <button
               onClick={toggleDir}
               title={currentDir === "asc" ? labels.ascending : labels.descending}
               aria-label={currentDir === "asc" ? labels.ascending : labels.descending}
-              className="bg-muted text-muted-foreground hover:bg-muted/80 flex h-7 items-center justify-center rounded px-2 transition-colors"
+              className="bg-muted/70 text-foreground/70 hover:text-foreground flex size-7 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               {currentDir === "asc" ? (
                 <ArrowUp className="size-3.5" />
@@ -478,76 +559,88 @@ export default function PostList({
               )}
             </button>
           </div>
-          {/* Search + media type filter */}
+          {/* Search: a recessed capsule field, Apple search-bar style */}
           <div className="flex flex-wrap items-center gap-2">
             <div className="relative flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
+              <Search className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
               <input
-                type="text"
+                ref={searchInputRef}
+                type="search"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder={labels.searchPlaceholder ?? "Search posts..."}
-                className="border-input bg-background placeholder:text-muted-foreground focus:ring-ring w-full rounded-md border py-1.5 pr-3 pl-8 text-sm focus:ring-1 focus:outline-none"
+                className="bg-muted/70 placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-full py-1.5 pr-9 pl-9 text-sm transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none [&::-webkit-search-cancel-button]:hidden"
               />
+              {/* Apple search-bar grammar: a clear affordance appears once
+                  there's something to clear, and hands focus back for the
+                  next query. */}
+              {searchQuery.length > 0 && (
+                <button
+                  type="button"
+                  aria-label={labels.clearSearch ?? "Clear search"}
+                  onClick={() => {
+                    setSearchQuery("");
+                    searchInputRef.current?.focus();
+                  }}
+                  className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+                >
+                  <X className="size-3.5" />
+                </button>
+              )}
             </div>
           </div>
           {availableTypes.length > 1 && (
             <div className="flex flex-wrap items-center gap-1.5">
-              <button
+              <FilterChip
+                size="xs"
+                selected={currentType === ""}
                 onClick={() => setMediaFilter("")}
-                className={`rounded px-2 py-0.5 text-xs transition-colors ${
-                  currentType === ""
-                    ? "bg-primary text-primary-foreground"
-                    : "bg-muted text-muted-foreground hover:bg-muted/80"
-                }`}
               >
                 {labels.allTypes ?? "All"}
-              </button>
+              </FilterChip>
               {availableTypes.map((type) => (
-                <button
+                <FilterChip
                   key={type}
+                  size="xs"
+                  selected={currentType === type}
                   onClick={() => setMediaFilter(type)}
-                  className={`rounded px-2 py-0.5 text-xs transition-colors ${
-                    currentType === type
-                      ? "bg-primary text-primary-foreground"
-                      : "bg-muted text-muted-foreground hover:bg-muted/80"
-                  }`}
                 >
                   {labels.mediaTypes?.[type] ?? type}
-                </button>
+                </FilterChip>
               ))}
             </div>
           )}
         </div>
 
-        {/* Post list */}
-        <div ref={listScrollRef} className="flex-1 overflow-y-auto">
+        {/* Post list: floating rounded selection, macOS-sidebar style */}
+        <div ref={listScrollRef} className="flex-1 overflow-y-auto p-1.5">
           {posts.length === 0 ? (
             <div className="text-muted-foreground p-6 text-center text-sm">{labels.noPosts}</div>
           ) : null}
           {posts.map((post) => (
-            <div
+            <button
               key={post.id}
+              type="button"
               onClick={() => selectPost(post.id)}
               className={cn(
-                "hover:bg-accent/50 cursor-pointer border-b px-4 py-3.5 transition-colors last:border-b-0",
-                selectedId === post.id && "bg-accent",
+                "hover:bg-muted/60 active:bg-muted focus-visible:ring-ring/50 block w-full rounded-lg px-3 py-3 text-left transition-colors duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none",
+                selectedId === post.id && "bg-accent hover:bg-accent active:bg-accent",
               )}
             >
               <p className="line-clamp-2 text-sm leading-snug">{post.text || labels.noText}</p>
-              <div className="mt-2 flex flex-wrap items-center gap-2.5">
-                <span className="text-muted-foreground text-xs">
-                  {formatPostDate(post.timestamp, locale, timeZone)}
-                </span>
-                <span className="text-xs font-semibold">
+              <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                <span className="text-xs font-semibold tabular-nums">
                   {post.views.toLocaleString(locale)} {labels.views.toLowerCase()}
                 </span>
-                <span className="text-muted-foreground text-xs">
+                <span className="text-muted-foreground text-[11px] tabular-nums">
                   {post.likes} {labels.likes.toLowerCase()} · {post.replies}{" "}
                   {labels.replies.toLowerCase()}
                 </span>
+                <span className="text-muted-foreground/80 ml-auto text-[11px] tabular-nums">
+                  {formatPostDate(post.timestamp, locale, timeZone)}
+                </span>
               </div>
-            </div>
+            </button>
           ))}
         </div>
       </div>

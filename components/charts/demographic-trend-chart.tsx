@@ -11,6 +11,7 @@ import {
   YAxis,
 } from "recharts";
 import {
+  activeDot,
   axisTick,
   chartColors,
   seriesColors,
@@ -18,11 +19,10 @@ import {
   formatShortDate,
   spansMultipleYears,
   gridProps,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
 import AxisHint from "./axis-hint";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DemographicTrendChartProps {
   keys: string[];
@@ -50,6 +50,7 @@ export default function DemographicTrendChart({
   labels,
 }: DemographicTrendChartProps) {
   const locale = dateLocale ?? "en-US";
+  const motion = useChartMotion();
   const copy = labels ?? {
     date: "Date",
     shareChange: "Share change",
@@ -59,11 +60,7 @@ export default function DemographicTrendChart({
   };
 
   if (keys.length === 0 || rows.length < 2) {
-    return (
-      <div className="text-muted-foreground flex h-40 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={160} />;
   }
 
   const withYear = spansMultipleYears(rows.map((row) => String(row["date"])));
@@ -76,17 +73,18 @@ export default function DemographicTrendChart({
   return (
     <>
       <AxisHint x={copy.date} y={copy.shareChange} />
-      <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-3 text-[11px]">
+      <div className="mb-2 flex flex-wrap items-center gap-x-3.5 gap-y-1">
         {/* Naming the baseline date is what explains why every line starts at zero. */}
-        <span>
+        <span className="text-muted-foreground text-[11px] leading-4">
           {copy.baseline} {formatShortDate(String(rows[0]?.["date"]), locale, timeZone)} = 0
         </span>
-        {keys.map((key, i) => (
-          <span key={key} className="inline-flex items-center gap-1">
-            <span className="inline-block h-px w-5" style={{ backgroundColor: seriesColors[i] }} />
-            {labelFor(key)}
-          </span>
-        ))}
+        <ChartLegend
+          items={keys.map((key, i) => ({
+            label: labelFor(key),
+            color: seriesColors[i] ?? seriesColors[0],
+            shape: "line",
+          }))}
+        />
       </div>
       <ResponsiveContainer width="100%" height={220}>
         <LineChart data={rows} margin={compactChartMargin}>
@@ -107,13 +105,20 @@ export default function DemographicTrendChart({
             width={44}
           />
           <Tooltip
-            formatter={(v, name) => [formatPp(Number(v)), labelFor(String(name))]}
-            labelFormatter={(label) =>
-              formatShortDate(label as string, locale, timeZone, { year: withYear })
-            }
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
+            cursor={lineCursor}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              return (
+                <ChartTooltip
+                  title={formatShortDate(label as string, locale, timeZone, { year: withYear })}
+                  rows={payload.map((entry) => ({
+                    label: labelFor(String(entry.dataKey)),
+                    value: formatPp(Number(entry.value)),
+                    color: String(entry.stroke ?? entry.color ?? seriesColors[0]),
+                  }))}
+                />
+              );
+            }}
           />
           {/* The baseline date sits at zero by construction — every series starts there. */}
           <ReferenceLine y={0} stroke={chartColors.trend} strokeDasharray="4 3" />
@@ -123,9 +128,11 @@ export default function DemographicTrendChart({
               type="monotone"
               dataKey={key}
               name={key}
-              stroke={seriesColors[i]}
-              strokeWidth={2}
+              stroke={seriesColors[i] ?? seriesColors[0]}
+              strokeWidth={1.8}
               dot={false}
+              activeDot={activeDot(seriesColors[i] ?? seriesColors[0])}
+              {...motion}
             />
           ))}
         </LineChart>

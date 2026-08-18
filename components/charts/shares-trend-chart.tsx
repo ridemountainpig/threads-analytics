@@ -4,15 +4,13 @@ import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContaine
 import AxisHint from "./axis-hint";
 import {
   axisTick,
+  barCursor,
   barRadius,
   chartColors,
   compactAxisTick,
   compactChartMargin,
   spansMultipleYears,
   gridProps,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
 } from "./chart-style";
 import {
   GranularityToggle,
@@ -21,6 +19,7 @@ import {
   formatBucketTooltipLabel,
   useGranularity,
 } from "./granularity";
+import { ChartEmptyState, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface SharesTrendChartProps {
   data: Array<{ date: string; shares: number }>;
@@ -43,6 +42,7 @@ export default function SharesTrendChart({
   labels,
 }: SharesTrendChartProps) {
   const locale = dateLocale ?? "en-US";
+  const motion = useChartMotion();
   const copy = labels ?? {
     date: "Date",
     shares: "Shares",
@@ -61,11 +61,7 @@ export default function SharesTrendChart({
   );
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-40 items-center justify-center text-sm">
-        {copy.empty}
-      </div>
-    );
+    return <ChartEmptyState label={copy.empty} height={160} />;
   }
 
   const series =
@@ -111,17 +107,34 @@ export default function SharesTrendChart({
           />
           <YAxis tick={axisTick} tickLine={false} axisLine={false} width={34} />
           <Tooltip
-            formatter={(v) => [(v as number).toLocaleString(locale), copy.shares]}
-            labelFormatter={(v) =>
-              formatBucketTooltipLabel(String(v), granularity, locale, timeZone, {
-                year: withYear,
-              })
-            }
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
+            cursor={barCursor}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              const point = payload[0]?.payload as (typeof series)[number];
+              return (
+                <ChartTooltip
+                  title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
+                    year: withYear,
+                  })}
+                  rows={[
+                    {
+                      label: copy.shares,
+                      value: point.shares.toLocaleString(locale),
+                      color: chartColors.share,
+                    },
+                  ]}
+                />
+              );
+            }}
           />
-          <Bar dataKey="shares" fill={chartColors.bar} radius={barRadius} maxBarSize={16} />
+          <Bar
+            dataKey="shares"
+            fill={chartColors.share}
+            fillOpacity={0.78}
+            radius={barRadius}
+            maxBarSize={14}
+            {...motion}
+          />
         </BarChart>
       </ResponsiveContainer>
     </>

@@ -33,21 +33,21 @@ export default async function SettingsPage() {
 
       <div className="space-y-4">
         <Card>
-          <CardHeader className="pb-2">
+          <CardHeader>
             <CardTitle className="text-base">{t.settingsPage.accountsTitle}</CardTitle>
             <CardDescription>{t.settingsPage.accountsSub}</CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <Link
               href="/dashboard/settings/token-guide"
-              className="bg-muted/50 hover:bg-muted flex items-center gap-3 rounded-lg border px-3 py-2.5 transition-colors"
+              className="bg-muted/40 hover:bg-muted/70 group flex items-center gap-3 rounded-xl px-3.5 py-3 transition-[background-color,transform] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               <BookOpen className="text-muted-foreground size-4 shrink-0" />
               <span className="min-w-0 flex-1 text-sm">
                 <span className="font-medium">{t.settingsPage.tokenGuideCardLink}</span>{" "}
                 <span className="text-muted-foreground">{t.settingsPage.tokenHelp}</span>
               </span>
-              <ChevronRight className="text-muted-foreground size-4 shrink-0" />
+              <ChevronRight className="text-muted-foreground size-4 shrink-0 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
             </Link>
             <AccountManager
               labels={t.settingsPage}
@@ -72,7 +72,7 @@ export default async function SettingsPage() {
 
         {activeAccount && (
           <Card>
-            <CardHeader className="pb-2">
+            <CardHeader>
               <CardTitle className="text-base">{t.settingsPage.dataSync}</CardTitle>
               <p className="text-muted-foreground text-sm">
                 {t.settingsPage.dataSyncSub.replace("{username}", activeAccount.username)}

@@ -233,7 +233,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
             {totalPosts > 0 && (
               <a
                 href={exportHref}
-                className="border-input bg-background hover:bg-accent flex h-7 items-center gap-1.5 rounded-md border px-2.5 text-xs"
+                className="bg-muted/70 text-foreground hover:bg-muted flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 <Download className="size-3.5" />
                 {t.postsPage.exportCsv}
@@ -270,16 +270,16 @@ export default async function PostsPage({ searchParams }: PageProps) {
           {currentPage > 1 ? (
             <Link
               href={pageHref(currentPage - 1)}
-              className="border-input bg-background hover:bg-accent rounded-md border px-3 py-1.5 text-sm"
+              className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               {t.postsPage.previousPage}
             </Link>
           ) : (
-            <span className="text-muted-foreground border-input rounded-md border px-3 py-1.5 text-sm opacity-50">
+            <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
               {t.postsPage.previousPage}
             </span>
           )}
-          <span className="text-muted-foreground text-sm">
+          <span className="text-muted-foreground text-sm tabular-nums">
             {t.postsPage.pageStatus
               .replace("{page}", String(currentPage))
               .replace("{total}", String(pageCount))}
@@ -287,12 +287,12 @@ export default async function PostsPage({ searchParams }: PageProps) {
           {currentPage < pageCount ? (
             <Link
               href={pageHref(currentPage + 1)}
-              className="border-input bg-background hover:bg-accent rounded-md border px-3 py-1.5 text-sm"
+              className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               {t.postsPage.nextPage}
             </Link>
           ) : (
-            <span className="text-muted-foreground border-input rounded-md border px-3 py-1.5 text-sm opacity-50">
+            <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
               {t.postsPage.nextPage}
             </span>
           )}

@@ -5,7 +5,6 @@ import {
   ResponsiveContainer,
   Scatter,
   ScatterChart,
-  Legend,
   Tooltip,
   XAxis,
   YAxis,
@@ -15,13 +14,12 @@ import AxisHint from "./axis-hint";
 import {
   axisTick,
   chartColors,
+  chartPalette,
   compactChartMargin,
   formatCompactNumber,
   gridProps,
-  legendStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
 } from "./chart-style";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   id: string;
@@ -60,11 +58,20 @@ interface Props {
   };
 }
 
+// Winners get color; underperformers recede to gray rather than shouting
+// in a warning hue.
 const QUADRANT_COLORS: Record<DataPoint["quadrant"], string> = {
   breakout: chartColors.engagement,
   conversation: chartColors.quote,
   broadcast: chartColors.views,
-  underperforming: chartColors.share,
+  underperforming: chartPalette.slate,
+};
+
+const QUADRANT_OPACITY: Record<DataPoint["quadrant"], number> = {
+  breakout: 0.85,
+  conversation: 0.8,
+  broadcast: 0.8,
+  underperforming: 0.35,
 };
 
 function getQuadrantLabel(quadrant: DataPoint["quadrant"], labels?: Props["labels"]) {
@@ -86,6 +93,7 @@ function truncateText(text: string, noText?: string) {
 }
 
 export default function PostQualityScatterChart({ data, labels }: Props) {
+  const motion = useChartMotion();
   const copy = labels ?? {
     views: "Views",
     engagementRate: "Engagement Rate",
@@ -98,14 +106,11 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
   };
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-[280px] items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={280} />;
   }
 
   const getMediaTypeLabel = (mediaType: string) => labels?.mediaTypes?.[mediaType] ?? mediaType;
+  const quadrants = ["breakout", "conversation", "broadcast", "underperforming"] as const;
 
   return (
     <>
@@ -114,6 +119,14 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
         y={copy.engagementRate}
         size={copy.dotSizeShares ?? copy.shares}
         color={copy.quadrantGroup ?? "Quadrant"}
+      />
+      <ChartLegend
+        className="mb-2"
+        items={quadrants.map((quadrant) => ({
+          label: getQuadrantLabel(quadrant, labels),
+          color: QUADRANT_COLORS[quadrant],
+          shape: "dot",
+        }))}
       />
       <ResponsiveContainer width="100%" height={320}>
         <ScatterChart margin={compactChartMargin}>
@@ -140,57 +153,52 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
           />
           <ZAxis type="number" dataKey="shares" range={[48, 260]} />
           <Tooltip
-            cursor={{ strokeDasharray: "3 3" }}
+            cursor={{
+              stroke: "color-mix(in oklch, var(--muted-foreground) 35%, transparent)",
+              strokeDasharray: "3 3",
+            }}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as DataPoint;
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground max-w-[280px] rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>{truncateText(point.text, copy.noText)}</p>
-                  <p>
-                    {copy.views}: {point.views.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.engagementRate}: {point.engagementRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {copy.replyRate}: {point.replyRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {copy.shareRate}: {point.shareRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {copy.shares}: {point.shares.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.viewsMultiplier ?? "Views vs Median"}: {point.viewsMultiplier}x
-                  </p>
-                  <p>
-                    {copy.textLength ?? "Text Length"}: {point.textLength}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {getMediaTypeLabel(point.mediaType)} ·{" "}
-                    {getQuadrantLabel(point.quadrant, labels)}
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={truncateText(point.text, copy.noText)}
+                  subtitle={`${getMediaTypeLabel(point.mediaType)} · ${getQuadrantLabel(point.quadrant, labels)}`}
+                  rows={[
+                    {
+                      label: copy.views,
+                      value: point.views.toLocaleString(),
+                      color: QUADRANT_COLORS[point.quadrant],
+                    },
+                    { label: copy.engagementRate, value: `${point.engagementRate.toFixed(2)}%` },
+                    { label: copy.replyRate, value: `${point.replyRate.toFixed(2)}%` },
+                    { label: copy.shareRate, value: `${point.shareRate.toFixed(2)}%` },
+                    { label: copy.shares, value: point.shares.toLocaleString() },
+                    {
+                      label: copy.viewsMultiplier ?? "Views vs Median",
+                      value: `${point.viewsMultiplier}x`,
+                      muted: true,
+                    },
+                    {
+                      label: copy.textLength ?? "Text Length",
+                      value: point.textLength.toLocaleString(),
+                      muted: true,
+                    },
+                  ]}
+                />
               );
             }}
           />
-          <Legend iconSize={9} wrapperStyle={legendStyle} />
-          {(["breakout", "conversation", "broadcast", "underperforming"] as const).map(
-            (quadrant) => (
-              <Scatter
-                key={quadrant}
-                name={getQuadrantLabel(quadrant, labels)}
-                data={data.filter((point) => point.quadrant === quadrant)}
-                fill={QUADRANT_COLORS[quadrant]}
-                fillOpacity={quadrant === "underperforming" ? 0.45 : 0.82}
-              />
-            ),
-          )}
+          {quadrants.map((quadrant) => (
+            <Scatter
+              key={quadrant}
+              name={getQuadrantLabel(quadrant, labels)}
+              data={data.filter((point) => point.quadrant === quadrant)}
+              fill={QUADRANT_COLORS[quadrant]}
+              fillOpacity={QUADRANT_OPACITY[quadrant]}
+              {...motion}
+            />
+          ))}
         </ScatterChart>
       </ResponsiveContainer>
     </>

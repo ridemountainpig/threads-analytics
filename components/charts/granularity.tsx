@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatShortDate } from "./chart-style";
 
@@ -164,18 +164,43 @@ export function GranularityToggle({
   labels: GranularityLabels;
 }) {
   const options: Granularity[] = ["day", "week", "month"];
+  const buttonRefs = useRef(new Map<Granularity, HTMLButtonElement>());
+  const [pill, setPill] = useState<{ x: number; width: number } | null>(null);
+
+  // The raised segment is a single pill that glides to the selection instead
+  // of each button painting its own background. Measured after layout (and
+  // re-measured when labels change size, e.g. on locale switch).
+  useLayoutEffect(() => {
+    const button = buttonRefs.current.get(value);
+    if (button) setPill({ x: button.offsetLeft, width: button.offsetWidth });
+  }, [value, labels]);
+
+  // Styled as a segmented control: a recessed track with the selected
+  // segment raised on a background-colored pill. Feedback lands on press
+  // (active:scale) rather than on release; reduced motion snaps the pill.
   return (
-    <div className="border-border inline-flex items-center gap-0.5 rounded-md border p-0.5">
+    <div className="bg-muted/70 relative inline-flex items-center rounded-full p-0.5">
+      {pill && (
+        <span
+          aria-hidden
+          className="bg-background ring-foreground/5 absolute inset-y-0.5 left-0 rounded-full shadow-sm ring-1 transition-[translate,width] duration-200 ease-out motion-reduce:transition-none"
+          style={{ translate: `${pill.x}px 0`, width: pill.width }}
+        />
+      )}
       {options.map((option) => (
         <button
           key={option}
+          ref={(node) => {
+            if (node) buttonRefs.current.set(option, node);
+            else buttonRefs.current.delete(option);
+          }}
           type="button"
           onClick={() => onChange(option)}
           className={cn(
-            "rounded-[5px] px-2.5 py-1 text-xs leading-4 transition-colors",
+            "relative inline-flex h-6 items-center rounded-full px-2.5 text-[11px] transition-[color,transform] duration-200 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
             value === option
-              ? "bg-muted text-foreground font-medium"
-              : "text-muted-foreground hover:text-foreground",
+              ? "text-foreground font-medium"
+              : "text-foreground/70 hover:text-foreground",
           )}
         >
           {labels[option]}

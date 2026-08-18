@@ -13,16 +13,16 @@ import {
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   barRadius,
   chartColors,
   compactAxisTick,
   compactChartMargin,
   formatCompactNumber,
   gridProps,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   day: string;
@@ -50,7 +50,14 @@ interface Props {
   };
 }
 
+const CONFIDENCE_OPACITY: Record<"low" | "medium" | "high", number> = {
+  low: 0.4,
+  medium: 0.7,
+  high: 1,
+};
+
 export default function DayOfWeekChart({ data, labels }: Props) {
+  const motion = useChartMotion();
   const copy = labels ?? {
     days: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
     posts: "Posts",
@@ -67,11 +74,7 @@ export default function DayOfWeekChart({ data, labels }: Props) {
   const chartData = data.map((item, index) => ({ ...item, day: copy.days[index] ?? item.day }));
 
   if (!data.length || data.every((d) => d.medianViews === 0)) {
-    return (
-      <div className="text-muted-foreground flex h-[160px] items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={180} />;
   }
 
   return (
@@ -79,6 +82,14 @@ export default function DayOfWeekChart({ data, labels }: Props) {
       <AxisHint
         x={copy.weekday ?? "Weekday"}
         y={`${medianViewsLabel} / ${copy.engagementRate} / ${copy.posts}`}
+      />
+      <ChartLegend
+        className="mb-2"
+        items={[
+          { label: medianViewsLabel, color: chartColors.views, shape: "line" },
+          { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
+          { label: copy.posts, color: chartColors.bar, shape: "dot" },
+        ]}
       />
       <ResponsiveContainer width="100%" height={180}>
         <ComposedChart data={chartData} margin={compactChartMargin}>
@@ -103,46 +114,32 @@ export default function DayOfWeekChart({ data, labels }: Props) {
             width={34}
           />
           <Tooltip
-            formatter={(v, name) => {
-              const value = Number(v);
-              if (name === copy.engagementRate) return [`${value.toFixed(2)}%`, name];
-              if (name === copy.posts) return [value.toLocaleString(), name];
-              return [formatCompactNumber(value), name];
-            }}
+            cursor={lineCursor}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as DataPoint;
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>{label}</p>
-                  <p>
-                    {copy.posts}: {point.postCount.toLocaleString()}
-                  </p>
-                  <p>
-                    {medianViewsLabel}: {point.medianViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.avgViews}: {point.avgViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.engagementRate}: {point.engagementRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {hitRateLabel}: {point.hitRate}%
-                  </p>
-                  <p className="text-muted-foreground">
-                    {confidenceLabel}:{" "}
-                    {copy.confidenceLevels?.[point.confidence] ?? point.confidence}
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={String(label)}
+                  subtitle={`${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence] ?? point.confidence}`}
+                  rows={[
+                    {
+                      label: medianViewsLabel,
+                      value: point.medianViews.toLocaleString(),
+                      color: chartColors.views,
+                    },
+                    { label: copy.avgViews, value: point.avgViews.toLocaleString() },
+                    {
+                      label: copy.engagementRate,
+                      value: `${point.engagementRate.toFixed(2)}%`,
+                      color: chartColors.engagement,
+                    },
+                    { label: hitRateLabel, value: `${point.hitRate}%` },
+                    { label: copy.posts, value: point.postCount.toLocaleString(), muted: true },
+                  ]}
+                />
               );
             }}
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
           />
           <Bar
             yAxisId="posts"
@@ -150,14 +147,11 @@ export default function DayOfWeekChart({ data, labels }: Props) {
             fill={chartColors.bar}
             radius={barRadius}
             name={copy.posts}
+            maxBarSize={22}
+            {...motion}
           >
             {chartData.map((entry) => (
-              <Cell
-                key={entry.day}
-                fillOpacity={
-                  entry.confidence === "low" ? 0.4 : entry.confidence === "medium" ? 0.7 : 1
-                }
-              />
+              <Cell key={entry.day} fillOpacity={CONFIDENCE_OPACITY[entry.confidence]} />
             ))}
           </Bar>
           <Line
@@ -165,9 +159,11 @@ export default function DayOfWeekChart({ data, labels }: Props) {
             type="monotone"
             dataKey="medianViews"
             stroke={chartColors.views}
-            strokeWidth={1.8}
-            dot={{ r: 2 }}
+            strokeWidth={2}
+            dot={false}
+            activeDot={activeDot(chartColors.views)}
             name={medianViewsLabel}
+            {...motion}
           />
           <Line
             yAxisId="rate"
@@ -175,8 +171,10 @@ export default function DayOfWeekChart({ data, labels }: Props) {
             dataKey="engagementRate"
             stroke={chartColors.engagement}
             strokeWidth={1.5}
-            dot={{ r: 2 }}
+            dot={false}
+            activeDot={activeDot(chartColors.engagement)}
             name={copy.engagementRate}
+            {...motion}
           />
         </ComposedChart>
       </ResponsiveContainer>

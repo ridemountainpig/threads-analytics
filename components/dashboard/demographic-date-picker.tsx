@@ -70,7 +70,7 @@ export default function DemographicDatePicker({
       <Select value={baseline} onValueChange={onBaselineChange}>
         <SelectTrigger
           size="sm"
-          className="h-8 w-auto max-w-44 min-w-32"
+          className="bg-muted/70 hover:bg-muted dark:bg-muted/70 dark:hover:bg-muted h-7 w-auto max-w-44 min-w-32 rounded-full border-0 px-3 text-xs tabular-nums data-[size=sm]:rounded-full"
           aria-label={labels.baseline}
         >
           <SelectValue>{(value) => labelFor(String(value))}</SelectValue>
@@ -89,7 +89,7 @@ export default function DemographicDatePicker({
       <Select value={current} onValueChange={onCurrentChange}>
         <SelectTrigger
           size="sm"
-          className="h-8 w-auto max-w-44 min-w-32"
+          className="bg-muted/70 hover:bg-muted dark:bg-muted/70 dark:hover:bg-muted h-7 w-auto max-w-44 min-w-32 rounded-full border-0 px-3 text-xs tabular-nums data-[size=sm]:rounded-full"
           aria-label={labels.current}
         >
           <SelectValue>{(value) => labelFor(String(value))}</SelectValue>

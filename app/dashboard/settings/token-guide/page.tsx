@@ -19,11 +19,17 @@ function transformGuideUrl(url: string) {
   return defaultUrlTransform(resolved);
 }
 
+// Long-form reading typography: body copy at full foreground contrast (muted
+// is reserved for the note callouts), 15px with relaxed leading, and slight
+// negative tracking on the larger headings. Body color is inherited rather
+// than set per-element so the callout can quiet everything inside it.
 const markdownComponents: Components = {
-  h1: ({ children }) => <h1 className="text-2xl font-semibold">{children}</h1>,
-  h2: ({ children }) => <h2 className="mt-10 text-lg font-semibold">{children}</h2>,
-  p: ({ children }) => <p className="text-muted-foreground text-sm leading-relaxed">{children}</p>,
-  strong: ({ children }) => <strong className="text-foreground font-medium">{children}</strong>,
+  h1: ({ children }) => <h1 className="text-2xl font-semibold tracking-[-0.01em]">{children}</h1>,
+  h2: ({ children }) => (
+    <h2 className="mt-10 text-lg font-semibold tracking-[-0.01em]">{children}</h2>
+  ),
+  p: ({ children }) => <p className="text-[15px] leading-relaxed">{children}</p>,
+  strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
   code: ({ children }) => (
     <code className="bg-muted rounded px-1 py-0.5 font-mono text-xs">{children}</code>
   ),
@@ -32,34 +38,33 @@ const markdownComponents: Components = {
       href={href}
       target="_blank"
       rel="noreferrer"
-      className="text-foreground underline underline-offset-2"
+      className="text-tint underline underline-offset-2 hover:opacity-80"
     >
       {children}
     </a>
   ),
   img: ({ src, alt }) => (
+    // Screenshots framed like the app's cards: hairline ring, card radius.
     // eslint-disable-next-line @next/next/no-img-element
     <img
       src={typeof src === "string" ? src : undefined}
       alt={alt ?? ""}
       loading="lazy"
-      className="my-2 w-full rounded-lg border"
+      className="ring-foreground/10 my-3 w-full rounded-xl ring-1"
     />
   ),
   blockquote: ({ children }) => (
-    <blockquote className="border-muted-foreground/30 space-y-2 border-l-2 pl-4">
+    // Notes render as quiet callout cards (Apple-docs style) instead of a
+    // bare left rule; the muted color cascades into the inherited body text.
+    <blockquote className="bg-muted/40 text-muted-foreground space-y-2 rounded-xl px-4 py-3">
       {children}
     </blockquote>
   ),
   ul: ({ children }) => (
-    <ul className="text-muted-foreground list-disc space-y-1 pl-5 text-sm leading-relaxed">
-      {children}
-    </ul>
+    <ul className="list-disc space-y-1 pl-5 text-[15px] leading-relaxed">{children}</ul>
   ),
   ol: ({ children }) => (
-    <ol className="text-muted-foreground list-decimal space-y-1 pl-5 text-sm leading-relaxed">
-      {children}
-    </ol>
+    <ol className="list-decimal space-y-1 pl-5 text-[15px] leading-relaxed">{children}</ol>
   ),
 };
 
@@ -76,9 +81,11 @@ export default async function TokenGuidePage() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-6 p-4 sm:p-6">
+      {/* Back link with a real hit area and press feedback — negative margins
+          keep it optically aligned with the content column. */}
       <Link
         href="/dashboard/settings"
-        className="text-muted-foreground hover:text-foreground inline-flex items-center gap-1.5 text-sm"
+        className="text-muted-foreground hover:text-foreground hover:bg-muted/70 -mx-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-[background-color,color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <ArrowLeft className="size-3.5" />
         {t.settingsPage.backToSettings}

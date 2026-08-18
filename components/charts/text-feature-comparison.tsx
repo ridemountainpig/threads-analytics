@@ -1,4 +1,5 @@
 import { chartColors } from "./chart-style";
+import { ChartEmptyState } from "./chart-chrome";
 
 interface TextFeatureStats {
   postCount: number;
@@ -61,40 +62,40 @@ export default function TextFeatureComparison({
     (point) => point.withFeature.postCount > 0 || point.withoutFeature.postCount > 0,
   );
   if (!hasData) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={192} />;
   }
 
   return (
-    <div className="space-y-10 py-2">
+    <div className="space-y-9 py-2">
       {data.map((point) => {
         const rows = rowsFor(point);
         const maxMedian = Math.max(1, ...rows.map((row) => row.stats.medianViews));
         return (
-          <div key={point.feature} className="space-y-6">
+          <div key={point.feature} className="space-y-5">
             {rows.map((row) => (
               <div key={row.name} className="grid grid-cols-[6.5rem_1fr] items-center gap-3">
                 <div className="min-w-0">
-                  <p className="truncate text-sm font-medium">{row.name}</p>
-                  <p className="text-muted-foreground text-xs">
+                  <p className="truncate text-[13px] leading-5 font-medium">{row.name}</p>
+                  <p className="text-muted-foreground text-[11px] leading-4 tabular-nums">
                     {row.stats.postCount.toLocaleString(locale)} {copy.posts}
                   </p>
                 </div>
                 <div className="min-w-0">
-                  <div className="bg-muted h-4 overflow-hidden rounded-full">
-                    <div
-                      className="h-full rounded-full"
-                      style={{
-                        width: `${Math.round((row.stats.medianViews / maxMedian) * 100)}%`,
-                        backgroundColor: row.highlight ? chartColors.views : chartColors.volume,
-                      }}
-                    />
+                  <div className="flex items-center gap-2.5">
+                    <div className="bg-muted/60 h-3 min-w-0 flex-1 overflow-hidden rounded-full">
+                      <div
+                        className="h-full rounded-full"
+                        style={{
+                          width: `${Math.round((row.stats.medianViews / maxMedian) * 100)}%`,
+                          backgroundColor: row.highlight ? chartColors.views : chartColors.volume,
+                        }}
+                      />
+                    </div>
+                    <span className="text-foreground shrink-0 text-xs font-medium tabular-nums">
+                      {row.stats.medianViews.toLocaleString(locale)}
+                    </span>
                   </div>
-                  <p className="text-muted-foreground mt-1.5 text-xs tabular-nums">
-                    {copy.medianViews} {row.stats.medianViews.toLocaleString(locale)} ·{" "}
+                  <p className="text-muted-foreground mt-1.5 text-[11px] leading-4 tabular-nums">
                     {copy.engagementRate} {row.stats.engagementRate.toFixed(2)}% · {copy.replyRate}{" "}
                     {row.stats.replyRate.toFixed(2)}%
                   </p>

@@ -4,6 +4,8 @@ import { useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
+import { chartPalette } from "./chart-style";
+import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
 import { expandPostingCalendarSeries } from "@/lib/posting-calendar-expand";
 
 interface DataPoint {
@@ -31,12 +33,14 @@ function getIntensity(count: number, max: number): number {
   return Math.ceil((count / max) * 4);
 }
 
-const INTENSITY_CLASSES: Record<number, string> = {
-  0: "bg-muted",
-  1: "bg-primary/20",
-  2: "bg-primary/45",
-  3: "bg-primary/70",
-  4: "bg-primary",
+// One hue, stepped toward the muted track — activity reads as saturation,
+// not as a rainbow.
+const INTENSITY_BG: Record<number, string> = {
+  0: "var(--muted)",
+  1: `color-mix(in oklch, ${chartPalette.blue} 25%, var(--muted))`,
+  2: `color-mix(in oklch, ${chartPalette.blue} 50%, var(--muted))`,
+  3: `color-mix(in oklch, ${chartPalette.blue} 75%, var(--muted))`,
+  4: chartPalette.blue,
 };
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
@@ -66,20 +70,12 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
   };
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-[120px] items-center justify-center text-sm">
-        {copy.noData ?? "No data"}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData ?? "No data"} height={120} />;
   }
 
   const calendarData = expandPostingCalendarSeries(data, selectedYear);
   if (!calendarData.length) {
-    return (
-      <div className="text-muted-foreground flex h-[120px] items-center justify-center text-sm">
-        {copy.noData ?? "No data"}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData ?? "No data"} height={120} />;
   }
 
   const max = Math.max(...calendarData.map((d) => d.count));
@@ -117,20 +113,24 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
         color={copy.posts ?? "Posts"}
       />
 
-      <div className="mb-1 grid gap-[2px]" style={{ gridTemplateColumns }}>
+      <div className="mb-1 grid gap-[3px]" style={{ gridTemplateColumns }}>
         <div />
         {weeks.map((_, wi) => {
           const label = monthLabels.find((m) => m.weekIndex === wi);
           return (
             <div key={wi} className="min-w-0 text-center">
-              {label && <span className="text-muted-foreground text-[9px]">{label.label}</span>}
+              {label && (
+                <span className="text-muted-foreground text-[9px] tracking-[0.02em]">
+                  {label.label}
+                </span>
+              )}
             </div>
           );
         })}
       </div>
 
-      <div className="grid gap-[2px]" style={{ gridTemplateColumns }}>
-        <div className="flex flex-col gap-[2px]">
+      <div className="grid gap-[3px]" style={{ gridTemplateColumns }}>
+        <div className="flex flex-col gap-[3px]">
           {copy.days.map((d, i) => (
             <div
               key={d}
@@ -142,17 +142,17 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
         </div>
 
         {weeks.map((week, wi) => (
-          <div key={wi} className="flex min-w-0 flex-col gap-[2px]">
+          <div key={wi} className="flex min-w-0 flex-col gap-[3px]">
             {week.map((cell, di) => {
-              if (!cell) return <div key={di} className="h-[12px] w-full rounded-[2px]" />;
+              if (!cell) return <div key={di} className="h-[12px] w-full rounded-[3px]" />;
               const intensity = getIntensity(cell.count, max);
               return (
                 <div
                   key={di}
                   className={cn(
-                    "h-[12px] w-full min-w-[8px] cursor-pointer rounded-[2px] transition-opacity hover:opacity-80",
-                    INTENSITY_CLASSES[intensity],
+                    "h-[12px] w-full min-w-[8px] rounded-[3px] transition-opacity duration-150 hover:opacity-75 motion-reduce:transition-none",
                   )}
+                  style={{ backgroundColor: INTENSITY_BG[intensity] }}
                   onMouseEnter={(e) => {
                     const rect = e.currentTarget.getBoundingClientRect();
                     setTooltip({ ...cell, x: rect.left + rect.width / 2, y: rect.top });
@@ -172,21 +172,34 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
       {tooltip &&
         createPortal(
           <div
-            className="bg-popover border-border pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-2 rounded border px-2 py-1 text-[11px] shadow-sm"
+            className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+8px)]"
             style={{ left: tooltip.x, top: tooltip.y }}
           >
-            {utcNoonFromYmd(tooltip.date).toLocaleDateString(dateLocale, { timeZone: "UTC" })} -{" "}
-            {tooltip.count} {copy.posts ?? "Posts"}
+            <ChartTooltip
+              rows={[
+                {
+                  label: utcNoonFromYmd(tooltip.date).toLocaleDateString(dateLocale, {
+                    timeZone: "UTC",
+                  }),
+                  value: `${tooltip.count} ${copy.posts ?? "Posts"}`,
+                  color: chartPalette.blue,
+                },
+              ]}
+            />
           </div>,
           document.body,
         )}
 
-      <div className="mt-2 flex items-center justify-end gap-1">
-        <span className="text-muted-foreground text-[9px]">{copy.less}</span>
+      <div className="mt-2.5 flex items-center justify-end gap-1">
+        <span className="text-muted-foreground/80 text-[9px]">{copy.less}</span>
         {[0, 1, 2, 3, 4].map((i) => (
-          <div key={i} className={cn("size-[10px] rounded-[2px]", INTENSITY_CLASSES[i])} />
+          <div
+            key={i}
+            className="size-[10px] rounded-[3px]"
+            style={{ backgroundColor: INTENSITY_BG[i] }}
+          />
         ))}
-        <span className="text-muted-foreground text-[9px]">{copy.more}</span>
+        <span className="text-muted-foreground/80 text-[9px]">{copy.more}</span>
       </div>
     </div>
   );

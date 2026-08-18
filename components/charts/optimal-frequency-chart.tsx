@@ -8,21 +8,19 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   axisTick,
   barRadius,
   chartColors,
-  compactAxisTick,
   formatCompactNumber,
   gridProps,
-  legendStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   range: string;
@@ -47,6 +45,7 @@ interface Props {
 }
 
 export default function OptimalFrequencyChart({ data, labels }: Props) {
+  const motion = useChartMotion();
   const copy = labels ?? {
     range: "Posts/Week",
     postsPerWeek: "Posts / Week",
@@ -58,16 +57,20 @@ export default function OptimalFrequencyChart({ data, labels }: Props) {
   };
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={220} />;
   }
 
   return (
     <>
       <AxisHint x={copy.postsPerWeek} y={`${copy.avgViewsPost} / ${copy.engagementRate}`} />
+      <ChartLegend
+        className="mb-2"
+        items={[
+          { label: copy.avgViewsPost, color: chartColors.views, shape: "dot" },
+          { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
+          { label: copy.shareRate, color: chartColors.share, shape: "line" },
+        ]}
+      />
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart data={data} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
           <CartesianGrid {...gridProps} />
@@ -90,44 +93,44 @@ export default function OptimalFrequencyChart({ data, labels }: Props) {
             width={38}
           />
           <Tooltip
+            cursor={lineCursor}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as DataPoint;
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>
-                    {point.range} {copy.postsPerWeek}
-                  </p>
-                  <p>
-                    {copy.weeks}: {point.weekCount}
-                  </p>
-                  <p>
-                    {copy.avgViewsPost}: {point.avgViewsPerPost.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.engagementRate}: {point.engagementRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {copy.shareRate}: {point.shareRate.toFixed(2)}%
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={`${point.range} ${copy.postsPerWeek}`}
+                  subtitle={`${point.weekCount} ${copy.weeks}`}
+                  rows={[
+                    {
+                      label: copy.avgViewsPost,
+                      value: point.avgViewsPerPost.toLocaleString(),
+                      color: chartColors.views,
+                    },
+                    {
+                      label: copy.engagementRate,
+                      value: `${point.engagementRate.toFixed(2)}%`,
+                      color: chartColors.engagement,
+                    },
+                    {
+                      label: copy.shareRate,
+                      value: `${point.shareRate.toFixed(2)}%`,
+                      color: chartColors.share,
+                    },
+                  ]}
+                />
               );
             }}
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipLabelStyle}
-            labelStyle={tooltipLabelStyle}
           />
-          <Legend iconType="square" iconSize={10} wrapperStyle={legendStyle} />
           <Bar
             yAxisId="views"
             dataKey="avgViewsPerPost"
             name={copy.avgViewsPost}
-            fill={chartColors.bar}
+            fill={chartColors.views}
+            fillOpacity={0.75}
             radius={barRadius}
             maxBarSize={28}
+            {...motion}
           />
           <Line
             yAxisId="rate"
@@ -136,7 +139,9 @@ export default function OptimalFrequencyChart({ data, labels }: Props) {
             name={copy.engagementRate}
             stroke={chartColors.engagement}
             strokeWidth={1.5}
-            dot={{ r: 3 }}
+            dot={false}
+            activeDot={activeDot(chartColors.engagement)}
+            {...motion}
           />
           <Line
             yAxisId="rate"
@@ -145,7 +150,9 @@ export default function OptimalFrequencyChart({ data, labels }: Props) {
             name={copy.shareRate}
             stroke={chartColors.share}
             strokeWidth={1.5}
-            dot={{ r: 3 }}
+            dot={false}
+            activeDot={activeDot(chartColors.share)}
+            {...motion}
           />
         </ComposedChart>
       </ResponsiveContainer>

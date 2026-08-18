@@ -64,6 +64,8 @@ import TextFeatureComparison from "@/components/charts/text-feature-comparison";
 import PostingGapChart from "@/components/charts/posting-gap-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import ChartCard from "@/components/dashboard/chart-card";
+import { ChartEmptyState } from "@/components/charts/chart-chrome";
+import { chartColors } from "@/components/charts/chart-style";
 import { TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import AnalyticsTabs, { type AnalyticsTabValue } from "@/components/dashboard/analytics-tabs";
 import FollowerTrendChart from "@/components/charts/follower-trend-chart";
@@ -454,10 +456,17 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
       </div>
 
       <AnalyticsTabs defaultTab={activeTab}>
-        <TabsList>
-          <TabsTrigger value="performance">{t.analytics.performance}</TabsTrigger>
-          <TabsTrigger value="content">{t.analytics.content}</TabsTrigger>
-          <TabsTrigger value="audience">{t.analytics.audience}</TabsTrigger>
+        {/* Pill segmented control, matching the granularity toggle grammar */}
+        <TabsList className="bg-muted/70 rounded-full p-0.5">
+          <TabsTrigger value="performance" className="rounded-full px-3">
+            {t.analytics.performance}
+          </TabsTrigger>
+          <TabsTrigger value="content" className="rounded-full px-3">
+            {t.analytics.content}
+          </TabsTrigger>
+          <TabsTrigger value="audience" className="rounded-full px-3">
+            {t.analytics.audience}
+          </TabsTrigger>
         </TabsList>
 
         {/* ── PERFORMANCE TAB ── */}
@@ -623,7 +632,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
             <Card>
               <CardContent className="p-4">
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                   {t.analytics.postingConsistency}
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{consistency.percentage}%</p>
@@ -635,7 +644,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                   {t.analytics.shareRate}
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{shareRate}%</p>
@@ -646,7 +655,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                   {t.analytics.quoteRatio}
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{quoteToRepostRatio}%</p>
@@ -655,7 +664,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                   {t.analytics.totalPosts}
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{posts.length.toLocaleString()}</p>
@@ -663,7 +672,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                   {t.analytics.longestStreak}
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{postingStreak.longestStreak}</p>
@@ -672,7 +681,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </Card>
             <Card>
               <CardContent className="p-4">
-                <p className="text-muted-foreground text-xs tracking-wider uppercase">
+                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                   {t.analytics.currentStreak}
                 </p>
                 <p className="mt-1 text-2xl font-semibold">{postingStreak.currentStreak}</p>
@@ -815,8 +824,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             {/* Top by Engagement Rate */}
             {topByEngRate.length > 0 && (
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                <CardHeader>
+                  <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                     {t.analytics.topEngagement}
                   </CardTitle>
                   <p className="text-muted-foreground text-xs">{t.analytics.topEngagementSub}</p>
@@ -833,7 +842,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm">{post.text}</p>
                         <div className="mt-1 flex items-center gap-3">
-                          <span className="text-primary text-xs font-medium">
+                          <span
+                            className="text-xs font-medium"
+                            style={{ color: chartColors.engagement }}
+                          >
                             {post.engRate}% {t.analytics.engagementShort}
                           </span>
                           <span className="text-muted-foreground text-xs">
@@ -860,8 +872,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             {/* Reply-Rate Leaders */}
             {replyRateLeaders.length > 0 && (
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                <CardHeader>
+                  <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                     {t.analytics.replyLeaders}
                   </CardTitle>
                   <p className="text-muted-foreground text-xs">{t.analytics.replyLeadersSub}</p>
@@ -878,7 +890,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm">{post.text}</p>
                         <div className="mt-1 flex items-center gap-3">
-                          <span className="text-primary text-xs font-medium">
+                          <span
+                            className="text-xs font-medium"
+                            style={{ color: chartColors.reply }}
+                          >
                             {post.replyRate}% {t.analytics.replyRate}
                           </span>
                           <span className="text-muted-foreground text-xs">
@@ -906,8 +921,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             {/* Share-Rate Leaders */}
             {shareLeaders.length > 0 && (
               <Card>
-                <CardHeader className="pb-2">
-                  <CardTitle className="text-muted-foreground text-sm tracking-wider uppercase">
+                <CardHeader>
+                  <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                     {t.analytics.shareLeaders}
                   </CardTitle>
                   <p className="text-muted-foreground text-xs">{t.analytics.shareLeadersSub}</p>
@@ -924,7 +939,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                       <div className="min-w-0 flex-1">
                         <p className="line-clamp-2 text-sm">{post.text}</p>
                         <div className="mt-1 flex items-center gap-3">
-                          <span className="text-primary text-xs font-medium">
+                          <span
+                            className="text-xs font-medium"
+                            style={{ color: chartColors.share }}
+                          >
                             {post.shareRate}% {t.analytics.shareRateInline}
                           </span>
                           <span className="text-muted-foreground text-xs">
@@ -1013,13 +1031,13 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </>
           ) : (
             <Card>
-              <CardHeader className="pb-2">
-                <CardTitle className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+              <CardHeader>
+                <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                   {t.analytics.followerTrend}
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-muted-foreground text-sm">{t.analytics.followerEmpty}</p>
+                <ChartEmptyState label={t.analytics.followerEmpty} height={140} />
               </CardContent>
             </Card>
           )}
@@ -1031,7 +1049,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                   right-aligned date controls read as one group. */}
               <div className="flex flex-col gap-2.5">
                 <div>
-                  <h2 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+                  <h2 className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                     {t.analytics.demographics}
                   </h2>
                   <p className="text-muted-foreground text-xs">{t.analytics.demographicsSub}</p>
@@ -1088,7 +1106,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               {hasDemographicTrend && (
                 <>
                   <div className="pt-2">
-                    <h2 className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+                    <h2 className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                       {t.analytics.demographicsTrend}
                     </h2>
                     <p className="text-muted-foreground text-xs">
@@ -1126,7 +1144,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               subtitle={t.analytics.demographicsSub}
               labels={cardLabels}
             >
-              <p className="text-muted-foreground text-sm">{demographicsEmptyMessage}</p>
+              <ChartEmptyState label={demographicsEmptyMessage} height={140} />
             </ChartCard>
           )}
         </TabsContent>

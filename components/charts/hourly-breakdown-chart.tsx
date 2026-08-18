@@ -11,9 +11,11 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
+import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
 import {
   axisTick,
+  barCursor,
   barRadius,
   chartColors,
   compactAxisTick,
@@ -21,6 +23,7 @@ import {
   formatCompactNumber,
   gridProps,
 } from "./chart-style";
+import { ChartTooltip, useChartMotion } from "./chart-chrome";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
 
@@ -74,6 +77,39 @@ function formatHour(h: number, locale?: string) {
   }
 }
 
+const CONFIDENCE_OPACITY: Record<"low" | "medium" | "high", number> = {
+  low: 0.35,
+  medium: 0.65,
+  high: 1,
+};
+
+// Filter chips share one visual grammar: capsule, filled when selected,
+// pressed-state scale for instant feedback.
+function DayChip({
+  selected,
+  onClick,
+  children,
+}: {
+  selected: boolean;
+  onClick: () => void;
+  children: React.ReactNode;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      className={cn(
+        "inline-flex h-6 items-center rounded-full px-2.5 text-[11px] transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+        selected
+          ? "bg-primary text-primary-foreground font-medium"
+          : "bg-muted/70 text-foreground/70 hover:text-foreground",
+      )}
+    >
+      {children}
+    </button>
+  );
+}
+
 export default function HourlyBreakdownChart({
   heatmap,
   bestTimeToPost,
@@ -81,6 +117,7 @@ export default function HourlyBreakdownChart({
   labels,
 }: HourlyBreakdownChartProps) {
   const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const motion = useChartMotion();
   const copy = labels ?? {
     allDays: "All days",
     days: DAY_LABELS,
@@ -135,21 +172,14 @@ export default function HourlyBreakdownChart({
   return (
     <div className="space-y-3">
       <AxisHint x={copy.hour ?? "Hour"} y={medianViewsLabel} />
-      <div className="flex flex-wrap gap-1">
-        <button
-          onClick={() => setSelectedDay(null)}
-          className={`rounded px-2 py-1 text-xs transition-colors ${selectedDay === null ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-        >
+      <div className="flex flex-wrap gap-1.5">
+        <DayChip selected={selectedDay === null} onClick={() => setSelectedDay(null)}>
           {copy.allDays}
-        </button>
+        </DayChip>
         {copy.days.map((label, i) => (
-          <button
-            key={i}
-            onClick={() => setSelectedDay(i)}
-            className={`rounded px-2 py-1 text-xs transition-colors ${selectedDay === i ? "bg-primary text-primary-foreground" : "bg-muted text-muted-foreground hover:bg-muted/80"}`}
-          >
+          <DayChip key={i} selected={selectedDay === i} onClick={() => setSelectedDay(i)}>
             {label}
-          </button>
+          </DayChip>
         ))}
       </div>
 
@@ -172,45 +202,46 @@ export default function HourlyBreakdownChart({
             width={40}
           />
           <Tooltip
+            cursor={barCursor}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as (typeof chartData)[number] | undefined;
               return (
-                <div className="bg-popover border-border rounded border px-2 py-1 text-xs shadow-sm">
-                  <p className="font-medium">{formatHour(Number(label ?? 0), dateLocale)}</p>
-                  <p>
-                    {medianViewsLabel}: {(point?.medianViews ?? 0).toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.avgViewsTooltip}: {(point?.avgViews ?? 0).toLocaleString()}
-                  </p>
-                  <p>
-                    {p75ViewsLabel}: {(point?.p75Views ?? 0).toLocaleString()}
-                  </p>
-                  <p>
-                    {hitRateLabel}: {point?.hitRate ?? 0}%
-                  </p>
-                  <p className="text-muted-foreground">
-                    {copy.postsTooltip}: {point?.postCount ?? 0}
-                  </p>
-                  <p className="text-muted-foreground">
-                    {confidenceLabel}:{" "}
-                    {copy.confidenceLevels?.[point?.confidence ?? "low"] ??
-                      point?.confidence ??
-                      "low"}
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={formatHour(Number(label ?? 0), dateLocale)}
+                  subtitle={`${confidenceLabel}: ${
+                    copy.confidenceLevels?.[point?.confidence ?? "low"] ??
+                    point?.confidence ??
+                    "low"
+                  }`}
+                  rows={[
+                    {
+                      label: medianViewsLabel,
+                      value: (point?.medianViews ?? 0).toLocaleString(),
+                      color: chartColors.views,
+                    },
+                    { label: copy.avgViewsTooltip, value: (point?.avgViews ?? 0).toLocaleString() },
+                    { label: p75ViewsLabel, value: (point?.p75Views ?? 0).toLocaleString() },
+                    { label: hitRateLabel, value: `${point?.hitRate ?? 0}%` },
+                    {
+                      label: copy.postsTooltip,
+                      value: (point?.postCount ?? 0).toLocaleString(),
+                      muted: true,
+                    },
+                  ]}
+                />
               );
             }}
           />
-          <Bar dataKey="medianViews" fill={chartColors.bar} radius={barRadius} maxBarSize={20}>
+          <Bar
+            dataKey="medianViews"
+            fill={chartColors.views}
+            radius={barRadius}
+            maxBarSize={18}
+            {...motion}
+          >
             {chartData.map((entry) => (
-              <Cell
-                key={entry.hour}
-                fillOpacity={
-                  entry.confidence === "low" ? 0.4 : entry.confidence === "medium" ? 0.7 : 1
-                }
-              />
+              <Cell key={entry.hour} fillOpacity={CONFIDENCE_OPACITY[entry.confidence]} />
             ))}
           </Bar>
         </BarChart>

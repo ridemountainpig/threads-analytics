@@ -302,9 +302,9 @@ export default async function OverviewPage({ searchParams }: PageProps) {
 
       {/* Top Hour Recommendation */}
       {topHours.length > 0 && (
-        <Card className="border-primary/20 bg-primary/5">
+        <Card className="ring-tint/20 bg-tint/8">
           <CardContent className="flex items-center gap-3 p-4">
-            <Clock className="text-primary size-4 shrink-0" />
+            <Clock className="text-tint size-4 shrink-0" />
             <div>
               <p className="text-sm font-medium">{t.overview.bestHours}</p>
               <p className="text-muted-foreground text-sm">
@@ -378,8 +378,8 @@ export default async function OverviewPage({ searchParams }: PageProps) {
 
       {/* Daily Views */}
       <Card>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+        <CardHeader>
+          <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
             {t.overview.dailyViews}
           </CardTitle>
           <p className="text-muted-foreground text-xs">{t.overview.dailyViewsSub}</p>
@@ -397,8 +397,8 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       {/* Viral Posts */}
       {viralPosts.length > 0 && (
         <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-muted-foreground text-sm font-semibold tracking-wider uppercase">
+          <CardHeader>
+            <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
               {t.overview.topPosts}
             </CardTitle>
           </CardHeader>
@@ -414,7 +414,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
                     <span className="text-muted-foreground text-sm">
                       {post.views.toLocaleString()} {t.common.views}
                     </span>
-                    <span className="text-primary text-sm font-medium">
+                    <span className="text-tint text-sm font-medium">
                       {post.multiplier}x {t.overview.median}
                     </span>
                     <span className="text-muted-foreground text-sm">

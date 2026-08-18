@@ -13,15 +13,13 @@ import {
 } from "recharts";
 import {
   axisTick,
+  barCursor,
   barRadius,
   chartColors,
   compactChartMargin,
   formatCompactNumber,
   spansMultipleYears,
   gridProps,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
 } from "./chart-style";
 import {
   GranularityToggle,
@@ -31,6 +29,7 @@ import {
   useGranularity,
 } from "./granularity";
 import AxisHint from "./axis-hint";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DailyViewsChartProps {
   data: Array<{ end_time: string; value: number }>;
@@ -63,6 +62,7 @@ export default function DailyViewsChart({
   labels,
 }: DailyViewsChartProps) {
   const locale = dateLocale ?? "en-US";
+  const motion = useChartMotion();
   const copy = labels ?? {
     views: "Views",
     sevenDayAvg: "7d Avg",
@@ -83,11 +83,7 @@ export default function DailyViewsChart({
   );
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={220} />;
   }
 
   const isDaily = granularity === "day";
@@ -123,37 +119,30 @@ export default function DailyViewsChart({
         x={copy.date ?? "Date"}
         y={isDaily ? `${copy.views} / ${copy.sevenDayAvg}` : copy.views}
       />
-      <div className="text-muted-foreground mb-2 flex flex-wrap items-center gap-3 text-[11px]">
-        <span className="inline-flex items-center gap-1">
-          <span className="bg-muted-foreground inline-block h-2.5 w-2.5 rounded-[2px]" />
-          {copy.views}
-        </span>
-        {isDaily && (
-          <span className="inline-flex items-center gap-1">
-            <span
-              className="inline-block h-px w-5"
-              style={{ backgroundColor: chartColors.views }}
-            />
-            {copy.sevenDayAvg}
-          </span>
-        )}
-        {baseline > 0 && (
-          <span className="inline-flex items-center gap-1">
-            <span
-              className="inline-block h-px w-5 border-t"
-              style={{ borderColor: chartColors.trend, borderTopStyle: "dashed" }}
-            />
-            {baselineLabel}: {baseline.toLocaleString(locale)}
-          </span>
-        )}
+      <div className="mb-2 flex flex-wrap items-center justify-between gap-x-3 gap-y-1.5">
+        <ChartLegend
+          items={[
+            { label: copy.views, color: chartColors.views, shape: "dot" },
+            ...(isDaily
+              ? [{ label: copy.sevenDayAvg, color: chartColors.trend, shape: "line" as const }]
+              : []),
+            ...(baseline > 0
+              ? [
+                  {
+                    label: `${baselineLabel} ${baseline.toLocaleString(locale)}`,
+                    color: chartColors.trend,
+                    shape: "dash" as const,
+                  },
+                ]
+              : []),
+          ]}
+        />
         {showToggle && (
-          <span className="ml-auto">
-            <GranularityToggle
-              value={granularity}
-              onChange={setGranularity}
-              labels={granularityLabels}
-            />
-          </span>
+          <GranularityToggle
+            value={granularity}
+            onChange={setGranularity}
+            labels={granularityLabels}
+          />
         )}
       </div>
       <ResponsiveContainer width="100%" height={220}>
@@ -177,20 +166,35 @@ export default function DailyViewsChart({
             width={40}
           />
           <Tooltip
-            formatter={(v, name) => {
-              const value = Number(v);
-              if (name === copy.sevenDayAvg)
-                return [value.toLocaleString(locale), copy.sevenDayAvg];
-              return [value.toLocaleString(locale), copy.views];
+            cursor={barCursor}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              const point = payload[0]?.payload as (typeof chartData)[number];
+              const rollingAvg = "rollingAvg" in point ? point.rollingAvg : undefined;
+              return (
+                <ChartTooltip
+                  title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
+                    year: withYear,
+                  })}
+                  rows={[
+                    {
+                      label: copy.views,
+                      value: point.value.toLocaleString(locale),
+                      color: chartColors.views,
+                    },
+                    ...(isDaily && rollingAvg != null
+                      ? [
+                          {
+                            label: copy.sevenDayAvg,
+                            value: rollingAvg.toLocaleString(locale),
+                            color: chartColors.trend,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              );
             }}
-            labelFormatter={(label) =>
-              formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
-                year: withYear,
-              })
-            }
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
           />
           {baseline > 0 && (
             <ReferenceLine y={baseline} stroke={chartColors.trend} strokeDasharray="4 3" />
@@ -198,18 +202,21 @@ export default function DailyViewsChart({
           <Bar
             dataKey="value"
             name={copy.views}
-            fill={chartColors.bar}
+            fill={chartColors.views}
+            fillOpacity={0.72}
             radius={barRadius}
-            maxBarSize={20}
+            maxBarSize={18}
+            {...motion}
           />
           {isDaily && (
             <Line
               type="monotone"
               dataKey="rollingAvg"
               name={copy.sevenDayAvg}
-              stroke={chartColors.views}
+              stroke={chartColors.trend}
               strokeWidth={1.8}
               dot={false}
+              {...motion}
             />
           )}
         </ComposedChart>

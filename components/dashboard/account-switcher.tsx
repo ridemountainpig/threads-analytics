@@ -30,12 +30,12 @@ export default function AccountSwitcher({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="text-muted-foreground hover:text-foreground inline-flex max-w-full items-center gap-1 rounded-sm text-left text-xs focus:outline-none"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex max-w-full items-center gap-1 rounded-sm text-left text-xs transition-colors duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none"
         aria-label={label}
       >
         {pending ? <Loader2 className="size-3 shrink-0 animate-spin" /> : null}
         <span className="min-w-0 truncate">@{active?.username}</span>
-        <ChevronDown className="size-3 shrink-0 opacity-50" />
+        <ChevronDown className="size-3 shrink-0 opacity-50 transition-transform duration-200 in-data-[popup-open]:rotate-180 motion-reduce:transition-none" />
       </DropdownMenuTrigger>
       <DropdownMenuContent align="start" className="w-48">
         {accounts.map((account) => (

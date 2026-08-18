@@ -8,23 +8,21 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
   Cell,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   axisTick,
   barRadius,
   chartColors,
   compactChartMargin,
   formatCompactNumber,
   gridProps,
-  legendStyle,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface ContentTypeChartProps {
   data: Array<{
@@ -56,7 +54,14 @@ interface ContentTypeChartProps {
   };
 }
 
+const CONFIDENCE_OPACITY: Record<"low" | "medium" | "high", number> = {
+  low: 0.35,
+  medium: 0.65,
+  high: 1,
+};
+
 export default function ContentTypeChart({ data, labels }: ContentTypeChartProps) {
+  const motion = useChartMotion();
   const copy = labels ?? {
     avgViews: "Avg Views",
     posts: "posts",
@@ -79,11 +84,7 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
   }));
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={220} />;
   }
 
   return (
@@ -91,6 +92,14 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
       <AxisHint
         x={copy.contentType ?? "Content Type"}
         y={`${medianViewsLabel} / ${copy.engagementRate} / ${copy.shareRate}`}
+      />
+      <ChartLegend
+        className="mb-2"
+        items={[
+          { label: medianViewsLabel, color: chartColors.views, shape: "dot" },
+          { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
+          { label: copy.shareRate, color: chartColors.share, shape: "line" },
+        ]}
       />
       <ResponsiveContainer width="100%" height={220}>
         <ComposedChart data={chartData} margin={compactChartMargin}>
@@ -114,73 +123,51 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
             width={38}
           />
           <Tooltip
-            formatter={(v, name) => {
-              const value = Number(v);
-              if (String(name).includes("Rate")) return [`${value.toFixed(2)}%`, name];
-              return [value.toLocaleString(), name];
-            }}
-            labelFormatter={(label, payload) => {
-              const point = payload?.[0]?.payload;
-              return point
-                ? `${label} · ${point.postCount} ${postsLabel} · ${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence as "low" | "medium" | "high"] ?? point.confidence}`
-                : String(label);
-            }}
+            cursor={lineCursor}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as ContentTypeChartProps["data"][number];
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>
-                    {label} · {point.postCount} {postsLabel}
-                  </p>
-                  <p>
-                    {medianViewsLabel}: {point.medianViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.avgViews}: {point.avgViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {p75ViewsLabel}: {point.p75Views.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.engagementRate}: {point.engagementRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {copy.shareRate}: {point.shareRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {hitRateLabel}: {point.hitRate}%
-                  </p>
-                  <p className="text-muted-foreground">
-                    {confidenceLabel}:{" "}
-                    {copy.confidenceLevels?.[point.confidence] ?? point.confidence}
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={String(label)}
+                  subtitle={`${point.postCount.toLocaleString()} ${postsLabel} · ${confidenceLabel}: ${
+                    copy.confidenceLevels?.[point.confidence] ?? point.confidence
+                  }`}
+                  rows={[
+                    {
+                      label: medianViewsLabel,
+                      value: point.medianViews.toLocaleString(),
+                      color: chartColors.views,
+                    },
+                    { label: copy.avgViews, value: point.avgViews.toLocaleString() },
+                    { label: p75ViewsLabel, value: point.p75Views.toLocaleString() },
+                    {
+                      label: copy.engagementRate,
+                      value: `${point.engagementRate.toFixed(2)}%`,
+                      color: chartColors.engagement,
+                    },
+                    {
+                      label: copy.shareRate,
+                      value: `${point.shareRate.toFixed(2)}%`,
+                      color: chartColors.share,
+                    },
+                    { label: hitRateLabel, value: `${point.hitRate}%`, muted: true },
+                  ]}
+                />
               );
             }}
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
           />
-          <Legend iconType="square" iconSize={10} wrapperStyle={legendStyle} />
           <Bar
             yAxisId="views"
             dataKey="medianViews"
             name={medianViewsLabel}
-            fill={chartColors.bar}
+            fill={chartColors.views}
             radius={barRadius}
             maxBarSize={24}
+            {...motion}
           >
             {chartData.map((entry) => (
-              <Cell
-                key={entry.type}
-                fillOpacity={
-                  entry.confidence === "low" ? 0.4 : entry.confidence === "medium" ? 0.7 : 1
-                }
-              />
+              <Cell key={entry.type} fillOpacity={CONFIDENCE_OPACITY[entry.confidence]} />
             ))}
           </Bar>
           <Line
@@ -190,7 +177,9 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
             name={copy.engagementRate}
             stroke={chartColors.engagement}
             strokeWidth={1.5}
-            dot={{ r: 2 }}
+            dot={false}
+            activeDot={activeDot(chartColors.engagement)}
+            {...motion}
           />
           <Line
             yAxisId="rate"
@@ -199,7 +188,9 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
             name={copy.shareRate}
             stroke={chartColors.share}
             strokeWidth={1.5}
-            dot={{ r: 2 }}
+            dot={false}
+            activeDot={activeDot(chartColors.share)}
+            {...motion}
           />
         </ComposedChart>
       </ResponsiveContainer>

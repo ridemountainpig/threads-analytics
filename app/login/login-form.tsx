@@ -58,11 +58,17 @@ export default function LoginForm({ labels, redirectTo }: LoginFormProps) {
           aria-invalid={hasError}
         />
       </div>
-      <Button type="submit" className="w-full" disabled={pending}>
+      <Button type="submit" className="w-full rounded-full" disabled={pending}>
         {pending ? copy.signingIn : copy.signIn}
       </Button>
-      {hasError && (
-        <div className="text-destructive flex items-center justify-center gap-2 text-sm">
+      {/* Hidden while a retry is in flight, so each failure re-mounts the
+          message and replays the shake — a physical "no" with the keyframes in
+          globals.css; reduced motion just shows the text. */}
+      {hasError && !pending && (
+        <div
+          role="alert"
+          className="text-destructive flex animate-[login-shake_0.4s_ease-in-out] items-center justify-center gap-2 text-sm motion-reduce:animate-none"
+        >
           <AlertCircle className="size-4 shrink-0" />
           <span>{errorMessage}</span>
         </div>

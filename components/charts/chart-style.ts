@@ -1,19 +1,37 @@
+// Shared visual language for every analytics chart, modeled on Apple's
+// charting style: one restrained system palette, hairline horizontal grids,
+// quiet axes with tabular numerals, and color reserved for the data itself.
+
+// Mid-lightness oklch values hold up on both the light and dark themes.
+export const chartPalette = {
+  blue: "oklch(0.62 0.17 252)",
+  teal: "oklch(0.69 0.12 215)",
+  green: "oklch(0.64 0.16 155)",
+  orange: "oklch(0.72 0.15 65)",
+  pink: "oklch(0.63 0.2 15)",
+  indigo: "oklch(0.58 0.17 278)",
+  purple: "oklch(0.63 0.2 305)",
+  slate: "oklch(0.62 0.03 255)",
+} as const;
+
 export const chartColors = {
-  bar: "var(--muted-foreground)",
-  views: "oklch(0.58 0.18 255)",
-  avgViews: "oklch(0.66 0.14 215)",
-  engagement: "oklch(0.58 0.15 152)",
-  share: "oklch(0.70 0.16 72)",
-  likes: "oklch(0.60 0.20 20)",
-  reply: "oklch(0.58 0.18 250)",
-  repost: "oklch(0.60 0.16 145)",
-  quote: "oklch(0.58 0.19 305)",
-  trend: "oklch(0.52 0.08 245)",
-  volume: "oklch(0.56 0.04 250)",
-  grid: "var(--border)",
+  // Contextual "volume" bars stay translucent gray so colored metrics lead.
+  bar: "color-mix(in oklch, var(--muted-foreground) 55%, transparent)",
+  views: chartPalette.blue,
+  avgViews: chartPalette.teal,
+  engagement: chartPalette.green,
+  share: chartPalette.orange,
+  likes: chartPalette.pink,
+  reply: chartPalette.indigo,
+  repost: chartPalette.green,
+  quote: chartPalette.purple,
+  trend: chartPalette.slate,
+  // The audience tab's hero metric shares the first categorical slot so the
+  // whole tab keeps one indigo identity; named here so it reads as a choice.
+  followers: "var(--series-1)",
+  volume: "color-mix(in oklch, var(--muted-foreground) 40%, transparent)",
+  grid: "color-mix(in oklch, var(--muted-foreground) 16%, transparent)",
   axis: "var(--muted-foreground)",
-  tooltipBg: "var(--popover)",
-  tooltipFg: "var(--popover-foreground)",
 } as const;
 
 // Categorical slots for charts that plot several entities at once. Assign in
@@ -35,46 +53,42 @@ export const chartMargin = { top: 8, right: 12, left: 0, bottom: 0 };
 
 export const compactChartMargin = { top: 6, right: 10, left: 0, bottom: 0 };
 
+// Small text wants a touch of positive tracking; numerals set tabular so
+// tick values align vertically along the axis.
 export const axisTick = {
   fontSize: 11,
   fill: chartColors.axis,
-};
+  letterSpacing: "0.01em",
+  fontVariantNumeric: "tabular-nums",
+} as const;
 
 export const compactAxisTick = {
   fontSize: 10,
   fill: chartColors.axis,
-};
+  letterSpacing: "0.015em",
+  fontVariantNumeric: "tabular-nums",
+} as const;
 
+// Solid hairlines, horizontal only — dashes read as noise at this weight.
 export const gridProps = {
   stroke: chartColors.grid,
-  strokeDasharray: "3 3",
   vertical: false,
+} as const;
+
+// Hover cursor presets: a faint wash behind bars, a hairline for lines.
+export const barCursor = { fill: "color-mix(in oklch, var(--foreground) 5%, transparent)" };
+
+export const lineCursor = {
+  stroke: "color-mix(in oklch, var(--muted-foreground) 35%, transparent)",
+  strokeWidth: 1,
 };
 
-export const tooltipStyle = {
-  backgroundColor: chartColors.tooltipBg,
-  border: "1px solid var(--border)",
-  borderRadius: "var(--radius-sm)",
-  boxShadow: "0 8px 24px color-mix(in oklch, var(--foreground) 10%, transparent)",
-  color: chartColors.tooltipFg,
-  fontSize: 12,
-};
+// Active dots get a background-colored ring so they lift off the line.
+export function activeDot(color: string) {
+  return { r: 4, fill: color, stroke: "var(--background)", strokeWidth: 2 };
+}
 
-export const tooltipLabelStyle = {
-  color: chartColors.tooltipFg,
-  fontWeight: 500,
-};
-
-export const tooltipItemStyle = {
-  color: chartColors.tooltipFg,
-};
-
-export const legendStyle = {
-  color: chartColors.axis,
-  fontSize: 12,
-};
-
-export const barRadius: [number, number, number, number] = [3, 3, 0, 0];
+export const barRadius: [number, number, number, number] = [4, 4, 0, 0];
 
 export function formatCompactNumber(v: number) {
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}m`;

@@ -7,20 +7,17 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   chartColors,
   compactAxisTick,
   compactChartMargin,
   spansMultipleYears,
   gridProps,
-  legendStyle,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
 import {
   GranularityToggle,
@@ -29,6 +26,7 @@ import {
   formatBucketTooltipLabel,
   useGranularity,
 } from "./granularity";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   date: string;
@@ -58,6 +56,7 @@ interface Props {
 
 export default function EngagementBreakdownChart({ data, dateLocale, timeZone, labels }: Props) {
   const locale = dateLocale ?? "en-US";
+  const motion = useChartMotion();
   const copy = labels ?? {
     likes: "Likes",
     replies: "Replies",
@@ -78,11 +77,7 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
   );
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-[200px] items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={200} />;
   }
 
   const series =
@@ -104,6 +99,13 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
 
   const withYear = spansMultipleYears(series.map((point) => point.date));
 
+  const seriesMeta = [
+    { key: "likes" as const, label: copy.likes, color: chartColors.likes },
+    { key: "replies" as const, label: copy.replies, color: chartColors.reply },
+    { key: "reposts" as const, label: copy.reposts, color: chartColors.repost },
+    { key: "quotes" as const, label: copy.quotes, color: chartColors.quote },
+  ];
+
   return (
     <>
       <div className="flex items-start justify-between gap-2">
@@ -116,6 +118,10 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
           />
         )}
       </div>
+      <ChartLegend
+        className="mb-2"
+        items={seriesMeta.map((meta) => ({ label: meta.label, color: meta.color, shape: "line" }))}
+      />
       <ResponsiveContainer width="100%" height={200}>
         <LineChart data={series} margin={compactChartMargin}>
           <CartesianGrid {...gridProps} />
@@ -130,48 +136,37 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
           />
           <YAxis tick={compactAxisTick} tickLine={false} axisLine={false} width={34} />
           <Tooltip
-            labelFormatter={(v) =>
-              formatBucketTooltipLabel(String(v), granularity, locale, timeZone, {
-                year: withYear,
-              })
-            }
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
+            cursor={lineCursor}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              const point = payload[0]?.payload as DataPoint;
+              return (
+                <ChartTooltip
+                  title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
+                    year: withYear,
+                  })}
+                  rows={seriesMeta.map((meta) => ({
+                    label: meta.label,
+                    value: point[meta.key].toLocaleString(locale),
+                    color: meta.color,
+                  }))}
+                />
+              );
+            }}
           />
-          <Legend iconType="line" iconSize={12} wrapperStyle={legendStyle} />
-          <Line
-            type="monotone"
-            dataKey="likes"
-            name={copy.likes}
-            stroke={chartColors.likes}
-            strokeWidth={1.8}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="replies"
-            name={copy.replies}
-            stroke={chartColors.reply}
-            strokeWidth={1.8}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="reposts"
-            name={copy.reposts}
-            stroke={chartColors.repost}
-            strokeWidth={1.8}
-            dot={false}
-          />
-          <Line
-            type="monotone"
-            dataKey="quotes"
-            name={copy.quotes}
-            stroke={chartColors.quote}
-            strokeWidth={1.8}
-            dot={false}
-          />
+          {seriesMeta.map((meta) => (
+            <Line
+              key={meta.key}
+              type="monotone"
+              dataKey={meta.key}
+              name={meta.label}
+              stroke={meta.color}
+              strokeWidth={1.8}
+              dot={false}
+              activeDot={activeDot(meta.color)}
+              {...motion}
+            />
+          ))}
         </LineChart>
       </ResponsiveContainer>
     </>

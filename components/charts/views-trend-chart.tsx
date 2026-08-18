@@ -2,17 +2,18 @@
 
 import {
   ComposedChart,
+  Area,
   Bar,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   axisTick,
   barRadius,
   chartColors,
@@ -20,10 +21,15 @@ import {
   compactChartMargin,
   formatCompactNumber,
   gridProps,
-  legendStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
+import {
+  ChartAreaGradient,
+  ChartEmptyState,
+  ChartLegend,
+  ChartTooltip,
+  useChartMotion,
+} from "./chart-chrome";
 
 interface ViewsTrendChartProps {
   data: {
@@ -68,6 +74,7 @@ function formatPeriod(
 
 export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrendChartProps) {
   const locale = dateLocale ?? "en-US";
+  const motion = useChartMotion();
   const copy = labels ?? {
     posts: "Posts",
     medianViews: "Median Views",
@@ -80,11 +87,7 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
   const { granularity, points } = data;
 
   if (!points.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={240} />;
   }
 
   const withYear = new Set(points.map((point) => point.period.slice(0, 4))).size > 1;
@@ -96,8 +99,17 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
         x={granularity === "month" ? copy.month : copy.week}
         y={`${copy.medianViews} / ${copy.avgViews} / ${copy.posts}`}
       />
+      <ChartLegend
+        className="mb-2"
+        items={[
+          { label: copy.medianViews, color: chartColors.views, shape: "line" },
+          { label: copy.avgViews, color: chartColors.avgViews, shape: "dash" },
+          { label: copy.posts, color: chartColors.bar, shape: "dot" },
+        ]}
+      />
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart data={points} margin={compactChartMargin}>
+          <ChartAreaGradient id="views-trend-fill" color={chartColors.views} />
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="period"
@@ -117,40 +129,54 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
           />
           <YAxis yAxisId="posts" hide domain={[0, "dataMax + 2"]} />
           <Tooltip
+            cursor={lineCursor}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as ViewsTrendChartProps["data"]["points"][number];
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>{fmt(String(label))}</p>
-                  <p>
-                    {copy.posts}: {point.postCount.toLocaleString(locale)}
-                  </p>
-                  <p>
-                    {copy.medianViews}: {point.medianViews.toLocaleString(locale)}
-                  </p>
-                  <p>
-                    {copy.avgViews}: {point.avgViews.toLocaleString(locale)}
-                  </p>
-                  <p>
-                    {copy.p75Views}: {point.p75Views.toLocaleString(locale)}
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={fmt(String(label))}
+                  rows={[
+                    {
+                      label: copy.medianViews,
+                      value: point.medianViews.toLocaleString(locale),
+                      color: chartColors.views,
+                    },
+                    {
+                      label: copy.avgViews,
+                      value: point.avgViews.toLocaleString(locale),
+                      color: chartColors.avgViews,
+                    },
+                    { label: copy.p75Views, value: point.p75Views.toLocaleString(locale) },
+                    {
+                      label: copy.posts,
+                      value: point.postCount.toLocaleString(locale),
+                      muted: true,
+                    },
+                  ]}
+                />
               );
             }}
           />
-          <Legend iconSize={10} wrapperStyle={legendStyle} />
           <Bar
             yAxisId="posts"
             dataKey="postCount"
             name={copy.posts}
             fill={chartColors.bar}
-            fillOpacity={0.35}
             radius={barRadius}
-            maxBarSize={20}
+            maxBarSize={16}
+            {...motion}
+          />
+          <Area
+            yAxisId="views"
+            type="monotone"
+            dataKey="medianViews"
+            name={copy.medianViews}
+            stroke="none"
+            fill="url(#views-trend-fill)"
+            activeDot={false}
+            tooltipType="none"
+            {...motion}
           />
           <Line
             yAxisId="views"
@@ -159,8 +185,9 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
             name={copy.medianViews}
             stroke={chartColors.views}
             strokeWidth={2}
-            dot={{ r: 2, fill: chartColors.views }}
-            activeDot={{ r: 4 }}
+            dot={false}
+            activeDot={activeDot(chartColors.views)}
+            {...motion}
           />
           <Line
             yAxisId="views"
@@ -171,6 +198,8 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
             strokeWidth={1.5}
             strokeDasharray="4 3"
             dot={false}
+            activeDot={activeDot(chartColors.avgViews)}
+            {...motion}
           />
         </ComposedChart>
       </ResponsiveContainer>

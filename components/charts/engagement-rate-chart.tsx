@@ -1,26 +1,24 @@
 "use client";
 
 import {
-  LineChart,
+  ComposedChart,
+  Area,
   Line,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   axisTick,
   chartColors,
   compactChartMargin,
   spansMultipleYears,
   gridProps,
-  legendStyle,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
 import {
   GranularityToggle,
@@ -29,6 +27,13 @@ import {
   formatBucketTooltipLabel,
   useGranularity,
 } from "./granularity";
+import {
+  ChartAreaGradient,
+  ChartEmptyState,
+  ChartLegend,
+  ChartTooltip,
+  useChartMotion,
+} from "./chart-chrome";
 
 interface EngagementRateChartProps {
   data: Array<{ date: string; rate: number; rollingAvg: number; views?: number }>;
@@ -53,6 +58,7 @@ export default function EngagementRateChart({
   labels,
 }: EngagementRateChartProps) {
   const locale = dateLocale ?? "en-US";
+  const motion = useChartMotion();
   const copy = labels ?? {
     dailyRate: "Daily Rate",
     sevenDayAvg: "7d Avg",
@@ -72,11 +78,7 @@ export default function EngagementRateChart({
   );
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={200} />;
   }
 
   const isDaily = granularity === "day";
@@ -119,8 +121,18 @@ export default function EngagementRateChart({
           />
         )}
       </div>
+      <ChartLegend
+        className="mb-2"
+        items={[
+          { label: seriesName, color: chartColors.engagement, shape: "line" },
+          ...(isDaily
+            ? [{ label: copy.sevenDayAvg, color: chartColors.trend, shape: "dash" as const }]
+            : []),
+        ]}
+      />
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={series} margin={compactChartMargin}>
+        <ComposedChart data={series} margin={compactChartMargin}>
+          <ChartAreaGradient id="engagement-rate-fill" color={chartColors.engagement} />
           <CartesianGrid {...gridProps} />
           <XAxis
             dataKey="date"
@@ -140,28 +152,53 @@ export default function EngagementRateChart({
             width={45}
           />
           <Tooltip
-            formatter={(v, name) => [
-              `${(v as number).toFixed(2)}%`,
-              name === copy.sevenDayAvg ? copy.sevenDayAvg : seriesName,
-            ]}
-            labelFormatter={(label) =>
-              formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
-                year: withYear,
-              })
-            }
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
+            cursor={lineCursor}
+            content={({ active, payload, label }) => {
+              if (!active || !payload?.length) return null;
+              const point = payload[0]?.payload as (typeof series)[number];
+              return (
+                <ChartTooltip
+                  title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
+                    year: withYear,
+                  })}
+                  rows={[
+                    {
+                      label: seriesName,
+                      value: `${point.rate.toFixed(2)}%`,
+                      color: chartColors.engagement,
+                    },
+                    ...(isDaily
+                      ? [
+                          {
+                            label: copy.sevenDayAvg,
+                            value: `${point.rollingAvg.toFixed(2)}%`,
+                            color: chartColors.trend,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
+              );
+            }}
           />
-          <Legend iconType="line" iconSize={12} wrapperStyle={legendStyle} />
+          <Area
+            type="monotone"
+            dataKey="rate"
+            stroke="none"
+            fill="url(#engagement-rate-fill)"
+            activeDot={false}
+            tooltipType="none"
+            {...motion}
+          />
           <Line
             type="monotone"
             dataKey="rate"
             stroke={chartColors.engagement}
-            strokeWidth={1.5}
-            dot={{ r: 2, fill: chartColors.engagement }}
-            activeDot={{ r: 4 }}
+            strokeWidth={1.8}
+            dot={false}
+            activeDot={activeDot(chartColors.engagement)}
             name={seriesName}
+            {...motion}
           />
           {isDaily && (
             <Line
@@ -169,13 +206,14 @@ export default function EngagementRateChart({
               dataKey="rollingAvg"
               stroke={chartColors.trend}
               strokeWidth={1.5}
-              dot={{ r: 2, fill: chartColors.trend }}
-              activeDot={{ r: 4 }}
-              strokeDasharray="4 2"
+              dot={false}
+              activeDot={activeDot(chartColors.trend)}
+              strokeDasharray="4 3"
               name={copy.sevenDayAvg}
+              {...motion}
             />
           )}
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </>
   );

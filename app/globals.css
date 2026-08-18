@@ -4,9 +4,15 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Accessibility signals beyond reduced motion: frost translucent materials
+   when transparency is reduced, and harden their edges when contrast is up. */
+@custom-variant reduce-transparency (@media (prefers-reduced-transparency: reduce));
+@custom-variant more-contrast (@media (prefers-contrast: more));
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);
+  --color-tint: var(--tint);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
   --font-heading: var(--font-sans);
@@ -92,6 +98,8 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Interactive accent (iOS-style tint) — same blue family as the charts. */
+  --tint: oklch(0.55 0.16 252);
 }
 
 .dark {
@@ -132,6 +140,8 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  /* Brighter tint for dark surfaces. */
+  --tint: oklch(0.72 0.14 252);
 }
 
 @layer base {
@@ -143,5 +153,42 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Reduced motion: floating surfaces keep their fade but lose the zoom and
+   slide (tw-animate-css reads these vars inside its enter/exit keyframes).
+   Unlayered on purpose so it outranks the layered utilities. */
+@media (prefers-reduced-motion: reduce) {
+  [data-slot="dialog-content"],
+  [data-slot="dropdown-menu-content"],
+  [data-slot="select-content"] {
+    --tw-enter-scale: 1;
+    --tw-exit-scale: 1;
+    --tw-enter-translate-x: 0;
+    --tw-enter-translate-y: 0;
+    --tw-exit-translate-x: 0;
+    --tw-exit-translate-y: 0;
+  }
+}
+
+/* Wrong-password shake — a short, non-vestibular nudge; reduced motion gets
+   the plain fade the error already has. */
+@keyframes login-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+  20% {
+    transform: translateX(-4px);
+  }
+  40% {
+    transform: translateX(4px);
+  }
+  60% {
+    transform: translateX(-3px);
+  }
+  80% {
+    transform: translateX(3px);
   }
 }

@@ -36,10 +36,10 @@ export default function LanguageSwitcher({ locale, compact }: LanguageSwitcherPr
         aria-label="Language"
         disabled={pending}
         className={cn(
-          "flex items-center outline-none focus:outline-none disabled:opacity-50",
+          "flex items-center transition-[background-color,color,transform] duration-150 outline-none focus:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100",
           compact
-            ? "bg-muted/70 hover:bg-muted data-[popup-open]:bg-muted h-7 min-w-20 gap-1.5 rounded-md px-2.5 text-xs font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/50 data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground w-full gap-2.5 rounded-md px-3 py-2 text-sm",
+            ? "bg-muted/70 hover:bg-muted data-[popup-open]:bg-muted h-7 min-w-20 gap-1.5 rounded-full px-3 text-xs font-medium"
+            : "text-muted-foreground hover:text-foreground hover:bg-accent/50 data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground w-full gap-2.5 rounded-lg px-3 py-2 text-sm",
         )}
       >
         <Languages
@@ -48,7 +48,7 @@ export default function LanguageSwitcher({ locale, compact }: LanguageSwitcherPr
         <span className="min-w-0 flex-1 truncate text-left">{localeNames[locale]}</span>
         <ChevronDown
           className={cn(
-            "shrink-0 opacity-50",
+            "shrink-0 opacity-50 transition-transform duration-200 in-data-[popup-open]:rotate-180 motion-reduce:transition-none",
             compact ? "text-muted-foreground size-3.5" : "size-4",
           )}
         />

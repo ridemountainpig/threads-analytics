@@ -9,11 +9,11 @@ import {
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
+  activeDot,
   axisTick,
   barRadius,
   chartColors,
@@ -21,11 +21,9 @@ import {
   compactChartMargin,
   formatCompactNumber,
   gridProps,
-  legendStyle,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
+import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface WeeklyFrequencyChartProps {
   data: Array<{
@@ -56,7 +54,14 @@ function formatWeek(week: string) {
   return week.replace(/^\d{4}-/, "");
 }
 
+const CONFIDENCE_OPACITY: Record<"low" | "medium" | "high", number> = {
+  low: 0.4,
+  medium: 0.7,
+  high: 1,
+};
+
 export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyChartProps) {
+  const motion = useChartMotion();
   const copy = labels ?? {
     posts: "Posts",
     avgViews: "Avg Views",
@@ -72,11 +77,7 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
   const confidenceLabel = copy.confidence ?? "Confidence";
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={240} />;
   }
 
   return (
@@ -84,6 +85,15 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
       <AxisHint
         x={copy.week ?? "Week"}
         y={`${medianViewsLabel} / ${copy.engagementRate} / ${copy.shareRate} / ${copy.posts}`}
+      />
+      <ChartLegend
+        className="mb-2"
+        items={[
+          { label: medianViewsLabel, color: chartColors.views, shape: "line" },
+          { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
+          { label: copy.shareRate, color: chartColors.share, shape: "line" },
+          { label: copy.posts, color: chartColors.bar, shape: "dot" },
+        ]}
       />
       <ResponsiveContainer width="100%" height={240}>
         <ComposedChart data={data} margin={compactChartMargin}>
@@ -115,71 +125,49 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             width={38}
           />
           <Tooltip
-            formatter={(v, name) => {
-              const value = Number(v);
-              if (String(name).includes("Rate")) return [`${value.toFixed(2)}%`, name];
-              return [value.toLocaleString(), name];
-            }}
-            labelFormatter={(label, payload) => {
-              const point = payload?.[0]?.payload;
-              return point
-                ? `${formatWeek(String(label))} · ${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence as "low" | "medium" | "high"] ?? point.confidence}`
-                : formatWeek(String(label));
-            }}
+            cursor={lineCursor}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as WeeklyFrequencyChartProps["data"][number];
               return (
-                <div
-                  style={tooltipStyle}
-                  className="border-border bg-popover text-popover-foreground rounded border px-2 py-1 text-xs shadow-sm"
-                >
-                  <p style={tooltipLabelStyle}>{formatWeek(String(label))}</p>
-                  <p>
-                    {copy.posts}: {point.postCount.toLocaleString()}
-                  </p>
-                  <p>
-                    {medianViewsLabel}: {point.medianViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.avgViews}: {point.avgViews.toLocaleString()}
-                  </p>
-                  <p>
-                    {copy.engagementRate}: {point.engagementRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {copy.shareRate}: {point.shareRate.toFixed(2)}%
-                  </p>
-                  <p>
-                    {hitRateLabel}: {point.hitRate}%
-                  </p>
-                  <p className="text-muted-foreground">
-                    {confidenceLabel}:{" "}
-                    {copy.confidenceLevels?.[point.confidence] ?? point.confidence}
-                  </p>
-                </div>
+                <ChartTooltip
+                  title={formatWeek(String(label))}
+                  subtitle={`${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence] ?? point.confidence}`}
+                  rows={[
+                    {
+                      label: medianViewsLabel,
+                      value: point.medianViews.toLocaleString(),
+                      color: chartColors.views,
+                    },
+                    { label: copy.avgViews, value: point.avgViews.toLocaleString() },
+                    {
+                      label: copy.engagementRate,
+                      value: `${point.engagementRate.toFixed(2)}%`,
+                      color: chartColors.engagement,
+                    },
+                    {
+                      label: copy.shareRate,
+                      value: `${point.shareRate.toFixed(2)}%`,
+                      color: chartColors.share,
+                    },
+                    { label: hitRateLabel, value: `${point.hitRate}%` },
+                    { label: copy.posts, value: point.postCount.toLocaleString(), muted: true },
+                  ]}
+                />
               );
             }}
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
           />
-          <Legend iconSize={10} wrapperStyle={legendStyle} />
           <Bar
             yAxisId="posts"
             dataKey="postCount"
             name={copy.posts}
             fill={chartColors.bar}
             radius={barRadius}
-            maxBarSize={20}
+            maxBarSize={16}
+            {...motion}
           >
             {data.map((entry) => (
-              <Cell
-                key={entry.week}
-                fillOpacity={
-                  entry.confidence === "low" ? 0.4 : entry.confidence === "medium" ? 0.7 : 1
-                }
-              />
+              <Cell key={entry.week} fillOpacity={CONFIDENCE_OPACITY[entry.confidence]} />
             ))}
           </Bar>
           <Line
@@ -189,8 +177,9 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             name={medianViewsLabel}
             stroke={chartColors.views}
             strokeWidth={2}
-            dot={{ r: 2, fill: chartColors.views }}
-            activeDot={{ r: 4 }}
+            dot={false}
+            activeDot={activeDot(chartColors.views)}
+            {...motion}
           />
           <Line
             yAxisId="rate"
@@ -200,6 +189,8 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             stroke={chartColors.engagement}
             strokeWidth={1.5}
             dot={false}
+            activeDot={activeDot(chartColors.engagement)}
+            {...motion}
           />
           <Line
             yAxisId="rate"
@@ -209,6 +200,8 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             stroke={chartColors.share}
             strokeWidth={1.5}
             dot={false}
+            activeDot={activeDot(chartColors.share)}
+            {...motion}
           />
         </ComposedChart>
       </ResponsiveContainer>

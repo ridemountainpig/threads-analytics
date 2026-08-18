@@ -2,25 +2,26 @@
 
 import {
   CartesianGrid,
+  ComposedChart,
+  Area,
   Line,
-  LineChart,
   ResponsiveContainer,
   Tooltip,
   XAxis,
   YAxis,
 } from "recharts";
 import {
+  activeDot,
   axisTick,
+  chartColors,
   compactChartMargin,
   formatShortDate,
-  seriesColors,
   spansMultipleYears,
   gridProps,
-  tooltipItemStyle,
-  tooltipLabelStyle,
-  tooltipStyle,
+  lineCursor,
 } from "./chart-style";
 import AxisHint from "./axis-hint";
+import { ChartAreaGradient, ChartEmptyState, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 /** Wide enough for a spelled-out four-figure follower count. */
 const Y_AXIS_WIDTH = 52;
@@ -44,6 +45,7 @@ export default function FollowerTrendChart({
   labels,
 }: FollowerTrendChartProps) {
   const locale = dateLocale ?? "en-US";
+  const motion = useChartMotion();
   const copy = labels ?? {
     followers: "Followers",
     dailyChange: "Daily Change",
@@ -52,11 +54,7 @@ export default function FollowerTrendChart({
   };
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-48 items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={200} />;
   }
 
   const withYear = spansMultipleYears(data.map((point) => point.date));
@@ -91,7 +89,8 @@ export default function FollowerTrendChart({
     <>
       <AxisHint x={copy.date} y={copy.followers} />
       <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={chartData} margin={compactChartMargin}>
+        <ComposedChart data={chartData} margin={compactChartMargin}>
+          <ChartAreaGradient id="follower-trend-fill" color={chartColors.followers} />
           <CartesianGrid {...gridProps} />
           <XAxis {...sharedX} tickFormatter={formatDate} />
           <YAxis
@@ -103,39 +102,55 @@ export default function FollowerTrendChart({
             width={Y_AXIS_WIDTH}
           />
           <Tooltip
-            contentStyle={tooltipStyle}
-            itemStyle={tooltipItemStyle}
-            labelStyle={tooltipLabelStyle}
+            cursor={lineCursor}
             content={({ active, payload, label }) => {
               if (!active || !payload?.length) return null;
               const point = payload[0]?.payload as (typeof chartData)[number] | undefined;
               if (!point) return null;
               const change = point.change;
               return (
-                <div style={tooltipStyle} className="px-2.5 py-1.5">
-                  <p style={tooltipLabelStyle}>{formatDate(label as string)}</p>
-                  <p style={tooltipItemStyle}>
-                    {copy.followers} {point.followers.toLocaleString(locale)}
-                  </p>
-                  {change !== null && (
-                    <p style={tooltipItemStyle}>
-                      {copy.dailyChange} {change > 0 ? "+" : ""}
-                      {change.toLocaleString(locale)}
-                    </p>
-                  )}
-                </div>
+                <ChartTooltip
+                  title={formatDate(label as string)}
+                  rows={[
+                    {
+                      label: copy.followers,
+                      value: point.followers.toLocaleString(locale),
+                      color: chartColors.followers,
+                    },
+                    ...(change !== null
+                      ? [
+                          {
+                            label: copy.dailyChange,
+                            value: `${change > 0 ? "+" : ""}${change.toLocaleString(locale)}`,
+                            muted: true,
+                          },
+                        ]
+                      : []),
+                  ]}
+                />
               );
             }}
+          />
+          <Area
+            type="monotone"
+            dataKey="followers"
+            stroke="none"
+            fill="url(#follower-trend-fill)"
+            activeDot={false}
+            tooltipType="none"
+            {...motion}
           />
           <Line
             type="monotone"
             dataKey="followers"
             name={copy.followers}
-            stroke={seriesColors[0]}
+            stroke={chartColors.followers}
             strokeWidth={2}
             dot={false}
+            activeDot={activeDot(chartColors.followers)}
+            {...motion}
           />
-        </LineChart>
+        </ComposedChart>
       </ResponsiveContainer>
     </>
   );

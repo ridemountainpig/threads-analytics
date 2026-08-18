@@ -4,6 +4,8 @@ import { Fragment, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
+import { chartPalette } from "./chart-style";
+import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
 
 interface DataPoint {
   mediaType: string;
@@ -44,12 +46,15 @@ function getIntensity(value: number, max: number) {
   return Math.max(1, Math.ceil((value / max) * 4));
 }
 
-const INTENSITY_CLASSES: Record<number, string> = {
-  0: "bg-muted",
-  1: "bg-primary/10",
-  2: "bg-primary/25",
-  3: "bg-primary/40",
-  4: "bg-primary/55",
+// One hue stepped toward the muted track, matching the posting calendar —
+// performance reads as saturation, not as a rainbow. The top step stays a
+// mix (not the full hue) because these cells carry text.
+const INTENSITY_BG: Record<number, string> = {
+  0: "var(--muted)",
+  1: `color-mix(in oklch, ${chartPalette.blue} 22%, var(--muted))`,
+  2: `color-mix(in oklch, ${chartPalette.blue} 44%, var(--muted))`,
+  3: `color-mix(in oklch, ${chartPalette.blue} 66%, var(--muted))`,
+  4: `color-mix(in oklch, ${chartPalette.blue} 85%, var(--muted))`,
 };
 
 interface TooltipState {
@@ -81,16 +86,17 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
   const getMediaTypeLabel = (mediaType: string) => copy.mediaTypes?.[mediaType] ?? mediaType;
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-[180px] items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData ?? "No data"} height={180} />;
   }
 
   const mediaTypes = Array.from(new Set(data.map((point) => point.mediaType))).sort();
   const max = Math.max(...data.map((point) => point.medianViews));
   const byKey = new Map(data.map((point) => [`${point.mediaType}:${point.lengthBucket}`, point]));
+
+  const showTooltip = (point: DataPoint, label: string) => (e: React.MouseEvent<HTMLElement>) => {
+    const rect = e.currentTarget.getBoundingClientRect();
+    setTooltip({ point, label, x: rect.left + rect.width / 2, y: rect.top });
+  };
 
   return (
     <>
@@ -108,7 +114,10 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
         >
           <div />
           {LENGTH_BUCKETS.map((bucket) => (
-            <div key={bucket} className="text-muted-foreground px-2 text-center text-[11px]">
+            <div
+              key={bucket}
+              className="text-muted-foreground px-2 text-center text-[11px] tracking-[0.01em] tabular-nums"
+            >
               {bucket}
             </div>
           ))}
@@ -123,31 +132,30 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
                 return (
                   <div
                     key={`${type}-${bucket}`}
+                    onMouseEnter={
+                      point
+                        ? showTooltip(point, `${getMediaTypeLabel(type)} · ${bucket}`)
+                        : undefined
+                    }
                     onMouseMove={
                       point
-                        ? (e) =>
-                            setTooltip({
-                              point,
-                              label: `${getMediaTypeLabel(type)} · ${bucket}`,
-                              x: e.clientX,
-                              y: e.clientY,
-                            })
+                        ? showTooltip(point, `${getMediaTypeLabel(type)} · ${bucket}`)
                         : undefined
                     }
                     onMouseLeave={() => setTooltip(null)}
                     className={cn(
-                      "border-border flex h-16 min-w-0 flex-col justify-center rounded border px-2 text-center",
-                      "text-foreground",
-                      INTENSITY_CLASSES[intensity],
-                      point && "cursor-pointer",
-                      point?.confidence === "low" && "border-muted-foreground/40 border-dashed",
-                      point?.confidence === "medium" && "border-muted-foreground/30",
+                      "flex h-16 min-w-0 flex-col justify-center rounded-lg border border-transparent px-2 text-center transition-opacity duration-150 motion-reduce:transition-none",
+                      point && "hover:opacity-80",
+                      // Thin samples get a dashed outline — the quiet "take this
+                      // one with a grain of salt" mark; details live in the tooltip.
+                      point?.confidence === "low" && "border-foreground/20 border-dashed",
                     )}
+                    style={{ backgroundColor: INTENSITY_BG[intensity] }}
                   >
-                    <span className="text-sm font-semibold tabular-nums">
-                      {point ? point.medianViews.toLocaleString(locale) : "-"}
+                    <span className="text-foreground text-sm font-semibold tabular-nums">
+                      {point ? point.medianViews.toLocaleString(locale) : "–"}
                     </span>
-                    <span className="text-foreground/70 text-[10px]">
+                    <span className="text-foreground/70 text-[10px] tabular-nums">
                       {point ? `${point.postCount} ${copy.posts}` : ""}
                     </span>
                   </div>
@@ -156,46 +164,45 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
             </Fragment>
           ))}
         </div>
-        <div className="mt-2 flex items-center justify-end gap-1">
-          <span className="text-muted-foreground text-[10px]">{copy.less}</span>
+        <div className="mt-2.5 flex items-center justify-end gap-1">
+          <span className="text-muted-foreground/80 text-[9px]">{copy.less}</span>
           {[0, 1, 2, 3, 4].map((intensity) => (
             <div
               key={intensity}
-              className={cn("size-3 rounded-[2px]", INTENSITY_CLASSES[intensity])}
+              className="size-[10px] rounded-[3px]"
+              style={{ backgroundColor: INTENSITY_BG[intensity] }}
             />
           ))}
-          <span className="text-muted-foreground text-[10px]">{copy.more}</span>
+          <span className="text-muted-foreground/80 text-[9px]">{copy.more}</span>
         </div>
       </div>
 
       {tooltip &&
         createPortal(
           <div
-            className="bg-popover border-border pointer-events-none fixed z-50 rounded border px-3 py-2 text-xs shadow-md"
-            style={{ top: tooltip.y + 14, left: tooltip.x + 14 }}
+            className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+8px)]"
+            style={{ left: tooltip.x, top: tooltip.y }}
           >
-            <p className="text-foreground mb-1.5 font-medium">{tooltip.label}</p>
-            <div className="text-muted-foreground space-y-0.5">
-              <p>
-                {medianViewsLabel}: {tooltip.point.medianViews.toLocaleString(locale)}
-              </p>
-              <p>
-                {copy.avgViews}: {tooltip.point.avgViews.toLocaleString(locale)}
-              </p>
-              <p>
-                {p75ViewsLabel}: {tooltip.point.p75Views.toLocaleString(locale)}
-              </p>
-              <p>
-                {hitRateLabel}: {tooltip.point.hitRate}%
-              </p>
-              <p>
-                {copy.posts}: {tooltip.point.postCount}
-              </p>
-              <p>
-                {confidenceLabel}:{" "}
-                {copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence}
-              </p>
-            </div>
+            <ChartTooltip
+              title={tooltip.label}
+              rows={[
+                {
+                  label: medianViewsLabel,
+                  value: tooltip.point.medianViews.toLocaleString(locale),
+                  color: chartPalette.blue,
+                },
+                { label: copy.avgViews, value: tooltip.point.avgViews.toLocaleString(locale) },
+                { label: p75ViewsLabel, value: tooltip.point.p75Views.toLocaleString(locale) },
+                { label: hitRateLabel, value: `${tooltip.point.hitRate}%` },
+                { label: copy.posts, value: tooltip.point.postCount },
+                {
+                  label: confidenceLabel,
+                  value:
+                    copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence,
+                  muted: true,
+                },
+              ]}
+            />
           </div>,
           document.body,
         )}

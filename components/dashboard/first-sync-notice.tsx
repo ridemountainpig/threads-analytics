@@ -49,7 +49,7 @@ export function FirstSyncNotice({ labels }: { labels: FirstSyncNoticeLabels }) {
         <h2 className="font-heading text-lg font-medium">{heading}</h2>
         <p className="text-muted-foreground mx-auto max-w-xs text-sm text-balance">{labels.help}</p>
       </div>
-      <Button size="lg" onClick={handleSync} disabled={pending}>
+      <Button size="lg" className="rounded-full" onClick={handleSync} disabled={pending}>
         <RefreshCw className={`mr-1.5 size-4 ${pending ? "animate-spin" : ""}`} />
         {pending ? labels.syncing : labels.syncNow}
       </Button>

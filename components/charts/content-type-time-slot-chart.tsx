@@ -4,6 +4,8 @@ import { Fragment, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
+import { chartPalette, formatCompactNumber } from "./chart-style";
+import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
 
 interface DataPoint {
   mediaType: string;
@@ -38,12 +40,14 @@ function getIntensity(value: number, max: number) {
   return Math.max(1, Math.ceil((value / max) * 4));
 }
 
-const INTENSITY_CLASSES: Record<number, string> = {
-  0: "bg-muted",
-  1: "bg-primary/10",
-  2: "bg-primary/25",
-  3: "bg-primary/40",
-  4: "bg-primary/55",
+// A single-hue ramp blended toward the muted track keeps the heatmap calm
+// while intensity still reads at a glance.
+const INTENSITY_BG: Record<number, string> = {
+  0: "var(--muted)",
+  1: `color-mix(in oklch, ${chartPalette.blue} 22%, var(--muted))`,
+  2: `color-mix(in oklch, ${chartPalette.blue} 45%, var(--muted))`,
+  3: `color-mix(in oklch, ${chartPalette.blue} 70%, var(--muted))`,
+  4: chartPalette.blue,
 };
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
@@ -83,11 +87,7 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
   const getMediaTypeLabel = (mediaType: string) => copy.mediaTypes?.[mediaType] ?? mediaType;
 
   if (!data.length) {
-    return (
-      <div className="text-muted-foreground flex h-[180px] items-center justify-center text-sm">
-        {copy.noData}
-      </div>
-    );
+    return <ChartEmptyState label={copy.noData} height={180} />;
   }
 
   const mediaTypes = Array.from(new Set(data.map((d) => d.mediaType))).sort();
@@ -103,14 +103,17 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
           color={`${medianViewsLabel} / ${copy.colorIntensity ?? "Color Intensity"}`}
         />
         <div
-          className="grid min-w-[720px] gap-0.5"
+          className="grid min-w-[720px] gap-[3px]"
           style={{
             gridTemplateColumns: `90px repeat(${HOURS.length}, minmax(22px, 1fr))`,
           }}
         >
           <div />
           {HOURS.map((h) => (
-            <div key={h} className="text-muted-foreground text-center text-[9px] leading-tight">
+            <div
+              key={h}
+              className="text-muted-foreground pb-0.5 text-center text-[9px] leading-tight tracking-[0.02em] tabular-nums"
+            >
               {h % 3 === 0 ? formatHour(h, dateLocale) : ""}
             </div>
           ))}
@@ -138,19 +141,26 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
                     }
                     onMouseLeave={() => setTooltip(null)}
                     className={cn(
-                      "flex h-7 min-w-0 flex-col items-center justify-center rounded-sm text-[9px]",
-                      INTENSITY_CLASSES[intensity],
-                      point?.confidence === "low" &&
-                        "border-muted-foreground/40 border border-dashed",
-                      point?.confidence === "medium" && "border-muted-foreground/20 border",
-                      !point && "bg-muted/30",
+                      "flex h-6 min-w-0 items-center justify-center rounded-[4px] transition-opacity duration-150 motion-reduce:transition-none",
+                      point && "hover:opacity-80",
+                      // Low-confidence cells stay visible but visually tentative.
+                      point?.confidence === "low" && "opacity-60",
                     )}
+                    style={{
+                      backgroundColor: point
+                        ? INTENSITY_BG[intensity]
+                        : "color-mix(in oklch, var(--muted) 40%, transparent)",
+                    }}
                   >
                     {point ? (
-                      <span className="font-medium tabular-nums">
-                        {point.medianViews > 999
-                          ? `${(point.medianViews / 1000).toFixed(1)}k`
-                          : point.medianViews}
+                      <span
+                        className={cn(
+                          "text-[9px] leading-none font-medium tabular-nums",
+                          // Keep the value legible as the cell darkens.
+                          intensity >= 3 ? "text-white" : "text-foreground/70",
+                        )}
+                      >
+                        {formatCompactNumber(point.medianViews)}
                       </span>
                     ) : null}
                   </div>
@@ -159,37 +169,44 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
             </Fragment>
           ))}
         </div>
-        <div className="mt-2 flex items-center justify-end gap-1">
-          <span className="text-muted-foreground text-[10px]">{copy.less}</span>
+        <div className="mt-2.5 flex items-center justify-end gap-1">
+          <span className="text-muted-foreground/80 text-[10px]">{copy.less}</span>
           {[0, 1, 2, 3, 4].map((i) => (
-            <div key={i} className={cn("size-3 rounded-[2px]", INTENSITY_CLASSES[i])} />
+            <div
+              key={i}
+              className="size-3 rounded-[3px]"
+              style={{ backgroundColor: INTENSITY_BG[i] }}
+            />
           ))}
-          <span className="text-muted-foreground text-[10px]">{copy.more}</span>
+          <span className="text-muted-foreground/80 text-[10px]">{copy.more}</span>
         </div>
       </div>
 
       {tooltip &&
         createPortal(
           <div
-            className="bg-popover border-border pointer-events-none fixed z-50 rounded border px-3 py-2 text-xs shadow-md"
+            className="pointer-events-none fixed z-50"
             style={{ top: tooltip.y + 14, left: tooltip.x + 14 }}
           >
-            <p className="text-foreground mb-1.5 font-medium">{tooltip.label}</p>
-            <div className="text-muted-foreground space-y-0.5">
-              <p>
-                {medianViewsLabel}: {tooltip.point.medianViews.toLocaleString()}
-              </p>
-              <p>
-                {copy.avgViews}: {tooltip.point.avgViews.toLocaleString()}
-              </p>
-              <p>
-                {copy.posts}: {tooltip.point.postCount}
-              </p>
-              <p>
-                {confidenceLabel}:{" "}
-                {copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence}
-              </p>
-            </div>
+            <ChartTooltip
+              title={tooltip.label}
+              subtitle={`${confidenceLabel}: ${
+                copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence
+              }`}
+              rows={[
+                {
+                  label: medianViewsLabel,
+                  value: tooltip.point.medianViews.toLocaleString(),
+                  color: chartPalette.blue,
+                },
+                { label: copy.avgViews, value: tooltip.point.avgViews.toLocaleString() },
+                {
+                  label: copy.posts,
+                  value: tooltip.point.postCount.toLocaleString(),
+                  muted: true,
+                },
+              ]}
+            />
           </div>,
           document.body,
         )}
