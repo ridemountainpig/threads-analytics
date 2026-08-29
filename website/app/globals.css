@@ -4548,8 +4548,8 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr;
-  gap: 70px;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 56px;
   padding-bottom: 58px;
 }
 
@@ -4842,6 +4842,24 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
   .deploy-card-code {
     grid-column: auto;
     min-height: 260px;
+  }
+
+  /* Five nav items no longer fit this band at full size (widest labels in
+     zh-TW/ja), so tighten the nav and collapse the GitHub button to icon-only. */
+  .desktop-nav {
+    gap: 16px;
+    font-size: 12.5px;
+  }
+
+  .header-github span {
+    display: none;
+  }
+
+  .header-github {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
   }
 }
 
@@ -5215,6 +5233,12 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
   }
 
   .footer-brand {
+    grid-column: span 2;
+  }
+
+  /* Three link columns in a two-column grid: let the last one take the whole
+     final row instead of leaving an empty cell beside it. */
+  .footer-grid > div:last-child {
     grid-column: span 2;
   }
 }
@@ -7364,6 +7388,632 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
   .agent-cta .hero-actions .button {
     width: 100%;
+  }
+}
+
+/* Token guide (/token-guide) — reuses the agent hero, step cards, and CTA
+   shells; everything below covers the guide-specific pieces: the checklist
+   card, phase overview, sticky progress nav, and the step timeline. */
+
+.guide-hero-brandmark svg {
+  color: var(--accent-strong);
+}
+
+.guide-check-card {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 18px;
+  padding: 24px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  background: var(--night-panel);
+  color: white;
+  box-shadow: 0 28px 72px rgba(66, 40, 86, 0.18);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease;
+}
+
+.guide-check-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 34px 84px rgba(66, 40, 86, 0.26);
+}
+
+.guide-check-list {
+  display: grid;
+  gap: 13px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-check-list li {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  color: rgba(255, 255, 255, 0.87);
+  font-size: 14px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.guide-check-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+}
+
+.guide-check-icon svg {
+  width: 11px;
+  height: 11px;
+  color: #221631;
+}
+
+.guide-check-note {
+  margin: 0;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.12);
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.guide-token-result {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 15px 16px;
+  border: 1px solid rgba(255, 255, 255, 0.14);
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.guide-token-mask {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.92);
+  font-family: var(--mono);
+  font-size: 13px;
+  letter-spacing: 0.05em;
+}
+
+.guide-token-mask span {
+  overflow: hidden;
+  color: rgba(255, 255, 255, 0.34);
+  letter-spacing: 0.14em;
+  text-overflow: clip;
+  white-space: nowrap;
+}
+
+.guide-token-value {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12.5px;
+  font-weight: 550;
+}
+
+.guide-overview-section {
+  padding: 124px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.guide-phase-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.guide-phase-card {
+  cursor: pointer;
+}
+
+.guide-phase-range {
+  display: inline-flex;
+  align-items: center;
+  width: fit-content;
+  padding: 5px 10px;
+  border: 1px solid color-mix(in srgb, var(--accent) 34%, transparent);
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.guide-phase-card strong {
+  margin-top: 24px;
+  padding-right: 52px;
+  font-size: 19px;
+}
+
+.guide-steps-section {
+  padding: 124px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.guide-steps-layout {
+  display: grid;
+  grid-template-columns: 264px minmax(0, 1fr);
+  gap: 64px;
+  align-items: start;
+}
+
+.guide-progress-rail {
+  position: sticky;
+  top: 98px;
+}
+
+.guide-progress-label {
+  margin: 0 0 16px;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+}
+
+.guide-progress-list {
+  display: grid;
+  gap: 4px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-progress-list a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 10px 12px;
+  border: 1px solid transparent;
+  border-radius: 12px;
+  color: var(--ink-soft);
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease;
+}
+
+.guide-progress-list a:hover {
+  border-color: var(--rule);
+  background: color-mix(in srgb, var(--paper-strong) 82%, transparent);
+  color: var(--ink);
+}
+
+.guide-progress-index {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 27px;
+  height: 27px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 650;
+  transition:
+    background-color 200ms ease,
+    border-color 200ms ease,
+    color 200ms ease,
+    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+.guide-progress-index svg {
+  width: 12px;
+  height: 12px;
+}
+
+.guide-progress-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.guide-progress-text strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  letter-spacing: -0.012em;
+}
+
+.guide-progress-text > span {
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  opacity: 0.72;
+  text-transform: uppercase;
+}
+
+.guide-progress-list a.is-active {
+  border-color: color-mix(in srgb, var(--accent) 42%, transparent);
+  background: var(--paper-strong);
+  box-shadow: 0 10px 24px rgba(45, 29, 57, 0.07);
+  color: var(--ink);
+}
+
+.guide-progress-list a.is-active .guide-progress-index {
+  border-color: transparent;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  color: #221631;
+  transform: scale(1.06);
+}
+
+.guide-progress-list a.is-done .guide-progress-index {
+  border-color: transparent;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.guide-steps-flow {
+  display: grid;
+  gap: 110px;
+  min-width: 0;
+}
+
+.guide-phase {
+  display: grid;
+  gap: 52px;
+}
+
+.guide-phase-heading .section-kicker {
+  margin-bottom: 22px;
+}
+
+.guide-phase-heading h2 {
+  margin: 0;
+  font-size: clamp(30px, 3.4vw, 44px);
+  font-weight: 580;
+  letter-spacing: -0.04em;
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.guide-phase-heading .section-description {
+  margin-top: 16px;
+  font-size: 17px;
+}
+
+.guide-step {
+  display: grid;
+  grid-template-columns: 58px minmax(0, 1fr);
+  column-gap: 22px;
+}
+
+.guide-step-rail {
+  position: relative;
+  display: flex;
+  justify-content: center;
+}
+
+/* Connector between step numbers; fades out into the gap after each step. */
+.guide-step-rail::before {
+  content: "";
+  position: absolute;
+  top: 44px;
+  bottom: -52px;
+  left: 50%;
+  width: 1px;
+  background: linear-gradient(180deg, var(--rule-strong), transparent 92%);
+}
+
+.guide-step:last-child .guide-step-rail::before {
+  display: none;
+}
+
+.guide-step-num {
+  display: block;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  background-clip: text;
+  color: transparent;
+  font-family: var(--mono);
+  font-size: 27px;
+  font-weight: 640;
+  letter-spacing: -0.04em;
+  line-height: 1.1;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.guide-step-content h3 {
+  margin: 2px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  letter-spacing: -0.028em;
+  line-height: 1.25;
+  text-wrap: balance;
+}
+
+.guide-step-content > p {
+  margin: 10px 0 0;
+  max-width: 640px;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.7;
+  text-wrap: pretty;
+}
+
+.guide-step-content strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.guide-step-bullets {
+  display: grid;
+  gap: 8px;
+  max-width: 640px;
+  margin: 12px 0 0;
+  padding: 0;
+  list-style: none;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.6;
+}
+
+.guide-step-bullets li {
+  position: relative;
+  padding-left: 19px;
+}
+
+.guide-step-bullets li::before {
+  content: "";
+  position: absolute;
+  top: 8px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ec7dbc, #9e5bef);
+}
+
+.guide-step-note {
+  max-width: 640px;
+  margin: 14px 0 0;
+  padding: 13px 16px;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, transparent);
+  border-left: 3px solid var(--accent);
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent-soft) 40%, transparent);
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+.guide-shot {
+  margin: 22px 0 0;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: 14px;
+  background: var(--paper-strong);
+  box-shadow: 0 18px 44px rgba(45, 29, 57, 0.09);
+  transition:
+    transform 220ms ease,
+    box-shadow 220ms ease,
+    border-color 220ms ease;
+}
+
+.guide-shot:hover {
+  transform: translateY(-3px);
+  border-color: rgba(124, 61, 219, 0.4);
+  box-shadow: 0 26px 58px rgba(45, 29, 57, 0.13);
+}
+
+.guide-shot-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 9px 16px;
+  border-bottom: 1px solid var(--rule);
+  color: var(--ink-soft);
+}
+
+.guide-shot-bar .window-dots {
+  justify-self: start;
+}
+
+.guide-shot-domain {
+  overflow: hidden;
+  max-width: 100%;
+  padding: 4px 13px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.72);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.guide-shot-step {
+  justify-self: end;
+  padding: 4px 9px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.guide-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+/* Reuses the sitewide .section-kicker typography; this selector deliberately
+   outweighs .agent-cta-inner > p, which otherwise re-applies the description
+   width and margins to the kicker — a 560px box left-aligned in the 720px
+   column, which pulls the kicker off the heading's centre line. */
+.guide-finish .agent-cta-inner > .guide-finish-kicker {
+  justify-content: center;
+  max-width: none;
+  margin: 0 0 30px;
+  color: rgba(255, 255, 255, 0.56);
+  /* Sans rather than the sitewide kicker mono: this card's other Latin runs
+     (Token, Dashboard, Settings → Add Threads account) are all Inter, and the
+     mono only read as a second typeface inside one small card. */
+  font-family: var(--sans);
+  font-size: 11px;
+  line-height: normal;
+}
+
+.guide-finish .agent-cta-inner > p {
+  text-wrap: balance;
+}
+
+/* White emphasis; nowrap keeps the Settings → Add Threads account path on
+   one line instead of breaking after the arrow. */
+.guide-finish .agent-cta-inner > p strong {
+  color: white;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.guide-finish .agent-cta-inner > .guide-finish-expiry {
+  display: flex;
+  gap: 12px;
+  align-items: flex-start;
+  width: fit-content;
+  max-width: 620px;
+  margin: 34px auto 0;
+  padding: 13px 18px;
+  border: 1px solid rgba(255, 255, 255, 0.13);
+  border-radius: 13px;
+  background: rgba(255, 255, 255, 0.05);
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+  line-height: 1.6;
+  text-align: left;
+  text-wrap: pretty;
+}
+
+.guide-finish-expiry svg {
+  flex: 0 0 auto;
+  width: 26px;
+  height: 26px;
+  /* Centers the 26px badge on the first 20.8px text line (13px × 1.6), so it
+     stays aligned whether the note is one line or wraps on mobile. */
+  margin-top: -3px;
+  padding: 6px;
+  border-radius: 999px;
+  background: rgba(236, 125, 188, 0.14);
+  color: var(--accent-pink);
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .guide-token-mask span {
+    animation: guide-token-pulse 3.2s ease-in-out infinite alternate;
+  }
+
+  .guide-step.is-reveal-visible .guide-step-num {
+    animation: guide-num-in 640ms 120ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  }
+}
+
+@keyframes guide-token-pulse {
+  from {
+    opacity: 0.55;
+  }
+
+  to {
+    opacity: 1;
+  }
+}
+
+@keyframes guide-num-in {
+  from {
+    opacity: 0;
+    transform: scale(0.72);
+  }
+
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@media (max-width: 1000px) {
+  .guide-phase-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .guide-steps-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-progress-rail {
+    display: none;
+  }
+
+  .guide-steps-flow {
+    gap: 92px;
+  }
+}
+
+@media (max-width: 780px) {
+  .guide-overview-section,
+  .guide-steps-section {
+    padding: 92px 0;
+  }
+
+  .guide-phase {
+    gap: 44px;
+  }
+
+  .guide-step {
+    grid-template-columns: 40px minmax(0, 1fr);
+    column-gap: 14px;
+  }
+
+  .guide-step-rail::before {
+    top: 36px;
+    bottom: -44px;
+  }
+
+  .guide-step-num {
+    font-size: 20px;
+    line-height: 1.25;
+  }
+
+  .guide-step-content h3 {
+    font-size: 19px;
+  }
+}
+
+@media (max-width: 480px) {
+  .guide-phase-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-shot-bar .window-dots {
+    display: none;
+  }
+
+  .guide-shot-bar {
+    grid-template-columns: auto 1fr;
+    gap: 10px;
+  }
+
+  .guide-shot-domain {
+    justify-self: start;
   }
 }
 

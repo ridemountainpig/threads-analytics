@@ -15,6 +15,565 @@ export function isLocale(value: string): value is Locale {
   return locales.includes(value as Locale);
 }
 
+// Token guide copy is typed explicitly (instead of relying on inference like
+// the rest of the dictionaries) because steps carry optional bullets/notes —
+// without a shared type, each locale would infer a slightly different shape.
+export type TokenGuideStep = {
+  title: string;
+  /** Body text; `**…**` marks UI labels the page renders in bold. */
+  body: string;
+  bullets?: string[];
+  note?: string;
+};
+
+export type TokenGuidePhase = {
+  index: string;
+  /** Step range shown on the phase card and progress nav, e.g. "1–6". */
+  range: string;
+  title: string;
+  body: string;
+  steps: TokenGuideStep[];
+};
+
+export type TokenGuideCopy = {
+  metadata: { title: string; description: string };
+  hero: {
+    kicker: string;
+    lineOne: string;
+    lineTwo: string;
+    description: string;
+    primaryCta: string;
+    secondaryCta: string;
+    note: string;
+    checklistLabel: string;
+    checklist: string[];
+    checklistNote: string;
+    resultLabel: string;
+    resultValue: string;
+  };
+  overview: { kicker: string; title: string; description: string };
+  stepsLabel: string;
+  stepLabel: string;
+  progressLabel: string;
+  phases: TokenGuidePhase[];
+  finish: {
+    kicker: string;
+    title: string;
+    description: string;
+    expiry: string;
+    primary: string;
+    secondary: string;
+  };
+};
+
+const tokenGuideEn: TokenGuideCopy = {
+  metadata: {
+    title: "Generate a Threads access token — an 18-step visual guide | Threads Analytics",
+    description:
+      "A screenshot-by-screenshot guide: create a Meta app, add the Threads API use case, invite a Threads Tester, and copy the long-lived access token Threads Analytics needs.",
+  },
+  hero: {
+    kicker: "GUIDE / THREADS ACCESS TOKEN",
+    lineOne: "Eighteen steps.",
+    lineTwo: "One access token.",
+    description:
+      "Your dashboard is deployed — now it needs a key to your Threads data. Follow one screenshot per step through Meta for Developers and walk away with a long-lived Threads access token.",
+    primaryCta: "Start with step 1",
+    secondaryCta: "Open Meta Developers",
+    note: "About 10 minutes · Free · No code involved",
+    checklistLabel: "BEFORE YOU START",
+    checklist: [
+      "A Facebook / Meta account that can sign in to Meta for Developers",
+      "A public Threads account",
+      "Access to the Threads account that will accept the tester invitation",
+    ],
+    checklistNote:
+      "This flow covers personal and testing use. Supporting non-test users usually requires App Review and publishing the app.",
+    resultLabel: "WHAT YOU LEAVE WITH",
+    resultValue: "Long-lived Threads access token",
+  },
+  overview: {
+    kicker: "01 / THE ROUTE",
+    title: "Four phases. Eighteen steps.",
+    description:
+      "Every step is one screenshot and one click. Three happen inside Threads; everything else lives in Meta for Developers.",
+  },
+  stepsLabel: "STEPS",
+  stepLabel: "STEP",
+  progressLabel: "ON THIS PAGE",
+  phases: [
+    {
+      index: "01",
+      range: "1–6",
+      title: "Create the Meta app",
+      body: "Six screens of the app-creation wizard — name it, pick the Threads API use case, and skip everything optional.",
+      steps: [
+        {
+          title: "Open Meta Developers and create an app",
+          body: "Open **developers.facebook.com/apps** and click **Create App** in the top-right corner of the **Apps** page.",
+        },
+        {
+          title: "Enter app details",
+          body: "On the **Create an app** page, fill in the two fields, then click **Next**.",
+          bullets: [
+            "**App name** — for example, Threads Analytics",
+            "**App contact email** — your contact email",
+          ],
+        },
+        {
+          title: "Select the Threads API use case",
+          body: "On the **Add use cases** page, find **Access the Threads API**, select the checkbox on the right, and click **Next**.",
+        },
+        {
+          title: "Skip the business portfolio",
+          body: "On the business portfolio step, select **I don't want to connect a business portfolio yet.**, then click **Next**.",
+        },
+        {
+          title: "Confirm publishing requirements",
+          body: "When the page shows **No requirements identified**, there is nothing extra to prepare for this setup. Click **Next**.",
+        },
+        {
+          title: "Create the app",
+          body: "On the **Overview** page, confirm the app name, email, use case, business, and requirements, then click **Create app** in the bottom-right corner.",
+        },
+      ],
+    },
+    {
+      index: "02",
+      range: "7–12",
+      title: "Invite a Threads Tester",
+      body: "Open the use case settings and hand the tester role to the Threads account that owns the data.",
+      steps: [
+        {
+          title: "Open Use cases",
+          body: "The Dashboard appears once the app is created. Click **Use cases** in the left sidebar.",
+        },
+        {
+          title: "Customize the Threads API use case",
+          body: "On the **Use cases** page, find **Access the Threads API** and click **Customize**.",
+        },
+        {
+          title: "Open Settings",
+          body: "Inside **Customize use case**, the left panel shows **Permissions and features** and **Settings**. Click **Settings**.",
+        },
+        {
+          title: "Open Threads Tester management",
+          body: "At the bottom of the **Settings** page, find **User Token Generator** and click **Add or Remove Threads Testers**. The same page also lists:",
+          bullets: [
+            "**Threads app ID**",
+            "**Threads app secret**",
+            "**Threads Display Name**",
+            "**User Token Generator**",
+          ],
+        },
+        {
+          title: "Add people",
+          body: "You land on the **App roles** page. Click **Add People** in the top-right corner.",
+        },
+        {
+          title: "Assign the Threads Tester role",
+          body: "In the **Add people to your app** dialog:",
+          bullets: [
+            "Select **Threads Tester**",
+            "Search for and select the Threads account that should generate the token",
+            "Click **Add**",
+          ],
+          note: "The invited account must be a public Threads account and has to accept the invitation from Threads. If it doesn't appear in search, confirm the user has a Meta developer account and a public Threads profile.",
+        },
+      ],
+    },
+    {
+      index: "03",
+      range: "13–14",
+      title: "Accept in Threads",
+      body: "Switch to the invited Threads account for two clicks — the invitation is waiting under website permissions.",
+      steps: [
+        {
+          title: "Open website permissions in Threads",
+          body: "With the invited Threads account, open Threads on the web. Go to **More settings**, then click **Website permissions**.",
+        },
+        {
+          title: "Accept the tester invitation",
+          body: "In the **Invites** tab, find the app you created — for example **Threads Analytics** — and click **Accept**.",
+        },
+      ],
+    },
+    {
+      index: "04",
+      range: "15–18",
+      title: "Generate the token",
+      body: "Back in Meta Developers: generate, authorize, copy. The long-lived token is yours.",
+      steps: [
+        {
+          title: "Return to Threads API Settings",
+          body: "Back in Meta Developers, go to **Use cases** → **Access the Threads API** → **Customize**, then click **Settings** in the left panel.",
+        },
+        {
+          title: "Generate the access token",
+          body: "In **User Token Generator**, find the Threads Tester that accepted the invitation and click **Generate Access Token** on the right.",
+        },
+        {
+          title: "Confirm authorization",
+          body: "The authorization page lists the Threads permissions the app will receive. Confirm the account is correct, then click **Continue As …**.",
+          note: "If you open **Edit access**, keep the data and insights permissions enabled — without them the token can't sync analytics data.",
+        },
+        {
+          title: "Copy the access token",
+          body: "Back in Meta Developers, the token dialog appears. Select **I understand**, then click **Copy** to copy your long-lived Threads access token.",
+        },
+      ],
+    },
+  ],
+  finish: {
+    kicker: "AFTER THE TOKEN",
+    title: "Token copied? Bring it home.",
+    description:
+      "Paste it into your dashboard under **Settings → Add Threads account** and run the first sync.",
+    expiry:
+      "Threads access tokens expire. If syncing fails or the token is close to expiry, repeat the same flow to generate a fresh one.",
+    primary: "See deploy options",
+    secondary: "View on GitHub",
+  },
+};
+
+const tokenGuideZh: TokenGuideCopy = {
+  metadata: {
+    title: "如何產生 Threads Access Token — 18 步驟圖解教學 | Threads Analytics",
+    description:
+      "一步一張截圖的完整教學：建立 Meta App、加入 Threads API Use Case、邀請 Threads Tester，最後複製 Threads Analytics 需要的 Long-lived Access Token。",
+  },
+  hero: {
+    kicker: "教學 / THREADS ACCESS TOKEN",
+    lineOne: "跟著十八個步驟，",
+    lineTwo: "拿到一把 Access Token。",
+    description:
+      "Dashboard 部署好了，還差一把打開 Threads 數據的鑰匙。跟著 Meta for Developers 的畫面一步一步走，最後帶走一組 Long-lived Threads Access Token。",
+    primaryCta: "從 Step 1 開始",
+    secondaryCta: "開啟 Meta Developers",
+    note: "約 10 分鐘 · 免費 · 不需要寫程式",
+    checklistLabel: "開始前準備",
+    checklist: [
+      "一個可登入 Meta for Developers 的 Facebook / Meta 帳號",
+      "一個公開的 Threads 帳號",
+      "可以用該 Threads 帳號接受測試者邀請",
+    ],
+    checklistNote:
+      "這個流程適合個人或測試用途。若要讓非測試者使用，通常還需要完成 App Review 與發布流程。",
+    resultLabel: "完成後你會拿到",
+    resultValue: "Long-lived Threads Access Token",
+  },
+  overview: {
+    kicker: "01 / 路線圖",
+    title: "四個階段，十八個步驟。",
+    description:
+      "每一步都是一張截圖、一次點擊。其中三步在 Threads 完成，其餘都在 Meta for Developers。",
+  },
+  stepsLabel: "步驟",
+  stepLabel: "STEP",
+  progressLabel: "本頁進度",
+  phases: [
+    {
+      index: "01",
+      range: "1–6",
+      title: "建立 Meta App",
+      body: "六個建立 App 的畫面 — 命名、選擇 Threads API Use Case，其餘可選項目全部跳過。",
+      steps: [
+        {
+          title: "前往 Meta Developers 並建立 App",
+          body: "開啟 **developers.facebook.com/apps**，在 **Apps** 頁面右上角點擊 **Create App**。",
+        },
+        {
+          title: "填寫 App 基本資料",
+          body: "在 **Create an app** 頁面填寫兩個欄位，確認後點擊 **Next**。",
+          bullets: [
+            "**App name** — 例如 Threads Analytics",
+            "**App contact email** — 你的聯絡信箱",
+          ],
+        },
+        {
+          title: "選擇 Threads API Use Case",
+          body: "在 **Add use cases** 頁面找到 **Access the Threads API**，勾選右側方框，然後點擊 **Next**。",
+        },
+        {
+          title: "跳過 business portfolio",
+          body: "在 business portfolio 步驟選擇 **I don't want to connect a business portfolio yet.**，再點擊 **Next**。",
+        },
+        {
+          title: "確認發布需求",
+          body: "畫面顯示 **No requirements identified** 時，代表目前沒有額外需求。點擊 **Next**。",
+        },
+        {
+          title: "建立 App",
+          body: "在 **Overview** 頁面確認 App 名稱、信箱、Use Case、Business 與 Requirements 都正確後，點擊右下角 **Create app**。",
+        },
+      ],
+    },
+    {
+      index: "02",
+      range: "7–12",
+      title: "邀請 Threads Tester",
+      body: "打開 Use Case 設定，把測試者角色指派給擁有數據的 Threads 帳號。",
+      steps: [
+        {
+          title: "進入 Use cases",
+          body: "App 建立完成後會進入 Dashboard。從左側選單點擊 **Use cases**。",
+        },
+        {
+          title: "自訂 Threads API Use Case",
+          body: "在 **Use cases** 頁面找到 **Access the Threads API**，點擊右側 **Customize**。",
+        },
+        {
+          title: "進入 Settings",
+          body: "進入 **Customize use case** 後，左側會看到 **Permissions and features** 與 **Settings**。點擊 **Settings**。",
+        },
+        {
+          title: "開啟 Threads Tester 管理",
+          body: "在 **Settings** 頁面下方找到 **User Token Generator**，點擊 **Add or Remove Threads Testers**。這個頁面也會列出：",
+          bullets: [
+            "**Threads app ID**",
+            "**Threads app secret**",
+            "**Threads Display Name**",
+            "**User Token Generator**",
+          ],
+        },
+        {
+          title: "新增測試人員",
+          body: "系統會進入 **App roles** 頁面。點擊右上角 **Add People**。",
+        },
+        {
+          title: "指派 Threads Tester 角色",
+          body: "在 **Add people to your app** 視窗中：",
+          bullets: [
+            "選擇 **Threads Tester**",
+            "搜尋並選取要產生 Token 的 Threads 帳號",
+            "點擊 **Add**",
+          ],
+          note: "受邀帳號必須是公開的 Threads 帳號，並且要在 Threads 端接受邀請。如果搜尋不到帳號，請確認該使用者有 Meta 開發者帳號，且 Threads 個人檔案已設為公開。",
+        },
+      ],
+    },
+    {
+      index: "03",
+      range: "13–14",
+      title: "到 Threads 接受邀請",
+      body: "切換到受邀的 Threads 帳號，只要兩次點擊 — 邀請就在網站權限設定裡等著。",
+      steps: [
+        {
+          title: "到 Threads 開啟網站權限",
+          body: "使用受邀的 Threads 帳號開啟 Threads 網頁版，進入 **More settings**，再點擊 **Website permissions**。",
+        },
+        {
+          title: "接受測試者邀請",
+          body: "在 **Invites** 分頁中找到剛建立的 App — 例如 **Threads Analytics** — 點擊 **Accept**。",
+        },
+      ],
+    },
+    {
+      index: "04",
+      range: "15–18",
+      title: "產生 Token",
+      body: "回到 Meta Developers：產生、授權、複製，Long-lived Token 就到手了。",
+      steps: [
+        {
+          title: "回到 Threads API Settings",
+          body: "回到 Meta Developers 的 App 頁面，進入 **Use cases** → **Access the Threads API** → **Customize**，再點擊左側 **Settings**。",
+        },
+        {
+          title: "產生 Access Token",
+          body: "在 **User Token Generator** 區塊中，找到剛接受邀請的 Threads Tester，點擊右側 **Generate Access Token**。",
+        },
+        {
+          title: "確認授權",
+          body: "授權頁會列出 App 將取得的 Threads 權限。確認帳號正確後，點擊 **Continue As …**。",
+          note: "如果點擊 **Edit access**，請保持資料與 Insights 權限開啟 — 關閉的話 Token 將無法同步分析資料。",
+        },
+        {
+          title: "複製 Access Token",
+          body: "回到 Meta Developers 後會出現 Token 視窗。勾選 **I understand**，再點擊 **Copy** 複製產生的 Long-lived Threads Access Token。",
+        },
+      ],
+    },
+  ],
+  finish: {
+    kicker: "拿到 TOKEN 之後",
+    title: "複製好了？把它帶回家。",
+    description: "把 Token 貼到 Dashboard 的 **Settings → Add Threads account**，執行第一次同步。",
+    expiry: "Threads Access Token 會過期。若同步失敗或接近到期，請依照同樣流程重新產生一組。",
+    primary: "查看部署方式",
+    secondary: "前往 GitHub",
+  },
+};
+
+const tokenGuideJa: TokenGuideCopy = {
+  metadata: {
+    title: "Threads アクセストークンの生成 — 18ステップ図解ガイド | Threads Analytics",
+    description:
+      "スクリーンショット付きの完全ガイド：Meta App を作成し、Threads API の Use Case を追加、Threads Tester を招待して、Threads Analytics に必要な Long-lived アクセストークンをコピーするまで。",
+  },
+  hero: {
+    kicker: "ガイド / THREADS ACCESS TOKEN",
+    lineOne: "18ス⁠テ⁠ッ⁠プで、",
+    lineTwo: "ア⁠ク⁠セ⁠ス⁠ト⁠ー⁠ク⁠ンを手に。",
+    description:
+      "ダッシュボードのデプロイは完了。あとは Threads データを開く鍵だけです。Meta for Developers の画面を1ステップずつ進めば、Long-lived な Threads アクセストークンが手に入ります。",
+    primaryCta: "Step 1 から始める",
+    secondaryCta: "Meta Developers を開く",
+    note: "約10分 · 無料 · コード不要",
+    checklistLabel: "始める前に",
+    checklist: [
+      "Meta for Developers にログインできる Facebook / Meta アカウント",
+      "公開設定の Threads アカウント",
+      "テスター招待を承認できる Threads アカウント",
+    ],
+    checklistNote:
+      "この手順は個人利用またはテスト用途を想定しています。テスター以外のユーザーに使わせる場合は、通常 App Review と公開手続きが必要です。",
+    resultLabel: "最後に手に入るもの",
+    resultValue: "Long-lived Threads アクセストークン",
+  },
+  overview: {
+    kicker: "01 / 全体の流れ",
+    title: "4つのフェーズ、18のステップ。",
+    description:
+      "各ステップはスクリーンショット1枚とクリック1回。3ステップは Threads 側、それ以外はすべて Meta for Developers 側です。",
+  },
+  stepsLabel: "ステップ",
+  stepLabel: "STEP",
+  progressLabel: "このページ",
+  phases: [
+    {
+      index: "01",
+      range: "1–6",
+      title: "Meta App を作成する",
+      body: "App 作成ウィザードの6画面 — 名前を付け、Threads API の Use Case を選び、オプションはすべてスキップします。",
+      steps: [
+        {
+          title: "Meta Developers を開いて App を作成する",
+          body: "**developers.facebook.com/apps** を開き、**Apps** ページ右上の **Create App** をクリックします。",
+        },
+        {
+          title: "App の基本情報を入力する",
+          body: "**Create an app** ページで2つの項目を入力し、**Next** をクリックします。",
+          bullets: [
+            "**App name** — 例：Threads Analytics",
+            "**App contact email** — 連絡用メールアドレス",
+          ],
+        },
+        {
+          title: "Threads API の Use Case を選択する",
+          body: "**Add use cases** ページで **Access the Threads API** を探し、右側のチェックボックスを選択して **Next** をクリックします。",
+        },
+        {
+          title: "business portfolio をスキップする",
+          body: "business portfolio の手順では **I don't want to connect a business portfolio yet.** を選択し、**Next** をクリックします。",
+        },
+        {
+          title: "公開要件を確認する",
+          body: "**No requirements identified** と表示されていれば、追加要件はありません。**Next** をクリックします。",
+        },
+        {
+          title: "App を作成する",
+          body: "**Overview** ページで App 名、メールアドレス、Use Case、Business、Requirements を確認し、右下の **Create app** をクリックします。",
+        },
+      ],
+    },
+    {
+      index: "02",
+      range: "7–12",
+      title: "Threads Tester を招待する",
+      body: "Use Case の設定を開き、データの持ち主である Threads アカウントにテスターロールを割り当てます。",
+      steps: [
+        {
+          title: "Use cases を開く",
+          body: "App 作成後、Dashboard が表示されます。左側メニューの **Use cases** をクリックします。",
+        },
+        {
+          title: "Threads API Use Case をカスタマイズする",
+          body: "**Use cases** ページで **Access the Threads API** を見つけ、右側の **Customize** をクリックします。",
+        },
+        {
+          title: "Settings を開く",
+          body: "**Customize use case** に入ると、左側に **Permissions and features** と **Settings** が表示されます。**Settings** をクリックします。",
+        },
+        {
+          title: "Threads Tester の管理画面を開く",
+          body: "**Settings** ページ下部の **User Token Generator** を見つけ、**Add or Remove Threads Testers** をクリックします。このページでは次の情報も確認できます。",
+          bullets: [
+            "**Threads app ID**",
+            "**Threads app secret**",
+            "**Threads Display Name**",
+            "**User Token Generator**",
+          ],
+        },
+        {
+          title: "ユーザーを追加する",
+          body: "**App roles** ページに移動します。右上の **Add People** をクリックします。",
+        },
+        {
+          title: "Threads Tester ロールを割り当てる",
+          body: "**Add people to your app** ダイアログで次の操作を行います。",
+          bullets: [
+            "**Threads Tester** を選択する",
+            "トークンを生成したい Threads アカウントを検索して選択する",
+            "**Add** をクリックする",
+          ],
+          note: "招待されるアカウントは公開 Threads アカウントである必要があり、Threads 側で招待を承認する必要があります。検索に表示されない場合は、そのユーザーが Meta 開発者アカウントを持ち、Threads プロフィールが公開設定であることを確認してください。",
+        },
+      ],
+    },
+    {
+      index: "03",
+      range: "13–14",
+      title: "Threads で承認する",
+      body: "招待された Threads アカウントに切り替えて2クリック — 招待は Website permissions で待っています。",
+      steps: [
+        {
+          title: "Threads の Website permissions を開く",
+          body: "招待された Threads アカウントで Threads Web 版を開き、**More settings** に移動して **Website permissions** をクリックします。",
+        },
+        {
+          title: "テスター招待を承認する",
+          body: "**Invites** タブで作成した App — 例 **Threads Analytics** — を見つけ、**Accept** をクリックします。",
+        },
+      ],
+    },
+    {
+      index: "04",
+      range: "15–18",
+      title: "トークンを生成する",
+      body: "Meta Developers に戻って、生成、認可、コピー。Long-lived トークンの完成です。",
+      steps: [
+        {
+          title: "Threads API Settings に戻る",
+          body: "Meta Developers の App 画面に戻り、**Use cases** → **Access the Threads API** → **Customize** に移動して、左側の **Settings** をクリックします。",
+        },
+        {
+          title: "アクセストークンを生成する",
+          body: "**User Token Generator** で、招待を承認した Threads Tester を探し、右側の **Generate Access Token** をクリックします。",
+        },
+        {
+          title: "認可を確認する",
+          body: "認可ページには、App が取得する Threads 権限が表示されます。アカウントが正しいことを確認し、**Continue As …** をクリックします。",
+          note: "**Edit access** を開く場合は、データと Insights の権限を有効のままにしてください。無効にすると、トークンは分析データを同期できなくなります。",
+        },
+        {
+          title: "アクセストークンをコピーする",
+          body: "Meta Developers に戻ると Token のダイアログが表示されます。**I understand** にチェックを入れ、**Copy** をクリックして Long-lived Threads アクセストークンをコピーします。",
+        },
+      ],
+    },
+  ],
+  finish: {
+    kicker: "トークンを手にしたら",
+    title: "コピーできたら、持ち帰りましょう。",
+    description:
+      "ダッシュボードの **Settings → Add Threads account** に貼り付けて、最初の同期を実行します。",
+    expiry:
+      "Threads アクセストークンには有効期限があります。同期に失敗する場合や期限が近い場合は、同じ手順で再生成してください。",
+    primary: "デプロイ方法を見る",
+    secondary: "GitHub で見る",
+  },
+};
+
 export const dictionaries = {
   en: {
     metadata: {
@@ -27,6 +586,7 @@ export const dictionaries = {
       demo: "Live demo",
       features: "Features",
       deploy: "Deploy",
+      tokenGuide: "Token guide",
       github: "GitHub",
     },
     hero: {
@@ -565,6 +1125,7 @@ export const dictionaries = {
         others: "OTHER PLATFORMS",
       },
     },
+    tokenGuide: tokenGuideEn,
     finalCta: {
       kicker: "READ YOUR OWN SIGNALS",
       title: "Your next better post is already in your history.",
@@ -580,6 +1141,11 @@ export const dictionaries = {
       liveDemo: "Live demo",
       featureOverview: "Feature overview",
       deployment: "Deployment",
+      deployGuides: "Deploy guides",
+      railwayAgent: "Railway Agent",
+      zeaburAgent: "Zeabur Agent",
+      vercelAgent: "Vercel Agent",
+      tokenGuide: "Threads access token guide",
       source: "Source code",
       readme: "Documentation",
     },
@@ -595,6 +1161,7 @@ export const dictionaries = {
       demo: "互動展示",
       features: "功能",
       deploy: "部署",
+      tokenGuide: "Token 生成教學",
       github: "GitHub",
     },
     hero: {
@@ -1101,6 +1668,7 @@ export const dictionaries = {
         others: "其他部署平台",
       },
     },
+    tokenGuide: tokenGuideZh,
     finalCta: {
       kicker: "讀懂自己的訊號",
       title: "下一篇更好的貼文，其實已經藏在歷史紀錄裡。",
@@ -1115,6 +1683,11 @@ export const dictionaries = {
       liveDemo: "互動展示",
       featureOverview: "功能總覽",
       deployment: "部署方式",
+      deployGuides: "部署指南",
+      railwayAgent: "Railway Agent",
+      zeaburAgent: "Zeabur Agent",
+      vercelAgent: "Vercel Agent",
+      tokenGuide: "Threads Access Token 生成教學",
       source: "原始碼",
       readme: "使用文件",
     },
@@ -1130,6 +1703,7 @@ export const dictionaries = {
       demo: "ライブデモ",
       features: "機能",
       deploy: "デプロイ",
+      tokenGuide: "トークン生成ガイド",
       github: "GitHub",
     },
     hero: {
@@ -1656,6 +2230,7 @@ export const dictionaries = {
         others: "他のプラットフォーム",
       },
     },
+    tokenGuide: tokenGuideJa,
     finalCta: {
       kicker: "自分のシグナルを読む",
       title: "次の良い投稿は、すでに履歴の中にあります。",
@@ -1670,6 +2245,11 @@ export const dictionaries = {
       liveDemo: "ライブデモ",
       featureOverview: "機能一覧",
       deployment: "デプロイ",
+      deployGuides: "デプロイガイド",
+      railwayAgent: "Railway Agent",
+      zeaburAgent: "Zeabur Agent",
+      vercelAgent: "Vercel Agent",
+      tokenGuide: "アクセストークン生成ガイド",
       source: "ソースコード",
       readme: "ドキュメント",
     },

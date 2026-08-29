@@ -121,6 +121,11 @@ const arrowGlyph = (
   </svg>
 );
 
+// The dictionaries embed U+2060 word joiners as a text-wrap hint for the DOM,
+// but satori's fallback CJK fonts render them as a visible gap — strip them
+// and control the headline break explicitly via \n + pre-line instead.
+const stripWordJoiners = (text: string) => text.replace(/⁠/g, "");
+
 function renderOpenGraphImage({
   brandIconSrc,
   headline,
@@ -171,14 +176,15 @@ function renderOpenGraphImage({
           position: "absolute",
           top: 190,
           left: 72,
-          maxWidth: 940,
+          maxWidth: 1010,
           fontSize: 74,
           lineHeight: 1.02,
           letterSpacing: "-0.05em",
           fontWeight: 650,
+          whiteSpace: "pre-line",
         }}
       >
-        {headline}
+        {stripWordJoiners(headline)}
       </div>
       <div
         style={{
@@ -192,7 +198,7 @@ function renderOpenGraphImage({
           lineHeight: 1.45,
         }}
       >
-        {description}
+        {stripWordJoiners(description)}
       </div>
       <div
         style={{
@@ -229,7 +235,7 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale);
       return renderOpenGraphImage({
         brandIconSrc,
-        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>15+ ANALYSES · SELF-HOSTED</span>,
         footerRight: (
@@ -247,7 +253,7 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale).railwayAgentDeploy;
       return renderOpenGraphImage({
         brandIconSrc,
-        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
@@ -265,7 +271,7 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale).zeaburAgentDeploy;
       return renderOpenGraphImage({
         brandIconSrc,
-        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
@@ -278,12 +284,30 @@ const variants: OgVariant[] = [
     },
   },
   {
+    prefix: "token-guide",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale).tokenGuide;
+      return renderOpenGraphImage({
+        brandIconSrc,
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+            18 STEPS
+            {arrowGlyph}
+          </span>
+        ),
+      });
+    },
+  },
+  {
     prefix: "vercel-agent",
     render: (locale, brandIconSrc) => {
       const copy = getDictionary(locale).vercelAgentDeploy;
       return renderOpenGraphImage({
         brandIconSrc,
-        headline: `${copy.hero.lineOne} ${copy.hero.lineTwo}`,
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (

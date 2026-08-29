@@ -26,7 +26,14 @@ export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary[
           <a href={`/${locale}#deploy`}>{copy.deployment}</a>
         </div>
         <div>
+          <strong>{copy.deployGuides}</strong>
+          <a href={`/${locale}/deploy/railway-agent`}>{copy.railwayAgent}</a>
+          <a href={`/${locale}/deploy/zeabur-agent`}>{copy.zeaburAgent}</a>
+          <a href={`/${locale}/deploy/vercel-agent`}>{copy.vercelAgent}</a>
+        </div>
+        <div>
           <strong>{copy.resources}</strong>
+          <a href={`/${locale}/token-guide`}>{copy.tokenGuide}</a>
           <a href={siteConfig.github} target="_blank" rel="noreferrer">
             {copy.source}
           </a>
