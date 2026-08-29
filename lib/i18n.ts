@@ -415,6 +415,18 @@ export const dictionaries = {
       tokenUpdated: "Updated token for @{username}",
       firstSyncStarted: "Syncing data for @{username} — this may take a few minutes.",
     },
+    versionInfo: {
+      title: "About",
+      subtitle: "Version and update status of this deployment.",
+      currentVersion: "Current version",
+      sourceBuild: "Source build",
+      sourceBuildHelp:
+        "Version info and update checks are only available on published Docker images.",
+      checking: "Checking for updates...",
+      upToDate: "You're on the latest version.",
+      updateAvailable: "A new version is available.",
+      checkFailed: "Couldn't check for updates.",
+    },
     login: {
       title: "Threads Analytics",
       subtitle: "Enter your password to continue",
@@ -807,6 +819,17 @@ export const dictionaries = {
       updateToken: "更新 Token",
       tokenUpdated: "已更新 @{username} 的 token",
       firstSyncStarted: "正在同步 @{username} 的資料，可能需要幾分鐘。",
+    },
+    versionInfo: {
+      title: "關於",
+      subtitle: "此部署的版本與更新狀態。",
+      currentVersion: "目前版本",
+      sourceBuild: "原始碼建置",
+      sourceBuildHelp: "版本資訊與更新檢查僅在發佈的 Docker 映像上提供。",
+      checking: "檢查更新中...",
+      upToDate: "目前已是最新版本。",
+      updateAvailable: "有新版本可以更新。",
+      checkFailed: "無法檢查更新。",
     },
     login: {
       title: "Threads Analytics",
@@ -1209,6 +1232,18 @@ export const dictionaries = {
       updateToken: "トークンを更新",
       tokenUpdated: "@{username} のトークンを更新しました",
       firstSyncStarted: "@{username} のデータを同期しています。数分かかる場合があります。",
+    },
+    versionInfo: {
+      title: "このアプリについて",
+      subtitle: "このデプロイのバージョンと更新状況。",
+      currentVersion: "現在のバージョン",
+      sourceBuild: "ソースビルド",
+      sourceBuildHelp:
+        "バージョン情報と更新チェックは、公開された Docker イメージでのみ利用できます。",
+      checking: "更新を確認中...",
+      upToDate: "最新バージョンです。",
+      updateAvailable: "新しいバージョンが利用可能です。",
+      checkFailed: "更新を確認できませんでした。",
     },
     login: {
       title: "Threads Analytics",

@@ -4,22 +4,10 @@ import { useEffect, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { Collapse } from "@/components/ui/collapse";
 import type { Locale } from "@/lib/i18n";
+import { UPDATE_GUIDE_URLS } from "@/lib/update-guide";
+import { useImageUpdateStatus } from "@/components/dashboard/use-image-update-status";
 
 const DISMISSED_DIGEST_KEY = "threads_analytics_dismissed_image_digest";
-
-// The `#updating` anchor is an explicit <a id> in each README, so the links
-// survive section title changes.
-const UPDATE_GUIDE_URLS: Record<Locale, string> = {
-  en: "https://github.com/ridemountainpig/threads-analytics#updating",
-  "zh-TW": "https://github.com/ridemountainpig/threads-analytics/blob/main/README-zh.md#updating",
-  ja: "https://github.com/ridemountainpig/threads-analytics/blob/main/README-ja.md#updating",
-};
-
-interface ImageUpdateResponse {
-  supported: boolean;
-  updateAvailable: boolean;
-  latestDigest: string | null;
-}
 
 export default function ImageUpdateBanner({
   locale,
@@ -30,30 +18,18 @@ export default function ImageUpdateBanner({
 }) {
   const [latestDigest, setLatestDigest] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
+  // The banner is best-effort; a failed check should never disturb the dashboard.
+  const { status } = useImageUpdateStatus();
 
   useEffect(() => {
-    let disposed = false;
-
-    async function checkForUpdate() {
-      try {
-        const response = await fetch("/api/status/update", { cache: "no-store" });
-        if (!response.ok) return;
-
-        const status = (await response.json()) as ImageUpdateResponse;
-        if (disposed || !status.updateAvailable || !status.latestDigest) return;
-        if (window.localStorage.getItem(DISMISSED_DIGEST_KEY) === status.latestDigest) return;
-
-        setLatestDigest(status.latestDigest);
-      } catch {
-        // The banner is best-effort; a failed check should never disturb the dashboard.
-      }
+    if (!status?.updateAvailable || !status.latestDigest) return;
+    try {
+      if (window.localStorage.getItem(DISMISSED_DIGEST_KEY) === status.latestDigest) return;
+    } catch {
+      // Private browsing modes may block localStorage; show the banner anyway.
     }
-
-    void checkForUpdate();
-    return () => {
-      disposed = true;
-    };
-  }, []);
+    setLatestDigest(status.latestDigest);
+  }, [status]);
 
   function dismiss() {
     try {

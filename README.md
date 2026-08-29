@@ -272,6 +272,8 @@ docker run -p 3000:3000 --env-file .env.local threads-analytics
 
 The Docker image runs `prisma migrate deploy` automatically on startup.
 
+<a id="updating"></a>
+
 ### Updating an existing deployment
 
 New versions ship as updated Docker images. Database migrations run automatically on startup, so updating only requires getting the new image or code:

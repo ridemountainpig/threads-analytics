@@ -272,6 +272,8 @@ docker run -p 3000:3000 --env-file .env.local threads-analytics
 
 Docker イメージは起動時に `prisma migrate deploy` を自動実行します。
 
+<a id="updating"></a>
+
 ### 既存デプロイの更新
 
 新しいバージョンは更新された Docker イメージとして公開されます。データベースマイグレーションは起動時に自動実行されるため、更新に必要なのは新しいイメージまたはコードの取得だけです:

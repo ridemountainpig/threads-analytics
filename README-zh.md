@@ -272,6 +272,8 @@ docker run -p 3000:3000 --env-file .env.local threads-analytics
 
 Docker 映像檔在啟動時會自動執行 `prisma migrate deploy`。
 
+<a id="updating"></a>
+
 ### 更新既有部署
 
 新版本會以更新後的 Docker 映像檔發佈。資料庫 migration 會在啟動時自動執行，因此更新只需要取得新的映像檔或程式碼：

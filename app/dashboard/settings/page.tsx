@@ -6,6 +6,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import AccountManager from "./account-manager";
 import SyncButton from "@/components/dashboard/sync-button";
 import SyncIntervalSetting from "./sync-interval-setting";
+import VersionInfo from "./version-info";
+import { getImageVersionLink } from "@/lib/image-update";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
 
@@ -112,6 +114,20 @@ export default async function SettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t.versionInfo.title}</CardTitle>
+            <CardDescription>{t.versionInfo.subtitle}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <VersionInfo
+              version={getImageVersionLink()}
+              locale={locale}
+              labels={{ ...t.versionInfo, howToUpdate: t.updateBanner.howToUpdate }}
+            />
+          </CardContent>
+        </Card>
       </div>
     </div>
   );
