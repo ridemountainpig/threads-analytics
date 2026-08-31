@@ -1,12 +1,6 @@
 import type { Metadata } from "next";
-import { locales, type Locale } from "./i18n";
+import { defaultLocale, locales, openGraphLocales, type Locale } from "./locales";
 import { siteConfig } from "./site";
-
-const openGraphLocales: Record<Locale, string> = {
-  en: "en_US",
-  "zh-TW": "zh_TW",
-  ja: "ja_JP",
-};
 
 // Shared per-page metadata: canonical + hreflang derived from `locales`, plus
 // Open Graph and Twitter cards pointing at the pre-rendered images in
@@ -44,13 +38,16 @@ export function localizedPageMetadata({
       canonical: `/${locale}${path}`,
       languages: {
         ...Object.fromEntries(locales.map((item) => [item, `/${item}${path}`])),
-        "x-default": `/en${path}`,
+        "x-default": `/${defaultLocale}${path}`,
       },
     },
     openGraph: {
       type: "website",
       siteName: siteConfig.name,
       locale: openGraphLocales[locale],
+      alternateLocale: locales
+        .filter((item) => item !== locale)
+        .map((item) => openGraphLocales[item]),
       url: `/${locale}${path}`,
       title,
       description,

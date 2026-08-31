@@ -7,12 +7,14 @@ import { FaGithub } from "react-icons/fa6";
 import { ClosingCurves } from "@/components/closing-curves";
 import { GuideProgress } from "@/components/guide-progress";
 import { HeroCurve } from "@/components/hero-curve";
+import { JsonLd } from "@/components/json-ld";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
 import { getDictionary, isLocale, locales, type Locale } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
+import { getTokenGuideStructuredData } from "@/lib/structured-data";
 
 const metaDevelopersUrl = "https://developers.facebook.com/apps/";
 
@@ -72,6 +74,7 @@ export default async function TokenGuidePage({ params }: { params: Promise<{ loc
 
   return (
     <>
+      <JsonLd data={getTokenGuideStructuredData(locale, copy)} />
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>

@@ -1,5 +1,5 @@
 import type { MetadataRoute } from "next";
-import { locales } from "@/lib/i18n";
+import { defaultLocale, locales } from "@/lib/locales";
 import { siteConfig } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
@@ -10,18 +10,17 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/deploy/vercel-agent",
     "/token-guide",
   ];
-  const lastModified = new Date();
 
+  // No lastModified: stamping every URL with the build date would tell
+  // crawlers the whole site changed on every deploy, which teaches them to
+  // ignore the field entirely.
   return routes.flatMap((route) =>
     locales.map((locale) => ({
       url: `${siteConfig.url}/${locale}${route}`,
-      lastModified,
       alternates: {
         languages: {
-          en: `${siteConfig.url}/en${route}`,
-          "zh-TW": `${siteConfig.url}/zh-TW${route}`,
-          ja: `${siteConfig.url}/ja${route}`,
-          "x-default": `${siteConfig.url}/en${route}`,
+          ...Object.fromEntries(locales.map((item) => [item, `${siteConfig.url}/${item}${route}`])),
+          "x-default": `${siteConfig.url}/${defaultLocale}${route}`,
         },
       },
     })),

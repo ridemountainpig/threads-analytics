@@ -1,4 +1,5 @@
 import type { Metadata, Viewport } from "next";
+import { GoogleAnalytics } from "@next/third-parties/google";
 import { notFound } from "next/navigation";
 import { getDictionary, isLocale, locales } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
@@ -60,6 +61,8 @@ export default async function LocaleLayout({
   const { locale } = await params;
   if (!isLocale(locale)) notFound();
 
+  const gaId = process.env.NEXT_PUBLIC_GA_ID;
+
   return (
     <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
       <body>
@@ -71,6 +74,7 @@ export default async function LocaleLayout({
         <div hidden dangerouslySetInnerHTML={{ __html: `<script>${revealBootstrap}</script>` }} />
         {children}
       </body>
+      {gaId ? <GoogleAnalytics gaId={gaId} /> : null}
     </html>
   );
 }

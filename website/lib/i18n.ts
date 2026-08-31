@@ -1,19 +1,10 @@
 import { vercelAgentPrompt } from "./agent-prompts";
 import { railwayTemplate, zeaburTemplate } from "./links";
+import type { Locale } from "./locales";
 
-export const locales = ["en", "zh-TW", "ja"] as const;
-
-export type Locale = (typeof locales)[number];
-
-export const localeNames: Record<Locale, string> = {
-  en: "English",
-  "zh-TW": "繁體中文",
-  ja: "日本語",
-};
-
-export function isLocale(value: string): value is Locale {
-  return locales.includes(value as Locale);
-}
+// The locale registry lives in locales.ts (dictionary-free so proxy.ts can
+// import it); re-exported here so existing `@/lib/i18n` imports keep working.
+export { locales, localeNames, isLocale, type Locale } from "./locales";
 
 // Token guide copy is typed explicitly (instead of relying on inference like
 // the rest of the dictionaries) because steps carry optional bullets/notes —

@@ -11,6 +11,7 @@ import { AgentPromptCard } from "@/components/agent-prompt-card";
 import { ClosingCurves } from "@/components/closing-curves";
 import { Vercel } from "@/components/deployment-logos";
 import { HeroCurve } from "@/components/hero-curve";
+import { JsonLd } from "@/components/json-ld";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { VercelAgentDemo } from "@/components/vercel-agent-demo";
@@ -18,6 +19,7 @@ import { ViewportRevealController } from "@/components/viewport-reveal-controlle
 import { getDictionary, isLocale, locales, type Locale } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
+import { getDeployPageStructuredData } from "@/lib/structured-data";
 
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
@@ -54,6 +56,13 @@ export default async function VercelAgentDeployPage({
 
   return (
     <>
+      <JsonLd
+        data={getDeployPageStructuredData({
+          locale,
+          path: "/deploy/vercel-agent",
+          title: copy.metadata.title,
+        })}
+      />
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>

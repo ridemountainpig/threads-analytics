@@ -9,6 +9,7 @@ import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
 import { FeatureGrid } from "@/components/feature-grid";
 import { HeroCurve } from "@/components/hero-curve";
 import { HeroVisual } from "@/components/hero-visual";
+import { JsonLd } from "@/components/json-ld";
 import { OriginPostVisual } from "@/components/origin-post-visual";
 import { ProductPreview } from "@/components/product-preview";
 import { SiteFooter } from "@/components/site-footer";
@@ -49,18 +50,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
 
   return (
     <>
-      {/* Rendered via innerHTML so React never treats the tag as a component
-          child — avoids the React 19 "script tag while rendering" warning on
-          client navigations. JSON-LD is data, not executable code. */}
-      <div
-        hidden
-        dangerouslySetInnerHTML={{
-          __html: `<script type="application/ld+json">${JSON.stringify(structuredData).replace(
-            /</g,
-            "\\u003c",
-          )}</script>`,
-        }}
-      />
+      <JsonLd data={structuredData} />
       <ViewportRevealController />
       <AnchorScrollController />
       <SiteHeader locale={locale} copy={copy.nav} />
