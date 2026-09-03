@@ -1,6 +1,6 @@
 import { db } from "@/lib/db";
 import { decryptToken } from "@/lib/crypto";
-import { getUserInsights } from "@/lib/threads-api";
+import { getUserInsightsCached } from "@/lib/user-insights-cache";
 import type { UserInsights } from "@/lib/threads-api";
 import { getTimeRange, toUnix } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
@@ -119,7 +119,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
 
   const shouldFetchUserInsights = range !== "all";
   const userInsightsPromise = shouldFetchUserInsights
-    ? getUserInsights(account.id, accessToken, toUnix(since), toUnix(until)).catch(
+    ? getUserInsightsCached(account.id, accessToken, toUnix(since), toUnix(until)).catch(
         () => emptyUserInsights,
       )
     : Promise.resolve(emptyUserInsights);
@@ -133,7 +133,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   // delta can be measured on the same profile-view denominator as the headline
   // rate rather than mixing it with post-view based numbers.
   const prevUserInsightsPromise = showComparison
-    ? getUserInsights(account.id, accessToken, toUnix(prevSince), toUnix(prevUntil)).catch(
+    ? getUserInsightsCached(account.id, accessToken, toUnix(prevSince), toUnix(prevUntil)).catch(
         () => emptyUserInsights,
       )
     : Promise.resolve(emptyUserInsights);

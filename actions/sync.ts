@@ -1,10 +1,11 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
+import { revalidatePath, updateTag } from "next/cache";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 import { syncActiveAccount, type SyncResult } from "@/lib/sync-service";
 import { withSyncLock } from "@/lib/sync-lock";
+import { USER_INSIGHTS_TAG } from "@/lib/user-insights-cache";
 
 export async function syncDataAction(): Promise<SyncResult> {
   if (!(await getSession())) return { error: "Unauthorized" };
@@ -15,6 +16,8 @@ export async function syncDataAction(): Promise<SyncResult> {
   const result = locked.value;
 
   if (!result.error) {
+    // revalidatePath doesn't touch unstable_cache entries, so expire them too.
+    updateTag(USER_INSIGHTS_TAG);
     revalidatePath("/dashboard");
   }
 
@@ -35,6 +38,8 @@ export async function syncAccountAction(accountId: string): Promise<SyncResult> 
   const result = locked.value;
 
   if (!result.error) {
+    // revalidatePath doesn't touch unstable_cache entries, so expire them too.
+    updateTag(USER_INSIGHTS_TAG);
     revalidatePath("/dashboard");
   }
 

@@ -1,6 +1,5 @@
 "use client";
 
-import { useRouter } from "next/navigation";
 import { useTransition } from "react";
 import { Check, ChevronDown, Languages } from "lucide-react";
 import { setLocaleAction } from "@/actions/locale";
@@ -19,14 +18,14 @@ interface LanguageSwitcherProps {
 }
 
 export default function LanguageSwitcher({ locale, compact }: LanguageSwitcherProps) {
-  const router = useRouter();
   const [pending, startTransition] = useTransition();
 
   function setLocale(nextLocale: Locale) {
     if (nextLocale === locale) return;
     startTransition(async () => {
+      // The action revalidates the layout, so its response already carries
+      // the re-rendered page — no router.refresh() needed.
       await setLocaleAction(nextLocale);
-      router.refresh();
     });
   }
 

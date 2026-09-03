@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { requireApiSession, unauthorizedResponse } from "@/lib/api-auth";
-import { getUserInsights, TokenExpiredError } from "@/lib/threads-api";
+import { TokenExpiredError } from "@/lib/threads-api";
+import { getUserInsightsCached } from "@/lib/user-insights-cache";
 import { decryptToken } from "@/lib/crypto";
 import {
   computeBestTimeToPost,
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest) {
   // Fetch user-level insights from Threads API
   let userInsights;
   try {
-    userInsights = await getUserInsights(
+    userInsights = await getUserInsightsCached(
       account.id,
       accessToken,
       Math.floor(since.getTime() / 1000),

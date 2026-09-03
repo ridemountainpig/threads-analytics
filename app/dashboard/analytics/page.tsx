@@ -1,7 +1,7 @@
 import { db } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma";
 import { decryptToken } from "@/lib/crypto";
-import { getUserInsights } from "@/lib/threads-api";
+import { getUserInsightsCached } from "@/lib/user-insights-cache";
 import type { UserInsights } from "@/lib/threads-api";
 import { getTimeRange, toUnix } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
@@ -213,7 +213,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     latestSnapshot,
   ] = await Promise.all([
     shouldFetchUserInsights
-      ? getUserInsights(account.id, accessToken, toUnix(since), toUnix(until)).catch(
+      ? getUserInsightsCached(account.id, accessToken, toUnix(since), toUnix(until)).catch(
           () => emptyUserInsights,
         )
       : Promise.resolve(emptyUserInsights),
