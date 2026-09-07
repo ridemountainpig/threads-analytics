@@ -66,7 +66,7 @@ export default async function VercelAgentDeployPage({
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>
-        <section className="agent-hero-section">
+        <section className="agent-hero-section" data-motion-pause>
           <div className="hero-grid-bg" aria-hidden="true" />
           <HeroCurve />
           <div className="site-shell agent-hero-grid">

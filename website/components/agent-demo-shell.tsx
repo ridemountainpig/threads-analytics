@@ -29,8 +29,12 @@ export function useAgentDemoTimeline(stepDelays: readonly number[]): AgentDemoTi
   const lastStep = stepDelays.length - 1;
   const [step, setStep] = useState(1);
   const [started, setStarted] = useState(false);
+  // Bumped on replay so restarting works even when the demo is already
+  // resting at step 1 (setStep(1) alone would be a no-op there).
+  const [runId, setRunId] = useState(0);
   const rootRef = useRef<HTMLDivElement>(null);
   const chatRef = useRef<HTMLDivElement>(null);
+  const prevStepRef = useRef(1);
   const reduceMotionRef = useRef(false);
 
   useEffect(() => {
@@ -61,11 +65,16 @@ export function useAgentDemoTimeline(stepDelays: readonly number[]): AgentDemoTi
     }
     const timeout = setTimeout(() => setStep(step + 1), stepDelays[step + 1]);
     return () => clearTimeout(timeout);
-  }, [started, step, lastStep, stepDelays]);
+  }, [started, step, lastStep, stepDelays, runId]);
 
   useEffect(() => {
     const chat = chatRef.current;
+    const previous = prevStepRef.current;
+    prevStepRef.current = step;
     if (!chat || step === 0) return;
+    // A rewind (replay) stays at the top instead of smooth-scrolling back
+    // down and fighting the reset scroll issued in replay().
+    if (step < previous) return;
     chat.scrollTo({
       top: chat.scrollHeight,
       behavior: reduceMotionRef.current ? "auto" : "smooth",
@@ -74,6 +83,7 @@ export function useAgentDemoTimeline(stepDelays: readonly number[]): AgentDemoTi
 
   const replay = () => {
     setStep(1);
+    setRunId((id) => id + 1);
     chatRef.current?.scrollTo({ top: 0 });
     // The timeline effect restarts from the opening prompt.
   };

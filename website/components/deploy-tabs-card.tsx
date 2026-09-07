@@ -60,21 +60,30 @@ export function DeployTabsCard({
           </button>
         </div>
 
-        {tab === "template" ? (
-          <a href={templateHref} target="_blank" rel="noreferrer" className="deploy-tab-action">
+        {/* Both actions stay mounted in one grid cell so the switch
+            crossfades; the inactive one is visibility-hidden. */}
+        <div className="deploy-tab-action-swap">
+          <a
+            href={templateHref}
+            target="_blank"
+            rel="noreferrer"
+            className={tab === "template" ? "deploy-tab-action is-current" : "deploy-tab-action"}
+          >
             <span className="deploy-tab-action-text">{copy.action}</span>
             <span className="deploy-tab-action-chip" aria-hidden="true">
               <ArrowUpRight className="deploy-tab-action-arrow" strokeWidth={2} />
             </span>
           </a>
-        ) : (
-          <Link href={walkthroughHref} className="deploy-tab-action">
+          <Link
+            href={walkthroughHref}
+            className={tab === "agent" ? "deploy-tab-action is-current" : "deploy-tab-action"}
+          >
             <span className="deploy-tab-action-text">{copy.agentAction}</span>
             <span className="deploy-tab-action-chip" aria-hidden="true">
               <ArrowUpRight className="deploy-tab-action-arrow" strokeWidth={2} />
             </span>
           </Link>
-        )}
+        </div>
       </div>
     </div>
   );

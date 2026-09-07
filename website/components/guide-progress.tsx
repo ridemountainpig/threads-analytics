@@ -25,38 +25,40 @@ export function GuideProgress({
 
   useEffect(() => {
     const ids = phases.map((_, i) => `phase-${i + 1}`);
-    let ticking = false;
+    const targets = ids
+      .map((id) => document.getElementById(id))
+      .filter((element): element is HTMLElement => element !== null);
 
-    const update = () => {
-      ticking = false;
-      // Reading line at 35% of the viewport: the phase whose heading last
-      // crossed it is the one the reader is in.
-      const line = window.innerHeight * 0.35;
-      let current = 0;
-      ids.forEach((id, i) => {
-        const element = document.getElementById(id);
-        if (element && element.getBoundingClientRect().top <= line) {
-          current = i;
-        }
-      });
-      setActive(current);
-    };
+    if (targets.length === 0) {
+      return;
+    }
 
-    const request = () => {
-      if (!ticking) {
-        ticking = true;
-        requestAnimationFrame(update);
-      }
-    };
+    // Reading line at 35% of the viewport, expressed as rootMargin so the
+    // browser tracks crossings off the main thread — no per-scroll layout
+    // reads. A heading counts as passed once its top is above that line.
+    const passed = new Map<string, boolean>();
 
-    update();
-    window.addEventListener("scroll", request, { passive: true });
-    window.addEventListener("resize", request);
+    const observer = new IntersectionObserver(
+      (entries) => {
+        entries.forEach((entry) => {
+          const line = entry.rootBounds ? entry.rootBounds.top : window.innerHeight * 0.35;
+          passed.set(entry.target.id, entry.boundingClientRect.top <= line);
+        });
 
-    return () => {
-      window.removeEventListener("scroll", request);
-      window.removeEventListener("resize", request);
-    };
+        let current = 0;
+        ids.forEach((id, i) => {
+          if (passed.get(id)) {
+            current = i;
+          }
+        });
+        setActive(current);
+      },
+      { rootMargin: "-35% 0px -65% 0px" },
+    );
+
+    targets.forEach((target) => observer.observe(target));
+
+    return () => observer.disconnect();
   }, [phases]);
 
   return (
@@ -68,8 +70,13 @@ export function GuideProgress({
           return (
             <li key={phase.index}>
               <a href={`#phase-${i + 1}`} className={state}>
+                {/* Digit and check stay stacked so the done state crossfades
+                    instead of swapping glyphs in a hard cut. */}
                 <span className="guide-progress-index" aria-hidden="true">
-                  {i < active ? <Check strokeWidth={2.6} /> : phase.index}
+                  <span className="guide-progress-glyph guide-progress-num">{phase.index}</span>
+                  <span className="guide-progress-glyph guide-progress-check">
+                    <Check strokeWidth={2.6} />
+                  </span>
                 </span>
                 <span className="guide-progress-text">
                   <strong>{phase.title}</strong>

@@ -1,11 +1,15 @@
 "use client";
 
+import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Check, ChevronDown, Languages } from "lucide-react";
+import { useDetailsDismiss } from "@/components/use-details-dismiss";
 import { isLocale, localeNames, locales, type Locale } from "@/lib/i18n";
 
 export function LanguageMenu({ locale }: { locale: Locale }) {
+  const menuRef = useRef<HTMLDetailsElement>(null);
+  useDetailsDismiss(menuRef);
   const pathname = usePathname() ?? `/${locale}`;
   const firstSegment = pathname.split("/")[1] ?? "";
   const pathAfterLocale = isLocale(firstSegment)
@@ -13,7 +17,7 @@ export function LanguageMenu({ locale }: { locale: Locale }) {
     : pathname;
 
   return (
-    <details className="language-menu">
+    <details className="language-menu" ref={menuRef}>
       <summary aria-label="Change language">
         <Languages className="language-icon" aria-hidden="true" strokeWidth={1.9} />
         <span className="language-label">{localeNames[locale]}</span>

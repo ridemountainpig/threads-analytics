@@ -18,18 +18,35 @@ const HEADER_OFFSET = 84;
 // smooth-scroll the small remaining distance.
 export function AnchorScrollController() {
   useEffect(() => {
+    // One settle loop at a time; user scroll input always wins over the
+    // correction — a stale loop must never yank the page back.
+    let rafId = 0;
+    let cancelled = false;
+
     const desiredTop = (target: HTMLElement) =>
       Math.max(0, target.getBoundingClientRect().top + window.scrollY - HEADER_OFFSET);
+
+    const cancelPending = () => {
+      cancelled = true;
+      cancelAnimationFrame(rafId);
+    };
+
+    const onUserScroll = () => cancelPending();
 
     const correctAfterSettle = (id: string) => {
       const target = document.getElementById(id);
       if (!target) return;
+
+      cancelPending();
+      cancelled = false;
 
       let stableFrames = 0;
       let lastY = Number.NaN;
       let frames = 0;
 
       const tick = () => {
+        if (cancelled) return;
+
         const y = Math.round(window.scrollY);
         if (y === lastY) stableFrames += 1;
         else {
@@ -41,7 +58,7 @@ export function AnchorScrollController() {
         // Wait until the native scroll has stopped moving (or bail after a
         // generous ceiling so we never spin forever).
         if (stableFrames < 6 && frames < 180) {
-          requestAnimationFrame(tick);
+          rafId = requestAnimationFrame(tick);
           return;
         }
 
@@ -52,7 +69,7 @@ export function AnchorScrollController() {
         }
       };
 
-      requestAnimationFrame(tick);
+      rafId = requestAnimationFrame(tick);
     };
 
     const onHashChange = () => {
@@ -62,6 +79,8 @@ export function AnchorScrollController() {
     };
 
     window.addEventListener("hashchange", onHashChange);
+    window.addEventListener("wheel", onUserScroll, { passive: true });
+    window.addEventListener("touchstart", onUserScroll, { passive: true });
 
     // A page loaded (or hard-reloaded) with a hash jumps using the same wrong
     // estimates, so correct that landing too.
@@ -69,7 +88,12 @@ export function AnchorScrollController() {
       correctAfterSettle(decodeURIComponent(window.location.hash.slice(1)));
     }
 
-    return () => window.removeEventListener("hashchange", onHashChange);
+    return () => {
+      cancelPending();
+      window.removeEventListener("hashchange", onHashChange);
+      window.removeEventListener("wheel", onUserScroll);
+      window.removeEventListener("touchstart", onUserScroll);
+    };
   }, []);
 
   return null;

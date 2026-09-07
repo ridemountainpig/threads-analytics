@@ -19,9 +19,12 @@
   --site-width: 1240px;
   --shell-edge: max(24px, calc((100% - var(--site-width)) / 2));
   --sans:
-    "Inter", "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont, "Segoe UI",
-    "Noto Sans TC", "Noto Sans JP", sans-serif;
+    var(--font-inter, "Inter"), "SF Pro Display", "SF Pro Text", -apple-system, BlinkMacSystemFont,
+    "Segoe UI", "Noto Sans TC", "Noto Sans JP", sans-serif;
   --mono: "SFMono-Regular", "Roboto Mono", "Noto Sans Mono", Consolas, monospace;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
 }
 
 * {
@@ -31,6 +34,9 @@
 html {
   scroll-behavior: smooth;
   scroll-padding-top: 84px;
+  /* Press feedback is custom (:active scales); the platform flash on top
+     of it reads as two competing responses. */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -99,7 +105,7 @@ summary:focus-visible {
 
 @media (prefers-reduced-motion: no-preference) {
   .site-header {
-    animation: header-enter 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: header-enter 480ms var(--ease-out) both;
   }
 
   .hero-grid-bg {
@@ -107,13 +113,13 @@ summary:focus-visible {
   }
 
   .hero-curve {
-    animation: hero-curve-in 1500ms 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-curve-in 1500ms 140ms var(--ease-out) both;
   }
 
   .hero-curve-path {
     stroke-dasharray: 1;
     stroke-dashoffset: 1;
-    animation: hero-curve-draw 2200ms 320ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: hero-curve-draw 2200ms 320ms var(--ease-out) forwards;
   }
 
   .hero-curve-spark {
@@ -129,7 +135,7 @@ summary:focus-visible {
   }
 
   .closing-curves.is-reveal-visible .closing-curve-path {
-    animation: closing-curve-draw 1500ms 260ms cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    animation: closing-curve-draw 1500ms 260ms var(--ease-out) forwards;
   }
 
   .closing-curves.is-reveal-pending .closing-curve-spark,
@@ -143,27 +149,27 @@ summary:focus-visible {
   }
 
   .hero-eyebrow {
-    animation: hero-enter 1100ms 100ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1100ms 100ms var(--ease-out) both;
   }
 
   .hero-copy h1 span {
-    animation: hero-enter 1300ms 190ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1300ms 180ms var(--ease-out) both;
   }
 
   .hero-copy h1 em {
-    animation: hero-enter 1350ms 300ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1350ms 260ms var(--ease-out) both;
   }
 
   .hero-description {
-    animation: hero-enter 1200ms 440ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1200ms 340ms var(--ease-out) both;
   }
 
   .hero-copy > .hero-actions {
-    animation: hero-enter 1100ms 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1100ms 420ms var(--ease-out) both;
   }
 
   .hero-note {
-    animation: hero-enter 1000ms 650ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1000ms 500ms var(--ease-out) both;
   }
 
   .hero-visual.is-awaiting-view {
@@ -190,32 +196,32 @@ summary:focus-visible {
   }
 
   .hero-visual.is-in-view {
-    animation: hero-visual-reveal 1000ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-visual-reveal 1000ms var(--ease-out) both;
   }
 
   .hero-visual.is-in-view .signal-card {
-    animation: hero-panel-reveal 820ms 180ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: hero-panel-reveal 820ms 180ms var(--ease-out) backwards;
   }
 
   .hero-visual.is-in-view .micro-chart {
-    animation: hero-panel-reveal 860ms 340ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: hero-panel-reveal 860ms 340ms var(--ease-out) backwards;
   }
 
   .hero-visual.is-in-view .post-stack {
-    animation: hero-panel-reveal 900ms 460ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: hero-panel-reveal 900ms 460ms var(--ease-out) backwards;
   }
 
   .hero-visual.is-in-view .bars > span {
-    animation: hero-bar-reveal 720ms var(--bar-delay) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: hero-bar-reveal 720ms var(--bar-delay) var(--ease-out) backwards;
   }
 
   .hero-visual.is-in-view .hero-chart-trend {
     transform-origin: left center;
-    animation: hero-trend-reveal 1050ms 700ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-trend-reveal 1050ms 700ms var(--ease-out) both;
   }
 
   .hero-visual.is-in-view .mini-post {
-    animation: hero-panel-reveal 700ms var(--post-delay) cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: hero-panel-reveal 700ms var(--post-delay) var(--ease-out) backwards;
   }
 
   /* Pre-hydration state: the bootstrap script in the layout adds .js-reveal
@@ -237,13 +243,13 @@ summary:focus-visible {
     opacity: 1;
   }
 
-  /* Freeze every demo-internal animation at its first frame until the
-     wrapper actually reveals, so the sequence always plays in view even
+  /* Freeze every reveal-gated animation at its first frame until the
+     wrapper actually reveals, so sequences always play in view even
      when content-visibility renders the subtree early. */
-  .js-reveal [data-reveal]:not(.is-reveal-visible) .analytics-demo,
-  .js-reveal [data-reveal]:not(.is-reveal-visible) .analytics-demo *,
-  .js-reveal [data-reveal]:not(.is-reveal-visible) .analytics-demo *::before,
-  .js-reveal [data-reveal]:not(.is-reveal-visible) .analytics-demo *::after {
+  .js-reveal [data-reveal]:not(.is-reveal-visible),
+  .js-reveal [data-reveal]:not(.is-reveal-visible) *,
+  .js-reveal [data-reveal]:not(.is-reveal-visible) *::before,
+  .js-reveal [data-reveal]:not(.is-reveal-visible) *::after {
     animation-play-state: paused !important;
   }
 
@@ -284,8 +290,7 @@ summary:focus-visible {
   }
 
   [data-reveal].is-reveal-visible {
-    animation: viewport-reveal-up 900ms var(--reveal-delay, 0ms) cubic-bezier(0.22, 1, 0.36, 1)
-      backwards;
+    animation: viewport-reveal-up 900ms var(--reveal-delay, 0ms) var(--ease-out) backwards;
   }
 
   [data-reveal="fade"].is-reveal-visible {
@@ -305,29 +310,36 @@ summary:focus-visible {
   }
 
   [data-reveal="stagger"].is-reveal-visible > * {
-    animation: viewport-reveal-up 820ms var(--reveal-delay, 0ms) cubic-bezier(0.22, 1, 0.36, 1)
-      backwards;
+    animation: viewport-reveal-up 700ms var(--reveal-delay, 0ms) var(--ease-out) backwards;
   }
 
   [data-reveal="stagger"].is-reveal-visible > :nth-child(2) {
-    animation-delay: calc(var(--reveal-delay, 0ms) + 120ms);
+    animation-delay: calc(var(--reveal-delay, 0ms) + 60ms);
   }
 
   [data-reveal="stagger"].is-reveal-visible > :nth-child(3) {
-    animation-delay: calc(var(--reveal-delay, 0ms) + 240ms);
+    animation-delay: calc(var(--reveal-delay, 0ms) + 120ms);
   }
 
   [data-reveal="stagger"].is-reveal-visible > :nth-child(4) {
-    animation-delay: calc(var(--reveal-delay, 0ms) + 360ms);
+    animation-delay: calc(var(--reveal-delay, 0ms) + 180ms);
   }
 
   [data-reveal="stagger"].is-reveal-visible > :nth-child(5) {
-    animation-delay: calc(var(--reveal-delay, 0ms) + 480ms);
+    animation-delay: calc(var(--reveal-delay, 0ms) + 240ms);
   }
 
   [data-reveal="stagger"].is-reveal-visible > :nth-child(6) {
-    animation-delay: calc(var(--reveal-delay, 0ms) + 600ms);
+    animation-delay: calc(var(--reveal-delay, 0ms) + 300ms);
   }
+}
+
+/* Suspend infinite/ambient loops while their section is off-screen. */
+.is-motion-paused,
+.is-motion-paused *,
+.is-motion-paused *::before,
+.is-motion-paused *::after {
+  animation-play-state: paused !important;
 }
 
 .header-inner {
@@ -345,6 +357,11 @@ summary:focus-visible {
   font-size: 14px;
   font-weight: 680;
   letter-spacing: -0.02em;
+  transition: transform 160ms var(--ease-out);
+}
+
+.brand-link:active {
+  transform: scale(0.97);
 }
 
 .brand-icon {
@@ -404,7 +421,12 @@ summary:focus-visible {
     color 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease,
-    box-shadow 160ms ease;
+    box-shadow 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.language-menu summary:active {
+  transform: scale(0.97);
 }
 
 .language-menu summary::-webkit-details-marker {
@@ -439,7 +461,7 @@ summary:focus-visible {
 }
 
 .language-chevron {
-  transition: transform 160ms ease;
+  transition: transform 160ms var(--ease-in-out);
 }
 
 .language-menu[open] .language-chevron {
@@ -457,7 +479,104 @@ summary:focus-visible {
   border-radius: 12px;
   background: var(--paper-strong);
   box-shadow: 0 16px 45px rgba(26, 22, 18, 0.12);
+  transform-origin: top right;
   animation: menu-in 150ms ease-out both;
+}
+
+/* Exit animation for the popovers where the platform can transition
+   <details> content; elsewhere they keep the instant native close. */
+@supports selector(::details-content) {
+  .language-menu::details-content,
+  .mobile-menu::details-content {
+    opacity: 1;
+    transition:
+      opacity 120ms var(--ease-out),
+      transform 120ms var(--ease-out),
+      content-visibility 120ms allow-discrete;
+  }
+
+  .language-menu:not([open])::details-content,
+  .mobile-menu:not([open])::details-content {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+/* Mobile nav: same details-popover pattern as the language menu, shown only
+   in the band where .desktop-nav is hidden. */
+.mobile-menu {
+  position: relative;
+  display: none;
+}
+
+.mobile-menu summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  min-height: 40px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.35);
+  color: var(--ink-soft);
+  cursor: pointer;
+  list-style: none;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.mobile-menu summary:active {
+  transform: scale(0.97);
+}
+
+.mobile-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.mobile-menu[open] summary {
+  border-color: rgba(124, 61, 219, 0.38);
+  background: var(--paper-strong);
+  color: var(--ink);
+}
+
+.mobile-menu-icon {
+  width: 17px;
+  height: 17px;
+}
+
+.mobile-menu-popover {
+  position: absolute;
+  top: calc(100% + 9px);
+  right: 0;
+  display: grid;
+  min-width: 190px;
+  padding: 6px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-strong);
+  box-shadow: 0 16px 45px rgba(26, 22, 18, 0.12);
+  transform-origin: top right;
+  animation: menu-in 150ms ease-out both;
+}
+
+.mobile-menu-popover a {
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.35;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.mobile-menu-popover a:hover {
+  background: #f7f3fa;
+  color: var(--ink);
 }
 
 .language-popover a {
@@ -513,10 +632,12 @@ summary:focus-visible {
     box-shadow 160ms ease;
 }
 
-.header-github:hover {
-  transform: translateY(-1px);
-  background: #c65091;
-  box-shadow: 0 8px 20px rgba(236, 125, 188, 0.28);
+@media (hover: hover) and (pointer: fine) {
+  .header-github:hover {
+    transform: translateY(-1px);
+    background: #c65091;
+    box-shadow: 0 8px 20px rgba(236, 125, 188, 0.28);
+  }
 }
 
 .header-github:active {
@@ -702,15 +823,17 @@ summary:focus-visible {
 .button svg {
   width: 17px;
   height: 17px;
-  transition: transform 160ms ease;
+  transition: transform 160ms var(--ease-out);
 }
 
-.button:hover {
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .button:hover {
+    transform: translateY(-1px);
+  }
 }
 
 .button:active {
-  transform: translateY(0) scale(0.985);
+  transform: translateY(0) scale(0.97);
 }
 
 .button-primary {
@@ -727,8 +850,10 @@ summary:focus-visible {
   box-shadow: 0 14px 34px rgba(236, 125, 188, 0.3);
 }
 
-.button-primary:hover svg {
-  transform: translateX(2px);
+@media (hover: hover) and (pointer: fine) {
+  .button-primary:hover svg {
+    transform: translateX(2px);
+  }
 }
 
 .button-secondary {
@@ -1245,17 +1370,19 @@ summary:focus-visible {
     color 150ms ease,
     background-color 150ms ease,
     box-shadow 220ms ease,
-    transform 150ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform 160ms var(--ease-out);
 }
 
-.segmented-control button:hover:not(.is-active) {
-  background: rgba(255, 255, 255, 0.07);
-  color: white;
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .segmented-control button:hover:not(.is-active) {
+    background: rgba(255, 255, 255, 0.07);
+    color: white;
+    transform: translateY(-1px);
+  }
 }
 
 .segmented-control button:active {
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 .segmented-control button.is-active {
@@ -1264,43 +1391,6 @@ summary:focus-visible {
   box-shadow:
     0 3px 12px rgba(216, 156, 255, 0.3),
     inset 0 0 0 1px rgba(255, 255, 255, 0.45);
-  animation: segment-pop 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
-}
-
-.segmented-control button.is-active::after {
-  position: absolute;
-  content: "";
-  inset: 0;
-  border-radius: inherit;
-  background: linear-gradient(
-    105deg,
-    transparent 25%,
-    rgba(255, 255, 255, 0.85) 50%,
-    transparent 75%
-  );
-  transform: translateX(-130%);
-  animation: segment-sheen 680ms 100ms ease-out both;
-  pointer-events: none;
-}
-
-@keyframes segment-pop {
-  0% {
-    transform: scale(0.86);
-  }
-
-  55% {
-    transform: scale(1.08);
-  }
-
-  100% {
-    transform: scale(1);
-  }
-}
-
-@keyframes segment-sheen {
-  to {
-    transform: translateX(130%);
-  }
 }
 
 .demo-grid {
@@ -1341,6 +1431,7 @@ summary:focus-visible {
 }
 
 .thread-more {
+  position: relative;
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1350,6 +1441,15 @@ summary:focus-visible {
   background: transparent;
   color: rgba(255, 255, 255, 0.52);
   cursor: default;
+}
+
+/* Extend the hit area to ~40px without moving a pixel of layout. */
+.thread-more::after,
+.thread-like::after,
+.origin-like::after {
+  content: "";
+  position: absolute;
+  inset: -8px;
 }
 
 .thread-more svg {
@@ -1388,6 +1488,23 @@ summary:focus-visible {
   font-size: 9px;
   letter-spacing: 0.05em;
   text-transform: uppercase;
+}
+
+/* Collapsible shell so switching away from "image" eases the card shut
+   instead of unmounting it and snapping the layout. The open height is the
+   card's fixed 170px plus its 22px top margin. */
+.thread-image-shell {
+  overflow: hidden;
+  height: 0;
+  opacity: 0;
+  transition:
+    height 260ms var(--ease-out),
+    opacity 200ms var(--ease-out);
+}
+
+.thread-image-shell.is-open {
+  height: 192px;
+  opacity: 1;
 }
 
 .thread-image {
@@ -1442,7 +1559,7 @@ summary:focus-visible {
 
 /* Entrance sequence — plays once when the demo first renders into view. */
 .demo-controls .control-group {
-  animation: demo-swap-in 500ms 60ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: demo-swap-in 500ms 60ms var(--ease-out) backwards;
 }
 
 .demo-controls .control-group-range {
@@ -1450,7 +1567,7 @@ summary:focus-visible {
 }
 
 .analytics-demo .segmented-control {
-  animation: segment-cascade 460ms 140ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation: segment-cascade 460ms 140ms var(--ease-bounce) backwards;
 }
 
 .analytics-demo .control-group-range .segmented-control {
@@ -1460,7 +1577,7 @@ summary:focus-visible {
 @keyframes segment-cascade {
   from {
     opacity: 0;
-    transform: scale(0.88);
+    transform: scale(0.94);
   }
 
   to {
@@ -1470,30 +1587,32 @@ summary:focus-visible {
 }
 
 .thread-author {
-  animation: demo-swap-in 520ms 140ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: demo-swap-in 520ms 140ms var(--ease-out) backwards;
 }
 
 .thread-avatar {
   animation:
-    demo-avatar-pop 560ms 180ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards,
+    demo-avatar-pop 560ms 180ms var(--ease-bounce) backwards,
     demo-avatar-glow 3200ms 1000ms ease-in-out infinite;
 }
 
 .thread-more {
-  animation: demo-fade 520ms 420ms ease backwards;
+  animation: demo-fade 520ms 420ms var(--ease-out) backwards;
 }
 
 .thread-tag {
-  animation: demo-swap-in 480ms 280ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: demo-swap-in 480ms 280ms var(--ease-out) backwards;
 }
 
 @keyframes demo-fade {
   from {
     opacity: 0;
+    transform: translate3d(0, 6px, 0);
   }
 
   to {
     opacity: 1;
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -1509,7 +1628,7 @@ summary:focus-visible {
 }
 
 .thread-actions > * {
-  animation: demo-swap-in 460ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: demo-swap-in 460ms var(--ease-out) backwards;
 }
 
 .thread-actions > :nth-child(1) {
@@ -1531,7 +1650,7 @@ summary:focus-visible {
 @keyframes demo-avatar-pop {
   from {
     opacity: 0;
-    transform: scale(0.4);
+    transform: scale(0.94);
   }
 
   to {
@@ -1541,24 +1660,20 @@ summary:focus-visible {
 }
 
 .demo-swap {
-  animation: demo-swap-in 460ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: demo-swap-in 320ms var(--ease-out) both;
 }
 
 .demo-swap .thread-range-context {
-  animation: demo-swap-in 420ms 90ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: demo-swap-in 300ms 60ms var(--ease-out) both;
 }
 
-.demo-expand {
-  animation: demo-expand-in 420ms cubic-bezier(0.22, 1, 0.36, 1) both;
-}
-
-.demo-expand .thread-image-line {
+.thread-image-shell.is-open .thread-image-line {
   transform-origin: left;
-  animation: demo-line-in 640ms 120ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: demo-line-in 640ms 160ms var(--ease-out) both;
 }
 
-.demo-expand .thread-image-grid {
-  animation: demo-grid-fade 560ms 60ms ease both;
+.thread-image-shell.is-open .thread-image-grid {
+  animation: demo-grid-fade 560ms 100ms var(--ease-out) both;
 }
 
 @keyframes demo-swap-in {
@@ -1572,18 +1687,6 @@ summary:focus-visible {
     opacity: 1;
     transform: translateY(0) scale(1);
     filter: blur(0);
-  }
-}
-
-@keyframes demo-expand-in {
-  from {
-    opacity: 0;
-    transform: translateY(14px) scale(0.97);
-  }
-
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
   }
 }
 
@@ -1650,7 +1753,7 @@ summary:focus-visible {
   width: 16px;
   height: 16px;
   transition:
-    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 160ms var(--ease-out),
     color 200ms ease;
 }
 
@@ -1658,12 +1761,14 @@ summary:focus-visible {
   color: #f6a8d3;
 }
 
-.thread-like:hover svg {
-  transform: scale(1.18);
+@media (hover: hover) and (pointer: fine) {
+  .thread-like:hover svg {
+    transform: scale(1.08);
+  }
 }
 
 .thread-like:active svg {
-  transform: scale(0.82);
+  transform: scale(0.95);
 }
 
 .thread-like.is-liked {
@@ -1673,7 +1778,7 @@ summary:focus-visible {
 .thread-like.is-liked svg {
   fill: var(--accent-pink);
   color: var(--accent-pink);
-  animation: heart-pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: heart-pop 520ms var(--ease-bounce);
 }
 
 .thread-like::before {
@@ -1691,20 +1796,20 @@ summary:focus-visible {
 }
 
 .thread-like.is-liked::before {
-  animation: heart-burst 620ms 40ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: heart-burst 620ms 40ms var(--ease-out) both;
 }
 
 @keyframes heart-pop {
   0% {
-    transform: scale(0);
+    transform: scale(0.9);
   }
 
   45% {
-    transform: scale(1.35);
+    transform: scale(1.2);
   }
 
   70% {
-    transform: scale(0.92);
+    transform: scale(0.96);
   }
 
   100% {
@@ -1760,6 +1865,7 @@ summary:focus-visible {
 .metric-row strong {
   font-size: 27px;
   font-weight: 550;
+  font-variant-numeric: tabular-nums;
   letter-spacing: -0.04em;
 }
 
@@ -1782,27 +1888,27 @@ summary:focus-visible {
 }
 
 .metric-row.demo-swap > div {
-  animation: demo-metric-in 560ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: demo-metric-in 400ms var(--ease-out) both;
 }
 
 .metric-row.demo-swap > div:nth-child(2) {
-  animation-delay: 80ms;
+  animation-delay: 60ms;
 }
 
 .metric-row.demo-swap > div:nth-child(3) {
-  animation-delay: 160ms;
+  animation-delay: 120ms;
 }
 
 .metric-row.demo-swap small {
-  animation: demo-chip-pop 480ms 280ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: demo-chip-pop 360ms 200ms var(--ease-bounce) both;
 }
 
 .metric-row.demo-swap > div:nth-child(2) small {
-  animation-delay: 360ms;
+  animation-delay: 260ms;
 }
 
 .metric-row.demo-swap > div:nth-child(3) small {
-  animation-delay: 440ms;
+  animation-delay: 320ms;
 }
 
 @keyframes demo-metric-in {
@@ -1820,7 +1926,7 @@ summary:focus-visible {
 @keyframes demo-chip-pop {
   from {
     opacity: 0;
-    transform: translateY(4px) scale(0.6);
+    transform: translateY(6px) scale(0.94);
   }
 
   to {
@@ -1890,14 +1996,14 @@ summary:focus-visible {
 }
 
 .chart-grid-lines {
-  animation: demo-fade 640ms 120ms ease backwards;
+  animation: demo-fade 400ms 80ms var(--ease-out) backwards;
 }
 
 .chart-baseline {
   stroke: rgba(243, 160, 202, 0.34);
   stroke-width: 1.15;
   stroke-dasharray: 4 4;
-  animation: chart-baseline-crawl 1000ms 420ms ease backwards;
+  animation: chart-baseline-crawl 700ms 240ms linear backwards;
 }
 
 @keyframes chart-baseline-crawl {
@@ -1914,7 +2020,7 @@ summary:focus-visible {
 
 .chart-area {
   fill: url(#chart-area);
-  animation: chart-area-in 760ms 340ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: chart-area-in 500ms 240ms var(--ease-out) both;
 }
 
 .chart-line {
@@ -1925,7 +2031,7 @@ summary:focus-visible {
 }
 
 .chart-line-clip {
-  animation: chart-line-draw 980ms 120ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation: chart-line-draw 700ms 80ms var(--ease-out) both;
 }
 
 .chart-point {
@@ -1934,7 +2040,7 @@ summary:focus-visible {
   stroke-width: 2;
   transform-box: fill-box;
   transform-origin: center;
-  animation: chart-point-pop 460ms var(--point-delay, 220ms) cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: chart-point-pop 360ms var(--point-delay, 220ms) var(--ease-bounce) both;
 }
 
 .chart-point.is-last {
@@ -1942,7 +2048,7 @@ summary:focus-visible {
   stroke: var(--accent);
   stroke-width: 3;
   animation:
-    chart-point-pop 460ms var(--point-delay, 220ms) cubic-bezier(0.34, 1.56, 0.64, 1) both,
+    chart-point-pop 360ms var(--point-delay, 220ms) var(--ease-bounce) both,
     chart-point-pulse 2600ms calc(var(--point-delay, 220ms) + 700ms) ease-in-out infinite;
 }
 
@@ -1969,7 +2075,7 @@ summary:focus-visible {
 @keyframes chart-point-pop {
   from {
     opacity: 0;
-    transform: scale(0);
+    transform: scale(0.92);
   }
 
   to {
@@ -1998,7 +2104,7 @@ summary:focus-visible {
   color: rgba(255, 255, 255, 0.5);
   font-family: var(--mono);
   font-size: 8px;
-  animation: demo-chip-pop 440ms 1050ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+  animation: demo-chip-pop 360ms 700ms var(--ease-bounce) backwards;
 }
 
 .chart-axis-labels {
@@ -2010,19 +2116,19 @@ summary:focus-visible {
 }
 
 .chart-axis-labels span {
-  animation: demo-swap-in 420ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: demo-swap-in 320ms var(--ease-out) backwards;
 }
 
 .chart-axis-labels span:nth-child(1) {
-  animation-delay: 620ms;
+  animation-delay: 420ms;
 }
 
 .chart-axis-labels span:nth-child(2) {
-  animation-delay: 680ms;
+  animation-delay: 480ms;
 }
 
 .chart-axis-labels span:nth-child(3) {
-  animation-delay: 740ms;
+  animation-delay: 540ms;
 }
 
 .chart-axis-labels span:nth-child(4) {
@@ -2038,11 +2144,11 @@ summary:focus-visible {
 }
 
 .chart-card-heading > div {
-  animation: demo-swap-in 500ms 200ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: demo-swap-in 500ms 200ms var(--ease-out) backwards;
 }
 
 .demo-disclaimer {
-  animation: demo-fade 520ms 480ms ease backwards;
+  animation: demo-fade 360ms 280ms var(--ease-out) backwards;
 }
 
 .recommendation-card {
@@ -2057,7 +2163,7 @@ summary:focus-visible {
   border: 1px solid rgba(174, 100, 255, 0.38);
   border-radius: 12px;
   background: linear-gradient(110deg, rgba(158, 91, 239, 0.11), rgba(236, 125, 188, 0.055));
-  animation: demo-swap-in 520ms 140ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: demo-swap-in 520ms 140ms var(--ease-out) both;
 }
 
 .recommendation-card::after {
@@ -2071,7 +2177,7 @@ summary:focus-visible {
     transparent 70%
   );
   transform: translateX(-140%);
-  animation: recommendation-sheen 1100ms 480ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation: recommendation-sheen 1100ms 480ms var(--ease-out) both;
   pointer-events: none;
 }
 
@@ -2101,7 +2207,7 @@ summary:focus-visible {
   height: 17px;
   color: var(--accent);
   animation:
-    recommendation-arrow-in 560ms 340ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards,
+    recommendation-arrow-in 560ms 340ms var(--ease-bounce) backwards,
     recommendation-arrow-nudge 2200ms 1500ms ease-in-out infinite;
 }
 
@@ -2578,9 +2684,7 @@ summary:focus-visible {
   cursor: pointer;
   font-family: var(--mono);
   font-size: 9px;
-  transition:
-    color 220ms ease,
-    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: color 220ms ease;
 }
 
 /* Optical size compensation — the lucide heart glyph fills its viewBox
@@ -2589,21 +2693,22 @@ summary:focus-visible {
   width: 14px;
   height: 14px;
   transition:
-    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 160ms var(--ease-out),
     color 200ms ease;
 }
 
 .origin-like:hover {
   color: var(--ink);
-  transform: translateY(-2px);
 }
 
-.origin-like:hover svg {
-  transform: scale(1.15);
+@media (hover: hover) and (pointer: fine) {
+  .origin-like:hover svg {
+    transform: scale(1.08);
+  }
 }
 
 .origin-like:active svg {
-  transform: scale(0.82);
+  transform: scale(0.95);
 }
 
 .origin-like.is-liked {
@@ -2613,7 +2718,7 @@ summary:focus-visible {
 .origin-like.is-liked svg {
   fill: var(--accent-pink);
   color: var(--accent-pink);
-  animation: heart-pop 520ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: heart-pop 520ms var(--ease-bounce);
 }
 
 .origin-like::before {
@@ -2631,7 +2736,7 @@ summary:focus-visible {
 }
 
 .origin-like.is-liked::before {
-  animation: heart-burst 620ms 40ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: heart-burst 620ms 40ms var(--ease-out) both;
 }
 
 .features-section {
@@ -3177,34 +3282,37 @@ summary:focus-visible {
   border-color: rgba(158, 91, 239, 0.32);
 }
 
-/* 01 — posting time bars ripple upward, accent bar glows */
+/* 01 — posting time bars ripple upward once on reveal, accent bar glows */
 .feature-art-01 > span {
   transition: box-shadow 260ms ease;
 }
 
-.feature-card:hover .feature-art-01 > span {
-  animation: art-bar-wave 860ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+.feature-card.is-reveal-visible .feature-art-01 > span {
+  animation: art-bar-wave 860ms var(--ease-bounce) both;
 }
 
-.feature-card:hover .feature-art-01 > span:nth-child(2) {
+.feature-card.is-reveal-visible .feature-art-01 > span:nth-child(2) {
   animation-delay: 60ms;
 }
 
-.feature-card:hover .feature-art-01 > span:nth-child(3) {
+.feature-card.is-reveal-visible .feature-art-01 > span:nth-child(3) {
   animation-delay: 120ms;
 }
 
-.feature-card:hover .feature-art-01 > span:nth-child(4) {
+.feature-card.is-reveal-visible .feature-art-01 > span:nth-child(4) {
   animation-delay: 180ms;
-  box-shadow: 0 0 26px rgba(158, 91, 239, 0.45);
 }
 
-.feature-card:hover .feature-art-01 > span:nth-child(5) {
+.feature-card.is-reveal-visible .feature-art-01 > span:nth-child(5) {
   animation-delay: 240ms;
 }
 
-.feature-card:hover .feature-art-01 > span:nth-child(6) {
+.feature-card.is-reveal-visible .feature-art-01 > span:nth-child(6) {
   animation-delay: 300ms;
+}
+
+.feature-card:hover .feature-art-01 > span:nth-child(4) {
+  box-shadow: 0 0 26px rgba(158, 91, 239, 0.45);
 }
 
 @keyframes art-bar-wave {
@@ -3223,91 +3331,71 @@ summary:focus-visible {
 .format-length-cross,
 .format-length-result {
   transition:
-    transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 240ms var(--ease-bounce),
     border-color 240ms ease,
     box-shadow 240ms ease,
     color 240ms ease;
 }
 
 .format-length-result b {
-  transition: transform 320ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 240ms var(--ease-bounce);
 }
 
-.feature-card:hover .format-length-option.is-format {
-  transform: translateY(-3px) rotate(-1.4deg);
-  box-shadow: 0 10px 24px rgba(158, 91, 239, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .format-length-option.is-format {
+    transform: translateY(-3px) rotate(-1.4deg);
+    box-shadow: 0 10px 24px rgba(158, 91, 239, 0.14);
+  }
 }
 
-.feature-card:hover .format-length-option.is-length {
-  transform: translateY(-3px) rotate(1.4deg);
-  box-shadow: 0 10px 24px rgba(236, 125, 188, 0.14);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .format-length-option.is-length {
+    transform: translateY(-3px) rotate(1.4deg);
+    box-shadow: 0 10px 24px rgba(236, 125, 188, 0.14);
+  }
 }
 
-.feature-card:hover .format-length-cross {
-  color: var(--accent-strong);
-  transform: rotate(90deg) scale(1.2);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .format-length-cross {
+    color: var(--accent-strong);
+    transform: rotate(90deg) scale(1.2);
+  }
 }
 
-.feature-card:hover .format-length-result {
-  border-color: rgba(158, 91, 239, 0.42);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .format-length-result {
+    border-color: rgba(158, 91, 239, 0.42);
+    transform: translateY(-2px);
+  }
 }
 
-.feature-card:hover .format-length-result b {
-  transform: scale(1.14);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .format-length-result b {
+    transform: scale(1.14);
+  }
 }
 
-/* 03 — quality-map dots float at their own rhythm */
+/* 03 — the leading quality-map dot glows on hover */
 .feature-art-03 span {
   transition: box-shadow 280ms ease;
 }
 
-.feature-card:hover .feature-art-03 span {
-  animation: art-dot-float 2400ms ease-in-out infinite;
-}
-
-.feature-card:hover .feature-art-03 span:nth-child(2) {
-  animation-delay: 200ms;
-}
-
-.feature-card:hover .feature-art-03 span:nth-child(3) {
-  animation-delay: 500ms;
-}
-
 .feature-card:hover .feature-art-03 span:nth-child(4) {
-  animation-delay: 120ms;
   box-shadow: 0 0 0 7px rgba(158, 91, 239, 0.14);
-}
-
-.feature-card:hover .feature-art-03 span:nth-child(5) {
-  animation-delay: 700ms;
-}
-
-.feature-card:hover .feature-art-03 span:nth-child(6) {
-  animation-delay: 380ms;
-}
-
-@keyframes art-dot-float {
-  0%,
-  100% {
-    transform: translateY(0);
-  }
-
-  50% {
-    transform: translateY(-7px);
-  }
 }
 
 /* 04 — chips lift, cadence dots pulse in order, the streak flame flickers */
 .content-signal-chips b {
   transition:
-    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 240ms var(--ease-bounce),
     box-shadow 240ms ease;
 }
 
-.feature-card:hover .content-signal-chips b {
-  transform: translateY(-2px);
-  box-shadow: 0 5px 12px rgba(44, 27, 59, 0.08);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .content-signal-chips b {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 12px rgba(44, 27, 59, 0.08);
+  }
 }
 
 .feature-card:hover .content-signal-chips b:nth-child(2) {
@@ -3318,103 +3406,64 @@ summary:focus-visible {
   transition-delay: 90ms;
 }
 
-.feature-card:hover .content-signal-chips b.is-leading {
-  transform: translateY(-3px) scale(1.07);
-  box-shadow: 0 6px 14px rgba(236, 125, 188, 0.2);
-}
-
-.feature-card:hover .cadence-track .is-posted i {
-  animation: cadence-pulse 1700ms ease-in-out infinite;
-}
-
-.feature-card:hover .cadence-track > div:nth-child(3).is-posted i {
-  animation-delay: 220ms;
-}
-
-.feature-card:hover .cadence-track > div:nth-child(4).is-posted i {
-  animation-delay: 440ms;
-}
-
-.feature-card:hover .cadence-track > div:nth-child(6).is-posted i {
-  animation-delay: 660ms;
-}
-
-@keyframes cadence-pulse {
-  0%,
-  100% {
-    transform: scale(1);
-    box-shadow:
-      0 0 0 1px rgba(158, 91, 239, 0.32),
-      0 3px 8px rgba(158, 91, 239, 0.18);
-  }
-
-  50% {
-    transform: scale(1.3);
-    box-shadow:
-      0 0 0 3px rgba(158, 91, 239, 0.24),
-      0 3px 10px rgba(158, 91, 239, 0.3);
-  }
-}
-
-.feature-card:hover .content-signal-summary strong svg {
-  transform-origin: 50% 85%;
-  animation: streak-flame-flicker 950ms ease-in-out infinite;
-}
-
-@keyframes streak-flame-flicker {
-  0%,
-  100% {
-    transform: rotate(0deg) scale(1);
-  }
-
-  30% {
-    transform: rotate(-7deg) scale(1.12);
-  }
-
-  65% {
-    transform: rotate(6deg) scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .content-signal-chips b.is-leading {
+    transform: translateY(-3px) scale(1.07);
+    box-shadow: 0 6px 14px rgba(236, 125, 188, 0.2);
   }
 }
 
 /* 05 — the account stack fans out */
 .feature-art-05 span {
   transition:
-    margin-left 360ms cubic-bezier(0.34, 1.56, 0.64, 1),
-    transform 360ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    margin-left 240ms var(--ease-bounce),
+    transform 240ms var(--ease-bounce);
 }
 
 .feature-card:hover .feature-art-05 span {
   margin-left: -10px;
 }
 
-.feature-card:hover .feature-art-05 span:first-child {
-  margin-left: 0;
-  transform: scale(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-05 span:first-child {
+    margin-left: 0;
+    transform: scale(1.1);
+  }
 }
 
-.feature-card:hover .feature-art-05 span:nth-child(2) {
-  transform: translateY(-6px);
-  transition-delay: 30ms;
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-05 span:nth-child(2) {
+    transform: translateY(-6px);
+    transition-delay: 30ms;
+  }
 }
 
-.feature-card:hover .feature-art-05 span:nth-child(3) {
-  transform: translateY(4px);
-  transition-delay: 60ms;
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-05 span:nth-child(3) {
+    transform: translateY(4px);
+    transition-delay: 60ms;
+  }
 }
 
-.feature-card:hover .feature-art-05 span:nth-child(4) {
-  transform: translateY(-5px);
-  transition-delay: 90ms;
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-05 span:nth-child(4) {
+    transform: translateY(-5px);
+    transition-delay: 90ms;
+  }
 }
 
-.feature-card:hover .feature-art-05 span:nth-child(5) {
-  transform: translateY(3px);
-  transition-delay: 120ms;
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-05 span:nth-child(5) {
+    transform: translateY(3px);
+    transition-delay: 120ms;
+  }
 }
 
-.feature-card:hover .feature-art-05 span:nth-child(6) {
-  transform: translateY(-4px);
-  transition-delay: 150ms;
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-05 span:nth-child(6) {
+    transform: translateY(-4px);
+    transition-delay: 150ms;
+  }
 }
 
 /* 06 — server blocks hop, the encrypted pill and status LED come alive */
@@ -3428,59 +3477,40 @@ summary:focus-visible {
 
 .feature-art-06 span {
   transition:
-    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 240ms var(--ease-bounce),
     box-shadow 240ms ease,
     border-color 240ms ease;
 }
 
-.feature-card:hover .feature-art-06 span:nth-child(1) {
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-06 span:nth-child(1) {
+    transform: translateY(-3px);
+  }
 }
 
-.feature-card:hover .feature-art-06 span:nth-child(2) {
-  transform: translateY(-4px);
-  border-color: rgba(158, 91, 239, 0.55);
-  box-shadow: 0 8px 18px rgba(158, 91, 239, 0.18);
-  transition-delay: 50ms;
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-06 span:nth-child(2) {
+    transform: translateY(-4px);
+    border-color: rgba(158, 91, 239, 0.55);
+    box-shadow: 0 8px 18px rgba(158, 91, 239, 0.18);
+    transition-delay: 50ms;
+  }
 }
 
-.feature-card:hover .feature-art-06 span:nth-child(3) {
-  transform: translateY(-3px);
-  transition-delay: 100ms;
+@media (hover: hover) and (pointer: fine) {
+  .feature-card:hover .feature-art-06 span:nth-child(3) {
+    transform: translateY(-3px);
+    transition-delay: 100ms;
+  }
 }
 
 .feature-card:hover .feature-art-06 span:nth-child(4) {
-  animation: encrypted-pill-pulse 1900ms ease-in-out infinite;
+  border-color: rgba(158, 91, 239, 0.45);
+  background: rgba(158, 91, 239, 0.15);
 }
 
 .feature-card:hover .feature-art-06 span:nth-child(5) {
-  animation: server-led-blink 1100ms ease-in-out infinite;
-}
-
-@keyframes encrypted-pill-pulse {
-  0%,
-  100% {
-    border-color: rgba(158, 91, 239, 0.22);
-    background: rgba(158, 91, 239, 0.08);
-  }
-
-  50% {
-    border-color: rgba(158, 91, 239, 0.45);
-    background: rgba(158, 91, 239, 0.15);
-  }
-}
-
-@keyframes server-led-blink {
-  0%,
-  100% {
-    box-shadow: 0 0 0 3px rgba(99, 217, 155, 0.12);
-    opacity: 1;
-  }
-
-  50% {
-    box-shadow: 0 0 6px 3px rgba(99, 217, 155, 0.3);
-    opacity: 0.6;
-  }
+  box-shadow: 0 0 6px 3px rgba(99, 217, 155, 0.3);
 }
 
 .feature-card h3 {
@@ -3897,7 +3927,7 @@ summary:focus-visible {
 
 /* Product preview boot-up sequence — runs once the frame scrolls into view. */
 .product-frame.is-reveal-visible .window-dots span {
-  animation: preview-chip-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: preview-chip-pop 380ms var(--ease-bounce) both;
 }
 
 .product-frame.is-reveal-visible .window-dots span:nth-child(1) {
@@ -3913,7 +3943,7 @@ summary:focus-visible {
 }
 
 .product-frame.is-reveal-visible .product-tabs span {
-  animation: preview-fade 520ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: preview-fade 520ms var(--ease-out) both;
 }
 
 .product-frame.is-reveal-visible .product-tabs span:nth-child(1) {
@@ -3933,7 +3963,7 @@ summary:focus-visible {
 }
 
 .product-frame.is-reveal-visible .product-status {
-  animation: preview-chip-pop 460ms 560ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: preview-chip-pop 460ms 560ms var(--ease-bounce) both;
 }
 
 .product-frame.is-reveal-visible .product-status i {
@@ -3941,11 +3971,11 @@ summary:focus-visible {
 }
 
 .product-frame.is-reveal-visible .product-preview-brand {
-  animation: preview-slide-in 620ms 200ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: preview-slide-in 620ms 200ms var(--ease-out) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-nav > div {
-  animation: preview-slide-in 560ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: preview-slide-in 560ms var(--ease-out) backwards;
 }
 
 .product-frame.is-reveal-visible .product-preview-nav > div:nth-child(1) {
@@ -3966,37 +3996,37 @@ summary:focus-visible {
 
 .product-frame.is-reveal-visible .product-preview-nav > div.is-active {
   animation:
-    preview-slide-in 560ms 390ms cubic-bezier(0.22, 1, 0.36, 1) backwards,
-    preview-active-pop 480ms 900ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    preview-slide-in 560ms 390ms var(--ease-out) backwards,
+    preview-active-pop 480ms 900ms var(--ease-bounce) backwards;
 }
 
 .product-frame.is-reveal-visible .product-preview-private {
-  animation: preview-rise 560ms 680ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: preview-rise 560ms 680ms var(--ease-out) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-heading {
-  animation: preview-rise 600ms 320ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: preview-rise 600ms 320ms var(--ease-out) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-ranges span.is-active {
-  animation: preview-active-pop 460ms 820ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: preview-active-pop 460ms 820ms var(--ease-bounce) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-signal {
-  animation: preview-rise 620ms 440ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: preview-rise 620ms 440ms var(--ease-out) backwards;
 }
 
 .product-frame.is-reveal-visible .product-preview-signal > svg {
   transform-origin: 50% 50%;
-  animation: preview-clock-wiggle 700ms 950ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: preview-clock-wiggle 700ms 950ms var(--ease-bounce) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-signal > span {
-  animation: preview-chip-pop 460ms 1050ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: preview-chip-pop 460ms 1050ms var(--ease-bounce) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-metrics > div {
-  animation: preview-rise 580ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+  animation: preview-rise 580ms var(--ease-out) backwards;
 }
 
 .product-frame.is-reveal-visible .product-preview-metrics > div:nth-child(1) {
@@ -4016,7 +4046,7 @@ summary:focus-visible {
 }
 
 .product-frame.is-reveal-visible .product-preview-metrics span {
-  animation: preview-chip-pop 460ms cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: preview-chip-pop 460ms var(--ease-bounce) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-metrics > div:nth-child(1) span {
@@ -4036,40 +4066,36 @@ summary:focus-visible {
 }
 
 .product-frame.is-reveal-visible .product-preview-chart-card {
-  animation: preview-rise 620ms 640ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: preview-rise 620ms 640ms var(--ease-out) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-bars i {
-  animation: preview-bar-grow 680ms calc(760ms + var(--preview-bar-delay, 0ms))
-    cubic-bezier(0.22, 1, 0.36, 1) both;
+  animation: preview-bar-grow 680ms calc(760ms + var(--preview-bar-delay, 0ms)) var(--ease-out) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-bars i:nth-child(6),
 .product-frame.is-reveal-visible .product-preview-bars i:nth-child(11) {
   animation:
-    preview-bar-grow 680ms calc(760ms + var(--preview-bar-delay, 0ms))
-      cubic-bezier(0.22, 1, 0.36, 1) both,
+    preview-bar-grow 680ms calc(760ms + var(--preview-bar-delay, 0ms)) var(--ease-out) both,
     preview-bar-glow 3200ms calc(1900ms + var(--preview-bar-delay, 0ms)) ease-in-out infinite;
 }
 
 .product-frame.is-reveal-visible .product-preview-line-clip {
-  animation: preview-line-draw 1100ms 1050ms cubic-bezier(0.33, 1, 0.68, 1) both;
+  animation: preview-line-draw 1100ms 1050ms var(--ease-out) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-point {
-  animation: preview-point-pop 440ms var(--preview-point-delay, 1600ms)
-    cubic-bezier(0.34, 1.56, 0.64, 1) both;
+  animation: preview-point-pop 440ms var(--preview-point-delay, 1600ms) var(--ease-bounce) both;
 }
 
 .product-frame.is-reveal-visible .product-preview-point.is-last {
   animation:
-    preview-point-pop 440ms var(--preview-point-delay, 1600ms) cubic-bezier(0.34, 1.56, 0.64, 1)
-      both,
+    preview-point-pop 440ms var(--preview-point-delay, 1600ms) var(--ease-bounce) both,
     preview-point-pulse 2600ms calc(var(--preview-point-delay, 1600ms) + 700ms) ease-in-out infinite;
 }
 
 .product-frame.is-reveal-visible .product-preview-axis {
-  animation: preview-fade 640ms 1550ms ease both;
+  animation: preview-fade 640ms 1550ms var(--ease-out) both;
 }
 
 @keyframes preview-slide-in {
@@ -4123,7 +4149,7 @@ summary:focus-visible {
 @keyframes preview-chip-pop {
   from {
     opacity: 0;
-    transform: translateY(4px) scale(0.6);
+    transform: translateY(6px) scale(0.94);
   }
 
   to {
@@ -4186,12 +4212,12 @@ summary:focus-visible {
 @keyframes preview-point-pop {
   from {
     opacity: 0;
-    scale: 0.2;
+    transform: scale(0.92);
   }
 
   to {
     opacity: 1;
-    scale: 1;
+    transform: scale(1);
   }
 }
 
@@ -4250,15 +4276,17 @@ summary:focus-visible {
     border-color 180ms ease;
 }
 
-a.deploy-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(124, 61, 219, 0.55);
-  background: var(--paper-strong);
-  box-shadow: 0 15px 36px rgba(45, 29, 57, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  a.deploy-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(124, 61, 219, 0.55);
+    background: var(--paper-strong);
+    box-shadow: 0 15px 36px rgba(45, 29, 57, 0.1);
+  }
 }
 
 a.deploy-card:active {
-  transform: translateY(0) scale(0.995);
+  transform: translateY(0) scale(0.985);
 }
 
 .deploy-eyebrow {
@@ -4296,11 +4324,13 @@ a.deploy-card:active {
 .deploy-action svg {
   width: 17px;
   height: 17px;
-  transition: transform 180ms ease;
+  transition: transform 180ms var(--ease-out);
 }
 
-a.deploy-card:hover .deploy-action svg {
-  transform: translate(2px, -2px);
+@media (hover: hover) and (pointer: fine) {
+  a.deploy-card:hover .deploy-action svg {
+    transform: translate(2px, -2px);
+  }
 }
 
 /* Four cards: the three provider cards share the top row and the Docker code
@@ -4359,10 +4389,12 @@ a.deploy-card-code:hover {
   padding: 12px;
 }
 
-a.deploy-card:hover .deploy-brand-mark {
-  transform: translateY(-1px) scale(1.03);
-  border-color: rgba(124, 61, 219, 0.28);
-  background: white;
+@media (hover: hover) and (pointer: fine) {
+  a.deploy-card:hover .deploy-brand-mark {
+    transform: translateY(-1px) scale(1.03);
+    border-color: rgba(124, 61, 219, 0.28);
+    background: white;
+  }
 }
 
 a.deploy-card:active .deploy-brand-mark {
@@ -4388,15 +4420,17 @@ a.deploy-card:active .deploy-brand-mark {
 .deploy-package-link svg:last-child {
   width: 13px;
   height: 13px;
-  transition: transform 180ms ease;
+  transition: transform 180ms var(--ease-out);
 }
 
 a.deploy-card-code:hover .deploy-package-link {
   color: #ffd8ea;
 }
 
-a.deploy-card-code:hover .deploy-package-link svg:last-child {
-  transform: translate(2px, -2px);
+@media (hover: hover) and (pointer: fine) {
+  a.deploy-card-code:hover .deploy-package-link svg:last-child {
+    transform: translate(2px, -2px);
+  }
 }
 
 .deploy-card-code > p {
@@ -4524,8 +4558,10 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
   box-shadow: 0 14px 34px rgba(236, 125, 188, 0.3);
 }
 
-.button-light:hover svg {
-  transform: translate(2px, -2px);
+@media (hover: hover) and (pointer: fine) {
+  .button-light:hover svg {
+    transform: translate(2px, -2px);
+  }
 }
 
 .button-ghost {
@@ -4902,6 +4938,10 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
   .language-label,
   .language-chevron {
     display: none;
+  }
+
+  .mobile-menu {
+    display: block;
   }
 
   .hero-section {
@@ -5358,23 +5398,27 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 /* --- Hero dashboard hover interactions --- */
 .signal-card {
   transition:
-    transform 300ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 300ms var(--ease-out),
     border-color 240ms ease,
     background-color 240ms ease;
 }
 
-.signal-card:hover {
-  border-color: rgba(174, 100, 255, 0.42);
-  background: rgba(255, 255, 255, 0.07);
-  transform: translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .signal-card:hover {
+    border-color: rgba(174, 100, 255, 0.42);
+    background: rgba(255, 255, 255, 0.07);
+    transform: translateY(-3px);
+  }
 }
 
 .signal-lift {
-  transition: transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 300ms var(--ease-bounce);
 }
 
-.signal-card:hover .signal-lift {
-  transform: scale(1.08);
+@media (hover: hover) and (pointer: fine) {
+  .signal-card:hover .signal-lift {
+    transform: scale(1.08);
+  }
 }
 
 .micro-chart {
@@ -5387,18 +5431,22 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 
 .bars > span {
   transition:
-    transform 280ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 280ms var(--ease-bounce),
     background-color 200ms ease;
 }
 
-.bars > span:hover {
-  background: rgba(255, 255, 255, 0.32);
-  transform: scaleY(1.1);
+@media (hover: hover) and (pointer: fine) {
+  .bars > span:hover {
+    background: rgba(255, 255, 255, 0.32);
+    transform: scaleY(1.1);
+  }
 }
 
-.bars > span.is-peak:hover {
-  background: linear-gradient(to top, var(--accent), var(--accent-pink));
-  transform: scaleY(1.06);
+@media (hover: hover) and (pointer: fine) {
+  .bars > span.is-peak:hover {
+    background: linear-gradient(to top, var(--accent), var(--accent-pink));
+    transform: scaleY(1.06);
+  }
 }
 
 .post-stack {
@@ -5419,44 +5467,54 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 
 .mini-post-rank {
   transition:
-    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 300ms var(--ease-bounce),
     border-color 220ms ease,
     color 220ms ease;
 }
 
-.mini-post:hover .mini-post-rank {
-  border-color: rgba(174, 100, 255, 0.55);
-  color: white;
-  transform: scale(1.1) rotate(-4deg);
+@media (hover: hover) and (pointer: fine) {
+  .mini-post:hover .mini-post-rank {
+    border-color: rgba(174, 100, 255, 0.55);
+    color: white;
+    transform: scale(1.1) rotate(-4deg);
+  }
 }
 
 .mini-post-score {
   transition:
-    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 300ms var(--ease-bounce),
     background-color 220ms ease;
 }
 
-.mini-post:hover .mini-post-score {
-  background: rgba(94, 227, 154, 0.18);
-  transform: scale(1.08);
+@media (hover: hover) and (pointer: fine) {
+  .mini-post:hover .mini-post-score {
+    background: rgba(94, 227, 154, 0.18);
+    transform: scale(1.08);
+  }
 }
 
 .mini-reactions svg {
-  transition: transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 260ms var(--ease-bounce);
 }
 
-.mini-post:hover .mini-reactions span:nth-child(1) svg {
-  transform: scale(1.2);
+@media (hover: hover) and (pointer: fine) {
+  .mini-post:hover .mini-reactions span:nth-child(1) svg {
+    transform: scale(1.2);
+  }
 }
 
-.mini-post:hover .mini-reactions span:nth-child(2) svg {
-  transform: scale(1.2);
-  transition-delay: 50ms;
+@media (hover: hover) and (pointer: fine) {
+  .mini-post:hover .mini-reactions span:nth-child(2) svg {
+    transform: scale(1.2);
+    transition-delay: 50ms;
+  }
 }
 
-.mini-post:hover .mini-reactions span:nth-child(3) svg {
-  transform: scale(1.2);
-  transition-delay: 100ms;
+@media (hover: hover) and (pointer: fine) {
+  .mini-post:hover .mini-reactions span:nth-child(3) svg {
+    transform: scale(1.2);
+    transition-delay: 100ms;
+  }
 }
 
 /* --- Proof strip hover --- */
@@ -5471,13 +5529,15 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 .proof-grid strong {
   transform-origin: left center;
   transition:
-    transform 300ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 300ms var(--ease-bounce),
     color 240ms ease;
 }
 
-.proof-grid > div:hover strong {
-  color: var(--accent-strong);
-  transform: scale(1.05);
+@media (hover: hover) and (pointer: fine) {
+  .proof-grid > div:hover strong {
+    color: var(--accent-strong);
+    transform: scale(1.05);
+  }
 }
 
 .proof-grid span {
@@ -5490,7 +5550,7 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 
 /* --- Origin post card hover --- */
 .origin-post-frame {
-  transition: box-shadow 300ms ease;
+  transition: box-shadow 240ms ease;
 }
 
 .origin-post-frame:hover {
@@ -5498,69 +5558,60 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 }
 
 .origin-post-frame figcaption {
-  transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 240ms var(--ease-bounce);
 }
 
-.origin-post-frame:hover figcaption {
-  transform: rotate(2deg) translateY(-3px);
+@media (hover: hover) and (pointer: fine) {
+  .origin-post-frame:hover figcaption {
+    transform: rotate(2deg) translateY(-3px);
+  }
 }
 
 .origin-avatar svg {
-  transition: transform 340ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  transition: transform 240ms var(--ease-bounce);
 }
 
-.origin-post-frame:hover .origin-avatar svg {
-  transform: rotate(-10deg) scale(1.14);
-}
-
-.origin-post-frame:hover .origin-dashboard-topbar > span i {
-  animation: origin-sync-blink 1200ms ease-in-out infinite;
+@media (hover: hover) and (pointer: fine) {
+  .origin-post-frame:hover .origin-avatar svg {
+    transform: rotate(-10deg) scale(1.14);
+  }
 }
 
 .origin-chart-bars > i {
   transform-origin: bottom;
 }
 
-.origin-post-frame:hover .origin-chart-bars > i {
-  animation: art-bar-wave 860ms var(--origin-bar-delay, 0ms) cubic-bezier(0.34, 1.56, 0.64, 1) both;
+.origin-post-frame.is-reveal-visible .origin-chart-bars > i {
+  animation: art-bar-wave 860ms var(--origin-bar-delay, 0ms) var(--ease-bounce) both;
 }
 
 .origin-thread-actions span {
   transition:
-    transform 260ms cubic-bezier(0.34, 1.56, 0.64, 1),
+    transform 200ms var(--ease-out),
     color 220ms ease;
 }
 
-.origin-thread-actions span:hover {
-  color: var(--ink);
-  transform: translateY(-2px);
-}
-
-@keyframes origin-sync-blink {
-  0%,
-  100% {
-    box-shadow: 0 0 7px rgba(78, 208, 139, 0.6);
-    opacity: 1;
-  }
-
-  50% {
-    box-shadow: 0 0 3px rgba(78, 208, 139, 0.3);
-    opacity: 0.55;
+@media (hover: hover) and (pointer: fine) {
+  .origin-thread-actions span:hover {
+    color: var(--ink);
+    transform: translateY(-2px);
   }
 }
 
 /* --- Product mock UI hover --- */
 .product-preview-nav > div {
   transition:
-    transform 240ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 240ms var(--ease-out),
     background-color 200ms ease,
     color 200ms ease;
 }
 
-.product-preview-nav > div:hover:not(.is-active) {
-  background: rgba(158, 91, 239, 0.07);
-  color: var(--ink);
-  transform: translateX(3px);
+@media (hover: hover) and (pointer: fine) {
+  .product-preview-nav > div:hover:not(.is-active) {
+    background: rgba(158, 91, 239, 0.07);
+    color: var(--ink);
+    transform: translateX(3px);
+  }
 }
 
 .product-preview-ranges span {
@@ -5576,27 +5627,33 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 
 .product-preview-metrics > div {
   transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms var(--ease-out),
     background-color 220ms ease;
 }
 
-.product-preview-metrics > div:hover {
-  background: rgba(158, 91, 239, 0.045);
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .product-preview-metrics > div:hover {
+    background: rgba(158, 91, 239, 0.045);
+    transform: translateY(-2px);
+  }
 }
 
 .product-preview-signal {
   transition:
-    transform 260ms cubic-bezier(0.22, 1, 0.36, 1),
+    transform 260ms var(--ease-out),
     border-color 220ms ease;
 }
 
-.product-preview-signal:hover {
-  transform: translateY(-2px);
+@media (hover: hover) and (pointer: fine) {
+  .product-preview-signal:hover {
+    transform: translateY(-2px);
+  }
 }
 
-.product-frame.is-reveal-visible .product-preview-signal:hover > svg {
-  animation: product-clock-tick 1100ms ease-in-out infinite;
+@media (hover: hover) and (pointer: fine) {
+  .product-frame.is-reveal-visible .product-preview-signal:hover > svg {
+    animation: product-clock-tick 1100ms ease-in-out infinite;
+  }
 }
 
 @keyframes product-clock-tick {
@@ -5641,17 +5698,21 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 /* Tabbed cards (Railway, Zeabur) hold two links (template + agent guide), so
    unlike their siblings the card itself is not an anchor; mirror the hover
    treatment. */
-.deploy-card-tabbed:hover {
-  transform: translateY(-2px);
-  border-color: rgba(124, 61, 219, 0.55);
-  background: var(--paper-strong);
-  box-shadow: 0 15px 36px rgba(45, 29, 57, 0.1);
+@media (hover: hover) and (pointer: fine) {
+  .deploy-card-tabbed:hover {
+    transform: translateY(-2px);
+    border-color: rgba(124, 61, 219, 0.55);
+    background: var(--paper-strong);
+    box-shadow: 0 15px 36px rgba(45, 29, 57, 0.1);
+  }
 }
 
-.deploy-card-tabbed:hover .deploy-brand-mark {
-  transform: translateY(-1px) scale(1.03);
-  border-color: rgba(124, 61, 219, 0.28);
-  background: white;
+@media (hover: hover) and (pointer: fine) {
+  .deploy-card-tabbed:hover .deploy-brand-mark {
+    transform: translateY(-1px) scale(1.03);
+    border-color: rgba(124, 61, 219, 0.28);
+    background: white;
+  }
 }
 
 /* Tab switcher inside a deploy card: one-click template vs. agent prompt. */
@@ -5670,24 +5731,50 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 }
 
 .deploy-tabs button {
+  position: relative;
   padding: 4px 2px 8px;
   border: 0;
   background: transparent;
   color: var(--ink-soft);
   cursor: pointer;
   font-size: 13px;
-  font-weight: 560;
+  font-weight: 600;
   letter-spacing: -0.01em;
-  transition: color 160ms ease;
+  transition:
+    color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+/* Underline slides in instead of the label jumping font weight (which
+   reflows the sibling tab). */
+.deploy-tabs button::after {
+  content: "";
+  position: absolute;
+  right: 2px;
+  bottom: 3px;
+  left: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: var(--accent-pink);
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 220ms var(--ease-in-out);
 }
 
 .deploy-tabs button:hover {
   color: var(--ink);
 }
 
+.deploy-tabs button:active {
+  transform: scale(0.96);
+}
+
 .deploy-tabs button.is-active {
   color: var(--ink);
-  font-weight: 660;
+}
+
+.deploy-tabs button.is-active::after {
+  transform: scaleX(1);
 }
 
 .deploy-tab-divider {
@@ -5710,23 +5797,61 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
   font-size: 14px;
   font-weight: 620;
   letter-spacing: -0.012em;
-  animation: deploy-tab-action-in 300ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition: transform 160ms var(--ease-out);
+}
+
+.deploy-tab-action:active {
+  transform: scale(0.97);
+}
+
+/* Both actions share one grid cell; the tab switch crossfades them so the
+   outgoing link eases out instead of unmounting in a hard cut. */
+.deploy-tab-action-swap {
+  display: grid;
+  align-self: flex-start;
+}
+
+.deploy-tab-action-swap > .deploy-tab-action {
+  grid-area: 1 / 1;
+  justify-self: start;
+  transition:
+    opacity 180ms var(--ease-out),
+    transform 180ms var(--ease-out),
+    visibility 180ms;
+}
+
+.deploy-tab-action-swap > .deploy-tab-action:not(.is-current) {
+  opacity: 0;
+  pointer-events: none;
+  transform: translate3d(0, 5px, 0);
+  visibility: hidden;
 }
 
 /* #f3abd3 = --accent-pink lightened toward white (65/35 mix), spelled out as
    a literal because color-mix inside these declarations doesn't survive the
    CSS build for every property. */
 .deploy-tab-action-text {
+  position: relative;
   padding-bottom: 2px;
-  background-image: linear-gradient(#f3abd3, #f3abd3);
-  background-repeat: no-repeat;
-  background-position: 0 100%;
-  background-size: 0% 1px;
-  transition: background-size 240ms cubic-bezier(0.22, 1, 0.36, 1);
 }
 
-.deploy-tab-action:hover .deploy-tab-action-text {
-  background-size: 100% 1px;
+.deploy-tab-action-text::after {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  height: 1px;
+  background: #f3abd3;
+  transform: scaleX(0);
+  transform-origin: left;
+  transition: transform 240ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .deploy-tab-action:hover .deploy-tab-action-text::after {
+    transform: scaleX(1);
+  }
 }
 
 .deploy-tab-action-chip {
@@ -5764,29 +5889,18 @@ a.deploy-card-code:hover .deploy-package-link svg:last-child {
 .deploy-card-vercel .deploy-tab-action {
   margin-top: auto;
   padding-top: 30px;
-  animation: none;
 }
 
-a.deploy-card-vercel:hover .deploy-tab-action-text {
-  background-size: 100% 1px;
+@media (hover: hover) and (pointer: fine) {
+  a.deploy-card-vercel:hover .deploy-tab-action-text::after {
+    transform: scaleX(1);
+  }
 }
 
 a.deploy-card-vercel:hover .deploy-tab-action-chip {
   border-color: #f3abd3;
   background: #f3abd3;
   color: white;
-}
-
-@keyframes deploy-tab-action-in {
-  from {
-    opacity: 0;
-    transform: translate3d(0, 5px, 0);
-  }
-
-  to {
-    opacity: 1;
-    transform: translate3d(0, 0, 0);
-  }
 }
 
 /* Railway agent page: the hero side stacks two prompt cards (install +
@@ -5978,7 +6092,8 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     radial-gradient(closest-side at 30% 24%, rgba(255, 177, 138, 0.32), transparent),
     radial-gradient(closest-side at 76% 36%, rgba(236, 125, 188, 0.26), transparent),
     radial-gradient(closest-side at 54% 80%, rgba(158, 91, 239, 0.28), transparent);
-  filter: blur(36px);
+  filter: blur(18px);
+  will-change: transform;
 }
 
 .agent-prompt-card {
@@ -5998,9 +6113,11 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     box-shadow 220ms ease;
 }
 
-.agent-prompt-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 34px 84px rgba(66, 40, 86, 0.26);
+@media (hover: hover) and (pointer: fine) {
+  .agent-prompt-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 34px 84px rgba(66, 40, 86, 0.26);
+  }
 }
 
 .agent-prompt-topline {
@@ -6042,7 +6159,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     color 160ms ease,
     background-color 160ms ease,
     border-color 160ms ease,
-    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform 160ms var(--ease-out);
 }
 
 .agent-prompt-copy svg {
@@ -6066,10 +6183,12 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   visibility: hidden;
 }
 
-.agent-prompt-copy:hover {
-  border-color: rgba(158, 91, 239, 0.7);
-  background: rgba(158, 91, 239, 0.2);
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .agent-prompt-copy:hover {
+    border-color: rgba(158, 91, 239, 0.7);
+    background: rgba(158, 91, 239, 0.2);
+    transform: translateY(-1px);
+  }
 }
 
 .agent-prompt-copy:active {
@@ -6080,7 +6199,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   border-color: rgba(94, 227, 154, 0.5);
   background: rgba(94, 227, 154, 0.14);
   color: #5ee39a;
-  animation: agent-copied-pop 420ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: agent-copied-pop 420ms var(--ease-bounce);
 }
 
 @keyframes agent-copied-pop {
@@ -6170,26 +6289,32 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   color: white;
   transition:
     background-color 160ms ease,
-    transform 160ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform 160ms var(--ease-out);
 }
 
+/* Three attention pulses, then rest — a compositor-friendly scaling ring
+   instead of an animated box-shadow spread. */
 .agent-prompt-send::after {
   content: "";
   position: absolute;
   inset: 0;
+  border: 2px solid rgba(240, 80, 46, 0.5);
   border-radius: inherit;
+  opacity: 0;
   pointer-events: none;
-  animation: agent-send-pulse 3.4s 1.8s ease-out infinite;
+  animation: agent-send-pulse 3.4s 1.8s ease-out 3;
 }
 
 @keyframes agent-send-pulse {
   0% {
-    box-shadow: 0 0 0 0 rgba(240, 80, 46, 0.42);
+    transform: scale(1);
+    opacity: 0.55;
   }
 
   32%,
   100% {
-    box-shadow: 0 0 0 11px rgba(240, 80, 46, 0);
+    transform: scale(1.55);
+    opacity: 0;
   }
 }
 
@@ -6198,13 +6323,15 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   height: 16px;
 }
 
-.agent-prompt-send:hover {
-  background: #d9401f;
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .agent-prompt-send:hover {
+    background: #d9401f;
+    transform: translateY(-1px);
+  }
 }
 
 .agent-prompt-send:active {
-  transform: scale(0.94);
+  transform: scale(0.96);
 }
 
 /* Runbook-length prompt (Vercel): preserve line breaks, drop the typed-in
@@ -6248,12 +6375,17 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   font-family: var(--mono);
   font-size: 10.5px;
   letter-spacing: 0.07em;
+  transition: transform 160ms var(--ease-out);
+}
+
+.agent-prompt-expand:active {
+  transform: scale(0.96);
 }
 
 .agent-prompt-expand svg {
   width: 13px;
   height: 13px;
-  transition: transform 200ms ease;
+  transition: transform 200ms var(--ease-in-out);
 }
 
 .agent-prompt-expand[aria-expanded="true"] svg {
@@ -6289,9 +6421,13 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   border-radius: 13px;
   background: color-mix(in srgb, var(--paper-strong) 90%, transparent);
   transition:
-    transform 180ms ease,
+    transform 180ms var(--ease-out),
     border-color 180ms ease,
     box-shadow 180ms ease;
+}
+
+.agent-step-card:active {
+  transform: scale(0.985);
 }
 
 .agent-step-card::before {
@@ -6306,10 +6442,12 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   transition: opacity 200ms ease;
 }
 
-.agent-step-card:hover {
-  transform: translateY(-2px);
-  border-color: rgba(124, 61, 219, 0.45);
-  box-shadow: 0 15px 36px rgba(45, 29, 57, 0.08);
+@media (hover: hover) and (pointer: fine) {
+  .agent-step-card:hover {
+    transform: translateY(-2px);
+    border-color: rgba(124, 61, 219, 0.45);
+    box-shadow: 0 15px 36px rgba(45, 29, 57, 0.08);
+  }
 }
 
 .agent-step-card:hover::before {
@@ -6336,9 +6474,11 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   -webkit-text-fill-color: transparent;
 }
 
-.agent-step-card:hover .agent-step-index {
-  transform: translateY(-2px);
-  opacity: 0.72;
+@media (hover: hover) and (pointer: fine) {
+  .agent-step-card:hover .agent-step-index {
+    transform: translateY(-2px);
+    opacity: 0.72;
+  }
 }
 
 .agent-step-card strong {
@@ -6545,7 +6685,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   background: rgba(158, 91, 239, 0.16);
   color: white;
   box-shadow: 0 0 18px rgba(158, 91, 239, 0.22);
-  animation: agent-chip-select 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: agent-chip-select 460ms var(--ease-bounce);
 }
 
 .agent-chip.is-selected svg {
@@ -6603,16 +6743,16 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
 .agent-progress li.is-done svg {
   color: #5ee39a;
-  animation: agent-check-pop 380ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: agent-check-pop 380ms var(--ease-bounce);
 }
 
 @keyframes agent-check-pop {
   0% {
-    transform: scale(0.4);
+    transform: scale(0.9);
   }
 
   60% {
-    transform: scale(1.25);
+    transform: scale(1.08);
   }
 
   100% {
@@ -6816,7 +6956,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   background: rgba(158, 91, 239, 0.16);
   color: white;
   box-shadow: 0 0 18px rgba(158, 91, 239, 0.22);
-  animation: agent-chip-select 460ms cubic-bezier(0.34, 1.56, 0.64, 1);
+  animation: agent-chip-select 460ms var(--ease-bounce);
 }
 
 .agent-approval-allow.is-selected svg {
@@ -7052,13 +7192,18 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     color 160ms ease,
     border-color 160ms ease,
     background-color 160ms ease,
-    opacity 160ms ease;
+    opacity 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.agent-replay:active {
+  transform: scale(0.97);
 }
 
 .agent-replay svg {
   width: 13px;
   height: 13px;
-  transition: transform 320ms ease;
+  transition: transform 180ms var(--ease-out);
 }
 
 .agent-replay:hover {
@@ -7067,8 +7212,10 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   color: white;
 }
 
-.agent-replay:hover svg {
-  transform: rotate(120deg);
+@media (hover: hover) and (pointer: fine) {
+  .agent-replay:hover svg {
+    transform: rotate(45deg);
+  }
 }
 
 .agent-cta-section {
@@ -7182,11 +7329,13 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     transform 160ms ease;
 }
 
-.agent-cta-other:hover {
-  border-color: rgba(158, 91, 239, 0.7);
-  background: rgba(158, 91, 239, 0.16);
-  color: white;
-  transform: translateY(-1px);
+@media (hover: hover) and (pointer: fine) {
+  .agent-cta-other:hover {
+    border-color: rgba(158, 91, 239, 0.7);
+    background: rgba(158, 91, 239, 0.16);
+    color: white;
+    transform: translateY(-1px);
+  }
 }
 
 /* The brand marks are dark-on-light artwork, so each sits on a small light
@@ -7212,31 +7361,31 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
 @media (prefers-reduced-motion: no-preference) {
   .agent-hero-copy .section-kicker {
-    animation: hero-enter 1000ms 80ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1000ms 80ms var(--ease-out) both;
   }
 
   .agent-hero-copy h1 span {
-    animation: hero-enter 1200ms 170ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1200ms 160ms var(--ease-out) both;
   }
 
   .agent-hero-copy h1 em {
-    animation: hero-enter 1250ms 280ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1250ms 240ms var(--ease-out) both;
   }
 
   .agent-hero-copy .hero-description {
-    animation: hero-enter 1100ms 400ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1100ms 320ms var(--ease-out) both;
   }
 
   .agent-hero-copy .hero-actions {
-    animation: hero-enter 1000ms 510ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1000ms 400ms var(--ease-out) both;
   }
 
   .agent-hero-copy .hero-note {
-    animation: hero-enter 950ms 600ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 950ms 480ms var(--ease-out) both;
   }
 
   .agent-hero-side {
-    animation: hero-enter 1150ms 480ms cubic-bezier(0.22, 1, 0.36, 1) both;
+    animation: hero-enter 1150ms 480ms var(--ease-out) both;
   }
 
   .agent-hero-side::before {
@@ -7244,7 +7393,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   }
 
   .agent-chat > * {
-    animation: agent-step-in 480ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: agent-step-in 480ms var(--ease-out) backwards;
   }
 
   .agent-bubble-user {
@@ -7253,7 +7402,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   }
 
   .agent-result-card {
-    animation: agent-result-in 620ms cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    animation: agent-result-in 620ms var(--ease-out) backwards;
   }
 }
 
@@ -7416,9 +7565,11 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     box-shadow 220ms ease;
 }
 
-.guide-check-card:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 34px 84px rgba(66, 40, 86, 0.26);
+@media (hover: hover) and (pointer: fine) {
+  .guide-check-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 34px 84px rgba(66, 40, 86, 0.26);
+  }
 }
 
 .guide-check-list {
@@ -7516,6 +7667,10 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   cursor: pointer;
 }
 
+.guide-phase-card:active {
+  transform: scale(0.985);
+}
+
 .guide-phase-range {
   display: inline-flex;
   align-items: center;
@@ -7584,7 +7739,8 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   transition:
     color 160ms ease,
     background-color 160ms ease,
-    border-color 160ms ease;
+    border-color 160ms ease,
+    box-shadow 200ms ease;
 }
 
 .guide-progress-list a:hover {
@@ -7594,10 +7750,10 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 }
 
 .guide-progress-index {
-  display: inline-flex;
+  position: relative;
+  display: inline-grid;
   flex: 0 0 auto;
-  align-items: center;
-  justify-content: center;
+  place-items: center;
   width: 27px;
   height: 27px;
   border: 1px solid var(--rule-strong);
@@ -7610,7 +7766,46 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     background-color 200ms ease,
     border-color 200ms ease,
     color 200ms ease,
-    transform 200ms cubic-bezier(0.34, 1.56, 0.64, 1);
+    transform 200ms var(--ease-bounce);
+}
+
+/* The active gradient lives on an overlay so it can fade in — a
+   background-image can't transition. */
+.guide-progress-index::after {
+  content: "";
+  position: absolute;
+  inset: -1px;
+  border-radius: inherit;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  opacity: 0;
+  transition: opacity 200ms var(--ease-out);
+}
+
+.guide-progress-glyph {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  grid-area: 1 / 1;
+  align-items: center;
+  justify-content: center;
+  transition:
+    opacity 160ms var(--ease-out),
+    transform 160ms var(--ease-out);
+}
+
+.guide-progress-check {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.guide-progress-list a.is-done .guide-progress-num {
+  opacity: 0;
+  transform: scale(0.9);
+}
+
+.guide-progress-list a.is-done .guide-progress-check {
+  opacity: 1;
+  transform: scale(1);
 }
 
 .guide-progress-index svg {
@@ -7647,9 +7842,12 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
 .guide-progress-list a.is-active .guide-progress-index {
   border-color: transparent;
-  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
   color: #221631;
   transform: scale(1.06);
+}
+
+.guide-progress-list a.is-active .guide-progress-index::after {
+  opacity: 1;
 }
 
 .guide-progress-list a.is-done .guide-progress-index {
@@ -7806,10 +8004,12 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
     border-color 220ms ease;
 }
 
-.guide-shot:hover {
-  transform: translateY(-3px);
-  border-color: rgba(124, 61, 219, 0.4);
-  box-shadow: 0 26px 58px rgba(45, 29, 57, 0.13);
+@media (hover: hover) and (pointer: fine) {
+  .guide-shot:hover {
+    transform: translateY(-3px);
+    border-color: rgba(124, 61, 219, 0.4);
+    box-shadow: 0 26px 58px rgba(45, 29, 57, 0.13);
+  }
 }
 
 .guide-shot-bar {
@@ -7924,7 +8124,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   }
 
   .guide-step.is-reveal-visible .guide-step-num {
-    animation: guide-num-in 640ms 120ms cubic-bezier(0.34, 1.56, 0.64, 1) backwards;
+    animation: guide-num-in 640ms 120ms var(--ease-bounce) backwards;
   }
 }
 
@@ -7941,7 +8141,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 @keyframes guide-num-in {
   from {
     opacity: 0;
-    transform: scale(0.72);
+    transform: scale(0.92);
   }
 
   to {
@@ -8025,9 +8225,48 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   *,
   *::before,
   *::after {
+    animation-delay: 0.01ms !important;
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
     scroll-behavior: auto !important;
+    transition-delay: 0.01ms !important;
     transition-duration: 0.01ms !important;
+  }
+
+  /* Reduced motion means fewer and gentler animations, not zero: keep the
+     color/opacity feedback that carries state changes, drop only movement. */
+  .desktop-nav a,
+  .site-footer a,
+  .button,
+  .header-github,
+  .language-menu summary,
+  .language-popover a,
+  .segmented-control button,
+  .deploy-tabs button,
+  .guide-progress-list a,
+  .guide-progress-index,
+  .guide-progress-index::after,
+  .agent-prompt-copy,
+  .agent-replay {
+    transition-duration: 160ms !important;
+    transition-property: color, background-color, border-color, opacity !important;
+  }
+
+  /* The spinner must keep signalling "working" — swap the rotation for a
+     gentle opacity pulse. */
+  .agent-spinner {
+    animation: agent-spinner-fade 1400ms ease-in-out infinite alternate !important;
+    animation-duration: 1400ms !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+@keyframes agent-spinner-fade {
+  from {
+    opacity: 0.35;
+  }
+
+  to {
+    opacity: 1;
   }
 }

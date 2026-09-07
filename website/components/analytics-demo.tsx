@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type CSSProperties } from "react";
+import { useEffect, useMemo, useRef, useState, type CSSProperties } from "react";
 import {
   ArrowRight,
   Ellipsis,
@@ -105,11 +105,12 @@ const rangeProfiles: Record<
 
 function useCountUp(target: number, duration = 640) {
   const [display, setDisplay] = useState(target);
-  const previousRef = useRef(target);
+  // Live displayed value: an interrupted count resumes from where it is
+  // instead of jumping back to the previous target.
+  const displayRef = useRef(target);
 
   useEffect(() => {
-    const from = previousRef.current;
-    previousRef.current = target;
+    const from = displayRef.current;
     if (from === target) return;
     const reduceMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
@@ -118,12 +119,17 @@ function useCountUp(target: number, duration = 640) {
     const tick = (now: number) => {
       const progress = reduceMotion ? 1 : Math.min(1, (now - start) / duration);
       const eased = 1 - (1 - progress) ** 3;
-      setDisplay(from + (target - from) * eased);
+      const value = from + (target - from) * eased;
+      displayRef.current = value;
+      setDisplay(value);
       if (progress < 1) frame = requestAnimationFrame(tick);
     };
     frame = requestAnimationFrame(tick);
     // rAF pauses in hidden tabs; make sure the value still settles.
-    const settle = setTimeout(() => setDisplay(target), duration + 120);
+    const settle = setTimeout(() => {
+      displayRef.current = target;
+      setDisplay(target);
+    }, duration + 120);
     return () => {
       cancelAnimationFrame(frame);
       clearTimeout(settle);
@@ -167,6 +173,14 @@ export function AnalyticsDemo({ copy }: { copy: Dictionary["demo"] }) {
   const sample = copy.postSamples[format];
   const rangeProfile = rangeProfiles[range];
   const factor = rangeProfile.factor;
+  const chart = useMemo(
+    () => ({
+      line: linePath(activeSeries),
+      area: areaPath(activeSeries),
+      points: pointsFor(activeSeries),
+    }),
+    [activeSeries],
+  );
   const views = Math.round(useCountUp(Math.round((activeMetrics.views * factor) / 10) * 10));
   const engagement = `${useCountUp(
     activeMetrics.engagement + rangeProfile.engagementOffset,
@@ -233,13 +247,18 @@ export function AnalyticsDemo({ copy }: { copy: Dictionary["demo"] }) {
             {sample.content}
           </p>
           <span className="thread-tag">{sample.tag}</span>
-          {format === "image" ? (
-            <div className="thread-image demo-expand" aria-label="Analytics dashboard preview">
+          {/* Stays mounted: the shell eases shut when another format is
+              picked instead of collapsing the card in one frame. */}
+          <div
+            className={format === "image" ? "thread-image-shell is-open" : "thread-image-shell"}
+            aria-hidden={format === "image" ? undefined : true}
+          >
+            <div className="thread-image" aria-label="Analytics dashboard preview">
               <div className="thread-image-grid" />
               <div className="thread-image-line" />
               <span>CONTENT × TIME</span>
             </div>
-          ) : null}
+          </div>
           <div className="thread-actions">
             <button
               type="button"
@@ -250,14 +269,17 @@ export function AnalyticsDemo({ copy }: { copy: Dictionary["demo"] }) {
             >
               <Heart aria-hidden="true" strokeWidth={1.8} /> {likes}
             </button>
-            <span title={copy.replies}>
-              <MessageCircle aria-hidden="true" strokeWidth={1.8} /> {replies}
+            <span>
+              <MessageCircle aria-hidden="true" strokeWidth={1.8} />
+              <span className="sr-only">{copy.replies}</span> {replies}
             </span>
-            <span title={copy.reposts}>
-              <Repeat2 aria-hidden="true" strokeWidth={1.8} /> {reposts}
+            <span>
+              <Repeat2 aria-hidden="true" strokeWidth={1.8} />
+              <span className="sr-only">{copy.reposts}</span> {reposts}
             </span>
-            <span title={copy.sharesLabel}>
-              <Send aria-hidden="true" strokeWidth={1.8} /> {shareCount}
+            <span>
+              <Send aria-hidden="true" strokeWidth={1.8} />
+              <span className="sr-only">{copy.sharesLabel}</span> {shareCount}
             </span>
           </div>
         </article>
@@ -323,14 +345,14 @@ export function AnalyticsDemo({ copy }: { copy: Dictionary["demo"] }) {
                   <path d="M0 44H680M0 88H680M0 132H680M0 176H680" />
                 </g>
                 <path className="chart-baseline" d="M0 144H680" />
-                <path className="chart-area" d={areaPath(activeSeries)} />
+                <path className="chart-area" d={chart.area} />
                 <path
                   className="chart-line"
-                  d={linePath(activeSeries)}
+                  d={chart.line}
                   stroke="url(#chart-line-color)"
                   clipPath="url(#chart-line-reveal)"
                 />
-                {pointsFor(activeSeries).map((point, index) => (
+                {chart.points.map((point, index) => (
                   <circle
                     key={`${point.x}-${point.y}`}
                     className={

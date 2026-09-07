@@ -1,17 +1,27 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
+import { Inter } from "next/font/google";
 import { notFound } from "next/navigation";
 import { getDictionary, isLocale, locales } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
 import "@/app/globals.css";
 
+// Self-hosted so every platform renders the same face --sans declares; CJK
+// glyphs still fall through to the Noto families in the stack.
+const inter = Inter({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-inter",
+});
+
 export const dynamicParams = false;
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  themeColor: "#f6f5f1",
+  // Keep in sync with --paper in app/globals.css.
+  themeColor: "#f8f6fc",
   colorScheme: "light",
 };
 
@@ -64,7 +74,12 @@ export default async function LocaleLayout({
   const gaId = process.env.NEXT_PUBLIC_GA_ID;
 
   return (
-    <html lang={locale} data-scroll-behavior="smooth" suppressHydrationWarning>
+    <html
+      lang={locale}
+      className={inter.variable}
+      data-scroll-behavior="smooth"
+      suppressHydrationWarning
+    >
       <body>
         {/* Wrapped in innerHTML so React never renders a script element
             (avoids the React 19 warning on client navigations). The browser

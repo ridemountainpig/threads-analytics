@@ -2,6 +2,7 @@ import Image from "next/image";
 import Link from "next/link";
 import { FaGithub } from "react-icons/fa6";
 import { LanguageMenu } from "@/components/language-menu";
+import { MobileMenu } from "@/components/mobile-menu";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
 
@@ -35,6 +36,7 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
             <FaGithub className="github-icon" aria-hidden="true" />
             <span>{copy.github}</span>
           </a>
+          <MobileMenu locale={locale} copy={copy} />
         </div>
       </div>
     </header>

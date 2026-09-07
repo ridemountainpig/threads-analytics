@@ -3,7 +3,7 @@ const closingCurvePath =
 
 export function ClosingCurves() {
   return (
-    <div className="closing-curves" data-reveal="curve" aria-hidden="true">
+    <div className="closing-curves" data-reveal="curve" data-motion-pause aria-hidden="true">
       <svg viewBox="0 0 900 650" preserveAspectRatio="xMidYMid meet" focusable="false">
         <defs>
           <linearGradient

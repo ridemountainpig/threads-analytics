@@ -33,7 +33,7 @@ function SectionHeading({
   inverse?: boolean;
 }) {
   return (
-    <div className={`section-heading${inverse ? "section-heading-inverse" : ""}`}>
+    <div className={inverse ? "section-heading section-heading-inverse" : "section-heading"}>
       <p className="section-kicker">{kicker}</p>
       <h2>{title}</h2>
       <p className="section-description">{description}</p>
@@ -55,7 +55,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
       <AnchorScrollController />
       <SiteHeader locale={locale} copy={copy.nav} />
       <main>
-        <section className="hero-section" id="product">
+        <section className="hero-section" id="product" data-motion-pause>
           <div className="hero-grid-bg" aria-hidden="true" />
           <HeroCurve />
           <div className="site-shell hero-copy">
@@ -115,7 +115,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 inverse
               />
             </div>
-            <div className="render-deferred" data-reveal="scale" data-reveal-delay="1">
+            <div
+              className="render-deferred"
+              data-reveal="scale"
+              data-reveal-delay="1"
+              data-motion-pause
+            >
               <AnalyticsDemo copy={copy.demo} />
             </div>
           </div>
@@ -161,6 +166,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               className="product-frame render-deferred"
               data-reveal="scale"
               data-reveal-delay="1"
+              data-motion-pause
             >
               <div className="product-frame-bar">
                 <div className="window-dots" aria-hidden="true">

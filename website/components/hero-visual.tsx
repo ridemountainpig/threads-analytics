@@ -100,7 +100,7 @@ export function HeroVisual({ copy }: { copy: Dictionary["heroDemo"] }) {
             <article
               className="mini-post"
               key={post}
-              style={{ "--post-delay": `${760 + index * 120}ms` } as CSSProperties}
+              style={{ "--post-delay": `${760 + index * 70}ms` } as CSSProperties}
             >
               <span className="mini-post-rank">{String(index + 1).padStart(2, "0")}</span>
               <div className="mini-post-content">

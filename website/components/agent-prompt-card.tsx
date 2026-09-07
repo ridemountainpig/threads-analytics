@@ -30,6 +30,7 @@ export function AgentPromptCard({
   const [copied, setCopied] = useState(false);
   const resetRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const textRef = useRef<HTMLParagraphElement>(null);
+  const copyRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     return () => {
@@ -38,6 +39,16 @@ export function AgentPromptCard({
   }, []);
 
   const markCopied = () => {
+    // Re-copy inside the confirmation window: the class is already applied,
+    // so rewind the pop animation by hand or the click gives no feedback.
+    if (copied && copyRef.current) {
+      copyRef.current
+        .getAnimations()
+        .filter((animation) => "animationName" in animation)
+        .forEach((animation) => {
+          animation.currentTime = 0;
+        });
+    }
     setCopied(true);
     if (resetRef.current) clearTimeout(resetRef.current);
     resetRef.current = setTimeout(() => setCopied(false), 2200);
@@ -68,6 +79,7 @@ export function AgentPromptCard({
           {label}
         </span>
         <button
+          ref={copyRef}
           type="button"
           className={copied ? "agent-prompt-copy is-copied" : "agent-prompt-copy"}
           onClick={handleCopy}
