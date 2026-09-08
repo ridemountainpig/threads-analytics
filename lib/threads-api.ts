@@ -1,4 +1,6 @@
 const BASE_URL = "https://graph.threads.net/v1.0";
+// Token renewal sits outside the versioned graph path.
+const AUTH_BASE_URL = "https://graph.threads.net";
 
 // Cap each request so a stalled connection to Threads can't hang forever while
 // the sync holds the Postgres advisory lock (freezing all other syncs).
@@ -73,6 +75,26 @@ export class TokenExpiredError extends Error {
   }
 }
 
+/**
+ * Raises TokenExpiredError when an error body carries Meta's code 190, which
+ * covers an expired token as well as one the user revoked or invalidated by
+ * changing their password. Non-JSON and other error codes fall through so the
+ * caller can report them as ordinary failures.
+ */
+function throwIfTokenExpired(body: string): void {
+  let parsed: { error?: { code?: number; message?: string } };
+  try {
+    parsed = JSON.parse(body);
+  } catch {
+    return;
+  }
+  if (parsed?.error?.code === 190) {
+    throw new TokenExpiredError(
+      parsed.error.message ?? "Access token has expired. Please reconnect your Threads account.",
+    );
+  }
+}
+
 async function apiGet<T>(path: string, params: Record<string, string>): Promise<T> {
   const url = new URL(`${BASE_URL}${path}`);
   for (const [key, value] of Object.entries(params)) {
@@ -81,20 +103,53 @@ async function apiGet<T>(path: string, params: Record<string, string>): Promise<
   const res = await fetch(url.toString(), { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
   if (!res.ok) {
     const body = await res.text();
-    try {
-      const parsed = JSON.parse(body);
-      if (parsed?.error?.code === 190) {
-        throw new TokenExpiredError(
-          parsed.error.message ??
-            "Access token has expired. Please reconnect your Threads account.",
-        );
-      }
-    } catch (e) {
-      if (e instanceof TokenExpiredError) throw e;
-    }
+    throwIfTokenExpired(body);
     throw new Error(`Threads API error ${res.status} at ${path}: ${body}`);
   }
   return res.json() as Promise<T>;
+}
+
+export interface RefreshedToken {
+  accessToken: string;
+  expiresAt: Date;
+}
+
+/**
+ * Renews a long-lived token for another 60 days.
+ *
+ * Threads offers no way to inspect a token, so the `expires_in` returned here
+ * is the only authoritative source for how much life one has left — everything
+ * else is guesswork from when the token was pasted in. The token must be at
+ * least 24 hours old and unexpired; younger ones are rejected, which callers
+ * should treat as "try again later" rather than as a bad token.
+ */
+export async function refreshLongLivedToken(accessToken: string): Promise<RefreshedToken> {
+  const url = new URL(`${AUTH_BASE_URL}/refresh_access_token`);
+  url.searchParams.set("grant_type", "th_refresh_token");
+  url.searchParams.set("access_token", accessToken);
+
+  const res = await fetch(url.toString(), { signal: AbortSignal.timeout(REQUEST_TIMEOUT_MS) });
+  const body = await res.text();
+
+  if (!res.ok) {
+    throwIfTokenExpired(body);
+    throw new Error(`Threads token refresh failed ${res.status}: ${body}`);
+  }
+
+  let data: { access_token?: string; expires_in?: number };
+  try {
+    data = JSON.parse(body);
+  } catch {
+    throw new Error(`Threads token refresh returned a non-JSON body: ${body}`);
+  }
+  if (!data.access_token || typeof data.expires_in !== "number") {
+    throw new Error(`Threads token refresh returned an unexpected payload: ${body}`);
+  }
+
+  return {
+    accessToken: data.access_token,
+    expiresAt: new Date(Date.now() + data.expires_in * 1000),
+  };
 }
 
 export async function getUser(accessToken: string): Promise<ThreadsUser> {

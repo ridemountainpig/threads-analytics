@@ -11,6 +11,7 @@ import {
   getFollowersCount,
   TokenExpiredError,
 } from "@/lib/threads-api";
+import { ensureFreshToken } from "@/lib/token-refresh";
 import { DEFAULT_TZ, getDateString } from "@/lib/analytics";
 import { dateKeyToUtcDate } from "@/lib/followers";
 
@@ -29,6 +30,8 @@ interface SyncAccount {
   id: string;
   accessToken: string;
   expiresAt: Date;
+  tokenRefreshedAt: Date | null;
+  tokenCheckedAt: Date | null;
 }
 
 /**
@@ -126,6 +129,10 @@ export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncRe
   const userId = account.id;
 
   try {
+    // Every sync — manual or scheduled — passes through here, making it the one
+    // place that can keep the token alive and its recorded expiry honest.
+    accessToken = await ensureFreshToken(account, accessToken);
+
     const allPosts: Awaited<ReturnType<typeof getPosts>>["posts"] = [];
     let cursor: string | undefined;
 

@@ -19,6 +19,8 @@ model ThreadsAccount {
   username          String
   accessToken       String
   expiresAt         DateTime           @db.Timestamptz(3)
+  tokenRefreshedAt  DateTime?          @db.Timestamptz(3)
+  tokenCheckedAt    DateTime?          @db.Timestamptz(3)
   createdAt         DateTime           @default(now()) @db.Timestamptz(3)
   isActive          Boolean            @default(false)
   posts             Post[]
