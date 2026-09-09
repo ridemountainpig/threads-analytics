@@ -140,4 +140,12 @@ App 建立完成後會進入 Dashboard。從左側選單點擊 **Use cases**。
 
 將 token 貼到 Threads Analytics 的 **Settings** → **Add Threads account** 即可開始同步資料。
 
-> Threads Access Token 會過期。若同步失敗或接近到期，請依照同樣流程重新產生 token。
+## Token 自動更新
+
+長效 Threads Access Token 的有效期限為 60 天，但通常不需要自己重新產生：
+
+- 每次同步資料時，Threads Analytics 會檢查 token，當剩餘效期少於 30 天就會自動更新。每次更新成功後，token 效期會重新延長為 60 天。
+- Threads API 只允許更新產生超過 24 小時的 token，所以剛貼上的 token 會稍晚才進行第一次自動更新。
+- **設定**頁面的帳號卡片會顯示 token 的有效期限與上次自動更新的時間。
+
+> 自動更新的前提是同步持續執行、且目前的 token 仍然有效。如果應用程式停止運作太久導致 token 過期，請依照上方流程重新產生 token，並在設定頁面帳號卡片的**更新 Token**貼上。

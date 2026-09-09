@@ -28,6 +28,7 @@ interface Account {
   username: string;
   isActive: boolean;
   expiresAt: string;
+  tokenRefreshedAt: string | null;
   lastSyncedAt: string | null;
 }
 
@@ -52,6 +53,8 @@ interface AccountManagerLabels {
   tokenExpiresIn: string;
   tokenExpiresToday: string;
   tokenExpiredLabel: string;
+  tokenValidUntil: string;
+  tokenAutoRefreshed: string;
   updateToken: string;
   tokenUpdated: string;
   firstSyncStarted: string;
@@ -67,6 +70,16 @@ function formatDate(date: string, dateLocale: string, timeZone: string) {
   return new Intl.DateTimeFormat(dateLocale, {
     timeZone,
     year: "numeric",
+    month: "numeric",
+    day: "numeric",
+  }).format(new Date(date));
+}
+
+// Renewals are at most 60 days old, so month/day is unambiguous and keeps the
+// metadata row from stacking three full dates.
+function formatShortDate(date: string, dateLocale: string, timeZone: string) {
+  return new Intl.DateTimeFormat(dateLocale, {
+    timeZone,
     month: "numeric",
     day: "numeric",
   }).format(new Date(date));
@@ -222,12 +235,32 @@ export default function AccountManager({
                       <p className="text-sm font-medium">@{account.username}</p>
                       <TokenExpiryBadge expiresAt={account.expiresAt} labels={labels} now={now} />
                     </div>
-                    {account.lastSyncedAt && (
-                      <p className="text-muted-foreground text-xs">
-                        {labels.lastSynced}{" "}
-                        {formatDate(account.lastSyncedAt, dateLocale ?? "en-US", timeZone)}
-                      </p>
-                    )}
+                    {/* One wrapping metadata row instead of stacked lines —
+                        sync and token facts sit side by side when there's
+                        room and only break apart on narrow screens. */}
+                    <div className="text-muted-foreground flex flex-wrap gap-x-3 text-xs">
+                      {account.lastSyncedAt && (
+                        <span>
+                          {labels.lastSynced}{" "}
+                          {formatDate(account.lastSyncedAt, dateLocale ?? "en-US", timeZone)}
+                        </span>
+                      )}
+                      <span>
+                        {labels.tokenValidUntil.replace(
+                          "{date}",
+                          formatDate(account.expiresAt, dateLocale ?? "en-US", timeZone),
+                        )}
+                        {account.tokenRefreshedAt &&
+                          ` · ${labels.tokenAutoRefreshed.replace(
+                            "{date}",
+                            formatShortDate(
+                              account.tokenRefreshedAt,
+                              dateLocale ?? "en-US",
+                              timeZone,
+                            ),
+                          )}`}
+                      </span>
+                    </div>
                   </div>
                 </div>
                 {/* Row controls follow the dashboard capsule grammar: gray

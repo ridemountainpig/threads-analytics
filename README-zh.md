@@ -132,7 +132,7 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 詳細圖文步驟請參考：[如何生成 Threads Access Token](./public/token-generate-step/README-zh.md)。
 
-> Token 有效期限為 60 天。當 Token 在 30 天內到期時，設定頁面會顯示警示提醒你重新連接。你可以隨時在設定頁面的帳號卡片上點擊**更新 Token**續期，已同步的資料會完整保留。
+> Token 有效期限為 60 天，應用程式會自動幫你續期：每次同步時會檢查 token，當剩餘效期少於 30 天就自動延長 60 天（Threads API 只允許更新產生超過 24 小時的 token）。設定頁面的帳號卡片會顯示 token 的有效期限與上次自動更新時間。若 token 仍然過期（例如應用程式停止太久沒有同步），設定頁面會顯示警示；此時請重新產生 token，並在帳號卡片上點擊**更新 Token**貼上，已同步的資料會完整保留。
 
 ---
 

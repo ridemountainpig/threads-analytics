@@ -132,7 +132,7 @@ npx prisma migrate dev --name <name>  # Create a new migration
 
 For a screenshot-based walkthrough, see [How to Generate a Threads Access Token](./public/token-generate-step/README.md).
 
-> Tokens are valid for 60 days. The dashboard shows an expiry warning when your token is within 30 days of expiring. Renew anytime with the **Update token** button on the account card in Settings — your synced data is kept.
+> Tokens are valid for 60 days, and the app renews them for you: during each sync it checks the token and automatically extends it for another 60 days once fewer than 30 days remain (the Threads API only renews tokens older than 24 hours). The account card in Settings shows the token's expiry date and the last automatic renewal. If a token still expires — e.g. the app was offline too long for a sync to renew it — the dashboard shows an expiry warning; generate a new token and paste it with the **Update token** button on the account card — your synced data is kept.
 
 ---
 

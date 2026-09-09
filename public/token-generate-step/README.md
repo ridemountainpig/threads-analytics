@@ -140,4 +140,12 @@ After returning to Meta Developers, the token dialog appears. Select **I underst
 
 Paste the token into Threads Analytics under **Settings** → **Add Threads account** to start syncing data.
 
-> Threads Access Tokens expire. If syncing fails or the token is close to expiry, generate a new token with the same flow.
+## Automatic token renewal
+
+A long-lived Threads Access Token is valid for 60 days, but you normally don't need to regenerate it yourself:
+
+- During each data sync, Threads Analytics checks the token and renews it automatically once fewer than 30 days remain. Every successful renewal extends the token for another 60 days.
+- The Threads API only renews tokens that are at least 24 hours old, so a freshly pasted token gets its first automatic renewal a little later.
+- The account card in **Settings** shows how long the token is valid and when it was last renewed automatically.
+
+> Automatic renewal only works while syncs keep running and the current token is still valid. If the app stays offline long enough for the token to expire, generate a new token with the flow above and paste it via **Update token** on the account card in Settings.

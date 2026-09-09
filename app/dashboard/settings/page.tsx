@@ -66,6 +66,7 @@ export default async function SettingsPage() {
                 username: a.username,
                 isActive: a.isActive,
                 expiresAt: a.expiresAt.toISOString(),
+                tokenRefreshedAt: a.tokenRefreshedAt?.toISOString() ?? null,
                 lastSyncedAt: a.syncState?.lastSyncedAt?.toISOString() ?? null,
               }))}
             />

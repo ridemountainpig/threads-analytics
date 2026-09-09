@@ -375,7 +375,7 @@ export const dictionaries = {
       subtitle: "Manage your Threads accounts and data",
       accountsTitle: "Threads Accounts",
       accountsSub:
-        "Connect accounts with a Threads long-lived access token, choose the active profile, and remove accounts you no longer track.",
+        "Connect accounts with a Threads long-lived access token, choose the active profile, and remove accounts you no longer track. Tokens are renewed automatically during sync before they expire.",
       dataSync: "Data Sync",
       dataSyncSub: "Fetch posts and insights for @{username}.",
       syncHelp:
@@ -411,6 +411,8 @@ export const dictionaries = {
       tokenExpiresIn: "Expires in {days} days",
       tokenExpiresToday: "Expires today",
       tokenExpiredLabel: "Token expired",
+      tokenValidUntil: "Token valid until {date}",
+      tokenAutoRefreshed: "auto-renewed {date}",
       updateToken: "Update token",
       tokenUpdated: "Updated token for @{username}",
       firstSyncStarted: "Syncing data for @{username} — this may take a few minutes.",
@@ -781,7 +783,7 @@ export const dictionaries = {
       subtitle: "管理 Threads 帳號與資料",
       accountsTitle: "Threads 帳號",
       accountsSub:
-        "使用 Threads 長效 access token 連接帳號、選擇啟用的個人檔案，並移除不再追蹤的帳號。",
+        "使用 Threads 長效 access token 連接帳號、選擇啟用的個人檔案，並移除不再追蹤的帳號。Token 會在同步時於到期前自動更新。",
       dataSync: "資料同步",
       dataSyncSub: "抓取 @{username} 的貼文與洞察資料。",
       syncHelp: "大型帳號可能需要一分鐘。同步完成前，儀表板會使用快取貼文指標。",
@@ -816,6 +818,8 @@ export const dictionaries = {
       tokenExpiresIn: "{days} 天後過期",
       tokenExpiresToday: "今天過期",
       tokenExpiredLabel: "Token 已過期",
+      tokenValidUntil: "Token 有效至 {date}",
+      tokenAutoRefreshed: "已於 {date} 自動更新",
       updateToken: "更新 Token",
       tokenUpdated: "已更新 @{username} 的 token",
       firstSyncStarted: "正在同步 @{username} 的資料，可能需要幾分鐘。",
@@ -1193,7 +1197,7 @@ export const dictionaries = {
       subtitle: "Threads アカウントとデータを管理",
       accountsTitle: "Threads アカウント",
       accountsSub:
-        "Threads の長期アクセストークンでアカウントを接続し、アクティブなプロフィールを選択し、追跡しないアカウントを削除します。",
+        "Threads の長期アクセストークンでアカウントを接続し、アクティブなプロフィールを選択し、追跡しないアカウントを削除します。トークンは期限切れ前の同期時に自動更新されます。",
       dataSync: "データ同期",
       dataSyncSub: "@{username} の投稿とインサイトを取得します。",
       syncHelp:
@@ -1229,6 +1233,8 @@ export const dictionaries = {
       tokenExpiresIn: "{days} 日後に期限切れ",
       tokenExpiresToday: "本日期限切れ",
       tokenExpiredLabel: "トークン期限切れ",
+      tokenValidUntil: "トークン有効期限 {date}",
+      tokenAutoRefreshed: "{date} に自動更新",
       updateToken: "トークンを更新",
       tokenUpdated: "@{username} のトークンを更新しました",
       firstSyncStarted: "@{username} のデータを同期しています。数分かかる場合があります。",
