@@ -23,6 +23,7 @@
 - [Development](#development)
 - [Getting Your Threads Access Token](#getting-your-threads-access-token)
 - [Analytics Reference](#analytics-reference)
+- [MCP Server](#mcp-server)
 - [Deployment](#deployment)
   - [Updating an existing deployment](#updating-an-existing-deployment)
 
@@ -48,6 +49,7 @@ Open [http://localhost:3000](http://localhost:3000) and sign in with `APP_PASSWO
 - **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts
 - **Analytics** — 25+ charts across **Performance**, **Content**, and **Audience** tabs
 - **Posts** — searchable, filterable list with per-post analytics panel
+- **MCP server** — let Claude and other AI agents query your analytics through an OAuth-protected endpoint
 - Multi-account support with account switching
 - Auto-sync on configurable intervals
 - Password-protected (single `APP_PASSWORD` env var)
@@ -208,6 +210,52 @@ The posts list supports:
 - **Filter** by media type (shows only types present in the current period)
 
 Clicking any post opens a detail panel with views, engagement rate, vs-median multiplier, view percentile, and a per-action engagement breakdown.
+
+---
+
+## MCP Server
+
+The dashboard ships a remote [MCP](https://modelcontextprotocol.io) server at `/api/mcp` (Streamable HTTP), so AI agents like Claude can query your synced Threads data — posts, aggregated analytics, and follower history — and answer questions or write reports about your account. Everything is **read-only**.
+
+### Connecting an agent
+
+Authentication uses OAuth 2.1 with PKCE and Dynamic Client Registration — there is no API key to copy. On first connection the client registers itself, your browser opens the dashboard login (`APP_PASSWORD`), and you approve access on a consent screen.
+
+**Claude Code**
+
+```bash
+claude mcp add --transport http threads-analytics https://your-deployment.example.com/api/mcp
+```
+
+Then run `/mcp` inside Claude Code to complete the OAuth sign-in.
+
+**Claude (web / desktop)** — Settings → Connectors → **Add custom connector**, and paste `https://your-deployment.example.com/api/mcp`.
+
+Connected clients appear in **Settings → Connected Agents**, where each one can be revoked at any time.
+
+### Tools
+
+| Tool                   | What it does                                                                                                                                                       |
+| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `get_account_overview` | Username, sync status, post count, data date range, and follower growth summary — the recommended first call                                                       |
+| `list_posts`           | Posts with metrics; supports date range, sorting (date / views / likes / engagement rate), media-type filter, full-text search, and pagination                     |
+| `get_post`             | Full detail of a single post, including its complete text                                                                                                          |
+| `get_analytics`        | 31 aggregated analytics sections over a date range (best time to post, keyword analysis, views distribution, posting streaks, …) — pick only the sections you need |
+| `get_follower_history` | Daily follower-count snapshots with growth summary, and optionally the latest audience demographics                                                                |
+| `compare_periods`      | Core metrics for two periods with absolute and percentage changes; the comparison period defaults to the same-length window immediately before                     |
+
+### Prompts
+
+The server also registers ready-made prompts, each taking an optional `period` argument (e.g. `30d`, `90d`, or a date range):
+
+| Prompt                 | What it produces                                                             |
+| ---------------------- | ---------------------------------------------------------------------------- |
+| `performance-review`   | A full performance report: trends, best/worst posts, and actions to improve  |
+| `content-strategy`     | Which formats, lengths, and topics work, with a recommended content mix      |
+| `posting-schedule`     | A concrete weekly posting schedule based on when your audience engages       |
+| `viral-post-breakdown` | Deep-dive of outlier posts and the repeatable patterns behind them           |
+| `audience-insights`    | Follower growth and demographics, and what they imply for content and timing |
+| `topic-analysis`       | Which topics and writing patterns drive performance, plus new post ideas     |
 
 ---
 

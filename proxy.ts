@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 
-const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/cron/sync"];
+// /api/oauth and /api/mcp authenticate their own callers (OAuth flow / bearer tokens).
+const PUBLIC_PATHS = ["/login", "/api/auth/login", "/api/cron/sync", "/api/oauth", "/api/mcp"];
 
 export default function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl;

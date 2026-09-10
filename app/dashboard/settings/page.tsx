@@ -4,6 +4,7 @@ import { db } from "@/lib/db";
 import { getSyncIntervalCached, requireSession } from "@/lib/dashboard-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AccountManager from "./account-manager";
+import ConnectedAgents from "./connected-agents";
 import SyncButton from "@/components/dashboard/sync-button";
 import SyncIntervalSetting from "./sync-interval-setting";
 import VersionInfo from "./version-info";
@@ -115,6 +116,21 @@ export default async function SettingsPage() {
             </CardContent>
           </Card>
         )}
+
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-base">{t.mcpAgents.title}</CardTitle>
+            <CardDescription>{t.mcpAgents.subtitle}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <ConnectedAgents
+              labels={t.mcpAgents}
+              locale={locale}
+              dateLocale={dateLocales[locale]}
+              timeZone={timeZone}
+            />
+          </CardContent>
+        </Card>
 
         <Card>
           <CardHeader>

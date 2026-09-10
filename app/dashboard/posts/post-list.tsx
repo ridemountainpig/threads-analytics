@@ -3,7 +3,7 @@
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ExternalLink, Search, X } from "lucide-react";
-import { cn } from "@/lib/utils";
+import { cn, normalizeIntlSpaces } from "@/lib/utils";
 import { chartColors, chartPalette } from "@/components/charts/chart-style";
 
 // Capsule filter chip shared by the sort row and media-type row: filled when
@@ -138,13 +138,15 @@ function formatPostDate(
   timeZone: string,
   includeTime = false,
 ) {
-  return new Intl.DateTimeFormat(dateLocale, {
-    timeZone,
-    year: "numeric",
-    month: includeTime ? "short" : "numeric",
-    day: "numeric",
-    ...(includeTime ? { hour: "2-digit", minute: "2-digit" } : {}),
-  }).format(new Date(date));
+  return normalizeIntlSpaces(
+    new Intl.DateTimeFormat(dateLocale, {
+      timeZone,
+      year: "numeric",
+      month: includeTime ? "short" : "numeric",
+      day: "numeric",
+      ...(includeTime ? { hour: "2-digit", minute: "2-digit" } : {}),
+    }).format(new Date(date)),
+  );
 }
 
 function PercentileBar({

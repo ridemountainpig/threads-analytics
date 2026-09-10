@@ -23,6 +23,7 @@
 - [開發設定](#開發設定)
 - [取得 Threads Access Token](#取得-threads-access-token)
 - [分析功能說明](#分析功能說明)
+- [MCP Server](#mcp-server)
 - [部署](#部署)
   - [更新既有部署](#更新既有部署)
 
@@ -48,6 +49,7 @@ pnpm dev
 - **總覽** — 數據卡（觀看、讚、回覆、轉發、引用、分享、互動率）含相對上期的漲跌幅、觀看趨勢圖（日／週／月）、最佳發文時段推薦、高曝光貼文
 - **分析** — 橫跨**成效**、**內容**與**受眾**三個分頁的 25+ 張圖表
 - **貼文** — 可搜尋、可篩選的列表，點選後展開單篇詳細分析
+- **MCP server** — 讓 Claude 等 AI agent 透過 OAuth 保護的端點查詢你的分析數據
 - 多帳號支援，可隨時切換
 - 可設定自動同步間隔
 - 密碼保護（單一環境變數 `APP_PASSWORD`）
@@ -208,6 +210,52 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 - **媒體類型篩選** — 只顯示當前時段內實際存在的類型
 
 點選任一貼文後，右側面板顯示：觀看數、互動率、相對中位數倍數、觀看百分位，以及各行動類型的互動拆解長條圖。
+
+---
+
+## MCP Server
+
+Dashboard 內建一個遠端 [MCP](https://modelcontextprotocol.io) server（`/api/mcp`，Streamable HTTP），讓 Claude 等 AI agent 直接查詢你已同步的 Threads 資料——貼文、聚合分析與追蹤者歷史——回答問題或撰寫成效報告。所有工具皆為**唯讀**。
+
+### 連接 AI agent
+
+驗證採用 OAuth 2.1（PKCE + Dynamic Client Registration），不需要複製任何 API key。首次連接時 client 會自行註冊，瀏覽器會開啟 dashboard 登入頁（`APP_PASSWORD`），登入後在同意畫面核准存取即可。
+
+**Claude Code**
+
+```bash
+claude mcp add --transport http threads-analytics https://your-deployment.example.com/api/mcp
+```
+
+接著在 Claude Code 內執行 `/mcp` 完成 OAuth 登入。
+
+**Claude（網頁版／桌面版）** — 設定 → Connectors → **Add custom connector**，貼上 `https://your-deployment.example.com/api/mcp`。
+
+已連接的 client 會顯示在 **Settings → Connected Agents**，隨時可以撤銷。
+
+### 工具
+
+| 工具                   | 功能                                                                                                       |
+| ---------------------- | ---------------------------------------------------------------------------------------------------------- |
+| `get_account_overview` | 帳號名稱、同步狀態、貼文數、資料日期範圍與追蹤者成長摘要——建議的第一個呼叫                                 |
+| `list_posts`           | 貼文列表含指標；支援日期範圍、排序（日期／觀看／讚／互動率）、媒體類型篩選、全文搜尋與分頁                 |
+| `get_post`             | 單篇貼文完整資訊，含全文                                                                                   |
+| `get_analytics`        | 指定日期範圍內的 31 個聚合分析 section（最佳發文時段、關鍵字分析、觀看分佈、發文連續紀錄等），可只取需要的 |
+| `get_follower_history` | 每日追蹤者快照與成長摘要，可選擇附上最新受眾組成                                                           |
+| `compare_periods`      | 兩個期間的核心指標對照，附絕對與百分比變化；比較期間預設為主要期間正前方的等長視窗                         |
+
+### Prompts
+
+Server 也註冊了現成的 prompts，皆接受選填的 `period` 參數（如 `30d`、`90d` 或日期區間）：
+
+| Prompt                 | 產出內容                                       |
+| ---------------------- | ---------------------------------------------- |
+| `performance-review`   | 完整成效報告：趨勢、最佳／最差貼文與改善行動   |
+| `content-strategy`     | 哪些格式、長度與主題有效，並給出建議的內容組合 |
+| `posting-schedule`     | 依受眾互動時間推薦的具體每週發文排程           |
+| `viral-post-breakdown` | 深入解析爆紅貼文，萃取可複製的模式             |
+| `audience-insights`    | 追蹤者成長與受眾組成，以及對內容和時段的啟示   |
+| `topic-analysis`       | 哪些主題與寫作模式帶動成效，並附新貼文點子     |
 
 ---
 

@@ -77,3 +77,43 @@ model AppSettings {
   key   String @id
   value String
 }
+
+model OAuthClient {
+  id           String      @id @default(cuid())
+  name         String
+  redirectUris Json
+  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
+  authorizedAt DateTime?   @db.Timestamptz(3)
+  codes        OAuthCode[]
+  tokens       OAuthToken[]
+}
+
+// code / accessToken / refreshToken store SHA-256 hashes; the raw values only
+// ever exist in the redirect and token responses handed to the client.
+model OAuthCode {
+  code          String      @id
+  clientId      String
+  client        OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  redirectUri   String
+  codeChallenge String
+  scope         String
+  expiresAt     DateTime    @db.Timestamptz(3)
+  createdAt     DateTime    @default(now()) @db.Timestamptz(3)
+}
+
+model OAuthToken {
+  id               String      @id @default(cuid())
+  accessToken      String      @unique
+  refreshToken     String      @unique
+  clientId         String
+  client           OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scope            String
+  familyId         String
+  accessExpiresAt  DateTime    @db.Timestamptz(3)
+  refreshExpiresAt DateTime    @db.Timestamptz(3)
+  rotatedAt        DateTime?   @db.Timestamptz(3)
+  createdAt        DateTime    @default(now()) @db.Timestamptz(3)
+  lastUsedAt       DateTime?   @db.Timestamptz(3)
+
+  @@index([familyId])
+}

@@ -5,7 +5,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { RefreshCw, ArrowRight, TriangleAlert } from "lucide-react";
 import { syncDataAction } from "@/actions/sync";
-import { cn } from "@/lib/utils";
+import { cn, normalizeIntlSpaces } from "@/lib/utils";
 import { toast } from "sonner";
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -39,14 +39,16 @@ interface SyncButtonProps {
 }
 
 function formatDateTime(date: string, dateLocale: string, timeZone: string) {
-  return new Intl.DateTimeFormat(dateLocale, {
-    timeZone,
-    year: "numeric",
-    month: "numeric",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(new Date(date));
+  return normalizeIntlSpaces(
+    new Intl.DateTimeFormat(dateLocale, {
+      timeZone,
+      year: "numeric",
+      month: "numeric",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit",
+    }).format(new Date(date)),
+  );
 }
 
 export default function SyncButton({
