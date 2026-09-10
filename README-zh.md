@@ -37,6 +37,7 @@ cd threads-analytics
 pnpm install
 cp .env.example .env.local # 或手動建立 .env.local
 npx prisma migrate dev --name init
+npx prisma generate
 pnpm dev
 ```
 
@@ -99,6 +100,7 @@ SYNC_SCHEDULER_ENABLED=false              # 只有長時間運行的部署環境
 
 ```bash
 npx prisma migrate dev --name init
+npx prisma generate
 ```
 
 ### 4. 啟動開發伺服器
@@ -124,6 +126,7 @@ pnpm build        # 建置正式版
 pnpm start        # 執行資料庫 migration 並啟動正式伺服器
 npx prisma studio # 開啟資料庫 GUI
 npx prisma migrate dev --name <名稱>  # 建立新的 migration
+npx prisma generate # 重新產生 Prisma Client
 ```
 
 ## 取得 Threads Access Token
