@@ -6,6 +6,11 @@
   自架的 Threads 數據分析儀表板。連接 Access Token，用詳細圖表與指標深入了解你的貼文表現。
 </p>
 <p align="center">
+  <a href="https://github.com/ridemountainpig/threads-analytics/stargazers"><img src="https://shieldcn.dev/github/stars/ridemountainpig/threads-analytics.svg?variant=secondary" alt="GitHub stars" /></a>
+  <a href="./LICENSE"><img src="https://shieldcn.dev/github/license/ridemountainpig/threads-analytics.svg?variant=secondary" alt="License: AGPL-3.0" /></a>
+  <a href="https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics"><img src="https://shieldcn.dev/badge/docker-ghcr.io.svg?variant=secondary&logo=docker" alt="Docker image on GHCR" /></a>
+</p>
+<p align="center">
   <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a> · <a href="./README-ja.md">日本語</a>
 </p>
 
@@ -17,30 +22,18 @@
 
 ## 目錄
 
-- [快速開始](#快速開始)
 - [功能](#功能)
-- [系統需求](#系統需求)
-- [開發設定](#開發設定)
+- [快速開始](#快速開始)
 - [取得 Threads Access Token](#取得-threads-access-token)
-- [分析功能說明](#分析功能說明)
 - [MCP Server](#mcp-server)
 - [部署](#部署)
+  - [Docker](#docker)
+  - [Vercel](#vercel)
+  - [自動同步](#自動同步)
   - [更新既有部署](#更新既有部署)
-
----
-
-## 快速開始
-
-```bash
-git clone https://github.com/ridemountainpig/threads-analytics.git
-cd threads-analytics
-pnpm install
-cp .env.example .env.local # 或手動建立 .env.local
-npx prisma migrate dev --name init
-pnpm dev
-```
-
-開啟 [http://localhost:3000](http://localhost:3000)，使用 `APP_PASSWORD` 登入。
+- [開發設定](#開發設定)
+- [分析功能說明](#分析功能說明)
+- [授權條款](#授權條款)
 
 ---
 
@@ -52,79 +45,32 @@ pnpm dev
 - **MCP server** — 讓 Claude 等 AI agent 透過 OAuth 保護的端點查詢你的分析數據
 - 多帳號支援，可隨時切換
 - 可設定自動同步間隔
+- Access Token 自動續期 — 連接一次即可，不用每 60 天手動重貼
 - 密碼保護（單一環境變數 `APP_PASSWORD`）
 - 繁體中文 / English / 日本語 介面
 
 ---
 
-## 系統需求
+## 快速開始
 
-- Node.js 20.9+
-- pnpm
-- PostgreSQL 資料庫
+最快取得線上實例的方式是一鍵部署 — 兩個模板都會自動建立 PostgreSQL 資料庫並設定好必要的環境變數：
+
+| 平台    | 部署                                                                                                                                                                          |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Railway | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
+| Zeabur  | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
+
+也可以交給 AI coding agent（Claude Code、Codex、Cursor…）代勞 — 每個 agent 部署指南都附有現成的 prompt，貼給 agent 就會自動建立資料庫、完成部署並回報網址：[Railway](https://threads-analytics.app/zh-TW/deploy/railway-agent) · [Zeabur](https://threads-analytics.app/zh-TW/deploy/zeabur-agent) · [Vercel](https://threads-analytics.app/zh-TW/deploy/vercel-agent)
+
+已經有自己的伺服器？直接執行預建映像檔（詳見 [Docker](#docker)）：
+
+```bash
+docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+服務啟動後，用 `APP_PASSWORD` 登入並連接 Threads 帳號 — 見下一節。想從原始碼執行請見[開發設定](#開發設定)。
 
 ---
-
-## 開發設定
-
-### 1. 複製專案並安裝套件
-
-```bash
-git clone https://github.com/ridemountainpig/threads-analytics.git
-cd threads-analytics
-pnpm install
-```
-
-### 2. 設定環境變數
-
-在專案根目錄建立 `.env.local`：
-
-```env
-APP_PASSWORD=你的儀表板密碼
-DATABASE_URL=postgresql://...              # PostgreSQL 連線字串
-TOKEN_ENCRYPTION_KEY=                      # openssl rand -hex 32
-CRON_SECRET=                               # 選填，正式環境用來保護 /api/cron/sync
-SYNC_SCHEDULER_ENABLED=false              # 只有長時間運行的部署環境才設為 true
-```
-
-| 變數                     | 說明                                      | 產生方式               |
-| ------------------------ | ----------------------------------------- | ---------------------- |
-| `APP_PASSWORD`           | 登入儀表板的密碼                          | 自行設定任意字串       |
-| `DATABASE_URL`           | PostgreSQL 連線字串                       | 由你的資料庫服務提供   |
-| `TOKEN_ENCRYPTION_KEY`   | 加密存放在資料庫中的 Threads Access Token | `openssl rand -hex 32` |
-| `CRON_SECRET`            | 正式環境用來保護 `/api/cron/sync`         | 隨機 16 字以上字串     |
-| `SYNC_SCHEDULER_ENABLED` | 啟用內建背景同步 scheduler                | Docker/VPS 設為 `true` |
-
-### 3. 執行資料庫 migration
-
-```bash
-npx prisma migrate dev --name init
-```
-
-### 4. 啟動開發伺服器
-
-```bash
-pnpm dev
-```
-
-開啟 [http://localhost:3000](http://localhost:3000)，用 `APP_PASSWORD` 登入。
-
-### 5. 連接 Threads 帳號
-
-1. 點擊側邊欄的**設定**
-2. 點擊**新增 Threads 帳號**
-3. 貼上你的 Threads Access Token（取得方式見下方）
-4. 新增完成後會自動開始首次同步（可能需要幾分鐘）
-
-### 常用指令
-
-```bash
-pnpm dev          # 啟動開發伺服器
-pnpm build        # 建置正式版
-pnpm start        # 執行資料庫 migration 並啟動正式伺服器
-npx prisma studio # 開啟資料庫 GUI
-npx prisma migrate dev --name <名稱>  # 建立新的 migration
-```
 
 ## 取得 Threads Access Token
 
@@ -134,82 +80,11 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 詳細圖文步驟請參考：[如何生成 Threads Access Token](./public/token-generate-step/README-zh.md)。
 
-> Token 有效期限為 60 天，應用程式會自動幫你續期：每次同步時會檢查 token，當剩餘效期少於 30 天就自動延長 60 天（Threads API 只允許更新產生超過 24 小時的 token）。設定頁面的帳號卡片會顯示 token 的有效期限與上次自動更新時間。若 token 仍然過期（例如應用程式停止太久沒有同步），設定頁面會顯示警示；此時請重新產生 token，並在帳號卡片上點擊**更新 Token**貼上，已同步的資料會完整保留。
+Token 有效期限為 60 天，應用程式會自動幫你續期：
 
----
-
-## 分析功能說明
-
-> 時間序列圖表（觀看趨勢、整體成效、互動率趨勢、互動拆解、分享趨勢、觸及成長趨勢）都可切換**日／週／月**粒度，每張圖的選擇會各自記住。
-
-### 總覽
-
-| 區塊             | 顯示內容                                                                                                     |
-| ---------------- | ------------------------------------------------------------------------------------------------------------ |
-| **數據卡**       | 所選時段的總觀看、讚、回覆、轉發、引用、分享與互動率。每張卡片下方顯示相較於前一個等長時段的 `+/−%` 漲跌幅。 |
-| **最佳發文時段** | 以中位數觀看排名的前 2–3 個發文時段，並標示基於樣本數的可信度。                                              |
-| **觀看趨勢**     | 觀看數走勢，可切換日／週／月，並附上你的個人中位數基準線。                                                   |
-| **高曝光貼文**   | 觀看數超過中位數的貼文，依倍數排序（例如 `3.2× 中位數`）。                                                   |
-
-### 分析 — 成效分頁
-
-分頁頂端的統計指標：**總觀看**、**日均觀看**、**互動率**、**分享率**。
-
-| 圖表                | 顯示內容                                                                                                                                  |
-| ------------------- | ----------------------------------------------------------------------------------------------------------------------------------------- |
-| **整體成效**        | 每日觀看數、發文量與單篇平均觀看數整合在同一條時間軸。                                                                                    |
-| **單篇品質地圖**    | 以觸及（觀看數）vs 互動率定位每篇貼文的散點圖，點的大小代表分享數。分為四個象限：高觸及高互動、低觸及高互動、高觸及低互動、低觸及低互動。 |
-| **觀看到行動漏斗**  | 從總觀看轉換到各行動類型（讚、回覆、轉發、引用、分享）的轉換率。                                                                          |
-| **最佳發文時間**    | 各小時的中位數觀看熱力圖。Tooltip 顯示樣本數與可信度等級。                                                                                |
-| **互動率趨勢**      | 每日互動率（互動 ÷ 觀看）與 7 日平滑平均線。                                                                                              |
-| **最佳星期**        | 依星期比較中位數觀看、互動率與發文數。                                                                                                    |
-| **格式 × 長度矩陣** | 以 2D 熱力圖比較各種內容格式與貼文長度組合相對於你的中位數觸及的表現。                                                                    |
-| **互動類型佔比**    | 讚、回覆、轉發、引用、分享各佔總互動比例的圓餅圖。                                                                                        |
-| **互動拆解趨勢**    | 讚、回覆、轉發、引用隨時間的堆疊趨勢圖。                                                                                                  |
-| **觸及成長趨勢**    | 每篇貼文的中位數與平均觀看隨時間的變化——用來判斷帳號整體觸及是否在成長。                                                                  |
-| **觀看數分布**      | 貼文落在各觀看區間的分布，以及各里程碑（1k、5k、1 萬…）的達成率。                                                                         |
-
-### 分析 — 內容分頁
-
-分頁頂端的統計指標：**發文穩定度**（有發文週數佔比）、**分享率**、**引用比例**（引用 ÷（引用 + 轉發））、**總貼文數**、**最長連續發文天數**、**目前連續發文天數**。
-
-| 圖表                    | 顯示內容                                                                                               |
-| ----------------------- | ------------------------------------------------------------------------------------------------------ |
-| **發文活動**            | 顯示每天發文數量的日曆熱力圖。                                                                         |
-| **內容類型成效**        | 依媒體類型（文字、圖片、影片、輪播、音訊）比較中位數觀看、互動率與分享率。樣本數不足的類型會自動淡化。 |
-| **貼文長度分析**        | 依字數區間比較中位數觀看。Tooltip 含平均值、P75、命中率與可信度。                                      |
-| **發文頻率與成效**      | 分析每週發文量增加是否能提升觸及，或反而稀釋單篇品質。                                                 |
-| **分享趨勢**            | 每日分享數的長期走勢。                                                                                 |
-| **熱門關鍵字互動分析**  | 互動率最高的詞彙（至少出現 3 篇，不含 hashtag）。                                                      |
-| **最佳發文頻率**        | 比較不同每週發文量下的單篇觸及與互動表現。                                                             |
-| **內容類型 × 發文時段** | 根據中位數觀看找出每種格式的最佳發文時間。                                                             |
-| **互動率最高**          | 以（讚 + 回覆 + 轉發 + 引用）÷ 觀看排名的高互動率貼文。                                                |
-| **回覆率最高**          | 依回覆 ÷ 觀看排序，找出最能引發對話的貼文。                                                            |
-| **分享率最高**          | 依分享 ÷ 觀看排序，找出最值得被收藏轉傳的貼文。                                                        |
-| **發文間隔與成效**      | 依「距上一篇隔幾天」比較中位數觀看，判斷連續發文或休息幾天哪個表現較好。                               |
-| **內容特徵對照**        | 有無連結、有無問句的貼文成效對照，用自己的資料回答「連結會不會傷觸及」。                               |
-
-### 分析 — 受眾分頁
-
-分頁頂端的統計指標：**追蹤人數**、**淨成長**（含 `+/−%`）、**平均每日增減**、**已累積天數**。
-
-| 圖表             | 顯示內容                                                                                                |
-| ---------------- | ------------------------------------------------------------------------------------------------------- |
-| **追蹤人數變化** | 追蹤人數折線，每同步一天記錄一筆；tooltip 顯示當天的增減。                                              |
-| **追蹤者組成**   | 國家、城市、年齡、性別各一張分布圖，長條上的直線標示基準日位置，數字同時給人數與百分點變化。            |
-| **組成變化趨勢** | 各分類佔比相對基準日的百分點變化折線，每個維度取變化最大的 5 項。組成移動極慢，改畫相對變化才看得出來。 |
-
-> Threads API 只提供「當下」的 `followers_count` 與 `follower_demographics`（不接受 `since` / `until`），歷史資料無法回補，只能逐日累積。受眾資料**每個日曆日最多只抓一次**，不論貼文同步多頻繁都不會多花 API 額度。追蹤者組成另需帳號追蹤人數達 100 以上，API 才會回傳。比較的兩個日期可用下拉選單自行挑選，選單只列出真正有資料的日期。
-
-### 貼文頁面
-
-貼文列表支援：
-
-- **排序** — 依日期、觀看數或按讚數排序
-- **搜尋** — 全文搜尋貼文內容
-- **媒體類型篩選** — 只顯示當前時段內實際存在的類型
-
-點選任一貼文後，右側面板顯示：觀看數、互動率、相對中位數倍數、觀看百分位，以及各行動類型的互動拆解長條圖。
+- 每次同步時會檢查 token，當剩餘效期少於 30 天就自動延長 60 天（Threads API 只允許更新產生超過 24 小時的 token）。
+- 設定頁面的帳號卡片會顯示 token 的有效期限與上次自動更新時間。
+- 若 token 仍然過期（例如應用程式停止太久沒有同步），設定頁面會顯示警示；此時請重新產生 token，並在帳號卡片上點擊**更新 Token**貼上，已同步的資料會完整保留。
 
 ---
 
@@ -231,7 +106,7 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 **Claude（網頁版／桌面版）** — 設定 → Connectors → **Add custom connector**，貼上 `https://your-deployment.example.com/api/mcp`。
 
-已連接的 client 會顯示在 **Settings → Connected Agents**，隨時可以撤銷。
+已連接的 client 會顯示在**設定 → 已連接的 agent**，隨時可以撤銷。
 
 ### 工具
 
@@ -261,24 +136,28 @@ Server 也註冊了現成的 prompts，皆接受選填的 `period` 參數（如 
 
 ## 部署
 
-### 一鍵部署
+### Docker
 
-最快取得線上實例的方式 — 兩個模板都會自動建立 PostgreSQL 資料庫並設定好必要的環境變數：
+GitHub Container Registry 上有發佈好的 multi-arch（amd64/arm64）映像檔。設定好[環境變數](#2-設定環境變數)後執行：
 
-| 平台    | 部署                                                                                                                                                                          |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Railway | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
-| Zeabur  | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
+```bash
+docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
+```
 
-### 自動同步行為
+也可以自行從原始碼建置：
 
-#### Railway / Zeabur / VPS / Docker
+```bash
+docker build -t threads-analytics .
+docker run -p 3000:3000 --env-file .env.local threads-analytics
+```
 
-在環境變數中設定 `SYNC_SCHEDULER_ENABLED=true`，內建 scheduler 會隨伺服器啟動，並依照 Settings 中設定的間隔自動同步。
+Docker 映像檔在啟動時會自動執行 `prisma migrate deploy`。
 
-#### Vercel
+### Vercel
 
-Vercel 不支援常駐 process，請改用 [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) 定期呼叫 `/api/cron/sync`。
+將 repository 匯入 Vercel 並設定好[環境變數](#2-設定環境變數)。Migration 會透過 `vercel-build` script（`prisma migrate deploy && next build`）在建置階段執行，Vercel 偵測到這個 script 會優先使用它。
+
+Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，請改用 [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) 定期呼叫 `/api/cron/sync`：
 
 1. 在專案根目錄新增 `vercel.json`：
 
@@ -303,22 +182,9 @@ Vercel 不支援常駐 process，請改用 [Vercel Cron Jobs](https://vercel.com
 
    Vercel 每次執行 cron 時會自動帶上 `Authorization: Bearer <CRON_SECRET>`，`/api/cron/sync` 會用這個值驗證請求來源是否合法。
 
-### Docker
+### 自動同步
 
-GitHub Container Registry 上有發佈好的 multi-arch（amd64/arm64）映像檔。設定所有環境變數後執行：
-
-```bash
-docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
-```
-
-也可以自行從原始碼建置：
-
-```bash
-docker build -t threads-analytics .
-docker run -p 3000:3000 --env-file .env.local threads-analytics
-```
-
-Docker 映像檔在啟動時會自動執行 `prisma migrate deploy`。
+在長時間運行的部署環境（Railway / Zeabur / VPS / Docker）設定 `SYNC_SCHEDULER_ENABLED=true`，內建 scheduler 會隨伺服器啟動，並依照 Settings 中設定的間隔自動同步。Vercel 請改用上方的 cron 設定。
 
 <a id="updating"></a>
 
@@ -335,6 +201,79 @@ Docker 映像檔在啟動時會自動執行 `prisma migrate deploy`。
 - **Zeabur** — 開啟 `threads-analytics` 服務並點擊 **Redeploy**，即會拉取最新映像檔。
 - **Railway** — 在 Railway Dashboard 對服務觸發重新部署。
 - **從原始碼部署** — `git pull` 後執行 `pnpm install && pnpm build`，再以 `pnpm start` 重新啟動（會自動執行 migration）。
-- **Vercel** — 推送新版本即可。Vercel 不會執行 `pnpm start`，因此 migration 改由 `vercel-build` script（`prisma migrate deploy && next build`）在建置階段執行，Vercel 偵測到這個 script 會優先使用它。
+- **Vercel** — 推送新版本即可，migration 會如上所述在建置階段執行。
 
 更新過程中資料庫（貼文、洞察資料、帳號）都會完整保留。
+
+---
+
+## 開發設定
+
+系統需求：Node.js 20.9+、pnpm、PostgreSQL 資料庫。
+
+### 1. 複製專案並安裝套件
+
+```bash
+git clone https://github.com/ridemountainpig/threads-analytics.git
+cd threads-analytics
+pnpm install
+```
+
+### 2. 設定環境變數
+
+```bash
+cp .env.example .env.local
+```
+
+接著填入各項數值：
+
+| 變數                     | 說明                                      | 產生方式               |
+| ------------------------ | ----------------------------------------- | ---------------------- |
+| `APP_PASSWORD`           | 登入儀表板的密碼                          | 自行設定任意字串       |
+| `DATABASE_URL`           | PostgreSQL 連線字串                       | 由你的資料庫服務提供   |
+| `TOKEN_ENCRYPTION_KEY`   | 加密存放在資料庫中的 Threads Access Token | `openssl rand -hex 32` |
+| `CRON_SECRET`            | 正式環境用來保護 `/api/cron/sync`         | 隨機 16 字以上字串     |
+| `SYNC_SCHEDULER_ENABLED` | 啟用內建背景同步 scheduler                | Docker/VPS 設為 `true` |
+
+### 3. 執行資料庫 migration
+
+```bash
+npx prisma migrate dev
+```
+
+### 4. 啟動開發伺服器
+
+```bash
+pnpm dev
+```
+
+開啟 [http://localhost:3000](http://localhost:3000)，用 `APP_PASSWORD` 登入。
+
+### 5. 連接 Threads 帳號
+
+1. 點擊側邊欄的**設定**
+2. 點擊**新增 Threads 帳號**
+3. 貼上你的 Threads Access Token（取得方式見[取得 Threads Access Token](#取得-threads-access-token)）
+4. 新增完成後會自動開始首次同步（可能需要幾分鐘）
+
+### 常用指令
+
+```bash
+pnpm dev          # 啟動開發伺服器
+pnpm build        # 建置正式版
+pnpm start        # 執行資料庫 migration 並啟動正式伺服器
+npx prisma studio # 開啟資料庫 GUI
+npx prisma migrate dev --name <名稱>  # 建立新的 migration
+```
+
+---
+
+## 分析功能說明
+
+儀表板在總覽、分析（成效／內容／受眾）與貼文頁面共提供 25+ 張圖表。每張圖表的內容說明，以及受眾指標背後的取樣規則，完整記錄在**[分析功能說明](./docs/analytics-zh.md)**。
+
+---
+
+## 授權條款
+
+Threads Analytics 以 [GNU Affero General Public License v3.0](./LICENSE) 開源。你可以自由地自架、修改與再散布 — 但若你以修改後的版本對外提供網路服務，必須以相同授權公開其原始碼。

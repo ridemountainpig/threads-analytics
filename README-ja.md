@@ -6,6 +6,11 @@
   セルフホスト型の Threads アナリティクスダッシュボード。アクセストークンを接続すると、詳細なチャートと指標で投稿パフォーマンスを分析できます。
 </p>
 <p align="center">
+  <a href="https://github.com/ridemountainpig/threads-analytics/stargazers"><img src="https://shieldcn.dev/github/stars/ridemountainpig/threads-analytics.svg?variant=secondary" alt="GitHub stars" /></a>
+  <a href="./LICENSE"><img src="https://shieldcn.dev/github/license/ridemountainpig/threads-analytics.svg?variant=secondary" alt="License: AGPL-3.0" /></a>
+  <a href="https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics"><img src="https://shieldcn.dev/badge/docker-ghcr.io.svg?variant=secondary&logo=docker" alt="Docker image on GHCR" /></a>
+</p>
+<p align="center">
   <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a> · <a href="./README-ja.md">日本語</a>
 </p>
 
@@ -17,30 +22,18 @@
 
 ## 目次
 
-- [クイックスタート](#クイックスタート)
 - [機能](#機能)
-- [動作要件](#動作要件)
-- [開発セットアップ](#開発セットアップ)
+- [クイックスタート](#クイックスタート)
 - [Threads アクセストークンの取得](#threads-アクセストークンの取得)
-- [アナリティクスリファレンス](#アナリティクスリファレンス)
 - [MCP サーバー](#mcp-サーバー)
 - [デプロイ](#デプロイ)
+  - [Docker](#docker)
+  - [Vercel](#vercel)
+  - [自動同期](#自動同期)
   - [既存デプロイの更新](#既存デプロイの更新)
-
----
-
-## クイックスタート
-
-```bash
-git clone https://github.com/ridemountainpig/threads-analytics.git
-cd threads-analytics
-pnpm install
-cp .env.example .env.local # または手動で .env.local を作成
-npx prisma migrate dev --name init
-pnpm dev
-```
-
-[http://localhost:3000](http://localhost:3000) を開き、`APP_PASSWORD` でサインインします。
+- [開発セットアップ](#開発セットアップ)
+- [アナリティクスリファレンス](#アナリティクスリファレンス)
+- [ライセンス](#ライセンス)
 
 ---
 
@@ -52,79 +45,32 @@ pnpm dev
 - **MCP サーバー** — Claude などの AI エージェントが OAuth 保護されたエンドポイント経由でアナリティクスを照会可能
 - 複数アカウント対応、アカウント切り替え可能
 - 設定可能な間隔での自動同期
+- アクセストークンの自動更新 — 一度接続すれば、60 日ごとに手動で貼り直す必要はありません
 - パスワード保護（単一の `APP_PASSWORD` 環境変数）
 - English / 繁體中文 / 日本語 UI
 
 ---
 
-## 動作要件
+## クイックスタート
 
-- Node.js 20.9+
-- pnpm
-- PostgreSQL データベース
+最速でインスタンスを立ち上げる方法はワンクリックデプロイです — どちらのテンプレートも PostgreSQL データベースのプロビジョニングと必要な環境変数の設定を自動で行います：
+
+| プラットフォーム | デプロイ                                                                                                                                                                      |
+| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Railway          | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
+| Zeabur           | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
+
+AI コーディングエージェント（Claude Code、Codex、Cursor など）に任せることもできます。各エージェントデプロイガイドには、エージェントに貼り付けるだけでデータベースの作成、デプロイ、URL の報告まで自動で行うプロンプトが用意されています：[Railway](https://threads-analytics.app/ja/deploy/railway-agent) · [Zeabur](https://threads-analytics.app/ja/deploy/zeabur-agent) · [Vercel](https://threads-analytics.app/ja/deploy/vercel-agent)
+
+すでにサーバーがある場合は、ビルド済みイメージを直接実行できます（詳細は [Docker](#docker)）：
+
+```bash
+docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+アプリが起動したら `APP_PASSWORD` でサインインし、Threads アカウントを接続します — 次のセクションを参照してください。ソースから実行する場合は[開発セットアップ](#開発セットアップ)へ。
 
 ---
-
-## 開発セットアップ
-
-### 1. クローンとインストール
-
-```bash
-git clone https://github.com/ridemountainpig/threads-analytics.git
-cd threads-analytics
-pnpm install
-```
-
-### 2. 環境変数の設定
-
-プロジェクトルートに `.env.local` を作成します:
-
-```env
-APP_PASSWORD=ダッシュボードのパスワード
-DATABASE_URL=postgresql://...              # PostgreSQL 接続文字列
-TOKEN_ENCRYPTION_KEY=                      # openssl rand -hex 32
-CRON_SECRET=                               # 任意。本番環境で /api/cron/sync を保護
-SYNC_SCHEDULER_ENABLED=false              # 常時稼働の環境でのみ true に設定
-```
-
-| 変数                     | 説明                                         | 生成方法                |
-| ------------------------ | -------------------------------------------- | ----------------------- |
-| `APP_PASSWORD`           | ダッシュボードにアクセスするためのパスワード | 任意の文字列を設定      |
-| `DATABASE_URL`           | PostgreSQL の接続文字列                      | DB プロバイダから取得   |
-| `TOKEN_ENCRYPTION_KEY`   | 保存された Threads アクセストークンを暗号化  | `openssl rand -hex 32`  |
-| `CRON_SECRET`            | 本番環境で `/api/cron/sync` を保護           | 16 文字以上のランダム値 |
-| `SYNC_SCHEDULER_ENABLED` | 内蔵のポーリングスケジューラを有効化         | Docker/VPS は `true`    |
-
-### 3. データベースマイグレーションの実行
-
-```bash
-npx prisma migrate dev --name init
-```
-
-### 4. 開発サーバーの起動
-
-```bash
-pnpm dev
-```
-
-[http://localhost:3000](http://localhost:3000) を開き、`APP_PASSWORD` でサインインします。
-
-### 5. Threads アカウントの接続
-
-1. サイドバーの**設定**を開く
-2. **Threads アカウントを追加**をクリック
-3. 長期アクセストークンを貼り付ける（[アクセストークンの取得方法](#threads-アクセストークンの取得)を参照）
-4. アカウント追加後、最初の同期が自動的に開始されます（数分かかる場合があります）
-
-### よく使うコマンド
-
-```bash
-pnpm dev          # 開発サーバーを起動
-pnpm build        # 本番用ビルド
-pnpm start        # マイグレーションを実行して本番サーバーを起動
-npx prisma studio # データベース GUI を開く
-npx prisma migrate dev --name <name>  # 新しいマイグレーションを作成
-```
 
 ## Threads アクセストークンの取得
 
@@ -134,82 +80,11 @@ npx prisma migrate dev --name <name>  # 新しいマイグレーションを作�
 
 スクリーンショット付きの詳しい手順は [Threads アクセストークンの生成方法](./public/token-generate-step/README-ja.md) を参照してください。
 
-> トークンの有効期限は 60 日間で、アプリが自動的に更新します。同期のたびにトークンを確認し、残り 30 日を切ると自動的に 60 日間延長されます（Threads API は発行から 24 時間以上経過したトークンのみ更新可能）。設定のアカウントカードにトークンの有効期限と最後の自動更新日時が表示されます。アプリが長期間停止してトークンが期限切れになった場合はダッシュボードに警告が表示されるので、新しいトークンを生成し、アカウントカードの**トークンを更新**ボタンから貼り付けてください。同期済みのデータはそのまま保持されます。
+トークンの有効期限は 60 日間で、アプリが自動的に更新します：
 
----
-
-## アナリティクスリファレンス
-
-> 時系列チャート（ビューの推移、全体パフォーマンス、エンゲージメント率の推移、エンゲージメント内訳、シェアの推移、リーチ成長トレンド）は**日／週／月**の粒度を切り替えられ、選択はチャートごとに記憶されます。
-
-### 概要
-
-| セクション       | 表示内容                                                                                                                                       |
-| ---------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **統計カード**   | 選択期間の総ビュー、いいね、リプライ、リポスト、引用、シェア、エンゲージメント率。各カードは同じ長さの前期に対する `+/−%` の変化を表示します。 |
-| **最適投稿時間** | 中央値ビューでランク付けされた上位 2〜3 の投稿時間帯。サンプル数に基づく信頼度インジケータ付き。                                               |
-| **ビューの推移** | 日／週／月で切り替えられるビュー数の推移。個人の中央値ベースラインを併記します。                                                               |
-| **トップ投稿**   | 中央値を上回ったビュー数を持つ投稿を、その倍率（例: `3.2× 中央値`）でランク付け。                                                              |
-
-### アナリティクス — パフォーマンスタブ
-
-タブ上部の統計指標: **総ビュー**、**1 日あたり平均ビュー**、**エンゲージメント率**、**シェア率**。
-
-| チャート                          | 表示内容                                                                                                                                            |
-| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **全体パフォーマンス**            | 日次ビュー、投稿数、投稿あたり平均ビューを 1 つのタイムラインに統合。                                                                               |
-| **投稿品質マップ**                | リーチ（ビュー）vs エンゲージメント率で全投稿を散布図化。ドットサイズはシェア数。4 象限: ブレイクアウト、対話、ブロードキャスト、低パフォーマンス。 |
-| **ビューからアクションへの漏斗**  | 総ビューから各アクション（いいね、リプライ、リポスト、引用、シェア）への変換率。                                                                    |
-| **最適な投稿時間**                | 時間帯別の中央値ビューのヒートマップ。Tooltip にサンプル数と信頼度を表示。                                                                          |
-| **エンゲージメント率の推移**      | 日次エンゲージメント率（インタラクション ÷ ビュー）と 7 日平滑平均。                                                                                |
-| **最適な曜日**                    | 曜日別の中央値ビュー、エンゲージメント率、投稿数。                                                                                                  |
-| **フォーマット × 長さマトリクス** | コンテンツフォーマットと投稿長のすべての組み合わせを、中央値リーチと比較する 2 次元ヒートマップ。                                                   |
-| **エンゲージメント種別の内訳**    | いいね、リプライ、リポスト、引用、シェアの割合を示す円グラフ。                                                                                      |
-| **エンゲージメント内訳の推移**    | いいね、リプライ、リポスト、引用の積み上げチャート。                                                                                                |
-| **リーチ成長トレンド**            | 投稿あたりの中央値・平均ビューの推移。アカウント全体のリーチが伸びているかを判断できます。                                                          |
-| **ビュー数の分布**                | 投稿がどのビュー帯に分布しているかと、各マイルストーン（1k、5k、1 万…）の到達率。                                                                   |
-
-### アナリティクス — コンテンツタブ
-
-タブ上部の統計指標: **投稿の継続性**（少なくとも 1 件投稿した週の割合）、**シェア率**、**引用比率**（引用 ÷（引用 + リポスト））、**総投稿数**、**最長連続投稿日数**、**現在の連続投稿日数**。
-
-| チャート                             | 表示内容                                                                                                                                       |
-| ------------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| **投稿アクティビティ**               | 日ごとの投稿数を示すカレンダーヒートマップ。                                                                                                   |
-| **コンテンツタイプ別パフォーマンス** | メディアタイプ（テキスト、画像、動画、カルーセル、音声）別の中央値ビュー、エンゲージメント率、シェア率。サンプル数が少ないカテゴリは淡色表示。 |
-| **投稿の長さ分析**                   | 文字数バケット別の中央値ビュー。Tooltip には平均、P75、ヒット率、信頼度を含む。                                                                |
-| **投稿頻度 vs パフォーマンス**       | 週あたりの投稿数を増やすと投稿あたりの平均ビューが上がるか下がるか。                                                                           |
-| **シェアの推移**                     | 日次シェア数の長期推移。                                                                                                                       |
-| **エンゲージメント上位キーワード**   | 平均エンゲージメント率が最も高い単語（ハッシュタグを除く、最低 3 投稿）。                                                                      |
-| **最適な投稿頻度**                   | 週あたりの投稿量別の投稿あたりリーチとエンゲージメントを比較。                                                                                 |
-| **時間帯別コンテンツタイプ**         | 中央値ビューに基づく各コンテンツフォーマットの最適投稿時間。                                                                                   |
-| **エンゲージメント率トップ**         | （いいね + リプライ + リポスト + 引用）÷ ビューでランク付けされた高エンゲージメント投稿。                                                      |
-| **リプライ率トップ**                 | リプライ ÷ ビューでランク付け — 最も対話を生んだ投稿。                                                                                         |
-| **シェア率トップ**                   | シェア ÷ ビューでランク付け — 最も保存・転送された投稿。                                                                                       |
-| **投稿間隔とパフォーマンス**         | 前回投稿から何日空けたかで中央値ビューを比較。連日投稿と間隔を空けるのとどちらが有効かが分かります。                                           |
-| **コンテンツ特徴の比較**             | リンクの有無、質問の有無で投稿パフォーマンスを比較します。                                                                                     |
-
-### アナリティクス — オーディエンスタブ
-
-タブ上部の指標：**フォロワー数**、**純増減**（`+/−%` 付き）、**1 日あたり平均**、**記録日数**。
-
-| チャート               | 表示内容                                                                                                                                        |
-| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------- |
-| **フォロワー数の推移** | フォロワー数の折れ線。同期した日ごとに 1 件記録され、その日の増減は tooltip に表示されます。                                                    |
-| **フォロワー構成**     | 国・都市・年齢・性別それぞれの分布グラフ。バー上の線が基準日の位置を示し、人数とポイントの両方の変化を併記します。                              |
-| **構成の推移**         | 各項目の構成比が基準日から何ポイント動いたかの折れ線。各項目で変化の大きい上位 5 件。構成は動きが遅いため、絶対値ではなく変化量で描いています。 |
-
-> Threads API の `followers_count` と `follower_demographics` は「現在」の値のみを返し（`since` / `until` 非対応）、過去分は補完できません。オーディエンス指標は投稿の同期頻度にかかわらず**1 日 1 回だけ**取得するため、頻繁に同期しても API 消費は増えません。フォロワー構成にはフォロワー 100 人以上が必要です。比較する 2 つの日付はセレクターで選べ、実際にデータがある日だけが表示されます。
-
-### 投稿ページ
-
-投稿リストは以下に対応:
-
-- **並び替え** — 日付、ビュー、いいねで並び替え
-- **検索** — 投稿コンテンツの全文検索
-- **メディアタイプフィルタ** — 現在の期間に存在するタイプのみ表示
-
-任意の投稿をクリックすると、ビュー、エンゲージメント率、中央値倍率、ビュー百分位、アクション別エンゲージメント内訳を含む詳細パネルが開きます。
+- 同期のたびにトークンを確認し、残り 30 日を切ると自動的に 60 日間延長されます（Threads API は発行から 24 時間以上経過したトークンのみ更新可能）。
+- 設定のアカウントカードにトークンの有効期限と最後の自動更新日時が表示されます。
+- それでもトークンが期限切れになった場合（アプリが長期間停止して同期が走らなかったなど）はダッシュボードに警告が表示されます。新しいトークンを生成し、アカウントカードの**トークンを更新**ボタンから貼り付けてください。同期済みのデータはそのまま保持されます。
 
 ---
 
@@ -231,7 +106,7 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 **Claude（Web / デスクトップ）** — 設定 → Connectors → **Add custom connector** で `https://your-deployment.example.com/api/mcp` を貼り付けます。
 
-接続済みクライアントは **Settings → Connected Agents** に表示され、いつでも取り消せます。
+接続済みクライアントは**設定 → 接続済みエージェント**に表示され、いつでも取り消せます。
 
 ### ツール
 
@@ -261,26 +136,30 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 ## デプロイ
 
-### ワンクリックデプロイ
+### Docker
 
-ホスティング環境を最速で用意する方法 — どちらのテンプレートも PostgreSQL データベースのプロビジョニングと必要な環境変数の設定を自動で行います：
+GitHub Container Registry にビルド済みのマルチアーキテクチャ（amd64/arm64）イメージが公開されています。[環境変数](#2-環境変数の設定)を設定後、次を実行：
 
-| プラットフォーム | デプロイ                                                                                                                                                                      |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Railway          | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
-| Zeabur           | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
+```bash
+docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
+```
 
-### 自動同期の挙動
+ソースから自分でビルドすることもできます：
 
-#### Railway / Zeabur / VPS / Docker
+```bash
+docker build -t threads-analytics .
+docker run -p 3000:3000 --env-file .env.local threads-analytics
+```
 
-環境変数で `SYNC_SCHEDULER_ENABLED=true` を設定します。内蔵スケジューラがサーバー起動とともに開始し、設定で構成された間隔で同期します。
+Docker イメージは起動時に `prisma migrate deploy` を自動実行します。
 
-#### Vercel
+### Vercel
 
-Vercel は長時間実行プロセスをサポートしていません。代わりに [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) を使って `/api/cron/sync` をスケジュール実行してください。
+リポジトリを Vercel にインポートし、[環境変数](#2-環境変数の設定)を設定します。マイグレーションは `vercel-build` スクリプト（`prisma migrate deploy && next build`）としてビルド時に実行されます。Vercel はこのスクリプトがあれば `build` より優先します。
 
-1. プロジェクトルートに `vercel.json` を追加:
+Vercel は長時間実行プロセスをサポートしていないため、内蔵の同期スケジューラは動作しません。代わりに [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) を使って `/api/cron/sync` をスケジュール実行してください：
+
+1. プロジェクトルートに `vercel.json` を追加：
 
    ```json
    {
@@ -295,7 +174,7 @@ Vercel は長時間実行プロセスをサポートしていません。代わ�
 
    `schedule` は Settings で設定した同期間隔に合わせます（例: 毎時 `0 * * * *`、30 分ごと `*/30 * * * *`）。Vercel の無料プランでは cron の頻度に制限があるので注意してください。
 
-2. Vercel ダッシュボードの **Settings → Environment Variables** で以下を追加:
+2. Vercel ダッシュボードの **Settings → Environment Variables** で以下を追加：
 
    | 変数          | 値                                                     |
    | ------------- | ------------------------------------------------------ |
@@ -303,30 +182,17 @@ Vercel は長時間実行プロセスをサポートしていません。代わ�
 
    Vercel は cron リクエストのたびに `Authorization: Bearer <CRON_SECRET>` を自動的に付与し、`/api/cron/sync` ルートがこの値を使って正当なリクエストかを検証します。
 
-### Docker
+### 自動同期
 
-GitHub Container Registry にビルド済みのマルチアーキテクチャ（amd64/arm64）イメージが公開されています。すべての環境変数を設定後、次を実行:
-
-```bash
-docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
-```
-
-ソースから自分でビルドすることもできます:
-
-```bash
-docker build -t threads-analytics .
-docker run -p 3000:3000 --env-file .env.local threads-analytics
-```
-
-Docker イメージは起動時に `prisma migrate deploy` を自動実行します。
+常時稼働のデプロイ環境（Railway / Zeabur / VPS / Docker）では `SYNC_SCHEDULER_ENABLED=true` を設定します。内蔵スケジューラがサーバー起動とともに開始し、設定で構成された間隔で同期します。Vercel では上記の cron 設定を使用してください。
 
 <a id="updating"></a>
 
 ### 既存デプロイの更新
 
-新しいバージョンは更新された Docker イメージとして公開されます。データベースマイグレーションは起動時に自動実行されるため、更新に必要なのは新しいイメージまたはコードの取得だけです:
+新しいバージョンは更新された Docker イメージとして公開されます。データベースマイグレーションは起動時に自動実行されるため、更新に必要なのは新しいイメージまたはコードの取得だけです：
 
-- **Docker / VPS** — 最新イメージを取得し、古いコンテナを停止して同じフラグで再起動:
+- **Docker / VPS** — 最新イメージを取得し、古いコンテナを停止して同じフラグで再起動：
 
   ```bash
   docker pull ghcr.io/ridemountainpig/threads-analytics:latest
@@ -335,6 +201,79 @@ Docker イメージは起動時に `prisma migrate deploy` を自動実行しま
 - **Zeabur** — `threads-analytics` サービスを開いて **Redeploy** をクリックすると最新イメージが取得されます。
 - **Railway** — Railway ダッシュボードからサービスの再デプロイをトリガーします。
 - **ソースからデプロイ** — `git pull` 後に `pnpm install && pnpm build` を実行し、`pnpm start` で再起動します（マイグレーションは自動実行）。
-- **Vercel** — 新しいバージョンを push するだけです。Vercel は `pnpm start` を実行しないため、マイグレーションは `vercel-build` スクリプト（`prisma migrate deploy && next build`）としてビルド時に実行されます。Vercel はこのスクリプトがあれば `build` より優先します。
+- **Vercel** — 新しいバージョンを push するだけです。マイグレーションは上記のとおりビルド時に実行されます。
 
 更新してもデータベース（投稿、インサイト、アカウント）はそのまま保持されます。
+
+---
+
+## 開発セットアップ
+
+動作要件：Node.js 20.9+、pnpm、PostgreSQL データベース。
+
+### 1. クローンとインストール
+
+```bash
+git clone https://github.com/ridemountainpig/threads-analytics.git
+cd threads-analytics
+pnpm install
+```
+
+### 2. 環境変数の設定
+
+```bash
+cp .env.example .env.local
+```
+
+続いて各値を設定します：
+
+| 変数                     | 説明                                         | 生成方法                |
+| ------------------------ | -------------------------------------------- | ----------------------- |
+| `APP_PASSWORD`           | ダッシュボードにアクセスするためのパスワード | 任意の文字列を設定      |
+| `DATABASE_URL`           | PostgreSQL の接続文字列                      | DB プロバイダから取得   |
+| `TOKEN_ENCRYPTION_KEY`   | 保存された Threads アクセストークンを暗号化  | `openssl rand -hex 32`  |
+| `CRON_SECRET`            | 本番環境で `/api/cron/sync` を保護           | 16 文字以上のランダム値 |
+| `SYNC_SCHEDULER_ENABLED` | 内蔵のポーリングスケジューラを有効化         | Docker/VPS は `true`    |
+
+### 3. データベースマイグレーションの実行
+
+```bash
+npx prisma migrate dev
+```
+
+### 4. 開発サーバーの起動
+
+```bash
+pnpm dev
+```
+
+[http://localhost:3000](http://localhost:3000) を開き、`APP_PASSWORD` でサインインします。
+
+### 5. Threads アカウントの接続
+
+1. サイドバーの**設定**を開く
+2. **Threads アカウントを追加**をクリック
+3. 長期アクセストークンを貼り付ける（[アクセストークンの取得方法](#threads-アクセストークンの取得)を参照）
+4. アカウント追加後、最初の同期が自動的に開始されます（数分かかる場合があります）
+
+### よく使うコマンド
+
+```bash
+pnpm dev          # 開発サーバーを起動
+pnpm build        # 本番用ビルド
+pnpm start        # マイグレーションを実行して本番サーバーを起動
+npx prisma studio # データベース GUI を開く
+npx prisma migrate dev --name <name>  # 新しいマイグレーションを作成
+```
+
+---
+
+## アナリティクスリファレンス
+
+ダッシュボードは概要、アナリティクス（パフォーマンス／コンテンツ／オーディエンス）、投稿の各ページで 25 種類以上のチャートを提供します。各チャートの表示内容とオーディエンス指標のサンプリングルールは、**[アナリティクスリファレンス](./docs/analytics-ja.md)**に完全にまとめられています。
+
+---
+
+## ライセンス
+
+Threads Analytics は [GNU Affero General Public License v3.0](./LICENSE) のオープンソースです。セルフホスト、改変、再配布は自由ですが、改変したバージョンをネットワークサービスとして提供する場合は、そのソースコードを同じライセンスで公開する必要があります。

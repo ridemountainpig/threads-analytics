@@ -2,6 +2,7 @@
   "name": "threads-analytics",
   "version": "0.1.0",
   "private": true,
+  "license": "AGPL-3.0",
   "engines": {
     "node": ">=20.9.0"
   },
