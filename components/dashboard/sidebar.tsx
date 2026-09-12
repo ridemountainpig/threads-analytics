@@ -15,6 +15,7 @@ import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
 import AccountSwitcher from "@/components/dashboard/account-switcher";
+import { useImageUpdateStatus } from "@/components/dashboard/use-image-update-status";
 import type { Locale } from "@/lib/i18n";
 import type { ImageVersionLink } from "@/lib/image-update";
 
@@ -50,6 +51,10 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
   const pathname = usePathname();
   const activeUsername = accounts.find((a) => a.isActive)?.username;
   const multiAccount = accounts.length > 1;
+  // The server-rendered link may still be the package overview (the GHCR deep
+  // link resolves in the background), so upgrade it from the status endpoint.
+  const { status } = useImageUpdateStatus(Boolean(version));
+  const versionLink = status?.versionLink ?? version;
 
   return (
     <>
@@ -112,9 +117,9 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
               {labels.signOut}
             </button>
           </form>
-          {version && (
+          {versionLink && (
             <a
-              href={version.url}
+              href={versionLink.url}
               target="_blank"
               rel="noreferrer"
               className="group text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-[background-color,color] duration-150 motion-reduce:transition-none"
@@ -123,7 +128,7 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
                 <Tag className="size-3.5" />
               </span>
               <span className="truncate font-mono text-[11px] tracking-[0.02em]">
-                {version.tag}
+                {versionLink.tag}
               </span>
               <ArrowUpRight className="size-3 shrink-0 -translate-x-0.5 opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:translate-x-0 motion-reduce:transition-[opacity]" />
             </a>

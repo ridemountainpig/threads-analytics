@@ -2,21 +2,21 @@
 
 import { useEffect, useState } from "react";
 // Type-only import: erased at build time, so the server-only guard never fires.
-import type { ImageUpdateStatus } from "@/lib/image-update";
+import type { ImageUpdateStatusPayload } from "@/lib/image-update";
 
-export type { ImageUpdateStatus };
+export type { ImageUpdateStatusPayload };
 
 // The banner (layout) and the settings About card can mount on the same page
 // view; sharing one module-level promise keeps that to a single request. The
 // server caches the underlying GHCR check, so there is no point refetching
 // within a page's lifetime either.
-let statusRequest: Promise<ImageUpdateStatus> | null = null;
+let statusRequest: Promise<ImageUpdateStatusPayload> | null = null;
 
-function fetchImageUpdateStatus(): Promise<ImageUpdateStatus> {
+function fetchImageUpdateStatus(): Promise<ImageUpdateStatusPayload> {
   statusRequest ??= fetch("/api/status/update", { cache: "no-store" })
     .then((response) => {
       if (!response.ok) throw new Error(`status ${response.status}`);
-      return response.json() as Promise<ImageUpdateStatus>;
+      return response.json() as Promise<ImageUpdateStatusPayload>;
     })
     .catch((error) => {
       // Let the next mount retry instead of caching the failure forever.
@@ -27,7 +27,7 @@ function fetchImageUpdateStatus(): Promise<ImageUpdateStatus> {
 }
 
 export function useImageUpdateStatus(enabled = true) {
-  const [status, setStatus] = useState<ImageUpdateStatus | null>(null);
+  const [status, setStatus] = useState<ImageUpdateStatusPayload | null>(null);
   const [failed, setFailed] = useState(false);
 
   useEffect(() => {

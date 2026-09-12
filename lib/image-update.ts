@@ -51,6 +51,10 @@ export interface ImageVersionLink {
   url: string;
 }
 
+export interface ImageUpdateStatusPayload extends ImageUpdateStatus {
+  versionLink: ImageVersionLink | null;
+}
+
 // GHCR version pages live at /pkgs/container/<name>/<numeric id>, and the id
 // is assigned at publish time, so the deep link can only be recovered by
 // scraping the public tagged-versions listing. That lookup must never gate a
@@ -63,6 +67,18 @@ export function getImageVersionLink(): ImageVersionLink | null {
     tag: currentImageTag(commitSha),
     url: deepVersionUrl ?? packageOverviewUrl(),
   };
+}
+
+// Awaited variant for API responses, where waiting on the scrape (bounded by
+// its fetch timeout) is acceptable and gets clients the deep link reliably.
+export async function getResolvedImageVersionLink(): Promise<ImageVersionLink | null> {
+  if (!commitSha || !imageRepository) return null;
+  const tag = currentImageTag(commitSha);
+  if (!deepVersionUrl) {
+    refreshDeepVersionUrl(tag);
+    await deepUrlLookup;
+  }
+  return { tag, url: deepVersionUrl ?? packageOverviewUrl() };
 }
 
 // An image name may be nested (owner/repo/app → package "repo/app"); GitHub

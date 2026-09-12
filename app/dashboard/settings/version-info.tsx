@@ -28,6 +28,7 @@ export default function VersionInfo({
   };
 }) {
   const { status, failed } = useImageUpdateStatus(Boolean(version));
+  const versionLink = status?.versionLink ?? version;
 
   let updateState: UpdateState = "checking";
   if (failed) updateState = "unavailable";
@@ -43,13 +44,13 @@ export default function VersionInfo({
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-3">
         <span className="text-sm font-medium">{labels.currentVersion}</span>
-        {version ? (
+        {versionLink ? (
           <Badge
             variant="secondary"
-            render={<a href={version.url} target="_blank" rel="noreferrer" />}
+            render={<a href={versionLink.url} target="_blank" rel="noreferrer" />}
             className="bg-muted/70 text-foreground/70 hover:bg-muted hover:text-foreground h-auto gap-1 rounded-full px-2.5 py-1 font-mono transition-colors duration-150 motion-reduce:transition-none"
           >
-            {version.tag}
+            {versionLink.tag}
             <ArrowUpRight className="opacity-60" />
           </Badge>
         ) : (
