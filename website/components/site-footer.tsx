@@ -2,6 +2,13 @@ import Image from "next/image";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
 
+// docs/ ships one analytics reference per locale.
+const analyticsDocFile: Record<Locale, string> = {
+  en: "analytics.md",
+  "zh-TW": "analytics-zh.md",
+  ja: "analytics-ja.md",
+};
+
 export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary["footer"] }) {
   return (
     <footer className="site-footer">
@@ -34,6 +41,14 @@ export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary[
         <div>
           <strong>{copy.resources}</strong>
           <a href={`/${locale}/token-guide`}>{copy.tokenGuide}</a>
+          <a href={`/${locale}/mcp`}>{copy.mcpGuide}</a>
+          <a
+            href={`${siteConfig.github}/blob/main/docs/${analyticsDocFile[locale]}`}
+            target="_blank"
+            rel="noreferrer"
+          >
+            {copy.analyticsReference}
+          </a>
           <a href={siteConfig.github} target="_blank" rel="noreferrer">
             {copy.source}
           </a>
@@ -43,7 +58,12 @@ export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary[
         </div>
       </div>
       <div className="site-shell footer-bottom" data-reveal="fade" data-reveal-delay="1">
-        <span>© {new Date().getFullYear()} Threads Analytics</span>
+        <span className="footer-credit">
+          © {new Date().getFullYear()} Threads Analytics ·{" "}
+          <a href={`${siteConfig.github}/blob/main/LICENSE`} target="_blank" rel="noreferrer">
+            {copy.license}
+          </a>
+        </span>
         <span className="footer-credit">
           Built by{" "}
           <a href={siteConfig.creator} target="_blank" rel="noreferrer">

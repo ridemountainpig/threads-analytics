@@ -2,6 +2,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
+import { RiOpenaiFill } from "react-icons/ri";
+import { SiClaude, SiClaudecode, SiCursor } from "react-icons/si";
 import { AnalyticsDemo } from "@/components/analytics-demo";
 import { ClosingCurves } from "@/components/closing-curves";
 import { DeployTabsCard } from "@/components/deploy-tabs-card";
@@ -10,6 +12,7 @@ import { FeatureGrid } from "@/components/feature-grid";
 import { HeroCurve } from "@/components/hero-curve";
 import { HeroVisual } from "@/components/hero-visual";
 import { JsonLd } from "@/components/json-ld";
+import { McpChatDemo } from "@/components/mcp-chat-demo";
 import { OriginPostVisual } from "@/components/origin-post-visual";
 import { ProductPreview } from "@/components/product-preview";
 import { SiteFooter } from "@/components/site-footer";
@@ -188,6 +191,56 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               <div className="product-preview-wrap">
                 <ProductPreview copy={copy.product} />
               </div>
+            </div>
+          </div>
+        </section>
+
+        <section className="mcp-home-section" id="mcp">
+          <div className="site-shell mcp-home-grid">
+            <div className="mcp-home-copy" data-reveal="up">
+              <SectionHeading
+                kicker={copy.mcpHome.kicker}
+                title={copy.mcpHome.title}
+                description={copy.mcpHome.description}
+              />
+              <div className="hero-actions">
+                <Link href={`/${locale}/mcp`} className="button button-primary">
+                  {copy.mcpHome.cta}
+                  <ArrowRight aria-hidden="true" strokeWidth={2} />
+                </Link>
+              </div>
+              <p className="hero-note">{copy.mcpHome.note}</p>
+              <div className="agent-works">
+                <span className="agent-works-label">{copy.mcpGuide.hero.worksWith}</span>
+                <span className="agent-works-chips">
+                  <span className="agent-works-chip agent-works-chip-claude">
+                    <SiClaudecode aria-hidden="true" />
+                    Claude Code
+                  </span>
+                  <span className="agent-works-chip">
+                    <SiClaude aria-hidden="true" />
+                    Claude
+                  </span>
+                  <span className="agent-works-chip">
+                    <RiOpenaiFill aria-hidden="true" />
+                    Codex
+                  </span>
+                  <span className="agent-works-chip">
+                    <SiCursor aria-hidden="true" />
+                    Cursor
+                  </span>
+                  <span className="agent-works-chip agent-works-chip-more">
+                    {copy.mcpGuide.hero.moreAgents}
+                  </span>
+                </span>
+              </div>
+            </div>
+            <div className="mcp-home-demo">
+              <McpChatDemo
+                label={copy.mcpGuide.usage.examplesLabel}
+                examples={copy.mcpGuide.usage.examples}
+                note={copy.mcpGuide.usage.examplesNote}
+              />
             </div>
           </div>
         </section>

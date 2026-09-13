@@ -2294,6 +2294,49 @@ summary:focus-visible {
   line-height: 1;
 }
 
+/* Homepage MCP section: copy column + the /mcp page's looping chat replay. */
+.mcp-home-section {
+  padding: 124px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.mcp-home-grid {
+  display: grid;
+  grid-template-columns: 0.95fr 1.05fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.mcp-home-copy .section-heading {
+  display: block;
+  margin-bottom: 40px;
+}
+
+.mcp-home-copy .section-kicker {
+  margin-bottom: 32px;
+}
+
+.mcp-home-copy .section-description {
+  margin-top: 28px;
+}
+
+.mcp-home-grid .mcp-examples-card {
+  max-width: none;
+  margin: 0;
+}
+
+@media (max-width: 1000px) {
+  .mcp-home-grid {
+    grid-template-columns: 1fr;
+    gap: 60px;
+  }
+
+  .mcp-home-grid .mcp-examples-card {
+    max-width: 720px;
+    margin: 0 auto;
+  }
+}
+
 .origin-post-frame {
   position: relative;
   width: min(100%, 680px);
@@ -8217,6 +8260,990 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   }
 }
 
+/* ---------- MCP guide ---------- */
+
+/* Dark tools-manifest panel: the five tools + prompts as list rows, styled
+   like an MCP client's tool listing instead of a card grid. */
+.mcp-tools-panel {
+  padding: 22px 26px 10px;
+  border: 1px solid rgba(0, 0, 0, 0.3);
+  border-radius: 16px;
+  background: var(--night-panel);
+  box-shadow: 0 28px 72px rgba(66, 40, 86, 0.18);
+}
+
+.mcp-tools-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.mcp-tools-name {
+  color: rgba(255, 255, 255, 0.78);
+  font-family: var(--mono);
+  font-size: 12px;
+  letter-spacing: 0.04em;
+}
+
+.mcp-tools-badge {
+  padding: 4px 11px;
+  border: 1px solid rgba(243, 171, 211, 0.4);
+  border-radius: 999px;
+  color: #f3abd3;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.mcp-tools-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 40px;
+}
+
+.mcp-tool-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  margin: 0 -14px;
+  padding: 18px 14px;
+  border-radius: 12px;
+  transition: background-color 160ms ease;
+}
+
+/* Divider drawn as a straight inset line so the hover radius can't curve it. */
+.mcp-tool-row::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 0;
+  left: 14px;
+  height: 1px;
+  background: rgba(255, 255, 255, 0.08);
+}
+
+.mcp-tool-row:hover {
+  background: rgba(255, 255, 255, 0.05);
+}
+
+.mcp-tool-row code {
+  transition: color 160ms ease;
+}
+
+.mcp-tool-row:hover code {
+  color: #e3ccff;
+}
+
+/* Last row of each of the two columns. */
+.mcp-tool-row:nth-last-child(-n + 2)::after {
+  display: none;
+}
+
+.mcp-tool-row code {
+  width: fit-content;
+  color: #cfa9ff;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  letter-spacing: 0.02em;
+}
+
+.mcp-tool-row strong {
+  color: white;
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+}
+
+.mcp-tool-row p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Connect steps as a plain numbered strip instead of cards. */
+.mcp-steps-strip {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 30px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.mcp-steps-strip li {
+  display: flex;
+  gap: 15px;
+  min-width: 0;
+  transition: transform 180ms var(--ease-out);
+}
+
+.mcp-step-num {
+  transition: filter 180ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mcp-steps-strip li:hover {
+    transform: translateY(-2px);
+  }
+
+  .mcp-steps-strip li:hover .mcp-step-num {
+    filter: brightness(1.12) saturate(1.15);
+  }
+}
+
+.mcp-step-num {
+  flex: 0 0 auto;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  background-clip: text;
+  color: transparent;
+  font-family: var(--mono);
+  font-size: 30px;
+  font-weight: 640;
+  letter-spacing: -0.04em;
+  line-height: 1;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.mcp-steps-strip strong {
+  display: block;
+  font-size: 16.5px;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+}
+
+.mcp-steps-strip p {
+  margin: 7px 0 0;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Per-client switcher: one card, homepage-style tab bar on top, instructions
+   and the matching mockup below. */
+.mcp-client-card {
+  margin-top: 56px;
+  padding: 20px 28px 28px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--paper-strong) 90%, transparent);
+}
+
+.mcp-client-tabs {
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.mcp-client-panel {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 34px;
+  align-items: center;
+  margin-top: 26px;
+  animation: mcp-panel-in 300ms var(--ease-out);
+}
+
+@keyframes mcp-panel-in {
+  from {
+    opacity: 0;
+    transform: translate3d(0, 5px, 0);
+  }
+
+  to {
+    opacity: 1;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+.mcp-client-copy strong {
+  display: block;
+  font-size: 19px;
+  font-weight: 600;
+  letter-spacing: -0.024em;
+}
+
+.mcp-client-copy p {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+/* Shared final step: consent copy beside the dashboard's consent screen. */
+.mcp-consent-row {
+  display: grid;
+  grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+  gap: 34px;
+  align-items: center;
+  margin-top: 72px;
+}
+
+.mcp-consent-copy h3 {
+  margin: 0;
+  font-size: 23px;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+}
+
+.mcp-consent-copy p {
+  margin: 12px 0 0;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+/* Post-connect management row: mirrored consent row (mockup left, copy right). */
+.mcp-manage-row {
+  display: grid;
+  grid-template-columns: minmax(0, 6fr) minmax(0, 5fr);
+  gap: 34px;
+  align-items: center;
+  margin-top: 56px;
+}
+
+.mcp-mock-agents {
+  max-width: 330px;
+}
+
+.mcp-mock-agent-list {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.mcp-mock-agent {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 9px 10px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  transition:
+    opacity 220ms var(--ease-out),
+    transform 220ms var(--ease-out);
+}
+
+.mcp-mock-agent > svg {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  color: var(--ink-soft);
+}
+
+.mcp-mock-agent-info {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 1px;
+  min-width: 0;
+}
+
+.mcp-mock-agent-info strong {
+  font-size: 11.5px;
+  font-weight: 600;
+}
+
+.mcp-mock-agent-info span {
+  overflow: hidden;
+  color: var(--ink-soft);
+  font-size: 9.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcp-mock-agent .mcp-mock-btn {
+  flex: 0 0 auto;
+  padding: 4px 10px;
+  font-size: 10.5px;
+}
+
+.mcp-mock-agent.is-revoked {
+  opacity: 0.25;
+  transform: scale(0.97);
+}
+
+.mcp-mock-agent.is-revoked .mcp-mock-btn {
+  pointer-events: none;
+}
+
+/* Terminal window for the Claude Code tab — its own chrome, so it isn't a
+   window inside a browser frame. */
+.mcp-term-window {
+  overflow: hidden;
+  justify-self: center;
+  width: 100%;
+  max-width: 430px;
+  margin: 0;
+  border-radius: 13px;
+  background: var(--ink);
+  box-shadow: 0 24px 56px rgba(45, 29, 57, 0.28);
+}
+
+.mcp-term-bar {
+  display: flex;
+  gap: 11px;
+  align-items: center;
+  padding: 10px 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  color: rgba(255, 255, 255, 0.5);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.03em;
+}
+
+.mcp-term-body {
+  /* Fits all replay lines so the window doesn't grow while typing. */
+  min-height: 124px;
+  padding: 16px 18px;
+  font-family: var(--mono);
+  font-size: 11.5px;
+  line-height: 1.55;
+}
+
+.mcp-term-caret {
+  display: inline-block;
+  width: 7px;
+  height: 1.05em;
+  margin-left: 3px;
+  border-radius: 1px;
+  vertical-align: -0.16em;
+  background: rgba(255, 255, 255, 0.75);
+  animation: mcp-caret-blink 1.05s step-end infinite;
+}
+
+@keyframes mcp-caret-blink {
+  50% {
+    opacity: 0;
+  }
+}
+
+.mcp-term-ok {
+  animation: mcp-term-ok-in 300ms var(--ease-out) both;
+}
+
+@keyframes mcp-term-ok-in {
+  from {
+    opacity: 0;
+    transform: translateY(3px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.mcp-term-body p {
+  margin: 0 0 10px;
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.86);
+}
+
+.mcp-term-body p:last-child {
+  margin-bottom: 0;
+}
+
+.mcp-term-prompt {
+  margin-right: 7px;
+  color: #f3abd3;
+}
+
+.mcp-term-ok {
+  color: #9ce0b4;
+}
+
+/* mcp.json editor window for the Cursor tab. */
+.mcp-code-window {
+  overflow: hidden;
+  justify-self: center;
+  width: 100%;
+  max-width: 430px;
+  margin: 0;
+  border: 1px solid var(--rule-strong);
+  border-radius: 13px;
+  background: white;
+  box-shadow: 0 18px 44px rgba(45, 29, 57, 0.12);
+}
+
+.mcp-code-bar {
+  border-bottom-color: var(--rule);
+  color: var(--ink-soft);
+}
+
+.mcp-code-body {
+  overflow-x: auto;
+  padding: 15px 18px;
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 11px;
+  line-height: 1.65;
+  white-space: pre;
+}
+
+/* Prompt menu: one bordered panel listing the six prompts. */
+.mcp-prompts-panel {
+  padding: 20px 26px 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 16px;
+  background: color-mix(in srgb, var(--paper-strong) 90%, transparent);
+}
+
+.mcp-prompts-head {
+  padding-bottom: 15px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.mcp-prompts-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  column-gap: 40px;
+}
+
+.mcp-prompt-row {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  margin: 0 -14px;
+  padding: 16px 14px;
+  border-radius: 12px;
+  transition: background-color 160ms ease;
+}
+
+.mcp-prompt-row::after {
+  content: "";
+  position: absolute;
+  right: 14px;
+  bottom: 0;
+  left: 14px;
+  height: 1px;
+  background: var(--rule);
+}
+
+.mcp-prompt-row:hover {
+  background: color-mix(in srgb, var(--accent-soft) 42%, transparent);
+}
+
+.mcp-prompt-row:nth-last-child(-n + 2)::after {
+  display: none;
+}
+
+.mcp-prompt-row code {
+  width: fit-content;
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
+}
+
+.mcp-prompt-row strong {
+  font-size: 15px;
+  font-weight: 600;
+  letter-spacing: -0.014em;
+}
+
+.mcp-prompt-row p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Example questions reuse the token guide's dark check card, constrained so
+   it doesn't stretch across the section, with the prompt grid below it. */
+.mcp-examples-card {
+  max-width: 720px;
+  margin: 0 auto 44px;
+}
+
+/* Homepage-style text tabs (.deploy-tabs): the shared sliding ::after pill
+   marks the active one; used by the hero command switch and client switcher. */
+
+/* Merged hero card: endpoint zone on top, install command below with dark
+   text tabs as that zone's header. */
+.mcp-hero-divider {
+  height: 1px;
+  margin: 2px -22px;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.mcp-hero-cmd-head {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+}
+
+.mcp-hero-cmd-head > svg {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  color: var(--accent-pink);
+}
+
+.mcp-tabs-dark button {
+  padding: 2px 2px 5px;
+  color: rgba(255, 255, 255, 0.52);
+  font-size: 12.5px;
+}
+
+.mcp-tabs-dark button:hover {
+  color: white;
+}
+
+.mcp-tabs-dark button.is-active {
+  color: white;
+}
+
+.mcp-tabs-dark .deploy-tab-divider {
+  background: rgba(255, 255, 255, 0.18);
+}
+
+/* The endpoint is a value, not something being typed — no blinking caret. */
+.mcp-text-static::after {
+  display: none;
+}
+
+/* Recreated UI mockups (client dialogs, terminal, consent screen) inside the
+   token guide's screenshot frame. */
+.mcp-frame {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  min-width: 0;
+}
+
+.mcp-shot-body {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  justify-content: center;
+  padding: 24px 18px;
+  background: color-mix(in srgb, var(--ink) 4%, var(--paper-strong));
+}
+
+.mcp-mock-dialog {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  width: 100%;
+  max-width: 300px;
+  padding: 16px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 12px;
+  background: white;
+  box-shadow: 0 14px 34px rgba(45, 29, 57, 0.12);
+  text-align: left;
+}
+
+.mcp-mock-title {
+  margin: 0 0 2px;
+  font-size: 13.5px;
+  font-weight: 650;
+  letter-spacing: -0.01em;
+}
+
+.mcp-mock-label {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+}
+
+.mcp-mock-input {
+  overflow: hidden;
+  padding: 7px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  font-size: 11.5px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.mcp-mock-mono {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.mcp-mock-typerow {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+  margin-top: 2px;
+}
+
+.mcp-mock-typerow .mcp-mock-label {
+  margin: 0 auto 0 0;
+}
+
+.mcp-mock-chip {
+  padding: 3px 8px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-size: 10px;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.mcp-mock-chip.is-active {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+}
+
+.mcp-mock-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  margin-top: 6px;
+}
+
+.mcp-mock-btn {
+  padding: 5px 12px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 8px;
+  background: white;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+}
+
+.mcp-mock-btn-primary {
+  border-color: var(--ink);
+  background: var(--ink);
+  color: white;
+}
+
+/* The consent demo's buttons are real (clicking Authorize plays the
+   connected flash), so they get hover feedback. */
+button.mcp-mock-btn {
+  cursor: pointer;
+  font-family: inherit;
+  transition:
+    color 160ms ease,
+    border-color 160ms ease,
+    box-shadow 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+button.mcp-mock-btn:hover {
+  border-color: rgba(124, 61, 219, 0.45);
+  color: var(--ink);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  button.mcp-mock-btn-primary:hover {
+    border-color: var(--ink);
+    box-shadow: 0 8px 20px rgba(45, 29, 57, 0.28);
+    color: white;
+    transform: translateY(-1px);
+  }
+}
+
+button.mcp-mock-btn:active {
+  transform: scale(0.96);
+}
+
+.mcp-mock-success {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: 132px;
+  margin-top: 4px;
+  border-radius: 10px;
+  background: rgba(94, 227, 154, 0.09);
+  color: #1c7a45;
+  font-size: 11.5px;
+  font-weight: 620;
+  animation: agent-copied-pop 420ms var(--ease-bounce);
+}
+
+.mcp-mock-consent {
+  align-items: center;
+  text-align: center;
+}
+
+/* Deny is a real button in the playable mockup but has nothing to deny —
+   a small head-shake answers the click honestly. */
+.mcp-mock-dialog.is-denied {
+  animation: mcp-deny-shake 260ms var(--ease-in-out);
+}
+
+@keyframes mcp-deny-shake {
+  0%,
+  100% {
+    transform: translateX(0);
+  }
+
+  25% {
+    transform: translateX(-3px);
+  }
+
+  65% {
+    transform: translateX(3px);
+  }
+}
+
+/* Chat replay inside the dark "try asking" card. */
+.mcp-chat-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.mcp-chat-dots {
+  display: flex;
+  gap: 6px;
+}
+
+.mcp-chat-dots button {
+  position: relative;
+  width: 7px;
+  height: 7px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.24);
+  cursor: pointer;
+  transition:
+    width 200ms ease,
+    background-color 200ms ease;
+}
+
+/* 7px dots are real question switchers — extend the hit area to ~27px. */
+.mcp-chat-dots button::after {
+  content: "";
+  position: absolute;
+  inset: -10px;
+}
+
+.mcp-chat-dots button.is-active {
+  width: 19px;
+  background: linear-gradient(90deg, #ffb18a, #ec7dbc 48%, #9e5bef);
+}
+
+.mcp-chat {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+  /* Fits the longest question + tools + reply, so phases don't resize the card. */
+  min-height: 218px;
+}
+
+.mcp-chat-q {
+  cursor: pointer;
+  text-align: left;
+  /* backwards, not both: a forwards fill would pin `transform` and block
+     the :active press below. */
+  animation: mcp-chat-in 320ms var(--ease-out) backwards;
+  transition:
+    border-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.mcp-chat-q:active {
+  transform: scale(0.985);
+}
+
+.mcp-chat-q:hover {
+  border-color: rgba(255, 255, 255, 0.24);
+}
+
+.mcp-chat-copy {
+  display: inline-flex;
+  margin-left: 8px;
+  color: rgba(255, 255, 255, 0.4);
+  opacity: 0;
+  vertical-align: -2px;
+  transition:
+    opacity 160ms ease,
+    color 160ms ease;
+}
+
+.mcp-chat-copy svg {
+  width: 13px;
+  height: 13px;
+}
+
+.mcp-chat-q:hover .mcp-chat-copy {
+  opacity: 1;
+}
+
+.mcp-chat-q.is-copied .mcp-chat-copy {
+  opacity: 1;
+  color: #5ee39a;
+}
+
+.mcp-chat-working {
+  flex-wrap: wrap;
+  animation: mcp-chat-in 280ms var(--ease-out) both;
+}
+
+.mcp-chat-working > svg:first-child {
+  color: #5ee39a;
+}
+
+.mcp-chat-working .agent-spinner {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.mcp-chat-tool {
+  padding: 3px 9px;
+  border: 1px dashed rgba(255, 255, 255, 0.24);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.85);
+  font-family: var(--mono);
+  font-size: 10px;
+  letter-spacing: 0.05em;
+  animation: mcp-chat-in 260ms var(--ease-out) both;
+}
+
+.mcp-chat-reply {
+  animation: mcp-chat-in 380ms var(--ease-out) both;
+}
+
+@keyframes mcp-chat-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* .guide-shot img stretches token-guide screenshots to full width; the
+   consent mock's app icon must stay icon-sized inside the same frame. */
+.guide-shot .mcp-mock-appicon {
+  width: 36px;
+  height: 36px;
+  border-radius: 9px;
+}
+
+.mcp-mock-sub {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.mcp-mock-scope {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  width: 100%;
+  margin-top: 4px;
+  padding: 11px 12px;
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--ink) 4%, transparent);
+  text-align: left;
+}
+
+.mcp-mock-scope-title {
+  margin: 0;
+  font-size: 11px;
+  font-weight: 650;
+}
+
+.mcp-mock-scope-row {
+  display: flex;
+  gap: 7px;
+  align-items: flex-start;
+  margin: 0;
+  font-size: 10.5px;
+  line-height: 1.45;
+}
+
+.mcp-mock-scope-row svg {
+  flex: 0 0 auto;
+  width: 13px;
+  height: 13px;
+  margin-top: 1px;
+  color: var(--ink-soft);
+}
+
+.mcp-mock-scope-row.is-muted {
+  color: var(--ink-soft);
+}
+
+.mcp-mock-consent .mcp-mock-actions {
+  width: 100%;
+  justify-content: center;
+}
+
+.mcp-mock-consent .mcp-mock-btn {
+  flex: 1;
+  text-align: center;
+}
+
+@media (max-width: 1000px) {
+  .mcp-tools-list,
+  .mcp-prompts-list {
+    grid-template-columns: 1fr;
+  }
+
+  .mcp-tool-row:nth-last-child(-n + 2)::after,
+  .mcp-prompt-row:nth-last-child(-n + 2)::after {
+    display: block;
+  }
+
+  .mcp-tool-row:last-child::after,
+  .mcp-prompt-row:last-child::after {
+    display: none;
+  }
+
+  .mcp-steps-strip {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .mcp-client-panel,
+  .mcp-consent-row,
+  .mcp-manage-row {
+    grid-template-columns: 1fr;
+    gap: 22px;
+  }
+
+  .mcp-consent-row,
+  .mcp-manage-row {
+    margin-top: 56px;
+  }
+
+  /* Stacked order stays copy-first even though desktop puts the mockup left. */
+  .mcp-manage-row .mcp-frame {
+    order: 2;
+  }
+}
+
+@media (max-width: 480px) {
+  .mcp-tabs {
+    flex-wrap: wrap;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -8247,7 +9274,11 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   .guide-progress-index,
   .guide-progress-index::after,
   .agent-prompt-copy,
-  .agent-replay {
+  .agent-replay,
+  .mcp-tabs button,
+  button.mcp-mock-btn,
+  .mcp-chat-q,
+  .mcp-chat-dots button {
     transition-duration: 160ms !important;
     transition-property: color, background-color, border-color, opacity !important;
   }

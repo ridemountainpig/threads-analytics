@@ -28,6 +28,7 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
           <a href={`/${locale}#features`}>{copy.features}</a>
           <a href={`/${locale}#deploy`}>{copy.deploy}</a>
           <Link href={`/${locale}/token-guide`}>{copy.tokenGuide}</Link>
+          <Link href={`/${locale}/mcp`}>{copy.mcp}</Link>
         </nav>
 
         <div className="header-actions">

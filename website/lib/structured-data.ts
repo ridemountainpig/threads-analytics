@@ -38,6 +38,7 @@ export function getStructuredData(locale: Locale, copy: Dictionary) {
         applicationSubCategory: "Social media analytics",
         operatingSystem: "Any",
         isAccessibleForFree: true,
+        license: "https://www.gnu.org/licenses/agpl-3.0.html",
         inLanguage: locale,
         offers: {
           "@type": "Offer",

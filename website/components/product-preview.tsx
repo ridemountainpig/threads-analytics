@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   LockKeyhole,
   Settings2,
+  Users,
 } from "lucide-react";
 import type { Dictionary } from "@/lib/i18n";
 
@@ -17,7 +18,7 @@ const previewPoints = [
 ] as const;
 const metricValues = ["2,840", "7.4%", "184", "96"] as const;
 const metricTrends = ["+28.4%", "+1.7 pt", "+18.6%", "+12.2%"] as const;
-const navIcons = [LayoutDashboard, ChartNoAxesCombined, FileText, Settings2] as const;
+const navIcons = [LayoutDashboard, ChartNoAxesCombined, FileText, Users, Settings2] as const;
 
 export function ProductPreview({ copy }: { copy: Dictionary["product"] }) {
   return (

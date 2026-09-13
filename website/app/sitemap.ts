@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/deploy/zeabur-agent",
     "/deploy/vercel-agent",
     "/token-guide",
+    "/mcp",
   ];
 
   // No lastModified: stamping every URL with the build date would tell

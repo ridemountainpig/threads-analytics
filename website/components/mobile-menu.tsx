@@ -23,6 +23,7 @@ export function MobileMenu({ locale, copy }: { locale: Locale; copy: Dictionary[
     { href: `/${locale}#features`, label: copy.features },
     { href: `/${locale}#deploy`, label: copy.deploy },
     { href: `/${locale}/token-guide`, label: copy.tokenGuide, page: true },
+    { href: `/${locale}/mcp`, label: copy.mcp, page: true },
   ];
 
   return (

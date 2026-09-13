@@ -57,6 +57,101 @@ export type TokenGuideCopy = {
   };
 };
 
+// MCP guide copy shares one explicit type for the same reason as the token
+// guide: the card lists must keep an identical shape across locales.
+export type McpGuideCard = {
+  /** Mono chip above the card title, e.g. a tool or client name. */
+  tag: string;
+  index: string;
+  title: string;
+  body: string;
+};
+
+export type McpGuideCopy = {
+  metadata: { title: string; description: string };
+  hero: {
+    kicker: string;
+    lineOne: string;
+    lineTwo: string;
+    description: string;
+    primaryCta: string;
+    secondaryCta: string;
+    note: string;
+    endpointLabel: string;
+    commandLabel: string;
+    codexCommandLabel: string;
+    copy: string;
+    copied: string;
+    hint: string;
+    worksWith: string;
+    moreAgents: string;
+  };
+  capabilities: {
+    kicker: string;
+    title: string;
+    description: string;
+    /** Status chip on the tools-manifest panel, e.g. "READ-ONLY". */
+    panelBadge: string;
+    items: McpGuideCard[];
+  };
+  connect: {
+    kicker: string;
+    title: string;
+    description: string;
+    steps: { index: string; title: string; body: string }[];
+    /** Per-client switcher entries: `tag` is the tab label. */
+    clients: McpGuideCard[];
+    /** The shared final step: the dashboard's consent screen. `dialog`
+     * strings mirror the dashboard's oauthConsent dictionary. */
+    consent: {
+      title: string;
+      body: string;
+      /** Success flash shown when the mock's Authorize button is clicked. */
+      connected: string;
+      dialog: {
+        title: string;
+        subtitle: string;
+        scopeTitle: string;
+        scopeRead: string;
+        scopeNoWrite: string;
+        deny: string;
+        approve: string;
+      };
+    };
+    /** Post-connect management: the dashboard's Settings → Connected Agents
+     * card, recreated. `panel` strings mirror the app's mcpAgents dictionary. */
+    manage: {
+      title: string;
+      body: string;
+      panel: {
+        title: string;
+        subtitle: string;
+        revoke: string;
+        agents: { name: string; meta: string }[];
+      };
+    };
+  };
+  usage: {
+    kicker: string;
+    title: string;
+    description: string;
+    examplesLabel: string;
+    /** Chat replay entries: question, sample reply, and the MCP tools the
+     * agent calls in between (tool names, identical across locales). */
+    examples: { q: string; a: string; tools: string[] }[];
+    examplesNote: string;
+    promptsLabel: string;
+    prompts: McpGuideCard[];
+  };
+  cta: {
+    title: string;
+    description: string;
+    primary: string;
+    secondary: string;
+    revokeNote: string;
+  };
+};
+
 const tokenGuideEn: TokenGuideCopy = {
   metadata: {
     title: "Generate a Threads access token — an 18-step visual guide | Threads Analytics",
@@ -221,7 +316,7 @@ const tokenGuideEn: TokenGuideCopy = {
     description:
       "Paste it into your dashboard under **Settings → Add Threads account** and run the first sync.",
     expiry:
-      "Threads access tokens expire. If syncing fails or the token is close to expiry, repeat the same flow to generate a fresh one.",
+      "Tokens last 60 days, and the dashboard renews them automatically during sync — you won't need this guide again. If a token still expires because the app was offline too long, generate a fresh one here and paste it with **Update token** on the account card; your synced data is kept.",
     primary: "See deploy options",
     secondary: "View on GitHub",
   },
@@ -389,7 +484,8 @@ const tokenGuideZh: TokenGuideCopy = {
     kicker: "拿到 TOKEN 之後",
     title: "複製好了？把它帶回家。",
     description: "把 Token 貼到 Dashboard 的 **Settings → Add Threads account**，執行第一次同步。",
-    expiry: "Threads Access Token 會過期。若同步失敗或接近到期，請依照同樣流程重新產生一組。",
+    expiry:
+      "Token 有效期為 60 天，Dashboard 會在同步時自動續期，之後不需要再跑一次這份教學。若 App 離線太久導致 Token 過期，再依同樣流程產生一組，用帳號卡片上的 **Update token** 貼回即可，已同步的資料都會保留。",
     primary: "查看部署方式",
     secondary: "前往 GitHub",
   },
@@ -559,9 +655,673 @@ const tokenGuideJa: TokenGuideCopy = {
     description:
       "ダッシュボードの **Settings → Add Threads account** に貼り付けて、最初の同期を実行します。",
     expiry:
-      "Threads アクセストークンには有効期限があります。同期に失敗する場合や期限が近い場合は、同じ手順で再生成してください。",
+      "トークンの有効期限は 60 日ですが、ダッシュボードが同期時に自動で延長するため、このガイドを再度たどる必要はありません。アプリが長期間オフラインで期限切れになった場合のみ、同じ手順で再生成し、アカウントカードの **Update token** から貼り直してください。同期済みデータはそのまま残ります。",
     primary: "デプロイ方法を見る",
     secondary: "GitHub で見る",
+  },
+};
+
+const mcpGuideEn: McpGuideCopy = {
+  metadata: {
+    title: "Connect AI agents over MCP — ask questions about your Threads data | Threads Analytics",
+    description:
+      "Every Threads Analytics deployment ships a built-in MCP server. Connect Claude Code, Claude, Cursor, or any MCP client and ask questions about your posts, analytics, and followers — read-only, OAuth-protected, no API keys.",
+  },
+  hero: {
+    kicker: "GUIDE / MCP SERVER",
+    lineOne: "Your Threads data,",
+    lineTwo: "one question away.",
+    description:
+      "Your dashboard already runs an MCP server at /api/mcp. Connect the AI agent you already use — Claude Code, Claude, Codex, Cursor — and it can read your posts, analytics, and follower history to answer questions and write reports. Read-only, and you approve every connection.",
+    primaryCta: "Connect your agent",
+    secondaryCta: "What is MCP?",
+    note: "About 2 minutes · No API keys · Read-only",
+    endpointLabel: "YOUR MCP ENDPOINT",
+    commandLabel: "CLAUDE CODE · ONE COMMAND",
+    codexCommandLabel: "CODEX · ONE COMMAND",
+    copy: "Copy",
+    copied: "Copied",
+    hint: "Replace your-deployment.example.com with your deployed dashboard's domain.",
+    worksWith: "WORKS WITH",
+    moreAgents: "+ any MCP client",
+  },
+  capabilities: {
+    kicker: "01 / WHAT IT CAN DO",
+    title: "Six read-only tools. Six report prompts.",
+    description:
+      "The server turns your synced data into structured tools. You ask in plain language; your agent picks the right tool and reads only what it needs.",
+    panelBadge: "READ-ONLY",
+    items: [
+      {
+        tag: "get_account_overview",
+        index: "01",
+        title: "See the account at a glance",
+        body: "Username, sync status, post count, data range, and follower growth summary — the first call every conversation starts with.",
+      },
+      {
+        tag: "list_posts · get_post",
+        index: "02",
+        title: "Search and read every post",
+        body: "Filter by date, media type, or text, sort by views, likes, or engagement rate, then pull any post's full text.",
+      },
+      {
+        tag: "get_analytics",
+        index: "03",
+        title: "31 analytics sections",
+        body: "Best time to post, keyword analysis, posting streaks, views distribution, and more — computed over any date range you ask for.",
+      },
+      {
+        tag: "get_follower_history",
+        index: "04",
+        title: "Follow the audience curve",
+        body: "Daily follower snapshots with a growth summary, plus the latest country, city, age, and gender demographics.",
+      },
+      {
+        tag: "compare_periods",
+        index: "05",
+        title: "Compare any two periods",
+        body: "Posts, views, engagement, and follower growth side by side, with absolute and percentage changes.",
+      },
+      {
+        tag: "6 built-in prompts",
+        index: "06",
+        title: "Reports, ready to run",
+        body: "Performance review, content strategy, posting schedule, and three more — pick one from your client's prompt menu and get a full report back.",
+      },
+    ],
+  },
+  connect: {
+    kicker: "02 / HOW TO CONNECT",
+    title: "No API keys. Approve it in your browser.",
+    description:
+      "Authentication is OAuth 2.1 with PKCE and dynamic client registration: the client registers itself, your browser opens your dashboard's sign-in, and you approve access on a consent screen.",
+    steps: [
+      {
+        index: "01",
+        title: "Copy your endpoint",
+        body: "The MCP server lives at /api/mcp on the dashboard you deployed — the same domain you sign in to, nothing extra to run.",
+      },
+      {
+        index: "02",
+        title: "Add it to your client",
+        body: "One command in Claude Code or Codex, a custom connector in Claude, a URL entry in Cursor — switch between them below.",
+      },
+      {
+        index: "03",
+        title: "Sign in and approve",
+        body: "Your browser opens the dashboard login. Approve the read-only scope and the agent is connected — revoke it anytime in Settings.",
+      },
+    ],
+    clients: [
+      {
+        tag: "Claude Code",
+        index: "01",
+        title: "One command, then /mcp",
+        body: "Run the one-line command — copyable at the top of this page — then run /mcp inside Claude Code and complete the sign-in when the browser opens.",
+      },
+      {
+        tag: "Claude",
+        index: "02",
+        title: "Add a custom connector",
+        body: "On claude.ai or in the desktop app, go to Settings → Connectors → Add custom connector, paste your endpoint URL, and finish the OAuth sign-in.",
+      },
+      {
+        tag: "Codex",
+        index: "03",
+        title: "CLI or app settings",
+        body: "Run the Codex command from the top of this page, then codex mcp login threads-analytics — or add it under the app's MCP settings, as shown here.",
+      },
+      {
+        tag: "Cursor & others",
+        index: "04",
+        title: "Point any MCP client at it",
+        body: "Add the endpoint as a url entry in .cursor/mcp.json — any client that supports Streamable HTTP with OAuth can connect.",
+      },
+    ],
+    consent: {
+      title: "The last step is always the same: authorize.",
+      body: "Whichever client you use, your browser opens your dashboard's sign-in. Approve the read-only scope on this screen and the agent is connected.",
+      connected: "Agent connected — read-only",
+      dialog: {
+        title: "Authorize access",
+        subtitle: "Claude is asking to connect to your Threads Analytics.",
+        scopeTitle: "This will allow the agent to:",
+        scopeRead: "Read your posts, metrics, and analytics data",
+        scopeNoWrite: "It cannot change any data or post on your behalf.",
+        deny: "Deny",
+        approve: "Authorize",
+      },
+    },
+    manage: {
+      title: "Connected once, revocable anytime.",
+      body: "Every agent you approve shows up under Settings → Connected Agents on your dashboard, with when it was authorized and last used. Revoke wipes its tokens instantly — the client has to pass the consent screen again to reconnect.",
+      panel: {
+        title: "Connected agents",
+        subtitle: "MCP clients you have authorized to read your analytics data.",
+        revoke: "Revoke",
+        agents: [
+          { name: "Claude Code", meta: "Authorized Sep 4, 7:53 PM · Last used 8:21 PM" },
+          { name: "Codex", meta: "Authorized Sep 4, 8:08 PM · Last used 8:09 PM" },
+        ],
+      },
+    },
+  },
+  usage: {
+    kicker: "03 / HOW TO USE IT",
+    title: "Ask in your own words, or start from a prompt.",
+    description:
+      "Once connected, the tools appear automatically — there is nothing to configure. Ask anything about your account, or run one of the six built-in prompts; each takes an optional period like 30d or 90d.",
+    examplesLabel: "TRY ASKING",
+    examples: [
+      {
+        q: "Which of my posts this month had the best engagement rate — and why?",
+        a: "Your top three by engagement rate are all question-led text posts — median 4.8%, 62% above your baseline. Short question plus your own answer is what drives the replies.",
+        tools: ["list_posts", "get_post"],
+      },
+      {
+        q: "When should I post next week? Base it on my last 90 days.",
+        a: "Your audience is most active Tue and Thu, 8–10 PM — median views +41% over the last 90 days. Try Tue 8:30 PM and Thu 9:00 PM next week.",
+        tools: ["get_account_overview", "get_analytics"],
+      },
+      {
+        q: "Compare this month with last month and write a short report.",
+        a: "This month: 18 posts (+3), 124K views (+22%), 3.9% engagement rate (+0.6pp), +214 followers. Full report below.",
+        tools: ["compare_periods"],
+      },
+    ],
+    examplesNote:
+      "Your agent decides which tools to call — overview first, then posts, analytics, or follower history as needed.",
+    promptsLabel: "PROMPT MENU",
+    prompts: [
+      {
+        tag: "performance-review",
+        index: "01",
+        title: "Performance review",
+        body: "Trends, your best and worst posts with likely reasons, and three concrete actions for the next period.",
+      },
+      {
+        tag: "content-strategy",
+        index: "02",
+        title: "Content strategy",
+        body: "Which formats, lengths, and topics work — and the content mix to publish going forward.",
+      },
+      {
+        tag: "posting-schedule",
+        index: "03",
+        title: "Posting schedule",
+        body: "A concrete weekly schedule built from when your audience actually engages.",
+      },
+      {
+        tag: "viral-post-breakdown",
+        index: "04",
+        title: "Viral post breakdown",
+        body: "Deep-dives your outlier posts and extracts the repeatable patterns behind them.",
+      },
+      {
+        tag: "audience-insights",
+        index: "05",
+        title: "Audience insights",
+        body: "Follower growth and demographics, and what they imply for content and timing.",
+      },
+      {
+        tag: "topic-analysis",
+        index: "06",
+        title: "Topic analysis",
+        body: "Which topics and writing patterns drive performance, plus five post ideas that apply them.",
+      },
+    ],
+  },
+  cta: {
+    title: "Point your agent at your own data.",
+    description:
+      "Deploy the dashboard, connect the agent you already use, and your next performance report is one prompt away.",
+    primary: "Connect your agent",
+    secondary: "View on GitHub",
+    revokeNote:
+      "Every connected agent shows up in Settings → Connected Agents — revoke access with one click.",
+  },
+};
+
+const mcpGuideZh: McpGuideCopy = {
+  metadata: {
+    title: "用 MCP 連接 AI Agent — 直接問你的 Threads 數據 | Threads Analytics",
+    description:
+      "每個 Threads Analytics 部署都內建 MCP Server。連接 Claude Code、Claude、Cursor 或任何 MCP 客戶端，直接詢問貼文、分析與粉絲數據 — 唯讀存取、OAuth 保護、不需要 API Key。",
+  },
+  hero: {
+    kicker: "教學 / MCP SERVER",
+    // ⁠ word joiners +   pin the break points: line one never breaks,
+    // line two only between 問一句 and 就能到手.
+    lineOne: "Threads 數⁠據，",
+    lineTwo: "問⁠一⁠句就⁠能⁠到⁠手。",
+    description:
+      "你的 Dashboard 已經在 /api/mcp 運行著一個 MCP Server。連接你慣用的 AI Agent — Claude Code、Claude、Codex、Cursor — 它就能讀取你的貼文、分析與粉絲紀錄，回答問題、撰寫報告。全程唯讀，每個連接都由你親自核准。",
+    primaryCta: "開始連接 Agent",
+    secondaryCta: "什麼是 MCP？",
+    note: "約 2 分鐘 · 不需要 API Key · 唯讀存取",
+    endpointLabel: "你的 MCP ENDPOINT",
+    commandLabel: "CLAUDE CODE · 一行指令",
+    codexCommandLabel: "CODEX · 一行指令",
+    copy: "複製",
+    copied: "已複製",
+    hint: "把 your-deployment.example.com 換成你部署的 Dashboard 網域。",
+    worksWith: "支援",
+    moreAgents: "+ 任何 MCP 客戶端",
+  },
+  capabilities: {
+    kicker: "01 / 它能做什麼",
+    title: "六個唯讀工具，六個報告 Prompt。",
+    description:
+      "MCP Server 把你同步好的數據整理成結構化工具。你用自然語言發問，Agent 自己挑選工具、只讀取需要的部分。",
+    panelBadge: "唯讀",
+    items: [
+      {
+        tag: "get_account_overview",
+        index: "01",
+        title: "一眼掌握帳號現況",
+        body: "帳號名稱、同步狀態、貼文數、資料範圍與粉絲成長摘要 — 每段對話的第一個呼叫。",
+      },
+      {
+        tag: "list_posts · get_post",
+        index: "02",
+        title: "搜尋並閱讀每篇貼文",
+        body: "依日期、媒體類型或文字篩選，依瀏覽、按讚或互動率排序，再取出任一篇貼文的完整內容。",
+      },
+      {
+        tag: "get_analytics",
+        index: "03",
+        title: "31 個分析區塊隨選即用",
+        body: "最佳發文時間、關鍵字分析、發文連續紀錄、瀏覽分佈等 — 依你指定的日期範圍即時計算。",
+      },
+      {
+        tag: "get_follower_history",
+        index: "04",
+        title: "追蹤粉絲成長曲線",
+        body: "每日粉絲快照與成長摘要，還能加上最新的國家、城市、年齡與性別輪廓。",
+      },
+      {
+        tag: "compare_periods",
+        index: "05",
+        title: "比較任意兩個期間",
+        body: "貼文、瀏覽、互動與粉絲成長並列呈現，附上絕對值與百分比變化。",
+      },
+      {
+        tag: "6 個內建 Prompt",
+        index: "06",
+        title: "一鍵產出完整報告",
+        body: "成效回顧、內容策略、發文排程等六種範本 — 在客戶端選單點一下，就能拿到完整報告。",
+      },
+    ],
+  },
+  connect: {
+    kicker: "02 / 如何連接",
+    title: "不需要 API Key，在瀏覽器按下核准就好。",
+    description:
+      "驗證採用 OAuth 2.1 with PKCE 與 Dynamic Client Registration：客戶端自動註冊，瀏覽器開啟你 Dashboard 的登入頁，由你在授權畫面親自核准。",
+    steps: [
+      {
+        index: "01",
+        title: "複製你的 Endpoint",
+        body: "MCP Server 就在你部署的 Dashboard 的 /api/mcp — 跟你平常登入的是同一個網域，不需要多跑任何服務。",
+      },
+      {
+        index: "02",
+        title: "加入你的客戶端",
+        body: "Claude Code 與 Codex 各一行指令、Claude 加一個 Custom Connector、Cursor 填一個 URL — 在下方切換查看各客戶端的做法。",
+      },
+      {
+        index: "03",
+        title: "登入並核准",
+        body: "瀏覽器會開啟 Dashboard 登入頁。核准唯讀權限後 Agent 就連上了 — 隨時可以在 Settings 撤銷。",
+      },
+    ],
+    clients: [
+      {
+        tag: "Claude Code",
+        index: "01",
+        title: "一行指令，再執行 /mcp",
+        body: "執行一行指令（頁面上方可複製），接著在 Claude Code 裡輸入 /mcp，瀏覽器開啟後完成登入。",
+      },
+      {
+        tag: "Claude",
+        index: "02",
+        title: "新增 Custom Connector",
+        body: "在 claude.ai 或桌面版前往 Settings → Connectors → Add custom connector，貼上你的 Endpoint URL，完成 OAuth 登入。",
+      },
+      {
+        tag: "Codex",
+        index: "03",
+        title: "CLI 或 App 設定都可以",
+        body: "執行頁面上方的 Codex 指令，再執行 codex mcp login threads-analytics — 也可以像圖中一樣在 App 的 MCP 設定裡新增。",
+      },
+      {
+        tag: "Cursor · 其他",
+        index: "04",
+        title: "任何 MCP 客戶端都能連",
+        body: "在 .cursor/mcp.json 加入一筆 url 設定 — 任何支援 Streamable HTTP 與 OAuth 的客戶端都能連接。",
+      },
+    ],
+    consent: {
+      title: "最後一步都一樣：授權。",
+      body: "無論用哪個客戶端，瀏覽器都會開啟你 Dashboard 的登入頁。在這個畫面核准唯讀權限後，Agent 就連上了。",
+      connected: "Agent 已連接 — 唯讀存取",
+      dialog: {
+        title: "授權存取",
+        subtitle: "Claude 想要連接你的 Threads Analytics。",
+        scopeTitle: "這將允許該 agent：",
+        scopeRead: "讀取你的貼文、數據與分析資料",
+        scopeNoWrite: "它無法修改任何資料，也無法代替你發文。",
+        deny: "拒絕",
+        approve: "授權",
+      },
+    },
+    manage: {
+      title: "連接後，也隨時收得回來。",
+      body: "每個核准過的 Agent 都會列在 Dashboard 的 Settings → Connected Agents，看得到授權時間與上次使用時間。點「撤銷」會立即作廢它的 Token — 客戶端要重新走一次授權畫面才能再連上。",
+      panel: {
+        title: "已連接的 agent",
+        subtitle: "你已授權讀取分析資料的 MCP client。",
+        revoke: "撤銷",
+        agents: [
+          { name: "Claude Code", meta: "授權於 9月4日 晚上7:53 · 上次使用 晚上8:21" },
+          { name: "Codex", meta: "授權於 9月4日 晚上8:08 · 上次使用 晚上8:09" },
+        ],
+      },
+    },
+  },
+  usage: {
+    kicker: "03 / 如何使用",
+    title: "用自己的話問，或從 Prompt 範本開始。",
+    description:
+      "連接完成後工具會自動出現，不需要任何設定。直接詢問帳號的任何問題，或執行六個內建 Prompt；每個都能加上像 30d、90d 的期間參數。",
+    examplesLabel: "試著這樣問",
+    examples: [
+      {
+        q: "我這個月互動率最高的貼文是哪些？為什麼表現好？",
+        a: "互動率前三名都是問句開頭的文字貼文 — 中位數 4.8%，比你的基準高 62%。短提問加上自己的回答，最能帶動回覆。",
+        tools: ["list_posts", "get_post"],
+      },
+      {
+        q: "下週什麼時候發文最好？用我過去 90 天的數據判斷。",
+        a: "你的受眾在週二、週四晚上 8–10 點最活躍 — 過去 90 天中位觀看高出 41%。下週建議排週二 20:30 和週四 21:00。",
+        tools: ["get_account_overview", "get_analytics"],
+      },
+      {
+        q: "比較這個月和上個月，寫一份簡短報告。",
+        a: "這個月：18 篇貼文（+3）、12.4 萬觀看（+22%）、互動率 3.9%（+0.6pp）、粉絲淨增 214。完整報告如下。",
+        tools: ["compare_periods"],
+      },
+    ],
+    examplesNote: "Agent 會自己決定呼叫哪些工具 — 先看帳號總覽，再視需要讀取貼文、分析或粉絲紀錄。",
+    promptsLabel: "PROMPT 選單",
+    prompts: [
+      {
+        tag: "performance-review",
+        index: "01",
+        title: "成效回顧",
+        body: "整體趨勢、表現最好與最差的貼文及原因，加上下個期間的三個具體行動。",
+      },
+      {
+        tag: "content-strategy",
+        index: "02",
+        title: "內容策略",
+        body: "哪些形式、長度與主題有效 — 以及接下來該採用的內容配比。",
+      },
+      {
+        tag: "posting-schedule",
+        index: "03",
+        title: "發文排程",
+        body: "根據受眾實際互動的時段，排出具體的每週發文時間表。",
+      },
+      {
+        tag: "viral-post-breakdown",
+        index: "04",
+        title: "爆紅貼文解析",
+        body: "深入拆解表現突出的貼文，萃取可以重複使用的模式。",
+      },
+      {
+        tag: "audience-insights",
+        index: "05",
+        title: "受眾洞察",
+        body: "粉絲成長與輪廓數據，以及它們對內容與發文時間的意義。",
+      },
+      {
+        tag: "topic-analysis",
+        index: "06",
+        title: "主題分析",
+        body: "哪些主題與寫作模式帶動成效，並附上五個套用這些模式的貼文靈感。",
+      },
+    ],
+  },
+  cta: {
+    title: "讓你的 Agent 讀懂你的數據。",
+    description: "部署 Dashboard、連接你慣用的 Agent，下一份成效報告只差一個 Prompt。",
+    primary: "開始連接 Agent",
+    secondary: "前往 GitHub",
+    revokeNote: "所有連接中的 Agent 都會列在 Settings → Connected Agents，一鍵即可撤銷存取。",
+  },
+};
+
+const mcpGuideJa: McpGuideCopy = {
+  metadata: {
+    title: "MCP で AI エージェントを接続 — Threads データに直接質問 | Threads Analytics",
+    description:
+      "Threads Analytics には MCP サーバーが標準搭載。Claude Code、Claude、Cursor などの MCP クライアントを接続すれば、投稿・分析・フォロワーのデータについて直接質問できます。読み取り専用・OAuth 保護・API キー不要。",
+  },
+  hero: {
+    kicker: "ガイド / MCP SERVER",
+    // ⁠ word joiners +   pin the break points: line one never breaks,
+    // line two only between ひと言で and 手元に.
+    lineOne: "Threads デ⁠ー⁠タ、",
+    lineTwo: "ひ⁠と⁠言⁠で手⁠元⁠に。",
+    description:
+      "デプロイしたダッシュボードは /api/mcp で MCP サーバーを公開しています。普段使っている AI エージェント — Claude Code、Claude、Codex、Cursor — を接続すれば、投稿・分析・フォロワー履歴を読み取り、質問への回答やレポート作成ができます。すべて読み取り専用で、接続はあなたが承認します。",
+    primaryCta: "エージェントを接続する",
+    secondaryCta: "MCP とは？",
+    note: "約 2 分 · API キー不要 · 読み取り専用",
+    endpointLabel: "あなたの MCP エンドポイント",
+    commandLabel: "CLAUDE CODE · コマンド 1 行",
+    codexCommandLabel: "CODEX · コマンド 1 行",
+    copy: "コピー",
+    copied: "コピーしました",
+    hint: "your-deployment.example.com をデプロイ済みダッシュボードのドメインに置き換えてください。",
+    worksWith: "対応クライアント",
+    moreAgents: "+ 任意の MCP クライアント",
+  },
+  capabilities: {
+    kicker: "01 / できること",
+    title: "読み取り専用ツール 6 つ、レポートプロンプト 6 つ。",
+    description:
+      "MCP サーバーは同期済みデータを構造化ツールとして公開します。自然な言葉で質問するだけで、エージェントが必要なツールを選び、必要な分だけ読み取ります。",
+    panelBadge: "読み取り専用",
+    items: [
+      {
+        tag: "get_account_overview",
+        index: "01",
+        title: "アカウントをひと目で把握",
+        body: "ユーザー名、同期状態、投稿数、データ範囲、フォロワー成長サマリー — どの会話も最初に呼ぶツールです。",
+      },
+      {
+        tag: "list_posts · get_post",
+        index: "02",
+        title: "すべての投稿を検索・閲覧",
+        body: "日付・メディアタイプ・テキストで絞り込み、閲覧数・いいね・エンゲージメント率で並べ替え、任意の投稿の全文を取得。",
+      },
+      {
+        tag: "get_analytics",
+        index: "03",
+        title: "31 種類の分析セクション",
+        body: "最適な投稿時間、キーワード分析、投稿ストリーク、閲覧数分布など — 指定した期間でその場で計算します。",
+      },
+      {
+        tag: "get_follower_history",
+        index: "04",
+        title: "フォロワーの推移を追う",
+        body: "日次フォロワースナップショットと成長サマリー、さらに最新の国・都市・年齢・性別の内訳も取得できます。",
+      },
+      {
+        tag: "compare_periods",
+        index: "05",
+        title: "任意の 2 期間を比較",
+        body: "投稿数・閲覧数・エンゲージメント・フォロワー成長を並べて、実数と変化率で比較します。",
+      },
+      {
+        tag: "内蔵プロンプト 6 種",
+        index: "06",
+        title: "レポートはワンクリック",
+        body: "パフォーマンスレビュー、コンテンツ戦略、投稿スケジュールなど 6 種類 — クライアントのメニューから選ぶだけで完全なレポートが届きます。",
+      },
+    ],
+  },
+  connect: {
+    kicker: "02 / 接続方法",
+    title: "API キーは不要。ブラウザで承認するだけ。",
+    description:
+      "認証は OAuth 2.1（PKCE）と Dynamic Client Registration。クライアントが自動で登録し、ブラウザにダッシュボードのログイン画面が開き、同意画面であなたが承認します。",
+    steps: [
+      {
+        index: "01",
+        title: "エンドポイントをコピー",
+        body: "MCP サーバーはデプロイ済みダッシュボードの /api/mcp にあります。いつもログインしているドメインと同じで、追加のサービスは不要です。",
+      },
+      {
+        index: "02",
+        title: "クライアントに追加",
+        body: "Claude Code と Codex はコマンド 1 行、Claude はカスタムコネクタ、Cursor は URL の設定 1 つ — 下で切り替えて確認できます。",
+      },
+      {
+        index: "03",
+        title: "ログインして承認",
+        body: "ブラウザにダッシュボードのログインが開きます。読み取り専用スコープを承認すれば接続完了 — いつでも Settings から取り消せます。",
+      },
+    ],
+    clients: [
+      {
+        tag: "Claude Code",
+        index: "01",
+        title: "コマンド 1 行、それから /mcp",
+        body: "コマンド 1 行を実行し（ページ上部でコピーできます）、Claude Code 内で /mcp を実行して、開いたブラウザでログインを完了します。",
+      },
+      {
+        tag: "Claude",
+        index: "02",
+        title: "カスタムコネクタを追加",
+        body: "claude.ai またはデスクトップアプリで Settings → Connectors → Add custom connector を開き、エンドポイント URL を貼り付けて OAuth ログインを完了します。",
+      },
+      {
+        tag: "Codex",
+        index: "03",
+        title: "CLI でもアプリ設定でも",
+        body: "ページ上部の Codex コマンドを実行し、codex mcp login threads-analytics を実行 — 図のようにアプリの MCP 設定から追加もできます。",
+      },
+      {
+        tag: "Cursor · その他",
+        index: "04",
+        title: "任意の MCP クライアントで",
+        body: ".cursor/mcp.json に url エントリを追加 — Streamable HTTP と OAuth に対応するクライアントなら何でも接続できます。",
+      },
+    ],
+    consent: {
+      title: "最後のステップは共通：許可するだけ。",
+      body: "どのクライアントでも、ブラウザにダッシュボードのログインが開きます。この画面で読み取り専用スコープを許可すれば、接続は完了です。",
+      connected: "エージェント接続済み — 読み取り専用",
+      dialog: {
+        title: "アクセスを許可",
+        subtitle: "Claude が Threads Analytics への接続を求めています。",
+        scopeTitle: "このエージェントに以下を許可します：",
+        scopeRead: "投稿・メトリクス・分析データの読み取り",
+        scopeNoWrite: "データの変更や、あなたに代わっての投稿はできません。",
+        deny: "拒否",
+        approve: "許可",
+      },
+    },
+    manage: {
+      title: "接続後も、いつでも取り消せる。",
+      body: "許可したエージェントはダッシュボードの Settings → Connected Agents に一覧表示され、許可日時と最終使用日時を確認できます。「取り消す」でトークンは即座に無効化され、再接続には同意画面をもう一度通す必要があります。",
+      panel: {
+        title: "接続済みエージェント",
+        subtitle: "分析データの読み取りを許可した MCP クライアント。",
+        revoke: "取り消す",
+        agents: [
+          { name: "Claude Code", meta: "許可日 9月4日 19:53 · 最終使用 20:21" },
+          { name: "Codex", meta: "許可日 9月4日 20:08 · 最終使用 20:09" },
+        ],
+      },
+    },
+  },
+  usage: {
+    kicker: "03 / 使い方",
+    title: "自分の言葉で質問するか、プロンプトから始める。",
+    description:
+      "接続すればツールは自動で現れ、設定は不要です。アカウントについて何でも質問するか、6 つの内蔵プロンプトを実行してください。どれも 30d や 90d のような期間指定に対応します。",
+    examplesLabel: "こんな質問を",
+    examples: [
+      {
+        q: "今月エンゲージメント率が最も高かった投稿はどれ？理由も教えて。",
+        a: "上位 3 件はすべて質問で始まるテキスト投稿 — 中央値 4.8%、ベースライン比 +62%。短い問いかけと自答の形式が返信を伸ばしています。",
+        tools: ["list_posts", "get_post"],
+      },
+      {
+        q: "来週はいつ投稿すべき？過去 90 日のデータで判断して。",
+        a: "オーディエンスは火・木の 20〜22 時が最も活発 — 90 日間の中央値ビューは +41%。来週は火 20:30 と木 21:00 がおすすめです。",
+        tools: ["get_account_overview", "get_analytics"],
+      },
+      {
+        q: "今月と先月を比較して、短いレポートを書いて。",
+        a: "今月：18 投稿（+3）、閲覧 12.4 万（+22%）、エンゲージ率 3.9%（+0.6pp）、フォロワー +214。詳細レポートは以下の通り。",
+        tools: ["compare_periods"],
+      },
+    ],
+    examplesNote:
+      "どのツールを呼ぶかはエージェントが判断します — まず概要を見て、必要に応じて投稿・分析・フォロワー履歴を読み取ります。",
+    promptsLabel: "プロンプトメニュー",
+    prompts: [
+      {
+        tag: "performance-review",
+        index: "01",
+        title: "パフォーマンスレビュー",
+        body: "全体トレンド、ベスト/ワースト投稿とその理由、次の期間への具体的なアクション 3 つ。",
+      },
+      {
+        tag: "content-strategy",
+        index: "02",
+        title: "コンテンツ戦略",
+        body: "どの形式・長さ・トピックが効いているか — そして今後の最適なコンテンツ配分。",
+      },
+      {
+        tag: "posting-schedule",
+        index: "03",
+        title: "投稿スケジュール",
+        body: "オーディエンスが実際に反応する時間帯から、具体的な週間スケジュールを提案。",
+      },
+      {
+        tag: "viral-post-breakdown",
+        index: "04",
+        title: "バズ投稿の分解",
+        body: "突出した投稿を深掘りし、再現可能なパターンを抽出します。",
+      },
+      {
+        tag: "audience-insights",
+        index: "05",
+        title: "オーディエンス分析",
+        body: "フォロワー成長と属性データ、そしてコンテンツと投稿時間への示唆。",
+      },
+      {
+        tag: "topic-analysis",
+        index: "06",
+        title: "トピック分析",
+        body: "成果を生むトピックと文章パターン、それを応用した投稿アイデア 5 つ。",
+      },
+    ],
+  },
+  cta: {
+    title: "エージェントに、自分のデータを。",
+    description:
+      "ダッシュボードをデプロイし、いつものエージェントを接続すれば、次のレポートはプロンプト 1 つの距離です。",
+    primary: "エージェントを接続する",
+    secondary: "GitHub で見る",
+    revokeNote:
+      "接続中のエージェントは Settings → Connected Agents に表示され、ワンクリックで取り消せます。",
   },
 };
 
@@ -578,6 +1338,7 @@ export const dictionaries = {
       features: "Features",
       deploy: "Deploy",
       tokenGuide: "Token guide",
+      mcp: "MCP",
       github: "GitHub",
     },
     hero: {
@@ -588,10 +1349,10 @@ export const dictionaries = {
         "Threads Analytics turns your own post history into practical signals—when to publish, what format to use, how long to write, and what earns real engagement.",
       primaryCta: "Try the live analysis",
       secondaryCta: "View on GitHub",
-      note: "15+ analyses · Multi-account · Automatic sync",
+      note: "25+ analyses · Multi-account · Automatic sync",
     },
     proof: [
-      { value: "15+", label: "analysis views" },
+      { value: "25+", label: "analysis views" },
       { value: "3", label: "interface languages" },
       { value: "24/7", label: "automatic sync" },
       { value: "100%", label: "your infrastructure" },
@@ -734,16 +1495,16 @@ export const dictionaries = {
           index: "06",
           tag: "SELF-HOSTED",
           title: "Your data stays on your stack",
-          body: "Deploy with PostgreSQL on Railway, Zeabur, Docker, or your own server. Tokens are encrypted at rest.",
+          body: "Deploy with PostgreSQL on Railway, Zeabur, Vercel, Docker, or your own server. Tokens are encrypted at rest.",
         },
       ],
     },
     product: {
       kicker: "04 / THE FULL PICTURE",
-      title: "Fifteen-plus views. One publishing system.",
+      title: "Twenty-five-plus charts. One publishing system.",
       description:
-        "Move from account health to post-level diagnosis without leaving the dashboard. Overview, performance, content, and posts share one source of truth.",
-      labels: ["Overview", "Performance", "Content", "Posts"],
+        "Move from account health to post-level diagnosis without leaving the dashboard. Overview, performance, content, audience, and posts share one source of truth.",
+      labels: ["Overview", "Performance", "Content", "Audience", "Posts"],
       preview: {
         privateLabel: "Self-hosted",
         eyebrow: "Performance analysis",
@@ -758,8 +1519,16 @@ export const dictionaries = {
         baseline: "Personal baseline",
       },
     },
+    mcpHome: {
+      kicker: "05 / BUILT-IN MCP SERVER",
+      title: "Ask your own data, in plain language.",
+      description:
+        "Every deployment ships a read-only MCP server. Connect Claude, Codex, or Cursor over OAuth — no API keys — and your agent reads posts, analytics, and follower history to answer with reports and next moves.",
+      cta: "Explore the MCP server",
+      note: "Read-only · OAuth 2.1 · Revoke anytime",
+    },
     deploy: {
-      kicker: "05 / OWN THE STACK",
+      kicker: "06 / OWN THE STACK",
       title: "From repository to your dashboard in minutes.",
       description:
         "Use a one-click template or run the container yourself. The official website stays separate; the deployable image contains only the analytics product.",
@@ -1117,6 +1886,7 @@ export const dictionaries = {
       },
     },
     tokenGuide: tokenGuideEn,
+    mcpGuide: mcpGuideEn,
     finalCta: {
       kicker: "READ YOUR OWN SIGNALS",
       title: "Your next better post is already in your history.",
@@ -1137,8 +1907,11 @@ export const dictionaries = {
       zeaburAgent: "Zeabur Agent",
       vercelAgent: "Vercel Agent",
       tokenGuide: "Threads access token guide",
+      mcpGuide: "MCP server guide",
+      analyticsReference: "Analytics reference",
       source: "Source code",
       readme: "Documentation",
+      license: "AGPL-3.0 license",
     },
   },
   "zh-TW": {
@@ -1153,6 +1926,7 @@ export const dictionaries = {
       features: "功能",
       deploy: "部署",
       tokenGuide: "Token 生成教學",
+      mcp: "MCP",
       github: "GitHub",
     },
     hero: {
@@ -1163,10 +1937,10 @@ export const dictionaries = {
         "Threads Analytics 把你自己的貼文紀錄變成可行動的訊號：什麼時候發、用什麼形式、寫多長，以及什麼內容真正帶來互動。",
       primaryCta: "操作分析 Demo",
       secondaryCta: "前往 GitHub",
-      note: "15+ 種分析 · 多帳號 · 自動同步",
+      note: "25+ 種分析 · 多帳號 · 自動同步",
     },
     proof: [
-      { value: "15+", label: "種分析視圖" },
+      { value: "25+", label: "種分析視圖" },
       { value: "3", label: "種介面語言" },
       { value: "24/7", label: "自動同步" },
       { value: "100%", label: "部署在自己的環境" },
@@ -1305,16 +2079,16 @@ export const dictionaries = {
           index: "06",
           tag: "自架部署",
           title: "資料留在自己的環境",
-          body: "使用 Railway、Zeabur、Docker 或自己的伺服器搭配 PostgreSQL，Token 會加密保存。",
+          body: "使用 Railway、Zeabur、Vercel、Docker 或自己的伺服器搭配 PostgreSQL，Token 會加密保存。",
         },
       ],
     },
     product: {
       kicker: "04 / 看見完整全貌",
-      title: "超過 15 種分析，一套發文系統。",
+      title: "超過 25 種分析，一套發文系統。",
       description:
-        "從帳號健康度一路看到單篇診斷，不必離開儀表板。總覽、成效、內容與貼文共用同一份資料來源。",
-      labels: ["總覽", "成效分析", "內容分析", "貼文"],
+        "從帳號健康度一路看到單篇診斷，不必離開儀表板。總覽、成效、內容、受眾與貼文共用同一份資料來源。",
+      labels: ["總覽", "成效分析", "內容分析", "受眾分析", "貼文"],
       preview: {
         privateLabel: "自架環境",
         eyebrow: "成效分析",
@@ -1329,8 +2103,16 @@ export const dictionaries = {
         baseline: "個人基準",
       },
     },
+    mcpHome: {
+      kicker: "05 / 內建 MCP 伺服器",
+      title: "用一句話，問你自己的數據。",
+      description:
+        "每個部署都內建唯讀 MCP 伺服器。用 OAuth 連接 Claude、Codex 或 Cursor，不需要 API Key，Agent 就能讀取貼文、分析與追蹤者紀錄，直接回覆報告與下一步建議。",
+      cta: "查看 MCP 連接教學",
+      note: "唯讀 · OAuth 2.1 · 隨時可撤銷",
+    },
     deploy: {
-      kicker: "05 / 掌握自己的環境",
+      kicker: "06 / 掌握自己的環境",
       title: "幾分鐘，部署好你的專屬儀表板。",
       description:
         "使用一鍵模板，或自己執行 Container。官方網站完全獨立，可部署的 Image 只包含分析產品。",
@@ -1660,6 +2442,7 @@ export const dictionaries = {
       },
     },
     tokenGuide: tokenGuideZh,
+    mcpGuide: mcpGuideZh,
     finalCta: {
       kicker: "讀懂自己的訊號",
       title: "下一篇更好的貼文，其實已經藏在歷史紀錄裡。",
@@ -1679,8 +2462,11 @@ export const dictionaries = {
       zeaburAgent: "Zeabur Agent",
       vercelAgent: "Vercel Agent",
       tokenGuide: "Threads Access Token 生成教學",
+      mcpGuide: "MCP 連接教學",
+      analyticsReference: "分析指標說明",
       source: "原始碼",
       readme: "使用文件",
+      license: "AGPL-3.0 授權",
     },
   },
   ja: {
@@ -1695,6 +2481,7 @@ export const dictionaries = {
       features: "機能",
       deploy: "デプロイ",
       tokenGuide: "トークン生成ガイド",
+      mcp: "MCP",
       github: "GitHub",
     },
     hero: {
@@ -1705,10 +2492,10 @@ export const dictionaries = {
         "Threads Analyticsは、自分の投稿履歴を実用的なシグナルに変えます。いつ投稿するか、どの形式にするか、どれくらい書くか、何が本当の反応につながったかを把握できます。",
       primaryCta: "分析デモを試す",
       secondaryCta: "GitHubを見る",
-      note: "15種類以上の分析 · 複数アカウント · 自動同期",
+      note: "25種類以上の分析 · 複数アカウント · 自動同期",
     },
     proof: [
-      { value: "15+", label: "分析ビュー" },
+      { value: "25+", label: "分析ビュー" },
       { value: "3", label: "対応言語" },
       { value: "24/7", label: "自動同期" },
       { value: "100%", label: "自分のインフラ" },
@@ -1850,16 +2637,16 @@ export const dictionaries = {
           index: "06",
           tag: "セルフホスト",
           title: "データは自分の環境に置く",
-          body: "Railway、Zeabur、Docker、または自分のサーバーへPostgreSQLと一緒にデプロイ。Tokenは暗号化されます。",
+          body: "Railway、Zeabur、Vercel、Docker、または自分のサーバーへPostgreSQLと一緒にデプロイ。Tokenは暗号化されます。",
         },
       ],
     },
     product: {
       kicker: "04 / 全体像",
-      title: "15種類以上の分析を、一つの投稿システムに。",
+      title: "25種類以上の分析を、一つの投稿システムに。",
       description:
-        "アカウント全体の状態から投稿単位の診断まで、ダッシュボード内で移動できます。概要、パフォーマンス、コンテンツ、投稿は同じデータを共有します。",
-      labels: ["概要", "パフォーマンス", "コンテンツ", "投稿"],
+        "アカウント全体の状態から投稿単位の診断まで、ダッシュボード内で移動できます。概要、パフォーマンス、コンテンツ、オーディエンス、投稿は同じデータを共有します。",
+      labels: ["概要", "パフォーマンス", "コンテンツ", "オーディエンス", "投稿"],
       preview: {
         privateLabel: "セルフホスト",
         eyebrow: "パフォーマンス分析",
@@ -1874,8 +2661,16 @@ export const dictionaries = {
         baseline: "個人基準",
       },
     },
+    mcpHome: {
+      kicker: "05 / 内蔵 MCP サーバー",
+      title: "自分のデータに、そのまま質問。",
+      description:
+        "すべてのデプロイに読み取り専用の MCP サーバーを内蔵。Claude、Codex、Cursor を OAuth で接続すれば、API キーなしでエージェントが投稿・分析・フォロワー履歴を読み取り、レポートと次の一手を返します。",
+      cta: "MCP ガイドを見る",
+      note: "読み取り専用 · OAuth 2.1 · いつでも解除可能",
+    },
     deploy: {
-      kicker: "05 / 自分のスタックで",
+      kicker: "06 / 自分のスタックで",
       title: "リポジトリから自分のダッシュボードまで、数分で。",
       description:
         "ワンクリックテンプレート、または自分でコンテナを実行できます。公式サイトは独立し、配布imageには分析プロダクトだけが含まれます。",
@@ -2222,6 +3017,7 @@ export const dictionaries = {
       },
     },
     tokenGuide: tokenGuideJa,
+    mcpGuide: mcpGuideJa,
     finalCta: {
       kicker: "自分のシグナルを読む",
       title: "次の良い投稿は、すでに履歴の中にあります。",
@@ -2241,8 +3037,11 @@ export const dictionaries = {
       zeaburAgent: "Zeabur Agent",
       vercelAgent: "Vercel Agent",
       tokenGuide: "アクセストークン生成ガイド",
+      mcpGuide: "MCP サーバーガイド",
+      analyticsReference: "分析リファレンス",
       source: "ソースコード",
       readme: "ドキュメント",
+      license: "AGPL-3.0 ライセンス",
     },
   },
 } as const;
