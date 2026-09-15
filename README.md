@@ -49,6 +49,17 @@
 - Password-protected (single `APP_PASSWORD` env var)
 - English / 繁體中文 / 日本語 UI
 
+<table>
+  <tr>
+    <td width="50%"><img src="public/demo/analytics.png" alt="Analytics — Performance charts" /></td>
+    <td width="50%"><img src="public/demo/audience.png" alt="Analytics — Audience growth and demographics" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="public/demo/posts.png" alt="Posts list with per-post analytics panel" /></td>
+    <td width="50%"><img src="public/demo/content.png" alt="Analytics — Content patterns and posting activity" /></td>
+  </tr>
+</table>
+
 ---
 
 ## Quick Start

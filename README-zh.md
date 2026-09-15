@@ -49,6 +49,17 @@
 - 密碼保護（單一環境變數 `APP_PASSWORD`）
 - 繁體中文 / English / 日本語 介面
 
+<table>
+  <tr>
+    <td width="50%"><img src="public/demo/analytics.png" alt="分析 — 成效圖表" /></td>
+    <td width="50%"><img src="public/demo/audience.png" alt="分析 — 受眾成長與輪廓" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="public/demo/posts.png" alt="貼文列表與單篇分析面板" /></td>
+    <td width="50%"><img src="public/demo/content.png" alt="分析 — 內容模式與發文活動" /></td>
+  </tr>
+</table>
+
 ---
 
 ## 快速開始

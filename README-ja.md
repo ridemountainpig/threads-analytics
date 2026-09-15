@@ -15,7 +15,7 @@
 </p>
 
 <p align="center">
-  <img src="public/dashboard.png" alt="Threads Analytics ダッシュボード" />
+  <img src="public/dashboard-ja.png" alt="Threads Analytics ダッシュボード" />
 </p>
 
 ---
@@ -48,6 +48,17 @@
 - アクセストークンの自動更新 — 一度接続すれば、60 日ごとに手動で貼り直す必要はありません
 - パスワード保護（単一の `APP_PASSWORD` 環境変数）
 - English / 繁體中文 / 日本語 UI
+
+<table>
+  <tr>
+    <td width="50%"><img src="public/demo/analytics.png" alt="アナリティクス — パフォーマンスチャート" /></td>
+    <td width="50%"><img src="public/demo/audience.png" alt="アナリティクス — オーディエンスの成長と属性" /></td>
+  </tr>
+  <tr>
+    <td width="50%"><img src="public/demo/posts.png" alt="投稿リストと投稿ごとのアナリティクスパネル" /></td>
+    <td width="50%"><img src="public/demo/content.png" alt="アナリティクス — コンテンツ傾向と投稿アクティビティ" /></td>
+  </tr>
+</table>
 
 ---
 
