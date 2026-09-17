@@ -6,6 +6,7 @@ import {
   LayoutDashboard,
   BarChart2,
   FileText,
+  Gift,
   Settings,
   LogOut,
   ArrowUpRight,
@@ -23,6 +24,7 @@ const navItems = [
   { href: "/dashboard/overview", labelKey: "overview", icon: LayoutDashboard },
   { href: "/dashboard/analytics", labelKey: "analytics", icon: BarChart2 },
   { href: "/dashboard/posts", labelKey: "posts", icon: FileText },
+  { href: "/dashboard/giveaway", labelKey: "giveaway", icon: Gift },
   { href: "/dashboard/settings", labelKey: "settings", icon: Settings },
 ] as const;
 
@@ -41,6 +43,7 @@ interface SidebarProps {
     overview: string;
     analytics: string;
     posts: string;
+    giveaway: string;
     settings: string;
     signOut: string;
     switchAccount: string;
@@ -138,7 +141,7 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
 
       {/* Mobile tab bar: iOS grammar — the active tab is tinted, not boxed;
           translucent material with safe-area padding for the home indicator */}
-      <nav className="bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden">
+      <nav className="bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden">
         {navItems.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (

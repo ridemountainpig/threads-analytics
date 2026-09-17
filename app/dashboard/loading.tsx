@@ -1,5 +1,6 @@
-// Skeletons mirror the overview layout — header row, stat-tile grid, chart
-// card — with the cards' real radii so nothing jumps when content lands.
+// Covers /dashboard (which redirects to overview); each child route ships its
+// own loading.tsx mirroring that page's layout so nothing jumps when content
+// lands. This one mirrors overview: header row, stat-tile grid, chart card.
 export default function DashboardLoading() {
   return (
     <div className="animate-pulse space-y-6 p-4 motion-reduce:animate-none sm:p-6">

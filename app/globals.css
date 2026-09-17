@@ -172,6 +172,12 @@
   }
 }
 
+/* Thin theme-tinted scrollbar for scrollable lists inside cards. */
+@utility scrollbar-subtle {
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
+}
+
 /* Wrong-password shake — a short, non-vestibular nudge; reduced motion gets
    the plain fade the error already has. */
 @keyframes login-shake {

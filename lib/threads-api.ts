@@ -75,6 +75,14 @@ export class TokenExpiredError extends Error {
   }
 }
 
+/** The token was minted without threads_read_replies, so no reply endpoint works. */
+export class MissingReplyPermissionError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "MissingReplyPermissionError";
+  }
+}
+
 /**
  * Raises TokenExpiredError when an error body carries Meta's code 190, which
  * covers an expired token as well as one the user revoked or invalidated by
@@ -331,6 +339,80 @@ export async function getFollowerDemographics(
     demographics[breakdown] = results[i] ?? { total: 0, entries: [] };
   });
   return demographics;
+}
+
+export interface ThreadsReply {
+  id: string;
+  username: string;
+  text: string;
+  timestamp: string;
+  permalink: string;
+}
+
+// 100 pages × limit 100 ≈ 10k replies; past that a giveaway draw is stale data
+// anyway and the loop must not spin on the rate limit.
+const REPLY_PAGE_LIMIT = 100;
+
+/**
+ * Fetches every reply (all nesting depths) under one of the user's own root
+ * posts via /{media_id}/conversation. Replies from private profiles come back
+ * without a username and are dropped — they can't be credited to an entrant.
+ */
+export async function getAllReplies(
+  mediaId: string,
+  accessToken: string,
+): Promise<{ replies: ThreadsReply[]; truncated: boolean }> {
+  interface ConversationResponse {
+    data: Array<{
+      id: string;
+      username?: string;
+      text?: string;
+      timestamp?: string;
+      permalink?: string;
+    }>;
+    paging?: { cursors?: { after?: string }; next?: string };
+  }
+
+  const replies: ThreadsReply[] = [];
+  let after: string | undefined;
+
+  for (let page = 0; page < REPLY_PAGE_LIMIT; page++) {
+    const params: Record<string, string> = {
+      fields: "id,username,text,timestamp,permalink",
+      limit: "100",
+      access_token: accessToken,
+    };
+    if (after) params["after"] = after;
+
+    let data: ConversationResponse;
+    try {
+      data = await apiGet<ConversationResponse>(`/${mediaId}/conversation`, params);
+    } catch (err) {
+      if (
+        err instanceof Error &&
+        (err.message.includes("threads_read_replies") || /"code":10\b/.test(err.message))
+      ) {
+        throw new MissingReplyPermissionError(err.message);
+      }
+      throw err;
+    }
+
+    for (const r of data.data ?? []) {
+      if (!r.username || !r.timestamp) continue;
+      replies.push({
+        id: r.id,
+        username: r.username,
+        text: r.text ?? "",
+        timestamp: r.timestamp,
+        permalink: r.permalink ?? "",
+      });
+    }
+
+    after = data.paging?.cursors?.after && data.paging.next ? data.paging.cursors.after : undefined;
+    if (!after) return { replies, truncated: false };
+  }
+
+  return { replies, truncated: true };
 }
 
 export async function getUserInsights(
