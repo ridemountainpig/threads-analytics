@@ -465,7 +465,7 @@ export const dictionaries = {
       accountsSub:
         "Connect accounts with a Threads long-lived access token, choose the active profile, and remove accounts you no longer track. Tokens are renewed automatically during sync before they expire.",
       dataSync: "Data Sync",
-      dataSyncSub: "Fetch posts and insights for @{username}.",
+      dataSyncSub: "Fetch posts and insights for @{username} and every other connected account.",
       syncHelp:
         "Syncing may take a minute for large accounts. The dashboard uses cached post metrics until the next sync completes.",
       autoSync: "Auto Sync",
@@ -985,7 +985,7 @@ export const dictionaries = {
       accountsSub:
         "使用 Threads 長效 access token 連接帳號、選擇啟用的個人檔案，並移除不再追蹤的帳號。Token 會在同步時於到期前自動更新。",
       dataSync: "資料同步",
-      dataSyncSub: "抓取 @{username} 的貼文與洞察資料。",
+      dataSyncSub: "抓取 @{username} 與其他所有已連接帳號的貼文與洞察資料。",
       syncHelp: "大型帳號可能需要一分鐘。同步完成前，儀表板會使用快取貼文指標。",
       autoSync: "自動同步",
       autoSyncSub:
@@ -1518,7 +1518,7 @@ export const dictionaries = {
       accountsSub:
         "Threads の長期アクセストークンでアカウントを接続し、アクティブなプロフィールを選択し、追跡しないアカウントを削除します。トークンは期限切れ前の同期時に自動更新されます。",
       dataSync: "データ同期",
-      dataSyncSub: "@{username} の投稿とインサイトを取得します。",
+      dataSyncSub: "@{username} と接続済みの他のすべてのアカウントの投稿とインサイトを取得します。",
       syncHelp:
         "大規模なアカウントは同期に1分ほどかかる場合があります。次の同期が完了するまで、ダッシュボードはキャッシュされた指標を使用します。",
       autoSync: "自動同期",

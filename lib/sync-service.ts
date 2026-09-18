@@ -26,6 +26,11 @@ export interface SyncResult {
   error?: string;
 }
 
+export interface AccountSyncResult extends SyncResult {
+  accountId: string;
+  username: string;
+}
+
 interface SyncAccount {
   id: string;
   accessToken: string;
@@ -114,10 +119,7 @@ async function captureFollowerSnapshot(accountId: string, accessToken: string): 
   }
 }
 
-export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncResult> {
-  const account = preloaded ?? (await db.threadsAccount.findFirst({ where: { isActive: true } }));
-
-  if (!account) return { error: "No active account. Please add a Threads account first." };
+export async function syncAccount(account: SyncAccount): Promise<SyncResult> {
   if (account.expiresAt < new Date()) return { error: "token_expired" };
 
   let accessToken: string;
@@ -234,4 +236,22 @@ export async function syncActiveAccount(preloaded?: SyncAccount): Promise<SyncRe
     const message = err instanceof Error ? err.message : "Sync failed";
     return { error: message };
   }
+}
+
+// Every connected account is synced, not just the active one, so switching
+// accounts never lands on stale data and each token keeps getting renewed.
+// Sequential to stay within the Threads API rate limit; the active account
+// goes first so the dashboard the user is looking at refreshes soonest.
+export async function syncAllAccounts(): Promise<AccountSyncResult[]> {
+  const accounts = await db.threadsAccount.findMany({
+    orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
+  });
+
+  const results: AccountSyncResult[] = [];
+  for (const account of accounts) {
+    const result = await syncAccount(account);
+    if (result.error) console.warn(`[sync] ${account.username}: ${result.error}`);
+    results.push({ accountId: account.id, username: account.username, ...result });
+  }
+  return results;
 }

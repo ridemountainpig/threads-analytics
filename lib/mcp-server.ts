@@ -119,8 +119,45 @@ function parseRange(since?: string, until?: string) {
 
 const READ_ONLY = { readOnlyHint: true };
 
-async function getActiveAccount() {
-  return db.threadsAccount.findFirst({ where: { isActive: true }, include: { syncState: true } });
+type ConnectedAccount = Prisma.ThreadsAccountGetPayload<{ include: { syncState: true } }>;
+
+async function listAccounts(): Promise<ConnectedAccount[]> {
+  return db.threadsAccount.findMany({
+    include: { syncState: true },
+    orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
+  });
+}
+
+const accountArg = z
+  .string()
+  .optional()
+  .describe(
+    "Which connected account to query: a username (with or without @) or account id from get_account_overview. Optional when only one account is connected, required otherwise.",
+  );
+
+// With several accounts connected there is no safe default — the dashboard's
+// "active" account is a UI preference the agent's user may not share — so the
+// agent is told to ask instead of silently answering about the wrong profile.
+async function resolveAccount(
+  ref: string | undefined,
+): Promise<{ account: ConnectedAccount } | { error: string }> {
+  const accounts = await listAccounts();
+  if (accounts.length === 0) return { error: "No Threads account is connected." };
+
+  const handles = accounts.map((a) => `@${a.username}`).join(", ");
+  if (ref) {
+    const wanted = ref.trim().replace(/^@/, "").toLowerCase();
+    const match = accounts.find((a) => a.id === wanted || a.username.toLowerCase() === wanted);
+    if (!match) {
+      return { error: `No connected account matches "${ref}". Connected accounts: ${handles}.` };
+    }
+    return { account: match };
+  }
+
+  if (accounts.length === 1) return { account: accounts[0] };
+  return {
+    error: `Multiple Threads accounts are connected (${handles}) and no 'account' was given. Ask the user which account they mean, then pass it as 'account'.`,
+  };
 }
 
 // Engagement excludes shares, matching the app-wide rate (see getMetricRates).
@@ -225,47 +262,61 @@ export function registerMcpServer(server: McpServer) {
       title: "Get account overview",
       annotations: READ_ONLY,
       description:
-        "Overview of the connected Threads account: username, sync status, post counts, data date range, and follower growth summary. Call this first to learn what data is available.",
+        "Overview of every connected Threads account: username, sync status, post counts, data date range, and follower growth summary. Call this first to learn what data is available and, when more than one account is connected, which one the user wants.",
       inputSchema: z.object({}),
     },
     async () => {
-      const account = await getActiveAccount();
-      if (!account) return errorResult("No active Threads account is connected.");
+      const accounts = await listAccounts();
+      if (accounts.length === 0) return errorResult("No Threads account is connected.");
 
-      const [postCount, oldest, newest, snapshots] = await Promise.all([
-        db.post.count({
-          where: { accountId: account.id, mediaType: { not: "REPOST_FACADE" } },
-        }),
-        db.post.findFirst({
-          where: { accountId: account.id },
-          orderBy: { timestamp: "asc" },
-          select: { timestamp: true },
-        }),
-        db.post.findFirst({
-          where: { accountId: account.id },
-          orderBy: { timestamp: "desc" },
-          select: { timestamp: true },
-        }),
-        db.followerSnapshot.findMany({
-          where: { accountId: account.id },
-          orderBy: { date: "asc" },
-          select: { date: true, followersCount: true },
-        }),
-      ]);
+      const overviews = await Promise.all(
+        accounts.map(async (account) => {
+          const [postCount, oldest, newest, snapshots] = await Promise.all([
+            db.post.count({
+              where: { accountId: account.id, mediaType: { not: "REPOST_FACADE" } },
+            }),
+            db.post.findFirst({
+              where: { accountId: account.id },
+              orderBy: { timestamp: "asc" },
+              select: { timestamp: true },
+            }),
+            db.post.findFirst({
+              where: { accountId: account.id },
+              orderBy: { timestamp: "desc" },
+              select: { timestamp: true },
+            }),
+            db.followerSnapshot.findMany({
+              where: { accountId: account.id },
+              orderBy: { date: "asc" },
+              select: { date: true, followersCount: true },
+            }),
+          ]);
 
-      const trend = computeFollowerTrend(
-        snapshots.map((s) => ({ date: s.date, followersCount: s.followersCount })),
+          const trend = computeFollowerTrend(
+            snapshots.map((s) => ({ date: s.date, followersCount: s.followersCount })),
+          );
+          return {
+            id: account.id,
+            username: account.username,
+            isActiveInDashboard: account.isActive,
+            lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString() ?? null,
+            accessTokenExpiresAt: account.expiresAt.toISOString(),
+            postCount,
+            dataRange: {
+              oldestPost: oldest?.timestamp.toISOString() ?? null,
+              newestPost: newest?.timestamp.toISOString() ?? null,
+            },
+            followers: summarizeFollowerGrowth(trend),
+          };
+        }),
       );
+
       return jsonResult({
-        username: account.username,
-        lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString() ?? null,
-        accessTokenExpiresAt: account.expiresAt.toISOString(),
-        postCount,
-        dataRange: {
-          oldestPost: oldest?.timestamp.toISOString() ?? null,
-          newestPost: newest?.timestamp.toISOString() ?? null,
-        },
-        followers: summarizeFollowerGrowth(trend),
+        accountCount: overviews.length,
+        ...(overviews.length > 1 && {
+          note: "Multiple accounts are connected. Every other tool requires an 'account' argument (username or id). If the user hasn't said which account they mean, ask before calling them.",
+        }),
+        accounts: overviews,
       });
     },
   );
@@ -278,6 +329,7 @@ export function registerMcpServer(server: McpServer) {
       description:
         "List posts with their metrics (views, likes, replies, reposts, quotes, shares, engagement rate). Text is truncated to 300 characters; use get_post for the full text. Defaults to the last 90 days sorted by date. Sorting by engagement_rate covers at most the 2000 most recent posts in range (the response includes sortedOver when truncated).",
       inputSchema: z.object({
+        account: accountArg,
         since: dateArg("Start of the date range (inclusive)"),
         until: dateArg("End of the date range (inclusive)"),
         sort: z
@@ -293,9 +345,10 @@ export function registerMcpServer(server: McpServer) {
         offset: z.number().int().min(0).optional().describe("Rows to skip, for pagination"),
       }),
     },
-    async ({ since, until, sort, media_type, query, limit, offset }) => {
-      const account = await getActiveAccount();
-      if (!account) return errorResult("No active Threads account is connected.");
+    async ({ account: accountRef, since, until, sort, media_type, query, limit, offset }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
 
       let range;
       try {
@@ -367,11 +420,15 @@ export function registerMcpServer(server: McpServer) {
       title: "Get post",
       annotations: READ_ONLY,
       description: "Full detail of a single post by id, including its complete text.",
-      inputSchema: z.object({ id: z.string().describe("Post id from list_posts") }),
+      inputSchema: z.object({
+        account: accountArg,
+        id: z.string().describe("Post id from list_posts"),
+      }),
     },
-    async ({ id }) => {
-      const account = await getActiveAccount();
-      if (!account) return errorResult("No active Threads account is connected.");
+    async ({ account: accountRef, id }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
       const post = await db.post.findFirst({ where: { id, accountId: account.id } });
       if (!post) return errorResult(`Post ${id} not found.`);
       return jsonResult({
@@ -402,6 +459,7 @@ export function registerMcpServer(server: McpServer) {
         ANALYTICS_SECTIONS.join(", ") +
         ". Defaults to a summary set over the last 90 days.",
       inputSchema: z.object({
+        account: accountArg,
         since: dateArg("Start of the date range (inclusive)"),
         until: dateArg("End of the date range (inclusive)"),
         sections: z
@@ -416,9 +474,10 @@ export function registerMcpServer(server: McpServer) {
           ),
       }),
     },
-    async ({ since, until, sections, timezone }) => {
-      const account = await getActiveAccount();
-      if (!account) return errorResult("No active Threads account is connected.");
+    async ({ account: accountRef, since, until, sections, timezone }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
 
       let range;
       try {
@@ -541,6 +600,7 @@ export function registerMcpServer(server: McpServer) {
       description:
         "Daily follower-count snapshots with growth summary, and optionally the latest audience demographics (country, city, age, gender).",
       inputSchema: z.object({
+        account: accountArg,
         since: dateArg("Start of the date range (inclusive)"),
         until: dateArg("End of the date range (inclusive)"),
         include_demographics: z
@@ -549,9 +609,10 @@ export function registerMcpServer(server: McpServer) {
           .describe("Include the latest demographics breakdown (default false)"),
       }),
     },
-    async ({ since, until, include_demographics }) => {
-      const account = await getActiveAccount();
-      if (!account) return errorResult("No active Threads account is connected.");
+    async ({ account: accountRef, since, until, include_demographics }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
 
       let range;
       try {
@@ -596,15 +657,17 @@ export function registerMcpServer(server: McpServer) {
       description:
         "Compare core metrics (posts, views, engagement, follower growth) between two periods, with absolute and percentage changes. Defaults: primary period = last 90 days, comparison period = the window of the same length immediately before it.",
       inputSchema: z.object({
+        account: accountArg,
         since: dateArg("Start of the primary period (inclusive)"),
         until: dateArg("End of the primary period (inclusive)"),
         compare_since: dateArg("Start of the comparison period (inclusive)"),
         compare_until: dateArg("End of the comparison period (inclusive)"),
       }),
     },
-    async ({ since, until, compare_since, compare_until }) => {
-      const account = await getActiveAccount();
-      if (!account) return errorResult("No active Threads account is connected.");
+    async ({ account: accountRef, since, until, compare_since, compare_until }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
 
       let primary;
       let comparison;
@@ -650,17 +713,26 @@ export function registerMcpServer(server: McpServer) {
     .string()
     .optional()
     .describe("Analysis period, e.g. '30d', '90d', or '2026-01-01 to 2026-03-01' (default 90d)");
+  const promptAccountArg = z
+    .string()
+    .optional()
+    .describe("Account username to analyze; only needed when several accounts are connected");
+  const accountLine = (account: string | undefined) =>
+    account
+      ? `Analyze the account @${account.replace(/^@/, "")} — pass it as 'account' to every tool.\n\n`
+      : "";
 
   server.registerPrompt(
     "performance-review",
     {
       title: "Performance review",
       description: "A full performance report for a period: trends, wins, and what to improve.",
-      argsSchema: z.object({ period: periodArg }),
+      argsSchema: z.object({ period: periodArg, account: promptAccountArg }),
     },
-    ({ period }) =>
+    ({ period, account }) =>
       promptText(
-        `Review my Threads performance for the period: ${period ?? "the last 90 days"}.\n\n` +
+        accountLine(account) +
+          `Review my Threads performance for the period: ${period ?? "the last 90 days"}.\n\n` +
           `Use the threads-analytics MCP tools: start with get_account_overview, then get_analytics ` +
           `(sections: total_engagement, daily_performance, engagement_rate_trend, posting_consistency, viral_posts) ` +
           `and list_posts sorted by views to find my top and bottom posts.\n\n` +
@@ -675,11 +747,12 @@ export function registerMcpServer(server: McpServer) {
       title: "Content strategy review",
       description:
         "Analyze which content types, lengths, and topics work, and recommend a strategy.",
-      argsSchema: z.object({ period: periodArg }),
+      argsSchema: z.object({ period: periodArg, account: promptAccountArg }),
     },
-    ({ period }) =>
+    ({ period, account }) =>
       promptText(
-        `Analyze my Threads content strategy for: ${period ?? "the last 90 days"}.\n\n` +
+        accountLine(account) +
+          `Analyze my Threads content strategy for: ${period ?? "the last 90 days"}.\n\n` +
           `Use get_analytics (sections: content_type_analysis, post_length_analysis, content_format_length_matrix, ` +
           `action_funnel, reply_rate_leaders) and read my actual top posts with list_posts + get_post to identify topics and hooks.\n\n` +
           `Tell me: which formats and lengths outperform, which topics drive engagement vs. views, ` +
@@ -692,11 +765,12 @@ export function registerMcpServer(server: McpServer) {
     {
       title: "Best posting schedule",
       description: "Recommend a weekly posting schedule based on when my audience engages.",
-      argsSchema: z.object({ period: periodArg }),
+      argsSchema: z.object({ period: periodArg, account: promptAccountArg }),
     },
-    ({ period }) =>
+    ({ period, account }) =>
       promptText(
-        `Work out my optimal Threads posting schedule from: ${period ?? "the last 90 days"}.\n\n` +
+        accountLine(account) +
+          `Work out my optimal Threads posting schedule from: ${period ?? "the last 90 days"}.\n\n` +
           `Use get_analytics (sections: best_time_to_post, top_hours, day_hour_heatmap, weekly_frequency, posting_consistency).\n\n` +
           `Recommend a concrete weekly schedule (days + times with confidence levels), how many posts per week, ` +
           `and note where the data is too thin to be confident.`,
@@ -708,11 +782,12 @@ export function registerMcpServer(server: McpServer) {
     {
       title: "Viral post breakdown",
       description: "Deep-dive the outlier posts and extract repeatable patterns.",
-      argsSchema: z.object({ period: periodArg }),
+      argsSchema: z.object({ period: periodArg, account: promptAccountArg }),
     },
-    ({ period }) =>
+    ({ period, account }) =>
       promptText(
-        `Break down my viral Threads posts from: ${period ?? "the last 90 days"}.\n\n` +
+        accountLine(account) +
+          `Break down my viral Threads posts from: ${period ?? "the last 90 days"}.\n\n` +
           `Use get_analytics (sections: viral_posts, post_quality_scatter), then fetch each outlier's full text with get_post.\n\n` +
           `For each viral post: what it was about, the hook, format, length, and timing. ` +
           `Then extract the repeatable patterns and suggest 3 new post ideas that apply them.`,
@@ -725,11 +800,12 @@ export function registerMcpServer(server: McpServer) {
       title: "Audience insights",
       description:
         "Analyze follower growth and audience demographics, and what they imply for content and timing.",
-      argsSchema: z.object({ period: periodArg }),
+      argsSchema: z.object({ period: periodArg, account: promptAccountArg }),
     },
-    ({ period }) =>
+    ({ period, account }) =>
       promptText(
-        `Analyze my Threads audience for: ${period ?? "the last 90 days"}.\n\n` +
+        accountLine(account) +
+          `Analyze my Threads audience for: ${period ?? "the last 90 days"}.\n\n` +
           `Use get_follower_history with include_demographics: true for the growth trend and demographics, ` +
           `plus get_analytics (sections: action_funnel, engagement_breakdown, best_time_to_post, daily_performance).\n\n` +
           `Tell me: how follower growth correlates with my posting activity, who my audience is ` +
@@ -743,11 +819,12 @@ export function registerMcpServer(server: McpServer) {
     {
       title: "Topic analysis",
       description: "Find which topics and writing patterns drive performance.",
-      argsSchema: z.object({ period: periodArg }),
+      argsSchema: z.object({ period: periodArg, account: promptAccountArg }),
     },
-    ({ period }) =>
+    ({ period, account }) =>
       promptText(
-        `Analyze which topics and writing patterns work on my Threads for: ${period ?? "the last 90 days"}.\n\n` +
+        accountLine(account) +
+          `Analyze which topics and writing patterns work on my Threads for: ${period ?? "the last 90 days"}.\n\n` +
           `Use get_analytics (sections: keyword_analysis, text_feature_comparison, content_type_analysis, ` +
           `top_posts_by_engagement_rate), then read the strongest and weakest posts in full with list_posts + get_post ` +
           `to identify topics beyond single keywords.\n\n` +

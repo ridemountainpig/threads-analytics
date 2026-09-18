@@ -123,12 +123,14 @@ Connected clients appear in **Settings → Connected agents**, where each one ca
 
 | Tool                   | What it does                                                                                                                                                       |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `get_account_overview` | Username, sync status, post count, data date range, and follower growth summary — the recommended first call                                                       |
+| `get_account_overview` | Every connected account's username, sync status, post count, data date range, and follower growth summary — the recommended first call                             |
 | `list_posts`           | Posts with metrics; supports date range, sorting (date / views / likes / engagement rate), media-type filter, full-text search, and pagination                     |
 | `get_post`             | Full detail of a single post, including its complete text                                                                                                          |
 | `get_analytics`        | 31 aggregated analytics sections over a date range (best time to post, keyword analysis, views distribution, posting streaks, …) — pick only the sections you need |
 | `get_follower_history` | Daily follower-count snapshots with growth summary, and optionally the latest audience demographics                                                                |
 | `compare_periods`      | Core metrics for two periods with absolute and percentage changes; the comparison period defaults to the same-length window immediately before                     |
+
+With several accounts connected, every tool except `get_account_overview` takes an `account` argument (username or id). If it is omitted, the tool returns the list of accounts so the agent asks you which one you mean instead of guessing.
 
 ### Prompts
 
@@ -195,7 +197,7 @@ Vercel does not support long-running processes, so the built-in sync scheduler c
 
 ### Auto-sync
 
-On long-running deployments (Railway / Zeabur / VPS / Docker), set `SYNC_SCHEDULER_ENABLED=true`. The built-in scheduler starts with the server and syncs at the interval configured in Settings. On Vercel, use the cron setup above instead.
+On long-running deployments (Railway / Zeabur / VPS / Docker), set `SYNC_SCHEDULER_ENABLED=true`. The built-in scheduler starts with the server and syncs every connected account — not only the active one — at the interval configured in Settings. On Vercel, use the cron setup above instead.
 
 <a id="updating"></a>
 

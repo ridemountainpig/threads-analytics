@@ -123,12 +123,14 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 | 工具                   | 功能                                                                                                       |
 | ---------------------- | ---------------------------------------------------------------------------------------------------------- |
-| `get_account_overview` | 帳號名稱、同步狀態、貼文數、資料日期範圍與追蹤者成長摘要——建議的第一個呼叫                                 |
+| `get_account_overview` | 所有已連接帳號的名稱、同步狀態、貼文數、資料日期範圍與追蹤者成長摘要——建議的第一個呼叫                     |
 | `list_posts`           | 貼文列表含指標；支援日期範圍、排序（日期／觀看／讚／互動率）、媒體類型篩選、全文搜尋與分頁                 |
 | `get_post`             | 單篇貼文完整資訊，含全文                                                                                   |
 | `get_analytics`        | 指定日期範圍內的 31 個聚合分析 section（最佳發文時段、關鍵字分析、觀看分佈、發文連續紀錄等），可只取需要的 |
 | `get_follower_history` | 每日追蹤者快照與成長摘要，可選擇附上最新受眾組成                                                           |
 | `compare_periods`      | 兩個期間的核心指標對照，附絕對與百分比變化；比較期間預設為主要期間正前方的等長視窗                         |
+
+連接多個帳號時，除了 `get_account_overview` 以外的每個工具都接受 `account` 參數（帳號名稱或 id）。若未提供，工具會回傳帳號清單，讓 agent 先問你要查哪一個，而不是自行猜測。
 
 ### Prompts
 
@@ -195,7 +197,7 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
 
 ### 自動同步
 
-在長時間運行的部署環境（Railway / Zeabur / VPS / Docker）設定 `SYNC_SCHEDULER_ENABLED=true`，內建 scheduler 會隨伺服器啟動，並依照 Settings 中設定的間隔自動同步。Vercel 請改用上方的 cron 設定。
+在長時間運行的部署環境（Railway / Zeabur / VPS / Docker）設定 `SYNC_SCHEDULER_ENABLED=true`，內建 scheduler 會隨伺服器啟動，並依照 Settings 中設定的間隔自動同步所有已連接的帳號（不只是使用中的那一個）。Vercel 請改用上方的 cron 設定。
 
 <a id="updating"></a>
 
