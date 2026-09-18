@@ -44,10 +44,15 @@ interface SyncAccount {
  * one row per calendar day. The API can't report either metric for a past date,
  * so a day missed here is lost for good.
  *
- * Audience metrics move by a handful of people per day, so this runs at most
- * once per calendar day no matter how often posts are synced: a day that is
- * already complete costs zero requests. Post syncing can therefore be as
- * frequent as the user likes without spending quota on the audience.
+ * The count is re-read on every sync and overwrites the day's row, so once the
+ * day is over the row holds its closing figure and the day-over-day delta is
+ * the change that actually happened on that date. It is a single request, so
+ * post syncing can be as frequent as the user likes.
+ *
+ * Demographics cost four requests, move by fractions of a point per day, and so
+ * are fetched at most once per calendar day (plus a spaced retry when a fetch
+ * came back empty). `capturedAt` marks the last demographics attempt, not the
+ * last count reading.
  *
  * Syncs also run from cron, where the browser's time-zone cookie isn't
  * available, so days are bucketed by DEFAULT_TZ to keep the series consistent
@@ -63,32 +68,25 @@ async function captureFollowerSnapshot(accountId: string, accessToken: string): 
       select: { followersCount: true, demographics: true, capturedAt: true },
     });
   } catch {
-    // Treated as "not captured yet" — worst case today's reading is taken again.
+    // Treated as "not captured yet" — worst case demographics are fetched again.
   }
 
-  // Demographics need the profile to be over the API's threshold; under it, a
-  // row with just the count is as complete as the day can get.
-  const demographicsPossible =
-    existing === null || existing.followersCount >= DEMOGRAPHICS_MIN_FOLLOWERS;
+  const followersCount =
+    (await getFollowersCount(accountId, accessToken)) ?? existing?.followersCount ?? null;
+  if (followersCount === null) return;
+
   // A failed demographics fetch is worth retrying — losing the day entirely to
   // one bad response would be worse — but not on every sync, or an hourly post
   // schedule would spend four requests an hour retrying a broken call.
   const retryDue =
     existing !== null &&
+    existing.demographics === null &&
     Date.now() - existing.capturedAt.getTime() >= DEMOGRAPHICS_RETRY_INTERVAL_MS;
-  const demographicsMissing = existing !== null && existing.demographics === null;
-  if (existing !== null && !(demographicsMissing && demographicsPossible && retryDue)) return;
-
-  // Only re-read the count when there is no row yet; an existing row's count
-  // stands for the day, so a retry for demographics costs no extra request.
-  const followersCount =
-    existing?.followersCount ?? (await getFollowersCount(accountId, accessToken));
-  if (followersCount === null) return;
-
-  const demographics =
-    followersCount >= DEMOGRAPHICS_MIN_FOLLOWERS
-      ? await getFollowerDemographics(accountId, accessToken)
-      : null;
+  const fetchDemographics =
+    followersCount >= DEMOGRAPHICS_MIN_FOLLOWERS && (existing === null || retryDue);
+  const demographics = fetchDemographics
+    ? await getFollowerDemographics(accountId, accessToken)
+    : null;
 
   // Prisma types Json columns as InputJsonValue, which a named interface never
   // structurally satisfies; the shape is validated on read by parseDemographics.
@@ -104,10 +102,11 @@ async function captureFollowerSnapshot(accountId: string, accessToken: string): 
         ...(demographics ? { demographics: demographicsJson } : {}),
       },
       // Demographics are only written when this run actually fetched them, so a
-      // failed fetch can't blank out a good earlier snapshot.
+      // failed fetch can't blank out a good earlier snapshot. capturedAt only
+      // moves on an attempt, so count-only syncs don't keep pushing the retry.
       update: {
         followersCount,
-        capturedAt: new Date(),
+        ...(fetchDemographics ? { capturedAt: new Date() } : {}),
         ...(demographics ? { demographics: demographicsJson } : {}),
       },
     });
