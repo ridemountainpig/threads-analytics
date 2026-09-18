@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { Prisma } from "@/lib/generated/prisma";
 import { decryptToken } from "@/lib/crypto";
 import { getUserInsightsCached } from "@/lib/user-insights-cache";
 import type { UserInsights } from "@/lib/threads-api";
@@ -6,6 +7,7 @@ import { getTimeRange, toUnix } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
 import {
+  DEFAULT_TZ,
   computeBestTimeToPost,
   computeTopHours,
   computeViralPosts,
@@ -13,7 +15,17 @@ import {
   getDateString,
   type PostWithInsights,
 } from "@/lib/analytics";
+import {
+  computeFollowerTrend,
+  dateKeyToUtcDate,
+  parseDemographics,
+  summarizeFollowerGrowth,
+} from "@/lib/followers";
+import { formatDemographicKey } from "@/lib/demographic-labels";
+import { buildSummary } from "@/lib/summary";
+import { bucketSeries, medianSeries, ratioSeries, smoothSeries } from "@/lib/sparkline";
 import { StatCard } from "@/components/dashboard/stat-card";
+import { SummaryCard } from "@/components/dashboard/summary-card";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
 import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
@@ -21,7 +33,7 @@ import SyncButton from "@/components/dashboard/sync-button";
 import TimeRangePicker from "@/components/dashboard/time-range-picker";
 import DailyViewsChart from "@/components/charts/daily-views-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Clock, ExternalLink } from "lucide-react";
+import { ExternalLink } from "lucide-react";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
 
@@ -138,7 +150,20 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       )
     : Promise.resolve(emptyUserInsights);
 
-  const [userInsights, prevUserInsights, dbPosts, prevDbPosts, syncInterval] = await Promise.all([
+  // Snapshot dates are bucketed by DEFAULT_TZ, the zone captureFollowerSnapshot
+  // writes them in, so the range edges are reduced the same way.
+  const sinceDate = dateKeyToUtcDate(getDateString(since, DEFAULT_TZ));
+  const untilDate = dateKeyToUtcDate(getDateString(until, DEFAULT_TZ));
+
+  const [
+    userInsights,
+    prevUserInsights,
+    dbPosts,
+    prevDbPosts,
+    syncInterval,
+    followerSnapshots,
+    latestDemographics,
+  ] = await Promise.all([
     userInsightsPromise,
     prevUserInsightsPromise,
     db.post.findMany({
@@ -168,6 +193,16 @@ export default async function OverviewPage({ searchParams }: PageProps) {
         })
       : Promise.resolve([]),
     getSyncIntervalCached(),
+    db.followerSnapshot.findMany({
+      where: { accountId: account.id, date: { gte: sinceDate, lte: untilDate } },
+      select: { date: true, followersCount: true },
+      orderBy: { date: "asc" },
+    }),
+    db.followerSnapshot.findFirst({
+      where: { accountId: account.id, demographics: { not: Prisma.DbNull } },
+      select: { demographics: true },
+      orderBy: { date: "desc" },
+    }),
   ]);
 
   const posts: PostWithInsights[] = dbPosts.map((p) => ({
@@ -275,6 +310,80 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     .map((hour) => bestTimeToPost.find((point) => point.hour === hour))
     .filter((point) => point !== undefined);
 
+  const followerGrowth = summarizeFollowerGrowth(computeFollowerTrend(followerSnapshots));
+  const countryBreakdown = parseDemographics(latestDemographics?.demographics)?.country;
+  const topCountryEntry = countryBreakdown?.entries.reduce<
+    (typeof countryBreakdown.entries)[number] | null
+  >((best, entry) => (best && best.value >= entry.value ? best : entry), null);
+  const topCountry =
+    topCountryEntry && countryBreakdown && countryBreakdown.total > 0
+      ? {
+          label: formatDemographicKey(topCountryEntry.key, "country", dateLocale),
+          share: Math.round((topCountryEntry.value / countryBreakdown.total) * 1000) / 10,
+        }
+      : null;
+  // Same encoding as the picker; a cookie-less first visit has no range at all.
+  const rangeQuery = from && to ? `&from=${from}&to=${to}` : range ? `&range=${range}` : "";
+  const summary = buildSummary(
+    {
+      totalViews,
+      postCount: dbPosts.length,
+      medianViews: curMedianViews,
+      engagementRate,
+      deltaViews,
+      deltaEngRate,
+      deltaPosts,
+      // A single snapshot has no growth to report, only a count.
+      followers:
+        followerGrowth && followerGrowth.days > 1
+          ? { current: followerGrowth.current, net: followerGrowth.net }
+          : null,
+      topCountry,
+      topPost: viralPosts[0]
+        ? { text: viralPosts[0].text, multiplier: viralPosts[0].multiplier }
+        : null,
+    },
+    t.overview,
+    dateLocale,
+  );
+
+  // Sparklines: per-day (or per-week/month on long ranges) shape of each
+  // headline metric. Post-level figures are bucketed by publish date.
+  const smoothed = ({ values, granularity }: ReturnType<typeof bucketSeries>) =>
+    smoothSeries(values, granularity);
+  const spark = (pick: (p: (typeof dbPosts)[number]) => number) =>
+    smoothed(
+      bucketSeries(
+        dbPosts.map((p) => ({ date: p.timestamp, value: pick(p) })),
+        since,
+        until,
+        tz,
+      ),
+    );
+  const trendViews = smoothed(
+    bucketSeries(
+      dailyViewsData.map((d) => ({ date: d.end_time, value: d.value })),
+      since,
+      until,
+      tz,
+    ),
+  );
+  const trendPosts = spark(() => 1);
+  const trendMedianViews = medianSeries(
+    dbPosts.map((p) => ({ date: p.timestamp, views: p.views })),
+    since,
+    until,
+    tz,
+  );
+  const trendLikes = spark((p) => p.likes);
+  const trendReplies = spark((p) => p.replies);
+  const trendRepostsQuotes = spark((p) => p.reposts + p.quotes);
+  const trendShares = spark((p) => p.shares);
+  const trendEngRate = ratioSeries(
+    spark((p) => p.likes + p.replies + p.reposts + p.quotes),
+    spark((p) => p.views),
+  );
+
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
@@ -300,76 +409,81 @@ export default async function OverviewPage({ searchParams }: PageProps) {
         </div>
       </div>
 
-      {/* Top Hour Recommendation */}
-      {topHours.length > 0 && (
-        <Card className="ring-tint/20 bg-tint/8">
-          <CardContent className="flex items-center gap-3 p-4">
-            <Clock className="text-tint size-4 shrink-0" />
-            <div>
-              <p className="text-sm font-medium">{t.overview.bestHours}</p>
-              <p className="text-muted-foreground text-sm">
-                {topHourDetails
-                  .map(
-                    (point) =>
-                      `${formatHour(point.hour)} (${point.postCount} ${t.common.posts}, ${getConfidenceLabel(
-                        point.confidence,
-                        t.chart.confidenceLevels,
-                      )})`,
-                  )
-                  .join(", ")}{" "}
-                - {t.overview.bestHoursSub}
-              </p>
-            </div>
-          </CardContent>
-        </Card>
+      {(dbPosts.length > 0 || hasApiInsights) && (
+        <SummaryCard
+          title={t.overview.summary}
+          headline={summary[0] ?? ""}
+          detail={summary.slice(1).join(t.overview.summarySeparator)}
+          note={t.overview.summaryNote}
+          bestHours={{
+            title: t.overview.bestHours,
+            sub: t.overview.bestHoursSub,
+            postsLabel: t.common.posts,
+            href: `/dashboard/analytics?tab=performance${rangeQuery}`,
+            slots: topHourDetails.map((point) => ({
+              label: formatHour(point.hour),
+              postCount: point.postCount,
+              confidence: point.confidence,
+              confidenceLabel: getConfidenceLabel(point.confidence, t.chart.confidenceLevels),
+            })),
+          }}
+        />
       )}
 
       {/* Stat Cards */}
       <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
         <StatCard
           title={t.overview.totalViews}
+          trend={trendViews}
           value={totalViews}
           delta={deltaViews}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.totalPosts}
+          trend={trendPosts}
           value={dbPosts.length}
           delta={deltaPosts}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.medianViews}
+          trend={trendMedianViews}
           value={curMedianViews}
           delta={deltaMedianViews}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.engRate}
+          trend={trendEngRate}
           value={`${engagementRate.toFixed(2)}%`}
           delta={deltaEngRate}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.likes}
+          trend={trendLikes}
           value={totalLikes}
           delta={deltaLikes}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.replies}
+          trend={trendReplies}
           value={totalReplies}
           delta={deltaReplies}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.repostsQuotes}
+          trend={trendRepostsQuotes}
           value={totalReposts + totalQuotes}
           delta={deltaRepostsQuotes}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.shares}
+          trend={trendShares}
           value={totalShares}
           delta={deltaShares}
           deltaLabel={t.overview.vsPrev}

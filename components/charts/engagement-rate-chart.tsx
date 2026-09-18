@@ -46,6 +46,7 @@ interface EngagementRateChartProps {
     engagementRate?: string;
     noData?: string;
     granularityDay?: string;
+    granularityGroup?: string;
     granularityWeek?: string;
     granularityMonth?: string;
   };
@@ -66,6 +67,7 @@ export default function EngagementRateChart({
   };
   const granularityLabels = {
     day: copy.granularityDay ?? "Day",
+    group: copy.granularityGroup,
     week: copy.granularityWeek ?? "Week",
     month: copy.granularityMonth ?? "Month",
   };

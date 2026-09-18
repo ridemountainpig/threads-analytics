@@ -61,6 +61,7 @@ interface Props {
     date?: string;
     noData?: string;
     granularityDay?: string;
+    granularityGroup?: string;
     granularityWeek?: string;
     granularityMonth?: string;
   };
@@ -105,6 +106,7 @@ export default function OverallPerformanceChart({ data, dateLocale, timeZone, la
   };
   const granularityLabels = {
     day: copy.granularityDay ?? "Day",
+    group: copy.granularityGroup,
     week: copy.granularityWeek ?? "Week",
     month: copy.granularityMonth ?? "Month",
   };

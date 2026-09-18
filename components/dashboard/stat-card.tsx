@@ -1,5 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { cn } from "@/lib/utils";
+import { Sparkline } from "./sparkline";
 
 interface StatCardProps {
   title: string;
@@ -8,9 +9,19 @@ interface StatCardProps {
   className?: string;
   delta?: number | null;
   deltaLabel?: string;
+  /** Per-period values across the selected range; drawn as a sparkline when there are at least two. */
+  trend?: number[];
 }
 
-export function StatCard({ title, value, sub, className, delta, deltaLabel }: StatCardProps) {
+export function StatCard({
+  title,
+  value,
+  sub,
+  className,
+  delta,
+  deltaLabel,
+  trend,
+}: StatCardProps) {
   const displayValue = typeof value === "number" ? value.toLocaleString() : value;
   return (
     <Card className={cn("", className)}>
@@ -20,7 +31,18 @@ export function StatCard({ title, value, sub, className, delta, deltaLabel }: St
         </CardTitle>
       </CardHeader>
       <CardContent className="px-4 pb-4">
-        <p className="text-2xl font-semibold tracking-[-0.01em] tabular-nums">{displayValue}</p>
+        {/* Phones stack the line under the number; a two-column grid there
+            leaves too little width beside it for the shape to read. */}
+        <div className="flex flex-wrap items-end justify-between gap-x-4 gap-y-2">
+          <p className="shrink-0 text-2xl font-semibold tracking-[-0.01em] tabular-nums">
+            {displayValue}
+          </p>
+          {trend && trend.length > 1 && (
+            <div className="min-w-0 basis-full sm:mb-1 sm:max-w-40 sm:flex-1 sm:basis-0">
+              <Sparkline values={trend} />
+            </div>
+          )}
+        </div>
         {delta != null && (
           <p className="mt-1 flex items-center gap-1.5 text-xs leading-4">
             <span

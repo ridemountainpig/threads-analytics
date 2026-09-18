@@ -75,6 +75,7 @@ import {
   computeDemographicTrend,
   computeFollowerTrend,
   dateKeyToUtcDate,
+  groupPostsByDay,
   utcDateToKey,
   hasDemographicData,
   parseDemographics,
@@ -1018,11 +1019,21 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               >
                 <FollowerTrendChart
                   data={followerTrend}
+                  postsByDate={groupPostsByDay(
+                    posts,
+                    DEFAULT_TZ,
+                    followerTrend.map((point) => point.date),
+                  )}
                   dateLocale={dateLocale}
                   timeZone={tz}
                   labels={{
                     followers: t.chart.followers,
                     dailyChange: t.chart.dailyChange,
+                    overall: t.chart.followerOverall,
+                    posted: t.chart.posted,
+                    postsThatDay: t.chart.postsThatDay,
+                    views: t.chart.viewsUnit,
+                    viewMode: t.chart.followerViewMode,
                     date: t.chart.date,
                     noData: t.chart.noData,
                   }}

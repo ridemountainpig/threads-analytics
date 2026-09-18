@@ -42,6 +42,7 @@ interface DailyViewsChartProps {
     date?: string;
     noData?: string;
     granularityDay?: string;
+    granularityGroup?: string;
     granularityWeek?: string;
     granularityMonth?: string;
   };
@@ -72,6 +73,7 @@ export default function DailyViewsChart({
   const baselineLabel = copy.baseline ?? "Baseline";
   const granularityLabels = {
     day: copy.granularityDay ?? "Day",
+    group: copy.granularityGroup,
     week: copy.granularityWeek ?? "Week",
     month: copy.granularityMonth ?? "Month",
   };

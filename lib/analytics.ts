@@ -178,7 +178,7 @@ function getPercentile(values: number[], percentile: number): number {
   return sorted[index] ?? 0;
 }
 
-function getMedian(values: number[]): number {
+export function getMedian(values: number[]): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const mid = Math.floor(sorted.length / 2);

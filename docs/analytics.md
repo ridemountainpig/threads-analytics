@@ -8,12 +8,13 @@ Every chart and metric in the Threads Analytics dashboard, and the rules behind 
 
 ## Overview
 
-| Section         | What it shows                                                                                                                                                                |
-| --------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Stat Cards**  | Total views, likes, replies, reposts, quotes, shares, and engagement rate for the selected period. Each card shows a `+/−%` delta vs the previous period of the same length. |
-| **Best Hours**  | Top 2–3 posting hours ranked by median views, with a confidence indicator based on sample size.                                                                              |
-| **Views Trend** | Views by day, week, or month, with your personal median as a baseline.                                                                                                       |
-| **Top Posts**   | Posts that exceeded the median view count, ranked by their multiplier (e.g. `3.2× median`).                                                                                  |
+| Section         | What it shows                                                                                                                                                                                                                                                         |
+| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Summary**     | A few plain sentences generated from the period's numbers: how views and engagement rate moved, posting volume and typical reach, follower growth, where most followers are, the best hour, and the top post. Rule-based, so it never disagrees with the cards below. |
+| **Stat Cards**  | Total views, likes, replies, reposts, quotes, shares, and engagement rate for the selected period. Each card shows a `+/−%` delta vs the previous period of the same length, plus a sparkline of the metric across the range (daily series are smoothed over 7 days). |
+| **Best Hours**  | Top 2–3 posting hours ranked by median views, with a confidence indicator based on sample size.                                                                                                                                                                       |
+| **Views Trend** | Views by day, week, or month, with your personal median as a baseline.                                                                                                                                                                                                |
+| **Top Posts**   | Posts that exceeded the median view count, ranked by their multiplier (e.g. `3.2× median`).                                                                                                                                                                           |
 
 ## Analytics — Performance tab
 
@@ -57,11 +58,11 @@ Stat metrics at the top of the tab: **Posting Consistency** (% of weeks with at 
 
 Stats at the top of the tab: **Followers**, **Net Growth** (with `+/−%`), **Avg / Day**, **Days Tracked**.
 
-| Chart                     | What it shows                                                                                                                                                               |
-| ------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Follower Growth**       | Follower count over time, one point per synced day; the tooltip carries that day's change.                                                                                  |
-| **Follower Demographics** | One distribution per breakdown — country, city, age, gender — with a marker on each bar for the baseline date and both a head-count and a percentage-point delta.           |
-| **Composition Trend**     | Each group's share as a change in percentage points from the baseline date, top 5 movers per breakdown. Composition shifts too slowly for absolute shares to show anything. |
+| Chart                     | What it shows                                                                                                                                                                                                                                     |
+| ------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **Follower Growth**       | Two views: **Overall** (follower count line) and **Daily Change** (signed bars, with the biggest outlier days labelled). Days you posted are marked along the bottom, and the tooltip lists those posts so a jump can be traced to what went out. |
+| **Follower Demographics** | One distribution per breakdown — country, city, age, gender — with a marker on each bar for the baseline date and both a head-count and a percentage-point delta.                                                                                 |
+| **Composition Trend**     | Each group's share as a change in percentage points from the baseline date, top 5 movers per breakdown. Composition shifts too slowly for absolute shares to show anything.                                                                       |
 
 > Threads only reports `followers_count` and `follower_demographics` as of right now — both reject `since` / `until` — so history can't be backfilled and builds up one row per day. Audience metrics are captured **at most once per calendar day**, however often posts are synced, so a frequent post schedule costs no extra API quota here. Demographics additionally require the profile to have at least 100 followers. Pick the two dates to compare with the date selectors; only days that were actually captured are offered.
 

@@ -1,10 +1,12 @@
 "use client";
 
-import { useEffect, useLayoutEffect, useMemo, useRef, useState } from "react";
-import { cn } from "@/lib/utils";
+import { useEffect, useMemo, useState } from "react";
 import { formatShortDate } from "./chart-style";
+import { SegmentedControl } from "./segmented-control";
 
-export type Granularity = "day" | "week" | "month";
+import { bucketStart, defaultGranularity, type Granularity } from "@/lib/granularity";
+
+export { bucketStart, defaultGranularity, type Granularity };
 
 // Data dates arrive either as ISO timestamps (API user insights) or as
 // YYYY-MM-DD calendar dates already resolved in the analytics time zone.
@@ -22,15 +24,6 @@ function utcDate(dateKey: string): Date {
   return new Date(`${dateKey}T00:00:00Z`);
 }
 
-// ≤ ~3 months of data reads fine daily, up to ~a year weekly, beyond that
-// monthly — thresholds carry a few days of slack so the 90d / 1y range
-// presets land on the granularity users expect.
-export function defaultGranularity(span: number): Granularity {
-  if (span <= 92) return "day";
-  if (span <= 370) return "week";
-  return "month";
-}
-
 function calendarSpanDays(dates: string[], timeZone: string): number {
   if (dates.length < 2) return dates.length;
   let first = "";
@@ -41,16 +34,6 @@ function calendarSpanDays(dates: string[], timeZone: string): number {
     if (!last || key > last) last = key;
   }
   return Math.round((utcDate(last).getTime() - utcDate(first).getTime()) / 86_400_000) + 1;
-}
-
-// Bucket key is the period's first calendar day (YYYY-MM-DD), so existing
-// date formatters keep working on aggregated series.
-export function bucketStart(dateKey: string, granularity: Granularity): string {
-  if (granularity === "day") return dateKey;
-  if (granularity === "month") return `${dateKey.slice(0, 7)}-01`;
-  const date = utcDate(dateKey);
-  date.setUTCDate(date.getUTCDate() - ((date.getUTCDay() + 6) % 7));
-  return date.toISOString().slice(0, 10);
 }
 
 export function aggregateByGranularity<T, R>(
@@ -152,6 +135,7 @@ export interface GranularityLabels {
   day: string;
   week: string;
   month: string;
+  group?: string;
 }
 
 export function GranularityToggle({
@@ -163,49 +147,11 @@ export function GranularityToggle({
   onChange: (granularity: Granularity) => void;
   labels: GranularityLabels;
 }) {
-  const options: Granularity[] = ["day", "week", "month"];
-  const buttonRefs = useRef(new Map<Granularity, HTMLButtonElement>());
-  const [pill, setPill] = useState<{ x: number; width: number } | null>(null);
-
-  // The raised segment is a single pill that glides to the selection instead
-  // of each button painting its own background. Measured after layout (and
-  // re-measured when labels change size, e.g. on locale switch).
-  useLayoutEffect(() => {
-    const button = buttonRefs.current.get(value);
-    if (button) setPill({ x: button.offsetLeft, width: button.offsetWidth });
-  }, [value, labels]);
-
-  // Styled as a segmented control: a recessed track with the selected
-  // segment raised on a background-colored pill. Feedback lands on press
-  // (active:scale) rather than on release; reduced motion snaps the pill.
+  const options = useMemo(
+    () => (["day", "week", "month"] as const).map((g) => ({ value: g, label: labels[g] })),
+    [labels],
+  );
   return (
-    <div className="bg-muted/70 relative inline-flex items-center rounded-full p-0.5">
-      {pill && (
-        <span
-          aria-hidden
-          className="bg-background ring-foreground/5 absolute inset-y-0.5 left-0 rounded-full shadow-sm ring-1 transition-[translate,width] duration-200 ease-out motion-reduce:transition-none"
-          style={{ translate: `${pill.x}px 0`, width: pill.width }}
-        />
-      )}
-      {options.map((option) => (
-        <button
-          key={option}
-          ref={(node) => {
-            if (node) buttonRefs.current.set(option, node);
-            else buttonRefs.current.delete(option);
-          }}
-          type="button"
-          onClick={() => onChange(option)}
-          className={cn(
-            "relative inline-flex h-6 items-center rounded-full px-2.5 text-[11px] transition-[color,transform] duration-200 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
-            value === option
-              ? "text-foreground font-medium"
-              : "text-foreground/70 hover:text-foreground",
-          )}
-        >
-          {labels[option]}
-        </button>
-      ))}
-    </div>
+    <SegmentedControl value={value} onChange={onChange} options={options} label={labels.group} />
   );
 }

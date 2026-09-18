@@ -1,3 +1,4 @@
+import { getDateString } from "@/lib/analytics";
 import {
   DEMOGRAPHIC_BREAKDOWNS,
   type DemographicBreakdown,
@@ -65,6 +66,41 @@ export function computeFollowerTrend(snapshots: FollowerSnapshotRow[]): Follower
       change: prev ? snapshot.followersCount - prev.followersCount : null,
     };
   });
+}
+
+export interface PostOnDay {
+  id: string;
+  text: string;
+  views: number;
+}
+
+export interface PostsOnDay {
+  top: PostOnDay[];
+  count: number;
+}
+
+// Keyed like the snapshots, so pass the zone they are bucketed in (DEFAULT_TZ), not the viewer's.
+export function groupPostsByDay(
+  posts: Array<{ id: string; text: string; views: number; timestamp: Date }>,
+  tz: string,
+  days: Iterable<string>,
+  limit = 3,
+): Record<string, PostsOnDay> {
+  const wanted = new Set(days);
+  const byDay = new Map<string, PostOnDay[]>();
+  for (const post of posts) {
+    const key = getDateString(post.timestamp, tz);
+    if (!wanted.has(key)) continue;
+    const list = byDay.get(key) ?? [];
+    list.push({ id: post.id, text: post.text, views: post.views });
+    byDay.set(key, list);
+  }
+  const result: Record<string, PostsOnDay> = {};
+  for (const [key, list] of byDay) {
+    list.sort((a, b) => b.views - a.views);
+    result[key] = { top: list.slice(0, limit), count: list.length };
+  }
+  return result;
 }
 
 export function summarizeFollowerGrowth(trend: FollowerTrendPoint[]): FollowerGrowthSummary | null {

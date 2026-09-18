@@ -172,6 +172,27 @@
   }
 }
 
+/* Stat-card sparklines fade in on the same 500ms ease-out as the charts
+   below them. Not a dash-offset draw: with preserveAspectRatio="none" plus
+   non-scaling strokes, browsers measure dashes against the unstretched path,
+   which leaves the tail of a wide sparkline undrawn. */
+@keyframes sparkline-reveal {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.sparkline-reveal {
+  animation: sparkline-reveal 500ms ease-out both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .sparkline-reveal {
+    animation: none;
+  }
+}
+
 /* Thin theme-tinted scrollbar for scrollable lists inside cards. */
 @utility scrollbar-subtle {
   scrollbar-width: thin;
