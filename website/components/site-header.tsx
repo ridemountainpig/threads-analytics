@@ -1,8 +1,10 @@
 import Image from "next/image";
 import Link from "next/link";
+import { ChartNoAxesColumn, Plug, Ticket } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { LanguageMenu } from "@/components/language-menu";
 import { MobileMenu } from "@/components/mobile-menu";
+import { NavMenu } from "@/components/nav-menu";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
 
@@ -20,15 +22,38 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
             priority
           />
           <span>Threads Analytics</span>
+          {copy.brandTag ? <span className="brand-tag">{copy.brandTag}</span> : null}
         </Link>
 
         <nav className="desktop-nav" aria-label="Primary navigation">
-          <a href={`/${locale}#product`}>{copy.product}</a>
           <a href={`/${locale}#demo`}>{copy.demo}</a>
-          <a href={`/${locale}#features`}>{copy.features}</a>
+          {/* Analytics, MCP, and the giveaway are all product capabilities —
+              one entry keeps them together and off the guide shelf. */}
+          <NavMenu
+            label={copy.features}
+            items={[
+              {
+                href: `/${locale}/analytics`,
+                label: copy.analytics,
+                icon: <ChartNoAxesColumn strokeWidth={2} />,
+                page: true,
+              },
+              {
+                href: `/${locale}/mcp`,
+                label: copy.mcp,
+                icon: <Plug strokeWidth={2} />,
+                page: true,
+              },
+              {
+                href: `/${locale}/giveaway`,
+                label: copy.giveaway,
+                icon: <Ticket strokeWidth={2} />,
+                page: true,
+              },
+            ]}
+          />
           <a href={`/${locale}#deploy`}>{copy.deploy}</a>
           <Link href={`/${locale}/token-guide`}>{copy.tokenGuide}</Link>
-          <Link href={`/${locale}/mcp`}>{copy.mcp}</Link>
         </nav>
 
         <div className="header-actions">

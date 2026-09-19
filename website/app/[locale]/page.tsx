@@ -9,6 +9,7 @@ import { ClosingCurves } from "@/components/closing-curves";
 import { DeployTabsCard } from "@/components/deploy-tabs-card";
 import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
 import { FeatureGrid } from "@/components/feature-grid";
+import { GiveawayWinnersCard } from "@/components/giveaway-winners-card";
 import { HeroCurve } from "@/components/hero-curve";
 import { HeroVisual } from "@/components/hero-visual";
 import { JsonLd } from "@/components/json-ld";
@@ -153,6 +154,12 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               />
             </div>
             <FeatureGrid copy={copy.features} />
+            <div className="features-cta" data-reveal="fade" data-reveal-delay="1">
+              <Link href={`/${locale}/analytics`} className="button button-secondary">
+                {copy.features.cta}
+                <ArrowRight aria-hidden="true" strokeWidth={2} />
+              </Link>
+            </div>
           </div>
         </section>
 
@@ -241,6 +248,28 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 examples={copy.mcpGuide.usage.examples}
                 note={copy.mcpGuide.usage.examplesNote}
               />
+            </div>
+          </div>
+        </section>
+
+        <section className="giveaway-home-section" id="giveaway">
+          <div className="site-shell giveaway-home-grid">
+            <div className="giveaway-home-copy" data-reveal="up">
+              <SectionHeading
+                kicker={copy.giveawayHome.kicker}
+                title={copy.giveawayHome.title}
+                description={copy.giveawayHome.description}
+              />
+              <div className="hero-actions">
+                <Link href={`/${locale}/giveaway`} className="button button-primary">
+                  {copy.giveawayHome.cta}
+                  <ArrowRight aria-hidden="true" strokeWidth={2} />
+                </Link>
+              </div>
+              <p className="hero-note">{copy.giveawayHome.note}</p>
+            </div>
+            <div className="giveaway-home-demo">
+              <GiveawayWinnersCard copy={copy.giveawayGuide.hero.resultCard} />
             </div>
           </div>
         </section>

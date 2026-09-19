@@ -152,18 +152,158 @@ export type McpGuideCopy = {
   };
 };
 
+export type GiveawayConditionId = "dedupe" | "keyword" | "mentions" | "deadline";
+
+export type GiveawayGuideCopy = {
+  metadata: { title: string; description: string };
+  hero: {
+    kicker: string;
+    lineOne: string;
+    lineTwo: string;
+    description: string;
+    primaryCta: string;
+    secondaryCta: string;
+    note: string;
+    hint: string;
+    /** Looping winner reveal; the homepage giveaway section reuses it. */
+    resultCard: {
+      label: string;
+      badge: string;
+      shuffling: string;
+      summary: string;
+      prizes: { name: string; winners: string[] }[];
+      replay: string;
+    };
+  };
+  how: {
+    kicker: string;
+    title: string;
+    description: string;
+    steps: { index: string; title: string; body: string }[];
+  };
+  conditions: {
+    kicker: string;
+    title: string;
+    description: string;
+    panelBadge: string;
+    items: { tag: string; index: string; title: string; body: string }[];
+  };
+  demo: {
+    kicker: string;
+    title: string;
+    description: string;
+    /** Playable replica of the dashboard's giveaway panel. Toggling a
+     * condition filters `entries` live; `id` selects the filter. */
+    panel: {
+      conditionsLabel: string;
+      prizesLabel: string;
+      entriesLabel: string;
+      eligibleLabel: string;
+      filteredLabel: string;
+      drawLabel: string;
+      drawingLabel: string;
+      redrawLabel: string;
+      resultsLabel: string;
+      emptyLabel: string;
+      summary: string;
+      conditions: { id: GiveawayConditionId; label: string; hint: string }[];
+      prizes: { name: string; count: number }[];
+      entries: {
+        user: string;
+        text: string;
+        mentions: number;
+        keyword: boolean;
+        /** Replied after the sample deadline. */
+        late?: boolean;
+      }[];
+    };
+    note: string;
+  };
+  fairness: {
+    kicker: string;
+    title: string;
+    description: string;
+    items: { index: string; title: string; body: string }[];
+    tokenNote: string;
+    tokenCta: string;
+  };
+  cta: {
+    title: string;
+    description: string;
+    primary: string;
+    secondary: string;
+    note: string;
+  };
+};
+
+export type AnalyticsSection = {
+  index: string;
+  kicker: string;
+  title: string;
+  description: string;
+  /** Mono name on the panel header, e.g. "threads-analytics · overview". */
+  panelName: string;
+  badge: string;
+  /** Short meta shown beside the title in the sticky rail. */
+  railMeta: string;
+  /** The stat strip above the tab's charts, when it has one. */
+  stats?: { label: string; items: string[] };
+  items: { name: string; body: string }[];
+  /** Caveat printed under the panel (the audience tab's API limits). */
+  note?: string;
+};
+
+export type AnalyticsGuideCopy = {
+  metadata: { title: string; description: string };
+  hero: {
+    kicker: string;
+    lineOne: string;
+    lineTwo: string;
+    description: string;
+    primaryCta: string;
+    secondaryCta: string;
+    note: string;
+    hint: string;
+    /** Section counts, doubling as the page's table of contents. */
+    summary: {
+      label: string;
+      badge: string;
+      total: string;
+      totalLabel: string;
+      rows: { name: string; count: string }[];
+    };
+  };
+  railLabel: string;
+  sections: AnalyticsSection[];
+  method: {
+    index: string;
+    kicker: string;
+    title: string;
+    description: string;
+    railMeta: string;
+    items: { index: string; title: string; body: string }[];
+  };
+  cta: {
+    title: string;
+    description: string;
+    primary: string;
+    secondary: string;
+    note: string;
+  };
+};
+
 const tokenGuideEn: TokenGuideCopy = {
   metadata: {
-    title: "Generate a Threads access token — an 18-step visual guide | Threads Analytics",
+    title: "How to Get a Threads Access Token (Threads API): 18-Step Guide",
     description:
-      "A screenshot-by-screenshot guide: create a Meta app, add the Threads API use case, invite a Threads Tester, and copy the long-lived access token Threads Analytics needs.",
+      "Get a long-lived Threads API access token step by step, with screenshots: create a Meta app, add the Threads API use case, invite a Threads Tester, copy the token.",
   },
   hero: {
     kicker: "GUIDE / THREADS ACCESS TOKEN",
     lineOne: "Eighteen steps.",
-    lineTwo: "One access token.",
+    lineTwo: "One Threads access token.",
     description:
-      "Your dashboard is deployed — now it needs a key to your Threads data. Follow one screenshot per step through Meta for Developers and walk away with a long-lived Threads access token.",
+      "Your dashboard is deployed. Now it needs a key: follow one screenshot per step through Meta for Developers and leave with a long-lived Threads access token.",
     primaryCta: "Start with step 1",
     secondaryCta: "Open Meta Developers",
     note: "About 10 minutes · Free · No code involved",
@@ -324,16 +464,17 @@ const tokenGuideEn: TokenGuideCopy = {
 
 const tokenGuideZh: TokenGuideCopy = {
   metadata: {
-    title: "如何產生 Threads Access Token — 18 步驟圖解教學 | Threads Analytics",
+    title: "Threads API 申請與 Access Token 取得教學：18 步驟圖解",
     description:
-      "一步一張截圖的完整教學：建立 Meta App、加入 Threads API Use Case、邀請 Threads Tester，最後複製 Threads Analytics 需要的 Long-lived Access Token。",
+      "Threads API 申請、Access Token 取得完整教學，一步一張截圖：建立 Meta App、加入 Threads API Use Case、邀請 Threads Tester，複製 Long-lived Access Token。",
   },
   hero: {
     kicker: "教學 / THREADS ACCESS TOKEN",
-    lineOne: "跟著十八個步驟，",
-    lineTwo: "拿到一把 Access Token。",
+    lineOne: "Threads Access Token，",
+    // \u2060 word joiners: line two only breaks between 跟著, 十八個步驟 and 拿到手.
+    lineTwo: "跟⁠著十⁠八⁠個⁠步⁠驟拿⁠到⁠手⁠。",
     description:
-      "Dashboard 部署好了，還差一把打開 Threads 數據的鑰匙。跟著 Meta for Developers 的畫面一步一步走，最後帶走一組 Long-lived Threads Access Token。",
+      "Dashboard 部署好了，還差一把鑰匙。跟著 Meta for Developers 的畫面一步一步走，拿到 Long-lived Threads Access Token。",
     primaryCta: "從 Step 1 開始",
     secondaryCta: "開啟 Meta Developers",
     note: "約 10 分鐘 · 免費 · 不需要寫程式",
@@ -350,7 +491,7 @@ const tokenGuideZh: TokenGuideCopy = {
   },
   overview: {
     kicker: "01 / 路線圖",
-    title: "四個階段，十八個步驟。",
+    title: "四⁠個⁠階⁠段⁠，十⁠八⁠個⁠步⁠驟⁠。",
     description:
       "每一步都是一張截圖、一次點擊。其中三步在 Threads 完成，其餘都在 Meta for Developers。",
   },
@@ -482,7 +623,7 @@ const tokenGuideZh: TokenGuideCopy = {
   ],
   finish: {
     kicker: "拿到 TOKEN 之後",
-    title: "複製好了？把它帶回家。",
+    title: "複⁠製⁠好⁠了⁠？把⁠它⁠帶⁠回⁠家⁠。",
     description: "把 Token 貼到 Dashboard 的 **Settings → Add Threads account**，執行第一次同步。",
     expiry:
       "Token 有效期為 60 天，Dashboard 會在同步時自動續期，之後不需要再跑一次這份教學。若 App 離線太久導致 Token 過期，再依同樣流程產生一組，用帳號卡片上的 **Update token** 貼回即可，已同步的資料都會保留。",
@@ -493,16 +634,16 @@ const tokenGuideZh: TokenGuideCopy = {
 
 const tokenGuideJa: TokenGuideCopy = {
   metadata: {
-    title: "Threads アクセストークンの生成 — 18ステップ図解ガイド | Threads Analytics",
+    title: "Threads アクセストークンの取得方法：Threads API 設定 18 ステップ図解",
     description:
-      "スクリーンショット付きの完全ガイド：Meta App を作成し、Threads API の Use Case を追加、Threads Tester を招待して、Threads Analytics に必要な Long-lived アクセストークンをコピーするまで。",
+      "Threads API のアクセストークン取得ガイド（スクリーンショット付き）：Meta App の作成、Threads API の Use Case 追加、Threads Tester の招待、Long-lived トークンのコピーまで。",
   },
   hero: {
     kicker: "ガイド / THREADS ACCESS TOKEN",
     lineOne: "18ス⁠テ⁠ッ⁠プで、",
     lineTwo: "ア⁠ク⁠セ⁠ス⁠ト⁠ー⁠ク⁠ンを手に。",
     description:
-      "ダッシュボードのデプロイは完了。あとは Threads データを開く鍵だけです。Meta for Developers の画面を1ステップずつ進めば、Long-lived な Threads アクセストークンが手に入ります。",
+      "ダッシュボードの準備は完了。あとは鍵だけ。Meta for Developers の画面を 1 ステップずつ進み、Long-lived な Threads アクセストークンを取得します。",
     primaryCta: "Step 1 から始める",
     secondaryCta: "Meta Developers を開く",
     note: "約10分 · 無料 · コード不要",
@@ -519,7 +660,7 @@ const tokenGuideJa: TokenGuideCopy = {
   },
   overview: {
     kicker: "01 / 全体の流れ",
-    title: "4つのフェーズ、18のステップ。",
+    title: "4⁠つ⁠の⁠フ⁠ェ⁠ー⁠ズ⁠、1⁠8⁠の⁠ス⁠テ⁠ッ⁠プ⁠。",
     description:
       "各ステップはスクリーンショット1枚とクリック1回。3ステップは Threads 側、それ以外はすべて Meta for Developers 側です。",
   },
@@ -651,7 +792,7 @@ const tokenGuideJa: TokenGuideCopy = {
   ],
   finish: {
     kicker: "トークンを手にしたら",
-    title: "コピーできたら、持ち帰りましょう。",
+    title: "コ⁠ピ⁠ー⁠で⁠き⁠た⁠ら⁠、持⁠ち⁠帰⁠り⁠ま⁠し⁠ょ⁠う⁠。",
     description:
       "ダッシュボードの **Settings → Add Threads account** に貼り付けて、最初の同期を実行します。",
     expiry:
@@ -663,16 +804,16 @@ const tokenGuideJa: TokenGuideCopy = {
 
 const mcpGuideEn: McpGuideCopy = {
   metadata: {
-    title: "Connect AI agents over MCP — ask questions about your Threads data | Threads Analytics",
+    title: "Threads MCP Server: Ask Claude or Cursor About Your Threads Data",
     description:
-      "Every Threads Analytics deployment ships a built-in MCP server. Connect Claude Code, Claude, Cursor, or any MCP client and ask questions about your posts, analytics, and followers — read-only, OAuth-protected, no API keys.",
+      "A built-in Threads MCP server. Connect Claude Code, Claude, Cursor, or any MCP client and ask about your posts, analytics, and followers. Read-only, OAuth-protected.",
   },
   hero: {
     kicker: "GUIDE / MCP SERVER",
-    lineOne: "Your Threads data,",
-    lineTwo: "one question away.",
+    lineOne: "Threads MCP server:",
+    lineTwo: "your data, one question away.",
     description:
-      "Your dashboard already runs an MCP server at /api/mcp. Connect the AI agent you already use — Claude Code, Claude, Codex, Cursor — and it can read your posts, analytics, and follower history to answer questions and write reports. Read-only, and you approve every connection.",
+      "Your dashboard ships an MCP server. Connect Claude Code, Claude, Codex, or Cursor and ask about your posts, analytics, and followers. Read-only, and you approve every connection.",
     primaryCta: "Connect your agent",
     secondaryCta: "What is MCP?",
     note: "About 2 minutes · No API keys · Read-only",
@@ -696,7 +837,7 @@ const mcpGuideEn: McpGuideCopy = {
         tag: "get_account_overview",
         index: "01",
         title: "See the account at a glance",
-        body: "Username, sync status, post count, data range, and follower growth summary — the first call every conversation starts with.",
+        body: "Every connected account's username, sync status, post count, data range, and follower growth summary — the first call every conversation starts with. With several accounts, the agent asks which one you mean.",
       },
       {
         tag: "list_posts · get_post",
@@ -884,18 +1025,18 @@ const mcpGuideEn: McpGuideCopy = {
 
 const mcpGuideZh: McpGuideCopy = {
   metadata: {
-    title: "用 MCP 連接 AI Agent — 直接問你的 Threads 數據 | Threads Analytics",
+    title: "Threads MCP Server：讓 Claude、Cursor 等 AI Agent 直接問你的 Threads 數據",
     description:
-      "每個 Threads Analytics 部署都內建 MCP Server。連接 Claude Code、Claude、Cursor 或任何 MCP 客戶端，直接詢問貼文、分析與粉絲數據 — 唯讀存取、OAuth 保護、不需要 API Key。",
+      "內建 Threads MCP Server：連接 Claude Code、Claude、Cursor 或任何 MCP 客戶端，直接用 AI 問你的 Threads 貼文、數據與粉絲成長。唯讀存取、OAuth 保護、免 API Key。",
   },
   hero: {
     kicker: "教學 / MCP SERVER",
     // ⁠ word joiners +   pin the break points: line one never breaks,
-    // line two only between 問一句 and 就能到手.
-    lineOne: "Threads 數⁠據，",
-    lineTwo: "問⁠一⁠句就⁠能⁠到⁠手。",
+    // line two only between 數據, 問一句 and 就能到手.
+    lineOne: "Threads MCP，",
+    lineTwo: "數⁠據問⁠一⁠句就⁠能⁠到⁠手⁠。",
     description:
-      "你的 Dashboard 已經在 /api/mcp 運行著一個 MCP Server。連接你慣用的 AI Agent — Claude Code、Claude、Codex、Cursor — 它就能讀取你的貼文、分析與粉絲紀錄，回答問題、撰寫報告。全程唯讀，每個連接都由你親自核准。",
+      "你的 Dashboard 內建 MCP Server。連接 Claude Code、Claude、Codex 或 Cursor，就能直接問你的貼文、數據與粉絲紀錄。唯讀，每個連接都由你核准。",
     primaryCta: "開始連接 Agent",
     secondaryCta: "什麼是 MCP？",
     note: "約 2 分鐘 · 不需要 API Key · 唯讀存取",
@@ -910,7 +1051,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / 它能做什麼",
-    title: "六個唯讀工具，六個報告 Prompt。",
+    title: "六⁠個唯⁠讀⁠工⁠具⁠，六⁠個報⁠告 P⁠r⁠o⁠m⁠p⁠t⁠。",
     description:
       "MCP Server 把你同步好的數據整理成結構化工具。你用自然語言發問，Agent 自己挑選工具、只讀取需要的部分。",
     panelBadge: "唯讀",
@@ -919,7 +1060,7 @@ const mcpGuideZh: McpGuideCopy = {
         tag: "get_account_overview",
         index: "01",
         title: "一眼掌握帳號現況",
-        body: "帳號名稱、同步狀態、貼文數、資料範圍與粉絲成長摘要 — 每段對話的第一個呼叫。",
+        body: "所有已連接帳號的名稱、同步狀態、貼文數、資料範圍與粉絲成長摘要 — 每段對話的第一個呼叫。有多個帳號時，Agent 會先問你要查哪一個。",
       },
       {
         tag: "list_posts · get_post",
@@ -955,7 +1096,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   connect: {
     kicker: "02 / 如何連接",
-    title: "不需要 API Key，在瀏覽器按下核准就好。",
+    title: "不⁠需⁠要 A⁠P⁠I K⁠e⁠y⁠，在⁠瀏⁠覽⁠器按⁠下⁠核⁠准就⁠好⁠。",
     description:
       "驗證採用 OAuth 2.1 with PKCE 與 Dynamic Client Registration：客戶端自動註冊，瀏覽器開啟你 Dashboard 的登入頁，由你在授權畫面親自核准。",
     steps: [
@@ -1031,7 +1172,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   usage: {
     kicker: "03 / 如何使用",
-    title: "用自己的話問，或從 Prompt 範本開始。",
+    title: "用⁠自⁠己⁠的⁠話⁠問⁠，或⁠從 P⁠r⁠o⁠m⁠p⁠t 範⁠本開⁠始⁠。",
     description:
       "連接完成後工具會自動出現，不需要任何設定。直接詢問帳號的任何問題，或執行六個內建 Prompt；每個都能加上像 30d、90d 的期間參數。",
     examplesLabel: "試著這樣問",
@@ -1094,7 +1235,7 @@ const mcpGuideZh: McpGuideCopy = {
     ],
   },
   cta: {
-    title: "讓你的 Agent 讀懂你的數據。",
+    title: "讓⁠你⁠的 A⁠g⁠e⁠n⁠t 讀⁠懂你⁠的⁠數⁠據⁠。",
     description: "部署 Dashboard、連接你慣用的 Agent，下一份成效報告只差一個 Prompt。",
     primary: "開始連接 Agent",
     secondary: "前往 GitHub",
@@ -1104,18 +1245,18 @@ const mcpGuideZh: McpGuideCopy = {
 
 const mcpGuideJa: McpGuideCopy = {
   metadata: {
-    title: "MCP で AI エージェントを接続 — Threads データに直接質問 | Threads Analytics",
+    title: "Threads MCP サーバー：Claude や Cursor などの AI エージェントから Threads データに質問",
     description:
-      "Threads Analytics には MCP サーバーが標準搭載。Claude Code、Claude、Cursor などの MCP クライアントを接続すれば、投稿・分析・フォロワーのデータについて直接質問できます。読み取り専用・OAuth 保護・API キー不要。",
+      "Threads MCP サーバーを標準搭載。Claude Code、Claude、Cursor などの MCP クライアントを接続し、投稿・分析・フォロワーのデータに AI から直接質問。読み取り専用・OAuth 保護・API キー不要。",
   },
   hero: {
     kicker: "ガイド / MCP SERVER",
     // ⁠ word joiners +   pin the break points: line one never breaks,
-    // line two only between ひと言で and 手元に.
-    lineOne: "Threads デ⁠ー⁠タ、",
-    lineTwo: "ひ⁠と⁠言⁠で手⁠元⁠に。",
+    // line two only between データは, ひと言で and 手元に.
+    lineOne: "Threads MCP で、",
+    lineTwo: "デ⁠ー⁠タ⁠はひ⁠と⁠言⁠で手⁠元⁠に⁠。",
     description:
-      "デプロイしたダッシュボードは /api/mcp で MCP サーバーを公開しています。普段使っている AI エージェント — Claude Code、Claude、Codex、Cursor — を接続すれば、投稿・分析・フォロワー履歴を読み取り、質問への回答やレポート作成ができます。すべて読み取り専用で、接続はあなたが承認します。",
+      "MCP サーバー内蔵。Claude Code、Claude、Codex、Cursor をつなげば、投稿・分析・フォロワーのデータに直接質問できます。読み取り専用で、接続はあなたが承認します。",
     primaryCta: "エージェントを接続する",
     secondaryCta: "MCP とは？",
     note: "約 2 分 · API キー不要 · 読み取り専用",
@@ -1130,7 +1271,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / できること",
-    title: "読み取り専用ツール 6 つ、レポートプロンプト 6 つ。",
+    title: "読⁠み⁠取⁠り⁠専⁠用ツ⁠ー⁠ル 6 つ⁠、レ⁠ポ⁠ー⁠トプ⁠ロ⁠ン⁠プ⁠ト 6 つ⁠。",
     description:
       "MCP サーバーは同期済みデータを構造化ツールとして公開します。自然な言葉で質問するだけで、エージェントが必要なツールを選び、必要な分だけ読み取ります。",
     panelBadge: "読み取り専用",
@@ -1139,7 +1280,7 @@ const mcpGuideJa: McpGuideCopy = {
         tag: "get_account_overview",
         index: "01",
         title: "アカウントをひと目で把握",
-        body: "ユーザー名、同期状態、投稿数、データ範囲、フォロワー成長サマリー — どの会話も最初に呼ぶツールです。",
+        body: "接続済み全アカウントのユーザー名、同期状態、投稿数、データ範囲、フォロワー成長サマリー — どの会話も最初に呼ぶツールです。複数アカウントがある場合、エージェントがどれを見るか尋ねます。",
       },
       {
         tag: "list_posts · get_post",
@@ -1175,7 +1316,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   connect: {
     kicker: "02 / 接続方法",
-    title: "API キーは不要。ブラウザで承認するだけ。",
+    title: "A⁠P⁠I キ⁠ー⁠は不⁠要⁠。ブ⁠ラ⁠ウ⁠ザ⁠で承⁠認⁠す⁠る⁠だ⁠け⁠。",
     description:
       "認証は OAuth 2.1（PKCE）と Dynamic Client Registration。クライアントが自動で登録し、ブラウザにダッシュボードのログイン画面が開き、同意画面であなたが承認します。",
     steps: [
@@ -1251,7 +1392,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   usage: {
     kicker: "03 / 使い方",
-    title: "自分の言葉で質問するか、プロンプトから始める。",
+    title: "自⁠分⁠の⁠言⁠葉⁠で質⁠問⁠す⁠る⁠か⁠、プ⁠ロ⁠ン⁠プ⁠ト⁠か⁠ら始⁠め⁠る⁠。",
     description:
       "接続すればツールは自動で現れ、設定は不要です。アカウントについて何でも質問するか、6 つの内蔵プロンプトを実行してください。どれも 30d や 90d のような期間指定に対応します。",
     examplesLabel: "こんな質問を",
@@ -1315,7 +1456,7 @@ const mcpGuideJa: McpGuideCopy = {
     ],
   },
   cta: {
-    title: "エージェントに、自分のデータを。",
+    title: "エ⁠ー⁠ジ⁠ェ⁠ン⁠ト⁠に⁠、自⁠分⁠の⁠デ⁠ー⁠タ⁠を⁠。",
     description:
       "ダッシュボードをデプロイし、いつものエージェントを接続すれば、次のレポートはプロンプト 1 つの距離です。",
     primary: "エージェントを接続する",
@@ -1325,36 +1466,1575 @@ const mcpGuideJa: McpGuideCopy = {
   },
 };
 
+const giveawayGuideEn: GiveawayGuideCopy = {
+  metadata: {
+    title: "Threads Giveaway Picker: Draw Winners from Post Replies",
+    description:
+      "Free Threads giveaway picker: load a post's replies, apply the entry rules you announced, and draw winners with a cryptographic shuffle. Self-hosted, no bot.",
+  },
+  hero: {
+    kicker: "FEATURE / GIVEAWAY",
+    lineOne: "Threads giveaway picker:",
+    lineTwo: "your replies are the entries.",
+    description:
+      "Pick a post, load its replies, filter by the rules you announced, then draw. No giveaway bot to authorize, and the entry list never leaves your server.",
+    primaryCta: "Try a draw",
+    secondaryCta: "Deploy the dashboard",
+    note: "Built in · Cryptographic shuffle · Nothing leaves your server",
+    hint: "Loading replies needs an access token with the threads_read_replies permission.",
+    resultCard: {
+      label: "DRAW RESULTS",
+      badge: "FAIR DRAW",
+      shuffling: "Shuffling entries…",
+      summary: "3 winners from 248 eligible entries",
+      prizes: [
+        { name: "Mechanical keyboard × 1", winners: ["@mina.codes"] },
+        { name: "Sticker pack × 2", winners: ["@leo.writes", "@hana.builds"] },
+      ],
+      replay: "Draw again",
+    },
+  },
+  how: {
+    kicker: "01 / HOW IT WORKS",
+    title: "Four steps from a post to a winner.",
+    description:
+      "Everything runs on the dashboard you deployed, against the posts you already sync — the same place you read your analytics.",
+    steps: [
+      {
+        index: "01",
+        title: "Pick the post",
+        body: "Choose any synced post from the picker. The tool walks the Threads conversation endpoint page by page and loads up to 10,000 replies.",
+      },
+      {
+        index: "02",
+        title: "Set your conditions",
+        body: "Switch on the rules you announced. Each one narrows the pool and the eligible counter updates as you type, so you know what you are drawing from.",
+      },
+      {
+        index: "03",
+        title: "Add the prizes",
+        body: "Name each prize and how many winners it takes. One draw can hand out a grand prize and a batch of runner-ups at the same time.",
+      },
+      {
+        index: "04",
+        title: "Draw and announce",
+        body: "Winners come out of a cryptographic shuffle. Copy the formatted result and paste it straight into your announcement reply.",
+      },
+    ],
+  },
+  conditions: {
+    kicker: "02 / ENTRY CONDITIONS",
+    title: "The rules you announced, applied to every reply.",
+    description:
+      "Conditions stack. Turn on what you promised in the post, and the panel tells you how many entries survive before anything is drawn.",
+    panelBadge: "STACKABLE",
+    items: [
+      {
+        tag: "one-per-account",
+        index: "01",
+        title: "One entry per account",
+        body: "Someone who replied nine times counts once. Their first qualifying reply is the one that stays in the pool.",
+      },
+      {
+        tag: "keyword",
+        index: "02",
+        title: "Must include a keyword",
+        body: "Require a hashtag or phrase. Comma-separate several and a reply qualifies if it contains any one of them.",
+      },
+      {
+        tag: "mentions",
+        index: "03",
+        title: "Must tag friends",
+        body: "Set how many @mentions a reply needs — the classic tag-two-friends rule, counted automatically instead of by eye.",
+      },
+      {
+        tag: "deadline",
+        index: "04",
+        title: "Replied before a deadline",
+        body: "Pick the exact cutoff. Anything that arrived after your stated closing time drops out of the pool.",
+      },
+      {
+        tag: "has-text",
+        index: "05",
+        title: "Must have comment text",
+        body: "Empty replies and bare reposts are filtered out, so a blank entry can't take a prize.",
+      },
+      {
+        tag: "exclude",
+        index: "06",
+        title: "Exclude specific accounts",
+        body: "Search the entrant list and remove alt accounts, teammates, or previous winners. Your own replies are excluded before the list is even built.",
+      },
+    ],
+  },
+  demo: {
+    kicker: "03 / TRY A DRAW",
+    title: "Toggle the rules. Watch the pool change. Draw.",
+    description:
+      "A working replica of the giveaway panel with twelve sample replies. Every switch filters the list in real time, and the draw runs the same cryptographic shuffle the product ships.",
+    panel: {
+      conditionsLabel: "ENTRY CONDITIONS",
+      prizesLabel: "PRIZES",
+      entriesLabel: "ENTRIES",
+      eligibleLabel: "eligible",
+      filteredLabel: "filtered out",
+      drawLabel: "Draw winners",
+      drawingLabel: "Drawing…",
+      redrawLabel: "Draw again",
+      resultsLabel: "WINNERS",
+      emptyLabel: "No draw yet — set your conditions, then draw.",
+      summary: "Drew {won} from {pool} eligible entries",
+      conditions: [
+        {
+          id: "dedupe",
+          label: "One entry per account",
+          hint: "Repeat replies collapse into one",
+        },
+        {
+          id: "keyword",
+          label: "Must include #giveaway",
+          hint: "Comma-separate to accept any of several",
+        },
+        {
+          id: "mentions",
+          label: "Must tag 2 friends",
+          hint: "Counts the @mentions in each reply",
+        },
+        {
+          id: "deadline",
+          label: "Replied before 21:00",
+          hint: "Late entries drop out of the pool",
+        },
+      ],
+      prizes: [
+        { name: "Mechanical keyboard", count: 1 },
+        { name: "Sticker pack", count: 2 },
+      ],
+      entries: [
+        {
+          user: "mina.codes",
+          text: "#giveaway count me in @leo.writes @hana.builds",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "leo.writes",
+          text: "#giveaway been waiting for this one @mina.codes @noah.dev",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "hana.builds",
+          text: "#giveaway @sora.ui @kai.exe you two need this",
+          mentions: 2,
+          keyword: true,
+        },
+        { user: "noah.dev", text: "count me in!", mentions: 0, keyword: false },
+        { user: "sora.ui", text: "#giveaway @kai.exe", mentions: 1, keyword: true },
+        {
+          user: "mina.codes",
+          text: "#giveaway bumping this @sora.ui @noah.dev",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "kai.exe",
+          text: "#giveaway 🎉 @mina.codes @leo.writes",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "ava.design",
+          text: "#giveaway just made it @hana.builds @noah.dev",
+          mentions: 2,
+          keyword: true,
+          late: true,
+        },
+        { user: "yuki.md", text: "love this dashboard", mentions: 0, keyword: false },
+        {
+          user: "theo.ships",
+          text: "#giveaway @ava.design @yuki.md joining in",
+          mentions: 2,
+          keyword: true,
+        },
+        { user: "lila.dev", text: "#giveaway @theo.ships", mentions: 1, keyword: true },
+        {
+          user: "ren.tech",
+          text: "#giveaway @lila.dev @yuki.md good luck everyone",
+          mentions: 2,
+          keyword: true,
+        },
+      ],
+    },
+    note: "Sample replies, real logic. On your deployment the panel reads the actual thread of the post you pick.",
+  },
+  fairness: {
+    kicker: "04 / WHY IT'S FAIR",
+    title: "Randomness you can explain, on a server you own.",
+    description:
+      "A giveaway is only worth running if the people who entered believe the result. Here is exactly what happens between the reply list and the winner.",
+    items: [
+      {
+        index: "01",
+        title: "A shuffle, not a guess",
+        body: "Winners come out of a Fisher–Yates shuffle driven by crypto.getRandomValues, the browser's cryptographic generator. Every eligible entry carries the same odds, and no account wins twice in one draw.",
+      },
+      {
+        index: "02",
+        title: "Your own replies never enter",
+        body: "The host's replies are dropped on the server before the pool is built, so answering entrants in the thread can't put you in your own giveaway.",
+      },
+      {
+        index: "03",
+        title: "What the API can't check",
+        body: "Threads only exposes replies. Repost, follow, and like requirements have to be confirmed by hand on the winners — the panel says so instead of pretending otherwise.",
+      },
+      {
+        index: "04",
+        title: "Nothing leaves your deployment",
+        body: "Replies are fetched with your own encrypted token and filtered in your browser. No third-party giveaway service ever sees your entrants.",
+      },
+    ],
+    tokenNote:
+      "Replies need an access token with the threads_read_replies permission — the token guide covers it step by step.",
+    tokenCta: "Read the token guide",
+  },
+  cta: {
+    title: "Run your next giveaway on your own dashboard.",
+    description:
+      "Deploy Threads Analytics, connect your Threads account, and the giveaway panel is already waiting in the sidebar — nothing else to install.",
+    primary: "Deploy the dashboard",
+    secondary: "View on GitHub",
+    note: "Entries, conditions, and results all stay on your deployment.",
+  },
+};
+
+const giveawayGuideZh: GiveawayGuideCopy = {
+  metadata: {
+    title: "免費 Threads 抽獎工具：從貼文留言隨機抽出得獎者",
+    description:
+      "免費的 Threads 抽獎工具：選一則貼文、載入全部留言、套用你公告過的抽獎條件（關鍵字、標記朋友、截止時間），再用密碼學等級的洗牌隨機抽出得獎者。完全自架，不用授權第三方抽獎機器人。",
+  },
+  hero: {
+    kicker: "功能 / 抽獎",
+    // \u2060 word joiners pin the break points: line one only breaks after Threads,
+    // line two only between 留言, 就是你的 and 抽獎池.
+    lineOne: "Threads 抽⁠獎⁠工⁠具⁠，",
+    lineTwo: "留⁠言就⁠是⁠你⁠的抽⁠獎⁠池⁠。",
+    description:
+      "選一則貼文、載入全部留言、依你公告過的規則篩選，然後開獎。不用授權第三方抽獎機器人，名單也不會離開你的伺服器。",
+    primaryCta: "試抽一次",
+    secondaryCta: "部署 Dashboard",
+    note: "內建功能 · 密碼學洗牌 · 資料不出你的伺服器",
+    hint: "載入留言需要具備 threads_read_replies 權限的 Access Token。",
+    resultCard: {
+      label: "開獎結果",
+      badge: "公平抽獎",
+      shuffling: "洗牌中…",
+      summary: "從 248 位符合資格者中抽出 3 位",
+      prizes: [
+        { name: "機械鍵盤 × 1", winners: ["@mina.codes"] },
+        { name: "貼紙組 × 2", winners: ["@leo.writes", "@hana.builds"] },
+      ],
+      replay: "重新抽一次",
+    },
+  },
+  how: {
+    kicker: "01 / 怎麼運作",
+    title: "從⁠一⁠則⁠貼⁠文到⁠得⁠獎⁠者⁠，四⁠個⁠步⁠驟⁠。",
+    description:
+      "全部都在你自己部署的 Dashboard 上執行，資料來自你早就同步好的貼文 — 和你看分析報表的是同一個地方。",
+    steps: [
+      {
+        index: "01",
+        title: "選擇貼文",
+        body: "從選單挑一則已同步的貼文。工具會逐頁呼叫 Threads 的 conversation 端點，最多載入 10,000 則留言。",
+      },
+      {
+        index: "02",
+        title: "設定抽獎條件",
+        body: "打開你公告過的規則。每多一個條件就收窄一次名單，符合資格的人數會即時更新，讓你清楚知道自己在從多少人裡面抽。",
+      },
+      {
+        index: "03",
+        title: "加入獎項",
+        body: "填上獎項名稱和要抽幾位。一次開獎可以同時抽出大獎和好幾個加碼獎。",
+      },
+      {
+        index: "04",
+        title: "開獎並公告",
+        body: "得獎者由密碼學洗牌抽出。複製排版好的結果，直接貼進你的公告留言。",
+      },
+    ],
+  },
+  conditions: {
+    kicker: "02 / 抽獎條件",
+    title: "你⁠公⁠告⁠的⁠規⁠則⁠，逐⁠則⁠留⁠言自⁠動⁠核⁠對⁠。",
+    description:
+      "條件可以疊加。把你在貼文裡答應過的規則打開，面板會先告訴你還剩多少人符合資格，再開獎。",
+    panelBadge: "可疊加",
+    items: [
+      {
+        tag: "one-per-account",
+        index: "01",
+        title: "同一帳號只算一次",
+        body: "留了九次言的人也只佔一個名額，保留他第一則符合條件的留言留在抽獎池裡。",
+      },
+      {
+        tag: "keyword",
+        index: "02",
+        title: "必須包含關鍵字",
+        body: "要求特定 hashtag 或字串。用逗號分隔多組，留言只要命中其中一組就算符合。",
+      },
+      {
+        tag: "mentions",
+        index: "03",
+        title: "必須標記朋友",
+        body: "設定留言至少要有幾個 @ 標記 — 經典的「標記兩位朋友」規則，交給程式數，不用自己一則一則看。",
+      },
+      {
+        tag: "deadline",
+        index: "04",
+        title: "須在截止時間前留言",
+        body: "指定精確的截止時刻。在你公告的結束時間之後才進來的留言會自動退出抽獎池。",
+      },
+      {
+        tag: "has-text",
+        index: "05",
+        title: "必須有留言內容",
+        body: "空白留言與純轉發會被濾掉，避免一則空的留言抽走獎品。",
+      },
+      {
+        tag: "exclude",
+        index: "06",
+        title: "排除指定帳號",
+        body: "搜尋參加者名單，移除分身、同事或上次的得獎者。你自己的留言在名單成形前就已經被排除。",
+      },
+    ],
+  },
+  demo: {
+    kicker: "03 / 試抽一次",
+    title: "切⁠換⁠條⁠件⁠，看⁠名⁠單⁠變⁠化⁠，然⁠後⁠開⁠獎⁠。",
+    description:
+      "這是抽獎面板的可操作復刻，裡面有 12 則範例留言。每個開關都會即時篩選名單，開獎用的也是產品實際採用的密碼學洗牌。",
+    panel: {
+      conditionsLabel: "抽獎條件",
+      prizesLabel: "獎項",
+      entriesLabel: "留言名單",
+      eligibleLabel: "符合資格",
+      filteredLabel: "已篩除",
+      drawLabel: "開始抽獎",
+      drawingLabel: "抽獎中…",
+      redrawLabel: "重新抽一次",
+      resultsLabel: "得獎者",
+      emptyLabel: "還沒開獎 — 設好條件後按下開始抽獎。",
+      summary: "從 {pool} 位符合資格者中抽出 {won} 位",
+      conditions: [
+        {
+          id: "dedupe",
+          label: "同一帳號只算一次",
+          hint: "重複留言合併為一筆",
+        },
+        {
+          id: "keyword",
+          label: "必須包含 #giveaway",
+          hint: "用逗號分隔可接受任一關鍵字",
+        },
+        {
+          id: "mentions",
+          label: "必須標記 2 位朋友",
+          hint: "計算每則留言裡的 @ 標記數",
+        },
+        {
+          id: "deadline",
+          label: "須在 21:00 前留言",
+          hint: "逾時留言會退出抽獎池",
+        },
+      ],
+      prizes: [
+        { name: "機械鍵盤", count: 1 },
+        { name: "貼紙組", count: 2 },
+      ],
+      entries: [
+        {
+          user: "mina.codes",
+          text: "#giveaway 算我一份 @leo.writes @hana.builds",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "leo.writes",
+          text: "#giveaway 等這個好久了 @mina.codes @noah.dev",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "hana.builds",
+          text: "#giveaway @sora.ui @kai.exe 你們兩個超需要",
+          mentions: 2,
+          keyword: true,
+        },
+        { user: "noah.dev", text: "算我一個！", mentions: 0, keyword: false },
+        { user: "sora.ui", text: "#giveaway @kai.exe", mentions: 1, keyword: true },
+        {
+          user: "mina.codes",
+          text: "#giveaway 再推一次 @sora.ui @noah.dev",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "kai.exe",
+          text: "#giveaway 🎉 @mina.codes @leo.writes",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "ava.design",
+          text: "#giveaway 趕上了 @hana.builds @noah.dev",
+          mentions: 2,
+          keyword: true,
+          late: true,
+        },
+        { user: "yuki.md", text: "這個 Dashboard 做得真好", mentions: 0, keyword: false },
+        {
+          user: "theo.ships",
+          text: "#giveaway @ava.design @yuki.md 一起來",
+          mentions: 2,
+          keyword: true,
+        },
+        { user: "lila.dev", text: "#giveaway @theo.ships", mentions: 1, keyword: true },
+        {
+          user: "ren.tech",
+          text: "#giveaway @lila.dev @yuki.md 大家好運",
+          mentions: 2,
+          keyword: true,
+        },
+      ],
+    },
+    note: "留言是範例，邏輯是真的。在你的部署上，面板讀的是你選定貼文底下的實際留言串。",
+  },
+  fairness: {
+    kicker: "04 / 為什麼公平",
+    title: "說⁠得⁠清⁠楚⁠的隨⁠機⁠，跑⁠在你⁠自⁠己⁠的伺⁠服⁠器⁠上⁠。",
+    description:
+      "抽獎要辦得有意義，前提是參加的人相信結果。以下就是從留言名單到得獎者之間，實際發生的每一件事。",
+    items: [
+      {
+        index: "01",
+        title: "是洗牌，不是隨便挑",
+        body: "得獎者來自以 crypto.getRandomValues（瀏覽器的密碼學亂數產生器）驅動的 Fisher–Yates 洗牌。每一筆符合資格的留言機率相同，同一場抽獎裡也不會有帳號中兩次。",
+      },
+      {
+        index: "02",
+        title: "你自己的留言不會進名單",
+        body: "主辦帳號的留言會在伺服器端就先被移除，所以你在留言串裡回覆參加者，不會把自己抽進自己的抽獎。",
+      },
+      {
+        index: "03",
+        title: "API 驗不了的事",
+        body: "Threads 只開放留言資料。轉發、追蹤、按讚這類條件必須在開獎後對得獎者人工確認 — 面板會直接把這件事寫出來，而不是假裝做得到。",
+      },
+      {
+        index: "04",
+        title: "資料不離開你的部署",
+        body: "留言用你自己加密保存的 Token 取得，篩選在你的瀏覽器裡完成。沒有任何第三方抽獎服務看得到你的參加者名單。",
+      },
+    ],
+    tokenNote:
+      "載入留言需要具備 threads_read_replies 權限的 Access Token — Token 生成教學會一步一步帶你完成。",
+    tokenCta: "看 Token 生成教學",
+  },
+  cta: {
+    title: "下⁠一⁠場⁠抽⁠獎⁠，就⁠在你⁠自⁠己⁠的 D⁠a⁠s⁠h⁠b⁠o⁠a⁠r⁠d 開⁠。",
+    description:
+      "部署 Threads Analytics、連接 Threads 帳號，抽獎面板就已經在側邊欄等你了 — 不需要再安裝任何東西。",
+    primary: "部署 Dashboard",
+    secondary: "在 GitHub 上查看",
+    note: "留言、條件與開獎結果，全都留在你自己的部署裡。",
+  },
+};
+
+const giveawayGuideJa: GiveawayGuideCopy = {
+  metadata: {
+    title: "Threads 抽選ツール：投稿のリプライから当選者をランダム抽出",
+    description:
+      "無料の Threads 抽選ツール。投稿を選び、リプライを読み込み、告知した応募条件（キーワード、友達のタグ付け、締切）で絞り込んで、暗号学的シャッフルで当選者を抽出。セルフホストなので抽選ボットの認可は不要です。",
+  },
+  hero: {
+    kicker: "機能 / 抽選",
+    // \u2060 word joiners pin the break points: line one only breaks after Threads,
+    // line two only between リプライが and 応募一覧に.
+    lineOne: "Threads 抽⁠選⁠ツ⁠ー⁠ル⁠で⁠、",
+    lineTwo: "リ⁠プ⁠ラ⁠イ⁠が応⁠募⁠一⁠覧⁠に⁠。",
+    description:
+      "投稿を選び、リプライを読み込み、告知したルールで絞り込んで抽選。抽選ボットの認可は不要で、応募者リストはサーバーの外に出ません。",
+    primaryCta: "抽選を試す",
+    secondaryCta: "ダッシュボードをデプロイ",
+    note: "標準搭載 · 暗号学的シャッフル · データは外に出ない",
+    hint: "リプライの読み込みには threads_read_replies 権限を持つアクセストークンが必要です。",
+    resultCard: {
+      label: "抽選結果",
+      badge: "公正な抽選",
+      shuffling: "シャッフル中…",
+      summary: "対象 248 件から 3 名を抽選",
+      prizes: [
+        { name: "メカニカルキーボード × 1", winners: ["@mina.codes"] },
+        { name: "ステッカーセット × 2", winners: ["@leo.writes", "@hana.builds"] },
+      ],
+      replay: "もう一度抽選",
+    },
+  },
+  how: {
+    kicker: "01 / 仕組み",
+    title: "投⁠稿⁠か⁠ら当⁠選⁠者⁠ま⁠で⁠、4 ス⁠テ⁠ッ⁠プ⁠。",
+    description:
+      "すべては自分でデプロイしたダッシュボード上で、すでに同期済みの投稿に対して実行されます — 分析を見ているのと同じ場所です。",
+    steps: [
+      {
+        index: "01",
+        title: "投稿を選ぶ",
+        body: "同期済みの投稿をセレクタから選びます。Threads の conversation エンドポイントをページ送りしながら、最大 10,000 件のリプライを読み込みます。",
+      },
+      {
+        index: "02",
+        title: "応募条件を設定する",
+        body: "告知したルールをオンにします。条件を足すたびに母数が絞られ、対象件数がその場で更新されるので、何件から抽選するのかが常に分かります。",
+      },
+      {
+        index: "03",
+        title: "賞品を追加する",
+        body: "賞品名と当選人数を入力します。1 回の抽選で大賞と追加賞をまとめて抽出できます。",
+      },
+      {
+        index: "04",
+        title: "抽選して発表する",
+        body: "当選者は暗号学的シャッフルで決まります。整形済みの結果をコピーして、そのまま発表のリプライに貼り付けてください。",
+      },
+    ],
+  },
+  conditions: {
+    kicker: "02 / 応募条件",
+    title: "告⁠知⁠し⁠たル⁠ー⁠ル⁠を⁠、す⁠べ⁠て⁠のリ⁠プ⁠ラ⁠イ⁠に自⁠動⁠で⁠適⁠用⁠。",
+    description:
+      "条件は重ねられます。投稿で約束したルールをオンにすると、抽選前に何件が対象として残るかをパネルが教えてくれます。",
+    panelBadge: "重ねがけ可能",
+    items: [
+      {
+        tag: "one-per-account",
+        index: "01",
+        title: "1 アカウント 1 口",
+        body: "9 回リプライした人も 1 口として扱い、条件を満たした最初のリプライだけが母集団に残ります。",
+      },
+      {
+        tag: "keyword",
+        index: "02",
+        title: "キーワードを含むこと",
+        body: "特定のハッシュタグや語句を必須にします。カンマ区切りで複数指定すると、いずれかを含めば対象になります。",
+      },
+      {
+        tag: "mentions",
+        index: "03",
+        title: "友達をタグ付けすること",
+        body: "必要な @メンション数を設定します。定番の「友達 2 人をタグ付け」も、目視ではなく自動でカウントします。",
+      },
+      {
+        tag: "deadline",
+        index: "04",
+        title: "締切前のリプライであること",
+        body: "締切時刻を正確に指定できます。告知した終了時刻より後に届いたリプライは母集団から外れます。",
+      },
+      {
+        tag: "has-text",
+        index: "05",
+        title: "コメント本文があること",
+        body: "空のリプライや本文のないリポストを除外し、中身のない応募が当選しないようにします。",
+      },
+      {
+        tag: "exclude",
+        index: "06",
+        title: "特定のアカウントを除外",
+        body: "応募者リストを検索して、サブアカウント・関係者・前回の当選者を外せます。あなた自身のリプライはリスト作成前に除外済みです。",
+      },
+    ],
+  },
+  demo: {
+    kicker: "03 / 抽選を試す",
+    title: "条⁠件⁠を切⁠り⁠替⁠え⁠、母⁠数⁠の⁠変⁠化⁠を見⁠て⁠、抽⁠選⁠す⁠る⁠。",
+    description:
+      "12 件のサンプルリプライを使った、抽選パネルの実動レプリカです。スイッチを切り替えるたびにリストが即座に絞り込まれ、抽選には製品と同じ暗号学的シャッフルを使っています。",
+    panel: {
+      conditionsLabel: "応募条件",
+      prizesLabel: "賞品",
+      entriesLabel: "応募リプライ",
+      eligibleLabel: "対象",
+      filteredLabel: "除外",
+      drawLabel: "抽選する",
+      drawingLabel: "抽選中…",
+      redrawLabel: "もう一度抽選",
+      resultsLabel: "当選者",
+      emptyLabel: "まだ抽選していません — 条件を設定して抽選してください。",
+      summary: "対象 {pool} 件から {won} 名を抽選",
+      conditions: [
+        {
+          id: "dedupe",
+          label: "1 アカウント 1 口",
+          hint: "重複リプライは 1 件にまとめます",
+        },
+        {
+          id: "keyword",
+          label: "#giveaway を含むこと",
+          hint: "カンマ区切りでいずれかを許可",
+        },
+        {
+          id: "mentions",
+          label: "友達を 2 人タグ付け",
+          hint: "各リプライの @メンション数を数えます",
+        },
+        {
+          id: "deadline",
+          label: "21:00 より前のリプライ",
+          hint: "締切後の応募は母集団から外れます",
+        },
+      ],
+      prizes: [
+        { name: "メカニカルキーボード", count: 1 },
+        { name: "ステッカーセット", count: 2 },
+      ],
+      entries: [
+        {
+          user: "mina.codes",
+          text: "#giveaway 参加します @leo.writes @hana.builds",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "leo.writes",
+          text: "#giveaway ずっと待ってました @mina.codes @noah.dev",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "hana.builds",
+          text: "#giveaway @sora.ui @kai.exe 二人にこそ必要",
+          mentions: 2,
+          keyword: true,
+        },
+        { user: "noah.dev", text: "参加したいです！", mentions: 0, keyword: false },
+        { user: "sora.ui", text: "#giveaway @kai.exe", mentions: 1, keyword: true },
+        {
+          user: "mina.codes",
+          text: "#giveaway もう一度あげておきます @sora.ui @noah.dev",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "kai.exe",
+          text: "#giveaway 🎉 @mina.codes @leo.writes",
+          mentions: 2,
+          keyword: true,
+        },
+        {
+          user: "ava.design",
+          text: "#giveaway ぎりぎり間に合った @hana.builds @noah.dev",
+          mentions: 2,
+          keyword: true,
+          late: true,
+        },
+        { user: "yuki.md", text: "このダッシュボード良いですね", mentions: 0, keyword: false },
+        {
+          user: "theo.ships",
+          text: "#giveaway @ava.design @yuki.md 一緒にどうぞ",
+          mentions: 2,
+          keyword: true,
+        },
+        { user: "lila.dev", text: "#giveaway @theo.ships", mentions: 1, keyword: true },
+        {
+          user: "ren.tech",
+          text: "#giveaway @lila.dev @yuki.md みんな頑張って",
+          mentions: 2,
+          keyword: true,
+        },
+      ],
+    },
+    note: "リプライはサンプルですが、ロジックは本物です。実際のデプロイでは、選んだ投稿のリプライを読み込みます。",
+  },
+  fairness: {
+    kicker: "04 / 公正である理由",
+    title: "説⁠明⁠で⁠き⁠るラ⁠ン⁠ダ⁠ム⁠性⁠を⁠、自⁠分⁠のサ⁠ー⁠バ⁠ー⁠で⁠。",
+    description:
+      "抽選が意味を持つのは、応募した人が結果を信じられるときだけです。リプライ一覧から当選者が決まるまでに何が起きているかを、そのまま書いておきます。",
+    items: [
+      {
+        index: "01",
+        title: "当てずっぽうではなくシャッフル",
+        body: "当選者はブラウザの暗号学的乱数 crypto.getRandomValues を用いた Fisher–Yates シャッフルで決まります。対象となるすべての応募が同じ確率で、1 回の抽選で同じアカウントが 2 度当選することはありません。",
+      },
+      {
+        index: "02",
+        title: "主催者のリプライは母集団に入らない",
+        body: "主催アカウントのリプライは母集団を組む前にサーバー側で除外されます。スレッドで応募者に返信しても、自分の抽選に自分が入ることはありません。",
+      },
+      {
+        index: "03",
+        title: "API で確認できないこと",
+        body: "Threads が公開しているのはリプライだけです。リポスト・フォロー・いいねの条件は当選者に対して手動で確認する必要があります — パネルはその点をごまかさずに明記します。",
+      },
+      {
+        index: "04",
+        title: "データはデプロイ先から出ない",
+        body: "リプライは暗号化して保管された自分のトークンで取得し、絞り込みはブラウザ内で完結します。第三者の抽選サービスが応募者を見ることはありません。",
+      },
+    ],
+    tokenNote:
+      "リプライの読み込みには threads_read_replies 権限を持つアクセストークンが必要です — トークン生成ガイドで手順を確認できます。",
+    tokenCta: "トークン生成ガイドを見る",
+  },
+  cta: {
+    title: "次⁠の⁠抽⁠選⁠は⁠、自⁠分⁠のダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ド⁠で⁠。",
+    description:
+      "Threads Analytics をデプロイして Threads アカウントを接続すれば、抽選パネルはすでにサイドバーにあります — 追加インストールは不要です。",
+    primary: "ダッシュボードをデプロイ",
+    secondary: "GitHub で見る",
+    note: "応募・条件・結果のすべてが、自分のデプロイ内にとどまります。",
+  },
+};
+
+const analyticsGuideEn: AnalyticsGuideCopy = {
+  metadata: {
+    title: "31 Threads Analytics Charts: Post, Content & Audience Metrics",
+    description:
+      "All 31 Threads analytics charts in the dashboard: overview, performance, content, and audience metrics, plus per-post stats and the baselines behind every number.",
+  },
+  hero: {
+    kicker: "FEATURE / ANALYTICS",
+    lineOne: "Thirty-one Threads analyses.",
+    lineTwo: "One question each.",
+    description:
+      "Every chart answers one publishing decision: when to post, what format, how long, what to write about, who is reading. Here is the full list.",
+    primaryCta: "See the full list",
+    secondaryCta: "Deploy the dashboard",
+    note: "Medians, not averages · Sample-size confidence · Your own baseline",
+    hint: "Every chart recomputes over whatever date range you pick — nothing is precomputed or capped.",
+    summary: {
+      label: "WHAT YOU GET",
+      badge: "PER ACCOUNT",
+      total: "31",
+      totalLabel: "analyses across four tabs",
+      rows: [
+        { name: "Overview", count: "4" },
+        { name: "Performance", count: "11" },
+        { name: "Content", count: "13" },
+        { name: "Audience", count: "3" },
+      ],
+    },
+  },
+  railLabel: "ON THIS PAGE",
+  sections: [
+    {
+      index: "01",
+      kicker: "01 / OVERVIEW",
+      title: "The account at a glance.",
+      description:
+        "The landing tab answers “how am I doing right now?” before you go looking for a reason.",
+      panelName: "threads-analytics · overview",
+      badge: "4 SECTIONS",
+      railMeta: "4 sections",
+      items: [
+        {
+          name: "Stat Cards",
+          body: "Views, likes, replies, reposts, quotes, shares, and engagement rate — each with its change against the previous period of the same length.",
+        },
+        {
+          name: "Best Hours",
+          body: "Your top two or three posting hours ranked by median views, with a confidence indicator driven by sample size.",
+        },
+        {
+          name: "Views Trend",
+          body: "Views by day, week, or month, drawn against your own median as the baseline.",
+        },
+        {
+          name: "Top Posts",
+          body: "Everything that beat your median view count, ranked by multiplier — 3.2× median, not just “popular”.",
+        },
+      ],
+    },
+    {
+      index: "02",
+      kicker: "02 / PERFORMANCE",
+      title: "Best time to post on Threads: when to post, and what actually travels.",
+      description:
+        "Eleven charts on reach and engagement: the timing questions, the quality map, and whether the account is growing at all.",
+      panelName: "threads-analytics · performance",
+      badge: "11 CHARTS",
+      railMeta: "11 charts",
+      stats: {
+        label: "TAB STATS",
+        items: ["Total Views", "Avg Views / Day", "Eng. Rate", "Share Rate"],
+      },
+      items: [
+        {
+          name: "Overall Performance",
+          body: "Daily views, post count, and average views per post on one timeline.",
+        },
+        {
+          name: "Post Quality Map",
+          body: "Every post plotted by reach against engagement rate, dot size by shares, split into four quadrants: breakout, conversation, broadcast, underperforming.",
+        },
+        {
+          name: "Views to Actions Funnel",
+          body: "What share of views converts into each action — likes, replies, reposts, quotes, shares.",
+        },
+        {
+          name: "Best Time to Post",
+          body: "Median views as an hour-by-hour heatmap, with sample count and confidence in the tooltip.",
+        },
+        {
+          name: "Engagement Rate Trend",
+          body: "Daily interactions ÷ views, with a 7-day smoothed line over the noise.",
+        },
+        {
+          name: "Best Day of Week",
+          body: "Median views, engagement rate, and post count compared weekday by weekday.",
+        },
+        {
+          name: "Format × Length Matrix",
+          body: "A 2-D heatmap of every format-and-length combination against your median reach.",
+        },
+        {
+          name: "Engagement Type Breakdown",
+          body: "How your interactions split across likes, replies, reposts, quotes, and shares.",
+        },
+        {
+          name: "Engagement Breakdown",
+          body: "The same split stacked over time, so a shift in what people do shows up.",
+        },
+        {
+          name: "Reach Growth Trend",
+          body: "Median and average views per post over time — the honest answer to “is this account growing?”",
+        },
+        {
+          name: "Views Distribution",
+          body: "How posts spread across view ranges, with the hit rate for each milestone: 1k, 5k, 10k.",
+        },
+      ],
+    },
+    {
+      index: "03",
+      kicker: "03 / CONTENT",
+      title: "Content analysis: what to write, how long, how often.",
+      description:
+        "Thirteen charts on the content itself — format, length, keywords, cadence, and the posts that start conversations.",
+      panelName: "threads-analytics · content",
+      badge: "13 CHARTS",
+      railMeta: "13 charts",
+      stats: {
+        label: "TAB STATS",
+        items: [
+          "Posting Consistency",
+          "Share Rate",
+          "Quote Ratio",
+          "Total Posts",
+          "Longest Streak",
+          "Current Streak",
+        ],
+      },
+      items: [
+        {
+          name: "Posting Activity",
+          body: "A calendar heatmap of how much you published each day.",
+        },
+        {
+          name: "Content Type Performance",
+          body: "Median views, engagement, and share rate by media type — text, image, video, carousel, audio — with thin buckets faded out.",
+        },
+        {
+          name: "Post Length Analysis",
+          body: "Median views by character-count bucket, with average, P75, hit rate, and confidence behind the tooltip.",
+        },
+        {
+          name: "Publishing Frequency vs Performance",
+          body: "Whether posting more in a week lifts reach or just dilutes it.",
+        },
+        { name: "Shares Trend", body: "Daily share counts over the long run." },
+        {
+          name: "Top Keywords by Engagement",
+          body: "The words that carry your highest engagement rate — hashtags excluded, three-post minimum.",
+        },
+        {
+          name: "Optimal Posting Frequency",
+          body: "Per-post reach and engagement compared across weekly posting volumes.",
+        },
+        {
+          name: "Content Type by Time Slot",
+          body: "The best hour for each format, by median views.",
+        },
+        {
+          name: "Top by Engagement Rate",
+          body: "Posts ranked by (likes + replies + reposts + quotes) ÷ views.",
+        },
+        {
+          name: "Reply-Rate Leaders",
+          body: "Replies ÷ views — the posts that actually started something.",
+        },
+        {
+          name: "Share-Rate Leaders",
+          body: "Shares ÷ views — the posts people kept rather than just liked.",
+        },
+        {
+          name: "Posting Gap vs Performance",
+          body: "Median views by days since your last post: does daily beat taking a break?",
+        },
+        {
+          name: "Content Feature Comparison",
+          body: "Posts with and without links, with and without questions — your own data answering whether links cost reach.",
+        },
+      ],
+    },
+    {
+      index: "04",
+      kicker: "04 / AUDIENCE",
+      title: "Follower growth and engagement rate: who is on the other side.",
+      description:
+        "Follower history the API refuses to backfill, so the dashboard records it one day at a time from the moment you deploy.",
+      panelName: "threads-analytics · audience",
+      badge: "3 CHARTS",
+      railMeta: "3 charts",
+      stats: {
+        label: "TAB STATS",
+        items: ["Followers", "Net Growth", "Avg / Day", "Days Tracked"],
+      },
+      items: [
+        {
+          name: "Follower Growth",
+          body: "Follower count over time, one point per synced day, with that day's change in the tooltip.",
+        },
+        {
+          name: "Follower Demographics",
+          body: "Country, city, age, and gender distributions, each marked with the baseline date and given as both head count and percentage points.",
+        },
+        {
+          name: "Composition Trend",
+          body: "Each group's share as a change in percentage points from the baseline — composition moves too slowly for absolute shares to show anything.",
+        },
+      ],
+      note: "Threads only reports followers as of right now, so history can't be backfilled. Audience data is captured at most once per calendar day no matter how often posts sync, and demographics need at least 100 followers before the API returns them.",
+    },
+    {
+      index: "05",
+      kicker: "05 / POSTS",
+      title: "And every post, one at a time.",
+      description:
+        "The aggregate view eventually points at a specific post. The posts page is where you go read it.",
+      panelName: "threads-analytics · posts",
+      badge: "4 TOOLS",
+      railMeta: "4 tools",
+      items: [
+        { name: "Sort", body: "By date, views, or likes." },
+        { name: "Search", body: "Full-text across everything you have published." },
+        {
+          name: "Media filter",
+          body: "Narrow to a format — only the types actually present in the current period are offered.",
+        },
+        {
+          name: "Post detail",
+          body: "Views, engagement rate, multiple of your median, view percentile, and a per-action breakdown for the post you opened.",
+        },
+      ],
+    },
+  ],
+  method: {
+    index: "06",
+    kicker: "06 / THE METHOD",
+    title: "Why these numbers are worth trusting.",
+    description:
+      "Analytics is easy to make flattering. These four rules are what keep the dashboard honest instead.",
+    railMeta: "4 rules",
+    items: [
+      {
+        index: "01",
+        title: "Medians, not averages",
+        body: "One post that went unusually far would drag an average up and keep it there, making every later post look like a failure. Medians describe your typical post, which is the one you are about to write.",
+      },
+      {
+        index: "02",
+        title: "Sample size decides confidence",
+        body: "Three posts at 8 PM is not a finding. Buckets with thin samples are faded, labelled low-confidence, or left out of the ranking — the dashboard says “not enough data yet” rather than inventing a best hour.",
+      },
+      {
+        index: "03",
+        title: "Your own baseline",
+        body: "Every comparison is against your own history, never against a global benchmark from accounts with different sizes, topics, and audiences. 3.2× median means 3.2× of your median.",
+      },
+      {
+        index: "04",
+        title: "Like-for-like periods",
+        body: "Every delta compares against the immediately preceding period of the same length, so a 30-day view is never quietly measured against a 7-day one.",
+      },
+    ],
+  },
+  cta: {
+    title: "Point all of this at your own account.",
+    description:
+      "Deploy the dashboard, connect your Threads account, and the first sync fills in every chart on this page from your own history.",
+    primary: "Deploy the dashboard",
+    secondary: "View on GitHub",
+    note: "Every chart recomputes on your server, from data that never leaves it.",
+  },
+};
+
+const analyticsGuideZh: AnalyticsGuideCopy = {
+  metadata: {
+    title: "Threads 數據分析圖表：貼文成效、內容與受眾共 31 種分析",
+    description:
+      "Threads Analytics 儀表板的 31 張 Threads 數據分析圖表完整清單：總覽、成效、內容、受眾與單篇貼文指標，以及每個數字背後的中位數、樣本信心度與個人基準線。",
+  },
+  hero: {
+    kicker: "功能 / 分析",
+    // \u2060 word joiners pin the break points: line one only breaks around Threads,
+    // line two only breaks between 各自回答 and 一個問題.
+    lineOne: "三⁠十⁠一⁠種 Threads 數⁠據⁠分⁠析⁠，",
+    lineTwo: "各⁠自⁠回⁠答一⁠個⁠問⁠題⁠。",
+    description:
+      "Dashboard 的每張圖表都在回答一個發文決策：何時發、什麼形式、寫多長、寫什麼、誰在看。以下是完整清單。",
+    primaryCta: "看完整清單",
+    secondaryCta: "部署 Dashboard",
+    note: "用中位數不用平均 · 樣本信心度 · 對照你自己的基準線",
+    hint: "每張圖表都會依你挑選的日期區間即時重算，沒有預先算好的數字，也沒有上限。",
+    summary: {
+      label: "你會拿到什麼",
+      badge: "每個帳號",
+      total: "31",
+      totalLabel: "個分析，分屬四個分頁",
+      rows: [
+        { name: "總覽", count: "4" },
+        { name: "成效", count: "11" },
+        { name: "內容", count: "13" },
+        { name: "受眾", count: "3" },
+      ],
+    },
+  },
+  railLabel: "本頁內容",
+  sections: [
+    {
+      index: "01",
+      kicker: "01 / 總覽",
+      title: "一⁠眼⁠看⁠完帳⁠號⁠現⁠況⁠。",
+      description: "在你開始找原因之前，登入後的第一個分頁先回答「我現在表現如何」。",
+      panelName: "threads-analytics · overview",
+      badge: "4 個區塊",
+      railMeta: "4 個區塊",
+      items: [
+        {
+          name: "數據卡",
+          body: "觀看、讚、回覆、轉發、引用、分享與互動率，每張都附上相較前一個等長時段的增減。",
+        },
+        {
+          name: "最佳發文時段",
+          body: "以中位數觀看排序的前 2–3 個時段，並依樣本數標示可信度。",
+        },
+        {
+          name: "觀看趨勢",
+          body: "可切換日／週／月的觀看走勢，疊上你自己的中位數基準線。",
+        },
+        {
+          name: "高曝光貼文",
+          body: "所有超過你中位數的貼文，依倍率排序 — 是「3.2× 中位數」，不只是「表現不錯」。",
+        },
+      ],
+    },
+    {
+      index: "02",
+      kicker: "02 / 成效分析",
+      title: "最⁠佳⁠發⁠文⁠時⁠間與⁠觸⁠及⁠率⁠：什⁠麼⁠時⁠候⁠發⁠，什⁠麼⁠真⁠的傳⁠得⁠出⁠去⁠。",
+      description: "十一張關於觸及與互動的圖表：發文時機、單篇品質定位，以及帳號到底有沒有在成長。",
+      panelName: "threads-analytics · performance",
+      badge: "11 張圖表",
+      railMeta: "11 張圖表",
+      stats: {
+        label: "分頁指標",
+        items: ["總觀看", "日均觀看", "互動率", "分享率"],
+      },
+      items: [
+        { name: "整體成效", body: "每日觀看數、發文量與單篇平均觀看整合在同一條時間軸。" },
+        {
+          name: "單篇品質地圖",
+          body: "以觸及對互動率定位每篇貼文，點的大小代表分享數，分成高觸及高互動、低觸及高互動、高觸及低互動、低觸及低互動四個象限。",
+        },
+        {
+          name: "觀看到行動漏斗",
+          body: "總觀看中有多少比例轉換成讚、回覆、轉發、引用與分享。",
+        },
+        {
+          name: "最佳發文時間",
+          body: "各小時中位數觀看的熱力圖，Tooltip 同時給出樣本數與可信度等級。",
+        },
+        { name: "互動率趨勢", body: "每日互動 ÷ 觀看，並疊上 7 日平滑線濾掉雜訊。" },
+        { name: "最佳星期", body: "依星期比較中位數觀看、互動率與發文數。" },
+        {
+          name: "格式 × 長度矩陣",
+          body: "以 2D 熱力圖比較每一種內容格式與長度的組合，相對於你的中位數觸及。",
+        },
+        { name: "互動類型佔比", body: "你的互動在讚、回覆、轉發、引用、分享之間怎麼分配。" },
+        { name: "互動拆解趨勢", body: "同樣的組成隨時間堆疊，讀者行為的轉變會直接顯示出來。" },
+        {
+          name: "觸及成長趨勢",
+          body: "單篇中位數與平均觀看的長期走向 — 對「這個帳號有在成長嗎」給出誠實的答案。",
+        },
+        {
+          name: "觀看數分布",
+          body: "貼文落在各觀看區間的分布，以及 1k、5k、1 萬各里程碑的達成率。",
+        },
+      ],
+    },
+    {
+      index: "03",
+      kicker: "03 / 內容分析",
+      title: "內⁠容⁠分⁠析⁠：寫⁠什⁠麼⁠、寫⁠多⁠長⁠、多⁠久⁠發⁠一⁠次⁠。",
+      description:
+        "十三張關於內容本身的圖表 — 格式、長度、關鍵字、發文節奏，以及最能引發對話的貼文。",
+      panelName: "threads-analytics · content",
+      badge: "13 張圖表",
+      railMeta: "13 張圖表",
+      stats: {
+        label: "分頁指標",
+        items: ["發文穩定度", "分享率", "引用比例", "總貼文數", "最長連續發文", "目前連續發文"],
+      },
+      items: [
+        { name: "發文活動", body: "顯示每天發文數量的日曆熱力圖。" },
+        {
+          name: "內容類型成效",
+          body: "依文字、圖片、影片、輪播、音訊比較中位數觀看、互動率與分享率，樣本不足的類型自動淡化。",
+        },
+        {
+          name: "貼文長度分析",
+          body: "依字數區間比較中位數觀看，Tooltip 附上平均值、P75、命中率與可信度。",
+        },
+        { name: "發文頻率與成效", body: "一週多發幾篇會拉高觸及，還是只是稀釋單篇品質。" },
+        { name: "分享趨勢", body: "每日分享數的長期走勢。" },
+        {
+          name: "熱門關鍵字互動分析",
+          body: "互動率最高的詞彙 — 不含 hashtag，至少要出現在三篇貼文。",
+        },
+        { name: "最佳發文頻率", body: "比較不同每週發文量下的單篇觸及與互動表現。" },
+        { name: "內容類型 × 發文時段", body: "依中位數觀看，找出每一種格式各自的最佳時段。" },
+        { name: "互動率最高", body: "依（讚 + 回覆 + 轉發 + 引用）÷ 觀看排名的貼文。" },
+        { name: "回覆率最高", body: "回覆 ÷ 觀看 — 真正引發對話的那些貼文。" },
+        { name: "分享率最高", body: "分享 ÷ 觀看 — 讀者願意收藏轉傳、而不只是按讚的貼文。" },
+        {
+          name: "發文間隔與成效",
+          body: "依「距上一篇隔幾天」比較中位數觀看：天天發比休息幾天好嗎？",
+        },
+        {
+          name: "內容特徵對照",
+          body: "有無連結、有無問句的貼文成效對照 — 用你自己的資料回答「連結會不會傷觸及」。",
+        },
+      ],
+    },
+    {
+      index: "04",
+      kicker: "04 / 受眾分析",
+      title: "粉⁠絲⁠分⁠析⁠：另⁠一⁠頭在⁠看⁠的⁠是⁠誰⁠。",
+      description:
+        "追蹤者歷史是 API 不給回補的資料，所以 Dashboard 從你部署那天起，一天一筆自己記下來。",
+      panelName: "threads-analytics · audience",
+      badge: "3 張圖表",
+      railMeta: "3 張圖表",
+      stats: {
+        label: "分頁指標",
+        items: ["追蹤人數", "淨成長", "平均每日", "已累積天數"],
+      },
+      items: [
+        {
+          name: "追蹤人數變化",
+          body: "追蹤人數折線，每同步一天記錄一筆，Tooltip 顯示當天的增減。",
+        },
+        {
+          name: "追蹤者組成",
+          body: "國家、城市、年齡、性別各一張分布圖，標出基準日位置，並同時給人數與百分點變化。",
+        },
+        {
+          name: "組成變化趨勢",
+          body: "各分類佔比相對基準日的百分點變化 — 組成移動太慢，只看絕對佔比什麼都讀不出來。",
+        },
+      ],
+      note: "Threads 只提供「當下」的追蹤者數字，歷史無法回補。受眾資料每個日曆日最多只抓一次，不論貼文同步多頻繁都不會多花 API 額度；追蹤者組成另需帳號追蹤人數達 100 以上，API 才會回傳。",
+    },
+    {
+      index: "05",
+      kicker: "05 / 貼文頁",
+      title: "然⁠後⁠，一⁠篇⁠一⁠篇⁠讀⁠。",
+      description: "彙總數據最後總會指向某一篇貼文，貼文頁就是你去讀它的地方。",
+      panelName: "threads-analytics · posts",
+      badge: "4 項工具",
+      railMeta: "4 項工具",
+      items: [
+        { name: "排序", body: "依日期、觀看數或按讚數排序。" },
+        { name: "搜尋", body: "全文搜尋你發過的所有內容。" },
+        {
+          name: "媒體類型篩選",
+          body: "縮小到單一格式 — 選單只會列出當前時段內實際存在的類型。",
+        },
+        {
+          name: "貼文詳情",
+          body: "點開後顯示觀看數、互動率、相對中位數倍率、觀看百分位，以及各行動類型的互動拆解。",
+        },
+      ],
+    },
+  ],
+  method: {
+    index: "06",
+    kicker: "06 / 方法論",
+    title: "為⁠什⁠麼這⁠些⁠數⁠字值⁠得⁠相⁠信⁠。",
+    description: "數據分析要做得好看很容易，以下四條規則是讓這個 Dashboard 保持誠實的原因。",
+    railMeta: "4 條規則",
+    items: [
+      {
+        index: "01",
+        title: "用中位數，不用平均",
+        body: "一篇意外爆開的貼文會把平均值永久拉高，讓之後每一篇看起來都像失敗。中位數描述的是你的典型貼文 — 也就是你正要寫的這一篇。",
+      },
+      {
+        index: "02",
+        title: "樣本數決定可信度",
+        body: "晚上八點發過三篇不算結論。樣本不足的欄位會被淡化、標示為低可信度，或直接不列入排名 — Dashboard 會說「資料還不夠」，而不是硬編一個最佳時段給你。",
+      },
+      {
+        index: "03",
+        title: "對照你自己的基準線",
+        body: "所有比較都是跟你自己的歷史比，不是跟規模、主題、受眾都不同的其他帳號比。「3.2× 中位數」指的是你自己的中位數。",
+      },
+      {
+        index: "04",
+        title: "等長期間對照",
+        body: "每一個增減都對照緊鄰的、等長的前一個期間，不會出現 30 天的數字偷偷跟 7 天比的情況。",
+      },
+    ],
+  },
+  cta: {
+    title: "把⁠這⁠一⁠整⁠套指⁠向你⁠自⁠己⁠的⁠帳⁠號⁠。",
+    description:
+      "部署 Dashboard、連接 Threads 帳號，第一次同步就會用你自己的歷史資料，把這頁上的每一張圖表填滿。",
+    primary: "部署 Dashboard",
+    secondary: "在 GitHub 上查看",
+    note: "每張圖表都在你自己的伺服器上運算，資料不會離開。",
+  },
+};
+
+const analyticsGuideJa: AnalyticsGuideCopy = {
+  metadata: {
+    title: "Threads データ分析チャート：投稿・コンテンツ・オーディエンスの 31 種",
+    description:
+      "Threads Analytics の Threads データ分析チャート 31 種の一覧。概要・パフォーマンス・コンテンツ・オーディエンスと投稿ごとの指標、中央値・サンプル信頼度・個人ベースラインの考え方。",
+  },
+  hero: {
+    kicker: "機能 / 分析",
+    // \u2060 word joiners pin the break points: line one only breaks after Threads,
+    // line two only breaks between 問いは and ひとつずつ.
+    lineOne: "Threads 分⁠析⁠は⁠ ⁠3⁠1⁠ ⁠種⁠類⁠、",
+    lineTwo: "問⁠い⁠はひ⁠と⁠つ⁠ず⁠つ⁠。",
+    description:
+      "すべてのチャートは投稿の判断に答えます。いつ、どの形式で、どれくらい、何を書くか、誰が読んでいるか。以下がその全一覧です。",
+    primaryCta: "完全な一覧を見る",
+    secondaryCta: "ダッシュボードをデプロイ",
+    note: "平均ではなく中央値 · サンプル信頼度 · 自分のベースライン",
+    hint: "どのチャートも選んだ期間でその場で再計算されます。事前集計も上限もありません。",
+    summary: {
+      label: "得られるもの",
+      badge: "アカウントごと",
+      total: "31",
+      totalLabel: "種類の分析（4 タブ）",
+      rows: [
+        { name: "概要", count: "4" },
+        { name: "パフォーマンス", count: "11" },
+        { name: "コンテンツ", count: "13" },
+        { name: "オーディエンス", count: "3" },
+      ],
+    },
+  },
+  railLabel: "このページ",
+  sections: [
+    {
+      index: "01",
+      kicker: "01 / 概要",
+      title: "ア⁠カ⁠ウ⁠ン⁠ト⁠をひ⁠と⁠目⁠で⁠。",
+      description: "理由を探しに行く前に、最初のタブが「今どうなっているか」に答えます。",
+      panelName: "threads-analytics · overview",
+      badge: "4 セクション",
+      railMeta: "4 セクション",
+      items: [
+        {
+          name: "統計カード",
+          body: "ビュー・いいね・リプライ・リポスト・引用・シェア・エンゲージメント率を、同じ長さの前期との増減付きで表示します。",
+        },
+        {
+          name: "最適投稿時間",
+          body: "中央値ビューでランク付けした上位 2〜3 の時間帯を、サンプル数に基づく信頼度とともに表示。",
+        },
+        {
+          name: "ビューの推移",
+          body: "日／週／月で切り替えられるビュー推移に、自分の中央値をベースラインとして重ねます。",
+        },
+        {
+          name: "トップ投稿",
+          body: "中央値を上回った投稿を倍率で並べます — 「人気」ではなく「中央値の 3.2 倍」として。",
+        },
+      ],
+    },
+    {
+      index: "02",
+      kicker: "02 / パフォーマンス",
+      title: "お⁠す⁠す⁠め⁠の投⁠稿⁠時⁠間⁠：い⁠つ⁠出⁠す⁠か⁠、何⁠が⁠実⁠際⁠に届⁠く⁠か⁠。",
+      description:
+        "リーチとエンゲージメントに関する 11 チャート。タイミングの問い、投稿の品質マップ、そしてアカウントが伸びているのかどうか。",
+      panelName: "threads-analytics · performance",
+      badge: "11 チャート",
+      railMeta: "11 チャート",
+      stats: {
+        label: "タブ指標",
+        items: ["総ビュー", "1 日平均ビュー", "エンゲージメント率", "シェア率"],
+      },
+      items: [
+        {
+          name: "全体パフォーマンス",
+          body: "日次ビュー、投稿数、投稿あたり平均ビューを 1 つのタイムラインに統合。",
+        },
+        {
+          name: "投稿品質マップ",
+          body: "リーチとエンゲージメント率で全投稿を散布図化。ドットサイズはシェア数で、ブレイクアウト・対話・ブロードキャスト・低パフォーマンスの 4 象限に分かれます。",
+        },
+        {
+          name: "ビューからアクションへの漏斗",
+          body: "総ビューのうち、いいね・リプライ・リポスト・引用・シェアに変換された割合。",
+        },
+        {
+          name: "最適な投稿時間",
+          body: "時間帯別の中央値ビューをヒートマップで表示。Tooltip にサンプル数と信頼度を添えます。",
+        },
+        {
+          name: "エンゲージメント率の推移",
+          body: "日次のインタラクション ÷ ビューに、7 日平滑線を重ねてノイズを抑えます。",
+        },
+        {
+          name: "最適な曜日",
+          body: "曜日ごとに中央値ビュー、エンゲージメント率、投稿数を比較。",
+        },
+        {
+          name: "フォーマット × 長さマトリクス",
+          body: "形式と長さのすべての組み合わせを、自分の中央値リーチと比べる 2 次元ヒートマップ。",
+        },
+        {
+          name: "エンゲージメント種別の内訳",
+          body: "いいね・リプライ・リポスト・引用・シェアへの分かれ方。",
+        },
+        {
+          name: "エンゲージメント内訳の推移",
+          body: "同じ内訳を時系列で積み上げ、読者の行動の変化がそのまま見えるようにします。",
+        },
+        {
+          name: "リーチ成長トレンド",
+          body: "投稿あたりの中央値・平均ビューの推移 — 「このアカウントは伸びているのか」への率直な答え。",
+        },
+        {
+          name: "ビュー数の分布",
+          body: "投稿がどのビュー帯に分布しているかと、1k・5k・1 万それぞれの到達率。",
+        },
+      ],
+    },
+    {
+      index: "03",
+      kicker: "03 / コンテンツ",
+      title: "投⁠稿⁠分⁠析⁠：何⁠を⁠、ど⁠れ⁠く⁠ら⁠い⁠、ど⁠の⁠頻⁠度⁠で⁠。",
+      description:
+        "コンテンツそのものに関する 13 チャート — 形式、長さ、キーワード、投稿のリズム、そして会話を生んだ投稿。",
+      panelName: "threads-analytics · content",
+      badge: "13 チャート",
+      railMeta: "13 チャート",
+      stats: {
+        label: "タブ指標",
+        items: [
+          "投稿の継続性",
+          "シェア率",
+          "引用比率",
+          "総投稿数",
+          "最長連続投稿",
+          "現在の連続投稿",
+        ],
+      },
+      items: [
+        { name: "投稿アクティビティ", body: "日ごとの投稿数を示すカレンダーヒートマップ。" },
+        {
+          name: "コンテンツタイプ別成果",
+          body: "テキスト・画像・動画・カルーセル・音声ごとに中央値ビュー、エンゲージメント率、シェア率を比較。サンプルが少ない区分は薄く表示されます。",
+        },
+        {
+          name: "投稿の長さ分析",
+          body: "文字数帯ごとの中央値ビュー。Tooltip に平均・P75・到達率・信頼度を添えます。",
+        },
+        {
+          name: "投稿頻度と成果",
+          body: "週に多く出すとリーチが伸びるのか、それとも 1 本あたりが薄まるだけなのか。",
+        },
+        { name: "シェアの推移", body: "日次シェア数の長期的な動き。" },
+        {
+          name: "エンゲージメント上位キーワード",
+          body: "最もエンゲージメント率が高い語 — ハッシュタグを除き、3 投稿以上に現れたもののみ。",
+        },
+        {
+          name: "最適な投稿頻度",
+          body: "週あたりの投稿本数ごとに、1 本あたりのリーチとエンゲージメントを比較。",
+        },
+        {
+          name: "コンテンツタイプ × 時間帯",
+          body: "中央値ビューに基づく、形式ごとの最適な投稿時間。",
+        },
+        {
+          name: "エンゲージメント率上位",
+          body: "（いいね + リプライ + リポスト + 引用）÷ ビューで並べた投稿。",
+        },
+        {
+          name: "リプライ率上位",
+          body: "リプライ ÷ ビュー — 実際に会話を始めた投稿。",
+        },
+        {
+          name: "シェア率上位",
+          body: "シェア ÷ ビュー — いいねより先に、手元に残された投稿。",
+        },
+        {
+          name: "投稿間隔と成果",
+          body: "前の投稿から何日空いたかで中央値ビューを比較。毎日出すのと少し休むのはどちらが良いか。",
+        },
+        {
+          name: "コンテンツ特徴の比較",
+          body: "リンクの有無、問いかけの有無で成果を対比 — 「リンクはリーチを損なうのか」に自分のデータで答えます。",
+        },
+      ],
+    },
+    {
+      index: "04",
+      kicker: "04 / オーディエンス",
+      title: "フ⁠ォ⁠ロ⁠ワ⁠ー⁠分⁠析⁠：そ⁠の⁠向⁠こ⁠う⁠にい⁠る⁠の⁠は誰⁠か⁠。",
+      description:
+        "フォロワーの履歴は API が遡って返してくれないため、デプロイした日から 1 日 1 件ずつダッシュボードが記録します。",
+      panelName: "threads-analytics · audience",
+      badge: "3 チャート",
+      railMeta: "3 チャート",
+      stats: {
+        label: "タブ指標",
+        items: ["フォロワー", "純増", "1 日平均", "記録日数"],
+      },
+      items: [
+        {
+          name: "フォロワー推移",
+          body: "同期した日ごとに 1 点のフォロワー数。Tooltip にその日の増減を表示します。",
+        },
+        {
+          name: "フォロワー構成",
+          body: "国・都市・年齢・性別の分布を 1 枚ずつ。基準日の位置を示し、人数と％ポイントの両方で変化を出します。",
+        },
+        {
+          name: "構成の変化",
+          body: "各グループの比率を基準日からの％ポイント変化で表示 — 構成の動きは遅く、絶対比率では何も見えないためです。",
+        },
+      ],
+      note: "Threads は「現時点」のフォロワー情報しか返さないため、履歴は遡れません。オーディエンスのデータは投稿の同期頻度にかかわらず 1 暦日につき最大 1 回だけ取得され、フォロワー構成は 100 フォロワー以上でないと API が返しません。",
+    },
+    {
+      index: "05",
+      kicker: "05 / 投稿",
+      title: "そ⁠し⁠て⁠、1 本⁠ず⁠つ読⁠む⁠。",
+      description: "集計はいつか特定の 1 投稿を指します。投稿ページは、それを読みに行く場所です。",
+      panelName: "threads-analytics · posts",
+      badge: "4 つの機能",
+      railMeta: "4 つの機能",
+      items: [
+        { name: "並べ替え", body: "日付・ビュー・いいねで並べ替え。" },
+        { name: "検索", body: "公開したすべての投稿を全文検索。" },
+        {
+          name: "メディア種別フィルタ",
+          body: "形式で絞り込み — 選べるのは、その期間に実際に存在する種別だけです。",
+        },
+        {
+          name: "投稿の詳細",
+          body: "開いた投稿のビュー、エンゲージメント率、中央値に対する倍率、ビューのパーセンタイル、アクション別の内訳を表示。",
+        },
+      ],
+    },
+  ],
+  method: {
+    index: "06",
+    kicker: "06 / 考え方",
+    title: "こ⁠の⁠数⁠値⁠を信⁠頼⁠で⁠き⁠る理⁠由⁠。",
+    description:
+      "分析は見栄えよく作るのが簡単です。ダッシュボードを正直に保っているのは、次の 4 つのルールです。",
+    railMeta: "4 つのルール",
+    items: [
+      {
+        index: "01",
+        title: "平均ではなく中央値",
+        body: "たまたま大きく伸びた 1 本は平均を押し上げ続け、その後のすべてを失敗のように見せます。中央値が表すのは自分の典型的な投稿 — つまり、これから書く 1 本です。",
+      },
+      {
+        index: "02",
+        title: "サンプル数が信頼度を決める",
+        body: "20 時の投稿が 3 本では結論になりません。サンプルの少ない区分は薄く表示され、低信頼と明示されるか、ランキングから外れます。最適な時間をでっち上げるのではなく「まだデータが足りない」と言います。",
+      },
+      {
+        index: "03",
+        title: "自分のベースライン",
+        body: "比較対象は常に自分の履歴で、規模もテーマも読者も違う他アカウントの一般的な基準ではありません。「中央値の 3.2 倍」は、あなた自身の中央値の 3.2 倍です。",
+      },
+      {
+        index: "04",
+        title: "同じ長さの期間で比較",
+        body: "増減はすべて直前の同じ長さの期間と比べます。30 日の数字が 7 日の数字と静かに比較されることはありません。",
+      },
+    ],
+  },
+  cta: {
+    title: "こ⁠れ⁠ら⁠す⁠べ⁠て⁠を自⁠分⁠のア⁠カ⁠ウ⁠ン⁠ト⁠に向⁠け⁠る⁠。",
+    description:
+      "ダッシュボードをデプロイして Threads アカウントを接続すれば、最初の同期でこのページのすべてのチャートが自分の履歴で埋まります。",
+    primary: "ダッシュボードをデプロイ",
+    secondary: "GitHub で見る",
+    note: "どのチャートも自分のサーバー上で計算され、データが外に出ることはありません。",
+  },
+};
+
 export const dictionaries = {
   en: {
     metadata: {
-      title: "Turn your Threads data into better posts | Threads Analytics",
+      title: "Threads Analytics: Free, Open-Source Analytics Tool for Threads",
       description:
-        "Self-hosted, open-source Threads analytics. Find your best posting time, content format, post length, and keywords — free, with your data on your own server.",
+        "Free, open-source Threads analytics tool you host yourself. Find your best posting time, content format, post length, and keywords from your own post data.",
     },
     nav: {
-      product: "Product",
+      // Searchable local name shown as a tag beside the wordmark; empty hides it.
+      brandTag: "",
       demo: "Live demo",
+      // Trigger for the feature menu; `analytics` is the homepage section it
+      // opens with, so the two read as a group instead of repeating "features".
       features: "Features",
+      analytics: "Analytics",
+      mcp: "MCP server",
+      giveaway: "Giveaway",
       deploy: "Deploy",
       tokenGuide: "Token guide",
-      mcp: "MCP",
       github: "GitHub",
     },
     hero: {
       eyebrow: "OPEN SOURCE · SELF-HOSTED · BUILT FOR THREADS",
-      lineOne: "Threads analytics that shows",
-      lineTwo: "what makes a post work.",
+      lineOne: "Free Threads analytics that",
+      lineTwo: "shows what makes a post work.",
       description:
-        "Threads Analytics turns your own post history into practical signals—when to publish, what format to use, how long to write, and what earns real engagement.",
+        "Free, open-source Threads analytics. Your own post history shows the best time to post, which formats and lengths work, and how your followers grow.",
       primaryCta: "Try the live analysis",
       secondaryCta: "View on GitHub",
-      note: "25+ analyses · Multi-account · Automatic sync",
+      note: "31 analyses · Multi-account · Automatic sync",
     },
     proof: [
-      { value: "25+", label: "analysis views" },
+      { value: "31", label: "Threads analytics charts" },
       { value: "3", label: "interface languages" },
-      { value: "24/7", label: "automatic sync" },
+      { value: "24/7", label: "post & follower tracking" },
       { value: "100%", label: "your infrastructure" },
     ],
     heroDemo: {
@@ -1443,6 +3123,7 @@ export const dictionaries = {
       title: "More than a dashboard full of totals.",
       description:
         "Every view is designed to answer a publishing decision, not just report another number.",
+      cta: "See all 31 analyses",
       formatLengthVisual: {
         formatLabel: "Format",
         formatValue: "Text",
@@ -1501,7 +3182,7 @@ export const dictionaries = {
     },
     product: {
       kicker: "04 / THE FULL PICTURE",
-      title: "Twenty-five-plus charts. One publishing system.",
+      title: "Thirty-one Threads analytics charts. One publishing system.",
       description:
         "Move from account health to post-level diagnosis without leaving the dashboard. Overview, performance, content, audience, and posts share one source of truth.",
       labels: ["Overview", "Performance", "Content", "Audience", "Posts"],
@@ -1527,9 +3208,17 @@ export const dictionaries = {
       cta: "Explore the MCP server",
       note: "Read-only · OAuth 2.1 · Revoke anytime",
     },
+    giveawayHome: {
+      kicker: "06 / GIVEAWAY, BUILT IN",
+      title: "Draw winners without leaving your dashboard.",
+      description:
+        "Pick the post, apply the rules you announced — keyword, tagged friends, deadline, one entry per account — and draw right inside your own dashboard. No signing into your Threads account on someone else's site, and no paying for a giveaway tool.",
+      cta: "See how a draw works",
+      note: "Stackable conditions · No third-party login · No extra fees",
+    },
     deploy: {
-      kicker: "06 / OWN THE STACK",
-      title: "From repository to your dashboard in minutes.",
+      kicker: "07 / OWN THE STACK",
+      title: "Self-host your Threads analytics dashboard in minutes.",
       description:
         "Use a one-click template or run the container yourself. The official website stays separate; the deployable image contains only the analytics product.",
       railway: {
@@ -1566,16 +3255,16 @@ export const dictionaries = {
     },
     zeaburAgentDeploy: {
       metadata: {
-        title: "Deploy with Zeabur Agent — one prompt, zero setup | Threads Analytics",
+        title: "Self-Host Threads Analytics on Zeabur: One Prompt with Zeabur Agent",
         description:
-          "Copy one prompt and let Zeabur's AI agent deploy Threads Analytics for you: PostgreSQL, encryption keys, app password, and a public URL — no manual configuration.",
+          "Self-host Threads Analytics on Zeabur: one prompt and Zeabur's AI agent sets up PostgreSQL, encryption keys, the app password, and a public URL. No manual setup.",
       },
       hero: {
         kicker: "DEPLOY / ZEABUR AGENT",
         lineOne: "One prompt.",
         lineTwo: "The agent does the rest.",
         description:
-          "Zeabur Agent reads the template, provisions PostgreSQL, generates the encryption key, asks for your dashboard password, and hands back a live URL. You only copy a prompt.",
+          "Zeabur Agent reads the template, provisions PostgreSQL, generates the encryption key, asks for your password, and hands back a live URL. You only paste a prompt.",
         copyCta: "Copy the agent prompt",
         copiedCta: "Prompt copied",
         openCta: "Open Zeabur Agent",
@@ -1661,16 +3350,16 @@ export const dictionaries = {
     },
     railwayAgentDeploy: {
       metadata: {
-        title: "Deploy with your coding agent on Railway | Threads Analytics",
+        title: "Self-Host Threads Analytics on Railway with Your Coding Agent",
         description:
-          "Two prompts and your own coding agent — Claude Code, Codex, or any agent — deploys Threads Analytics on Railway: PostgreSQL, migrations, app password, and a public URL.",
+          "Self-host Threads Analytics on Railway: two prompts and your coding agent (Claude Code, Codex, or any) set up PostgreSQL, migrations, and a public URL.",
       },
       hero: {
         kicker: "DEPLOY / RAILWAY AGENT",
         lineOne: "Two prompts.",
         lineTwo: "Your own agent does the rest.",
         description:
-          "First prompt installs Railway's agent tools into the coding agent you already use — Claude Code, Codex, Cursor. Second prompt hands it the template: it provisions PostgreSQL, runs migrations, asks for your password, and generates a public URL.",
+          "The first prompt installs Railway's tools into your coding agent. The second hands it the template: PostgreSQL, migrations, your password, and a public URL.",
         copyCta: "Copy the install prompt",
         copiedCta: "Prompt copied",
         openCta: "View Railway for Agents",
@@ -1761,16 +3450,16 @@ export const dictionaries = {
     },
     vercelAgentDeploy: {
       metadata: {
-        title: "Deploy with your coding agent on Vercel | Threads Analytics",
+        title: "Self-Host Threads Analytics on Vercel via Vercel MCP",
         description:
-          "One prompt and your coding agent — Claude Code, Codex, or any agent with Vercel MCP — deploys Threads Analytics on Vercel: Neon Postgres, sensitive variables, daily cron, and a verified production URL.",
+          "Self-host Threads Analytics on Vercel: one prompt and your coding agent with Vercel MCP set up Neon Postgres, secrets, a daily cron, and a production URL.",
       },
       hero: {
         kicker: "DEPLOY / VERCEL AGENT",
         lineOne: "One prompt.",
         lineTwo: "Vercel MCP does the rest.",
         description:
-          "The prompt is the whole runbook: your agent drives Vercel MCP for every deployment step, opens the dashboard only for Neon and Sensitive variables, pauses for you to sign in, and verifies the production deploy before reporting back.",
+          "One prompt is the whole runbook: your agent drives Vercel MCP, pauses only for Neon and sensitive variables, and verifies the production deploy.",
         copyCta: "Copy the agent prompt",
         copiedCta: "Prompt copied",
         openCta: "View Vercel MCP docs",
@@ -1887,6 +3576,8 @@ export const dictionaries = {
     },
     tokenGuide: tokenGuideEn,
     mcpGuide: mcpGuideEn,
+    giveawayGuide: giveawayGuideEn,
+    analyticsGuide: analyticsGuideEn,
     finalCta: {
       kicker: "READ YOUR OWN SIGNALS",
       title: "Your next better post is already in your history.",
@@ -1897,17 +3588,21 @@ export const dictionaries = {
     },
     footer: {
       description: "Open-source analytics for people building on Threads.",
+      // Column headings, each followed by that column's links. The grouping
+      // mirrors the primary nav: what the product does, how to deploy it,
+      // and what to read.
       product: "Product",
-      resources: "Resources",
       liveDemo: "Live demo",
-      featureOverview: "Feature overview",
-      deployment: "Deployment",
-      deployGuides: "Deploy guides",
+      analytics: "Analytics",
+      mcp: "MCP server",
+      giveaway: "Giveaway",
+      deploy: "Deploy",
+      deployment: "Deployment options",
       railwayAgent: "Railway Agent",
       zeaburAgent: "Zeabur Agent",
       vercelAgent: "Vercel Agent",
+      resources: "Resources",
       tokenGuide: "Threads access token guide",
-      mcpGuide: "MCP server guide",
       analyticsReference: "Analytics reference",
       source: "Source code",
       readme: "Documentation",
@@ -1916,33 +3611,38 @@ export const dictionaries = {
   },
   "zh-TW": {
     metadata: {
-      title: "用自己的數據寫出更好的 Threads 貼文 | Threads Analytics",
+      title: "Threads 數據分析工具 Threads Analytics：免費開源、可自架的儀表板",
       description:
-        "自架式開源 Threads 分析儀表板，找出最佳發文時間、內容形式、文字長度、關鍵字與互動模式。免費部署，資料完全留在自己的伺服器。",
+        "Threads Analytics 是免費開源、可自架的 Threads 數據分析工具。找出最佳發文時間、內容形式、文字長度與關鍵字，追蹤粉絲成長，資料完全留在自己的伺服器。",
     },
     nav: {
-      product: "產品",
+      // Searchable local name shown as a tag beside the wordmark; empty hides it.
+      brandTag: "Threads 數據分析工具",
       demo: "互動展示",
       features: "功能",
+      analytics: "分析功能",
+      mcp: "MCP 伺服器",
+      giveaway: "抽獎",
       deploy: "部署",
       tokenGuide: "Token 生成教學",
-      mcp: "MCP",
       github: "GitHub",
     },
     hero: {
       eyebrow: "開源 · 自架 · 為 THREADS 打造",
-      lineOne: "用 Threads Analytics 看懂",
-      lineTwo: "什麼樣的貼文會有成效。",
+      // \u2060 word joiners pin the break points: line one only breaks
+      // around Threads, line two only between 什麼樣的 and 貼文.
+      lineOne: "免⁠費⁠開⁠源⁠的 Threads 數⁠據⁠分⁠析⁠工⁠具⁠，",
+      lineTwo: "看⁠懂⁠什⁠麼⁠樣⁠的貼⁠文⁠會⁠有⁠成⁠效⁠。",
       description:
-        "Threads Analytics 把你自己的貼文紀錄變成可行動的訊號：什麼時候發、用什麼形式、寫多長，以及什麼內容真正帶來互動。",
+        "免費開源的脆（Threads）數據分析工具：從你的貼文紀錄找出最佳發文時間、有效的形式與長度，還有粉絲成長的來源。",
       primaryCta: "操作分析 Demo",
       secondaryCta: "前往 GitHub",
-      note: "25+ 種分析 · 多帳號 · 自動同步",
+      note: "31 種分析 · 多帳號 · 自動同步",
     },
     proof: [
-      { value: "25+", label: "種分析視圖" },
+      { value: "31", label: "種 Threads 數據分析" },
       { value: "3", label: "種介面語言" },
-      { value: "24/7", label: "自動同步" },
+      { value: "24/7", label: "自動同步貼文與粉絲數據" },
       { value: "100%", label: "部署在自己的環境" },
     ],
     heroDemo: {
@@ -1959,7 +3659,7 @@ export const dictionaries = {
     },
     demo: {
       kicker: "01 / 互動分析",
-      title: "換一個問題，看見不同模式。",
+      title: "換⁠一⁠個⁠問⁠題⁠，看⁠見不⁠同⁠模⁠式⁠。",
       description:
         "切換貼文形式與時間區間，範例貼文、觸及曲線和建議會一起更新，就像探索你自己的 Threads 帳號。",
       formatLabel: "貼文形式",
@@ -2016,7 +3716,7 @@ export const dictionaries = {
     },
     story: {
       kicker: "02 / 為什麼做",
-      title: "因為想看的答案，原本不存在。",
+      title: "因⁠為⁠想⁠看⁠的⁠答⁠案⁠，原⁠本⁠不⁠存⁠在⁠。",
       description:
         "多數分析工具只停在總數。Threads Analytics 從更實際的問題開始：什麼類型的貼文適合我？我又該在什麼時間發佈？",
       quote: "用了幾個 Threads 分析工具後，總覺得少了自己想看的分析，所以乾脆自己做了一個。",
@@ -2025,8 +3725,9 @@ export const dictionaries = {
     },
     features: {
       kicker: "03 / 從數據到決策",
-      title: "不只是堆滿總數的儀表板。",
+      title: "不⁠只⁠是堆⁠滿⁠總⁠數⁠的儀⁠表⁠板⁠。",
       description: "每一個視圖都用來回答發文決策，而不是再多報告一個數字。",
+      cta: "看完整的 31 個分析",
       formatLengthVisual: {
         formatLabel: "形式",
         formatValue: "純文字",
@@ -2085,7 +3786,7 @@ export const dictionaries = {
     },
     product: {
       kicker: "04 / 看見完整全貌",
-      title: "超過 25 種分析，一套發文系統。",
+      title: "3⁠1 種 T⁠h⁠r⁠e⁠a⁠d⁠s 數⁠據⁠分⁠析⁠，一⁠套發⁠文⁠系⁠統⁠。",
       description:
         "從帳號健康度一路看到單篇診斷，不必離開儀表板。總覽、成效、內容、受眾與貼文共用同一份資料來源。",
       labels: ["總覽", "成效分析", "內容分析", "受眾分析", "貼文"],
@@ -2105,15 +3806,23 @@ export const dictionaries = {
     },
     mcpHome: {
       kicker: "05 / 內建 MCP 伺服器",
-      title: "用一句話，問你自己的數據。",
+      title: "用⁠一⁠句⁠話⁠，問⁠你⁠自⁠己⁠的數⁠據⁠。",
       description:
         "每個部署都內建唯讀 MCP 伺服器。用 OAuth 連接 Claude、Codex 或 Cursor，不需要 API Key，Agent 就能讀取貼文、分析與追蹤者紀錄，直接回覆報告與下一步建議。",
       cta: "查看 MCP 連接教學",
       note: "唯讀 · OAuth 2.1 · 隨時可撤銷",
     },
+    giveawayHome: {
+      kicker: "06 / 內建抽獎功能",
+      title: "開⁠獎不⁠用⁠離⁠開你⁠的 D⁠a⁠s⁠h⁠b⁠o⁠a⁠r⁠d⁠。",
+      description:
+        "選好貼文，套用你公告過的規則 — 關鍵字、標記朋友、截止時間、同帳號只算一次 — 直接在自己的儀表板開獎。不用到別人的網站登入 Threads 帳號，也不用為了抽獎功能額外付費。",
+      cta: "看抽獎怎麼運作",
+      note: "條件可疊加 · 不用第三方登入 · 不用額外付費",
+    },
     deploy: {
-      kicker: "06 / 掌握自己的環境",
-      title: "幾分鐘，部署好你的專屬儀表板。",
+      kicker: "07 / 掌握自己的環境",
+      title: "幾⁠分⁠鐘⁠，自⁠架⁠好你⁠的 T⁠h⁠r⁠e⁠a⁠d⁠s 分⁠析⁠儀⁠表⁠板⁠。",
       description:
         "使用一鍵模板，或自己執行 Container。官方網站完全獨立，可部署的 Image 只包含分析產品。",
       railway: {
@@ -2150,9 +3859,9 @@ export const dictionaries = {
     },
     zeaburAgentDeploy: {
       metadata: {
-        title: "用 Zeabur Agent 一句話完成部署 | Threads Analytics",
+        title: "自架 Threads 分析工具到 Zeabur：用 Zeabur Agent 一句話完成部署",
         description:
-          "複製一段 Prompt，讓 Zeabur AI Agent 自動部署 Threads Analytics：PostgreSQL、加密金鑰、登入密碼與公開網址，全程不用手動設定。",
+          "在 Zeabur 自架 Threads Analytics：複製一段 Prompt，讓 Zeabur AI Agent 自動部署 PostgreSQL、加密金鑰、登入密碼與公開網址，全程不用手動設定。",
       },
       hero: {
         kicker: "部署 / ZEABUR AGENT",
@@ -2160,7 +3869,7 @@ export const dictionaries = {
         // ⁠ (word joiner) 防止 text-wrap: balance 從「交給」中間斷行。
         lineTwo: "剩下的交⁠給 Agent。",
         description:
-          "Zeabur Agent 會讀取模板、建立 PostgreSQL、產生加密金鑰、詢問你的儀表板密碼，最後回傳一個可以直接登入的網址。你要做的只有複製貼上。",
+          "Zeabur Agent 會讀取模板、建立 PostgreSQL、產生加密金鑰、詢問密碼，最後回傳可登入的網址。你只要複製貼上。",
         copyCta: "複製 Agent Prompt",
         copiedCta: "已複製 Prompt",
         openCta: "開啟 Zeabur Agent",
@@ -2176,7 +3885,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 三個步驟",
-        title: "從 Prompt 到儀⁠表⁠板，只要三步。",
+        title: "從 P⁠r⁠o⁠m⁠p⁠t 到⁠儀⁠表⁠板⁠，只⁠要⁠三⁠步⁠。",
         description:
           "沒有 YAML、沒有環境變數、不用自己建資料庫。設定交給 Agent，你只需要決定一件事：登入密碼。",
         items: [
@@ -2199,7 +3908,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 實際看一次",
-        title: "整段對話，長這個樣子。",
+        title: "整⁠段⁠對⁠話⁠，長⁠這⁠個⁠樣⁠子⁠。",
         description:
           "重播一次真實的 Zeabur Agent 部署過程：你會看到的訊息、選項和結果，和自己操作時一模一樣。",
         windowTitle: "ZEABUR AGENT",
@@ -2225,7 +3934,7 @@ export const dictionaries = {
         disclaimer: "模擬重播 · 實際流程相同",
       },
       cta: {
-        title: "換你部署一次了。",
+        title: "換⁠你部⁠署⁠一⁠次⁠了⁠。",
         description: "複製 Prompt、開啟 Zeabur Agent，幾分鐘後就有自己的儀表板。",
         primary: "開啟 Zeabur Agent",
         secondary: "回到所有部署方式",
@@ -2234,16 +3943,16 @@ export const dictionaries = {
     },
     railwayAgentDeploy: {
       metadata: {
-        title: "用你的 Coding Agent 部署到 Railway | Threads Analytics",
+        title: "自架 Threads 分析工具到 Railway：用 Claude Code、Codex 等 Coding Agent 部署",
         description:
-          "兩段 Prompt，讓你自己的 Coding Agent（Claude Code、Codex 等）在 Railway 部署 Threads Analytics：PostgreSQL、資料庫遷移、登入密碼與公開網址，一次完成。",
+          "在 Railway 自架 Threads Analytics：兩段 Prompt，讓 Claude Code、Codex 等 Coding Agent 完成 PostgreSQL、資料庫遷移、登入密碼與公開網址。",
       },
       hero: {
         kicker: "部署 / RAILWAY AGENT",
         lineOne: "兩段 Prompt，",
         lineTwo: "剩下的交⁠給你的 Agent。",
         description:
-          "第一段 Prompt 把 Railway 的 Agent 工具裝進你平常用的 Coding Agent——Claude Code、Codex、Cursor 都可以。第二段把模板交給它：自動建立 PostgreSQL、執行遷移、詢問你的密碼，最後產生公開網址。",
+          "第一段 Prompt 把 Railway 工具裝進你的 Coding Agent，第二段交出模板：建立 PostgreSQL、執行遷移、詢問密碼、產生公開網址。",
         copyCta: "複製安裝 Prompt",
         copiedCta: "已複製 Prompt",
         openCta: "查看 Railway for Agents",
@@ -2262,7 +3971,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 三個步驟",
-        title: "從兩段 Prompt 到上線的儀⁠表⁠板。",
+        title: "從⁠兩⁠段 P⁠r⁠o⁠m⁠p⁠t 到⁠上⁠線⁠的儀⁠表⁠板⁠。",
         description:
           "沒有 YAML、沒有環境變數、不用點部署後台。你的 Agent 會操作 Railway CLI，你只需要決定一件事：登入密碼。",
         items: [
@@ -2285,7 +3994,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 實際看一次",
-        title: "整段對話，長這個樣子。",
+        title: "整⁠段⁠對⁠話⁠，長⁠這⁠個⁠樣⁠子⁠。",
         description:
           "重播一次用 Codex 完成的真實部署——裝好 Railway 工具後，在 Claude Code 或任何 Agent 裡流程都一樣。",
         windowTitle: "YOUR CODING AGENT",
@@ -2314,7 +4023,7 @@ export const dictionaries = {
         disclaimer: "模擬重播 · 實際流程相同",
       },
       cta: {
-        title: "換你的 Agent 上場了。",
+        title: "換⁠你⁠的 A⁠g⁠e⁠n⁠t 上⁠場⁠了⁠。",
         description: "複製安裝 Prompt、打開你的 Coding Agent，兩段 Prompt 後就有自己的儀表板。",
         primary: "查看 Railway for Agents",
         secondary: "回到所有部署方式",
@@ -2323,16 +4032,16 @@ export const dictionaries = {
     },
     vercelAgentDeploy: {
       metadata: {
-        title: "用你的 Coding Agent 部署到 Vercel | Threads Analytics",
+        title: "自架 Threads 分析工具到 Vercel：用 Coding Agent 透過 Vercel MCP 部署",
         description:
-          "一段 Prompt，讓你的 Coding Agent（Claude Code、Codex 或任何接上 Vercel MCP 的 Agent）在 Vercel 部署 Threads Analytics：Neon Postgres、機密環境變數、每日 Cron，以及驗證完成的正式網址。",
+          "在 Vercel 自架 Threads Analytics：一段 Prompt，讓接上 Vercel MCP 的 Coding Agent 完成 Neon Postgres、機密環境變數、每日 Cron 與正式網址。",
       },
       hero: {
         kicker: "部署 / VERCEL AGENT",
         lineOne: "一段 Prompt，",
         lineTwo: "剩下交⁠給 Vercel MCP。",
         description:
-          "這段 Prompt 就是完整的部署手冊：Agent 用 Vercel MCP 執行所有部署操作，只在設定 Neon 與 Sensitive 變數時開啟儀表板並暫停等你登入，最後驗證完 Production 部署才回報結果。",
+          "一段 Prompt 就是完整部署手冊：Agent 用 Vercel MCP 執行每個步驟，只在設定 Neon 與機密變數時等你登入，最後驗證正式部署。",
         copyCta: "複製 Agent Prompt",
         copiedCta: "已複製 Prompt",
         openCta: "查看 Vercel MCP 文件",
@@ -2351,7 +4060,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 三個步驟",
-        title: "一段 Prompt、一次登入、一組密碼。",
+        title: "一⁠段 P⁠r⁠o⁠m⁠p⁠t⁠、一⁠次⁠登⁠入⁠、一⁠組⁠密⁠碼⁠。",
         description:
           "Prompt 已寫好整份部署規格——工具邊界、Neon 設定、機密處理與驗證流程。Agent 照著執行，你只需要出場兩次。",
         items: [
@@ -2374,7 +4083,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 實際看一次",
-        title: "整段對話，長這個樣子。",
+        title: "整⁠段⁠對⁠話⁠，長⁠這⁠個⁠樣⁠子⁠。",
         description:
           "重播一次在 Claude Code 完成的真實部署——部署操作全部走 Vercel MCP，瀏覽器只用來設定 Neon 與 Sensitive 變數，改動儀表板前都會先暫停等你確認。",
         windowTitle: "YOUR CODING AGENT",
@@ -2434,7 +4143,7 @@ export const dictionaries = {
         disclaimer: "模擬重播 · 濃縮自真實部署",
       },
       cta: {
-        title: "換你的 Agent 上場了。",
+        title: "換⁠你⁠的 A⁠g⁠e⁠n⁠t 上⁠場⁠了⁠。",
         description: "複製 Prompt、確認 Vercel MCP 已連接，儀表板就會自己部署完成。",
         primary: "查看 Vercel MCP 文件",
         secondary: "回到所有部署方式",
@@ -2443,26 +4152,29 @@ export const dictionaries = {
     },
     tokenGuide: tokenGuideZh,
     mcpGuide: mcpGuideZh,
+    giveawayGuide: giveawayGuideZh,
+    analyticsGuide: analyticsGuideZh,
     finalCta: {
       kicker: "讀懂自己的訊號",
-      title: "下一篇更好的貼文，其實已經藏在歷史紀錄裡。",
+      title: "下⁠一⁠篇更⁠好⁠的⁠貼⁠文⁠，其⁠實⁠已⁠經藏⁠在歷⁠史⁠紀⁠錄⁠裡⁠。",
       description: "自架 Threads Analytics，把舊貼文變成下一次發文的判斷依據。",
       primary: "部署分析儀表板",
       secondary: "在 GitHub 加星",
     },
     footer: {
-      description: "為認真經營 Threads 的創作者打造的開源分析工具。",
+      description: "Threads Analytics：免費開源的 Threads 數據分析工具。",
       product: "產品",
-      resources: "資源",
       liveDemo: "互動展示",
-      featureOverview: "功能總覽",
+      analytics: "分析功能",
+      mcp: "MCP 伺服器",
+      giveaway: "抽獎",
+      deploy: "部署",
       deployment: "部署方式",
-      deployGuides: "部署指南",
       railwayAgent: "Railway Agent",
       zeaburAgent: "Zeabur Agent",
       vercelAgent: "Vercel Agent",
-      tokenGuide: "Threads Access Token 生成教學",
-      mcpGuide: "MCP 連接教學",
+      resources: "資源",
+      tokenGuide: "Access Token 生成教學",
       analyticsReference: "分析指標說明",
       source: "原始碼",
       readme: "使用文件",
@@ -2471,33 +4183,39 @@ export const dictionaries = {
   },
   ja: {
     metadata: {
-      title: "自分のデータから、次の投稿を良くする | Threads Analytics",
+      title:
+        "Threads 分析ツール：無料・オープンソースのセルフホスト型ダッシュボード | Threads Analytics",
       description:
-        "投稿時間、コンテンツ形式、文章量、キーワード、エンゲージメント傾向を分析できるセルフホスト型Threadsダッシュボード。オープンソースで無料、データは自分のサーバーに残ります。",
+        "Threads Analytics は無料・オープンソースのセルフホスト型 Threads 分析ツール。最適な投稿時間、コンテンツ形式、文章量、キーワード、フォロワー推移を自分のデータから分析。データは自分のサーバーに残ります。",
     },
     nav: {
-      product: "プロダクト",
+      // Searchable local name shown as a tag beside the wordmark; empty hides it.
+      brandTag: "Threads 分析ツール",
       demo: "ライブデモ",
       features: "機能",
+      analytics: "分析機能",
+      mcp: "MCP サーバー",
+      giveaway: "抽選",
       deploy: "デプロイ",
       tokenGuide: "トークン生成ガイド",
-      mcp: "MCP",
       github: "GitHub",
     },
     hero: {
       eyebrow: "オープンソース · セルフホスト · THREADS 専用",
-      lineOne: "Threads Analyticsで、",
-      lineTwo: "伸びる投稿を勘で決めない。",
+      // \u2060 word joiners pin the break points: line one only breaks
+      // around Threads, line two only between 投稿を and 勘で.
+      lineOne: "無⁠料⁠のThreads分⁠析⁠ツ⁠ー⁠ル⁠で⁠、",
+      lineTwo: "伸⁠び⁠る⁠投⁠稿⁠を勘⁠で⁠決⁠め⁠な⁠い⁠。",
       description:
-        "Threads Analyticsは、自分の投稿履歴を実用的なシグナルに変えます。いつ投稿するか、どの形式にするか、どれくらい書くか、何が本当の反応につながったかを把握できます。",
+        "無料・オープンソースのスレッズ（Threads）分析ツール。自分の投稿履歴から、おすすめの投稿時間、効く形式と長さ、フォロワーの伸びを読み取れます。",
       primaryCta: "分析デモを試す",
       secondaryCta: "GitHubを見る",
-      note: "25種類以上の分析 · 複数アカウント · 自動同期",
+      note: "31種類の分析 · 複数アカウント · 自動同期",
     },
     proof: [
-      { value: "25+", label: "分析ビュー" },
+      { value: "31", label: "種類のThreads投稿分析" },
       { value: "3", label: "対応言語" },
-      { value: "24/7", label: "自動同期" },
+      { value: "24/7", label: "投稿・フォロワーの自動同期" },
       { value: "100%", label: "自分のインフラ" },
     ],
     heroDemo: {
@@ -2514,7 +4232,7 @@ export const dictionaries = {
     },
     demo: {
       kicker: "01 / ライブ分析",
-      title: "問いを変えると、パターンが動く。",
+      title: "問⁠い⁠を⁠変⁠え⁠る⁠と⁠、パ⁠タ⁠ー⁠ン⁠が動⁠く⁠。",
       description:
         "投稿形式と期間を切り替えると、サンプル投稿、リーチ曲線、提案が同時に更新されます。自分のアカウントを探索する感覚を試せます。",
       formatLabel: "投稿形式",
@@ -2573,7 +4291,7 @@ export const dictionaries = {
     },
     story: {
       kicker: "02 / つくった理由",
-      title: "欲しい答えが、まだなかったから。",
+      title: "欲⁠し⁠い⁠答⁠え⁠が⁠、ま⁠だな⁠か⁠っ⁠た⁠か⁠ら⁠。",
       description:
         "多くの分析ツールは合計値で止まります。Threads Analyticsは、もっと実用的な問いから始まりました。自分にはどんな投稿が合い、いつ公開すべきなのか。",
       quote:
@@ -2583,8 +4301,9 @@ export const dictionaries = {
     },
     features: {
       kicker: "03 / データから判断へ",
-      title: "合計値を並べるだけのダッシュボードではありません。",
+      title: "合⁠計⁠値⁠を並⁠べ⁠る⁠だ⁠け⁠のダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ドで⁠は⁠あ⁠り⁠ま⁠せ⁠ん⁠。",
       description: "すべてのビューは、投稿についての判断に答えるために設計されています。",
+      cta: "31 種類すべてを見る",
       formatLengthVisual: {
         formatLabel: "形式",
         formatValue: "テキスト",
@@ -2643,7 +4362,7 @@ export const dictionaries = {
     },
     product: {
       kicker: "04 / 全体像",
-      title: "25種類以上の分析を、一つの投稿システムに。",
+      title: "3⁠1⁠種⁠類⁠のT⁠h⁠r⁠e⁠a⁠d⁠s⁠分⁠析⁠を⁠、一⁠つ⁠の投⁠稿⁠シ⁠ス⁠テ⁠ム⁠に⁠。",
       description:
         "アカウント全体の状態から投稿単位の診断まで、ダッシュボード内で移動できます。概要、パフォーマンス、コンテンツ、オーディエンス、投稿は同じデータを共有します。",
       labels: ["概要", "パフォーマンス", "コンテンツ", "オーディエンス", "投稿"],
@@ -2663,15 +4382,23 @@ export const dictionaries = {
     },
     mcpHome: {
       kicker: "05 / 内蔵 MCP サーバー",
-      title: "自分のデータに、そのまま質問。",
+      title: "自⁠分⁠の⁠デ⁠ー⁠タ⁠に⁠、そ⁠の⁠ま⁠ま質⁠問⁠。",
       description:
         "すべてのデプロイに読み取り専用の MCP サーバーを内蔵。Claude、Codex、Cursor を OAuth で接続すれば、API キーなしでエージェントが投稿・分析・フォロワー履歴を読み取り、レポートと次の一手を返します。",
       cta: "MCP ガイドを見る",
       note: "読み取り専用 · OAuth 2.1 · いつでも解除可能",
     },
+    giveawayHome: {
+      kicker: "06 / 抽選機能を標準搭載",
+      title: "ダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ド⁠を離⁠れ⁠ず⁠に当⁠選⁠者⁠を決⁠め⁠る⁠。",
+      description:
+        "投稿を選び、告知したルール — キーワード、友達のタグ付け、締切、1 アカウント 1 口 — を適用して、自分のダッシュボードで抽選。他社サイトで Threads アカウントにログインする必要も、抽選機能のために課金する必要もありません。",
+      cta: "抽選の仕組みを見る",
+      note: "条件の重ねがけ · 第三者ログイン不要 · 追加課金なし",
+    },
     deploy: {
-      kicker: "06 / 自分のスタックで",
-      title: "リポジトリから自分のダッシュボードまで、数分で。",
+      kicker: "07 / 自分のスタックで",
+      title: "数⁠分⁠で⁠、自⁠分⁠のT⁠h⁠r⁠e⁠a⁠d⁠s⁠分⁠析ダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ド⁠をセ⁠ル⁠フ⁠ホ⁠ス⁠ト⁠。",
       description:
         "ワンクリックテンプレート、または自分でコンテナを実行できます。公式サイトは独立し、配布imageには分析プロダクトだけが含まれます。",
       railway: {
@@ -2708,16 +4435,16 @@ export const dictionaries = {
     },
     zeaburAgentDeploy: {
       metadata: {
-        title: "Zeabur Agentでプロンプト1つデプロイ | Threads Analytics",
+        title: "Threads Analytics を Zeabur にセルフホスト：Zeabur Agent でプロンプト1つ",
         description:
-          "プロンプトをコピーするだけで、Zeabur AIエージェントがThreads Analyticsをデプロイ。PostgreSQL、暗号化キー、パスワード、公開URLまで自動で設定します。",
+          "Threads Analytics を Zeabur にセルフホスト。プロンプト1つで Zeabur AI エージェントが PostgreSQL、暗号化キー、パスワード、公開 URL まで自動設定。",
       },
       hero: {
         kicker: "デプロイ / ZEABUR AGENT",
         lineOne: "プ⁠ロ⁠ン⁠プ⁠トは1つ。",
         lineTwo: "残りはエ⁠ー⁠ジ⁠ェ⁠ン⁠トが。",
         description:
-          "Zeabur Agentがテンプレートを読み取り、PostgreSQLを作成し、暗号化キーを生成し、ログインパスワードを確認して、最後に公開URLを返します。あなたはコピーして貼るだけです。",
+          "Zeabur Agent がテンプレートを読み、PostgreSQL と暗号化キーを用意し、パスワードを確認して公開 URL を返します。あなたはコピーして貼るだけ。",
         copyCta: "エージェント用プロンプトをコピー",
         copiedCta: "コピーしました",
         openCta: "Zeabur Agentを開く",
@@ -2756,7 +4483,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 実際の流れ",
-        title: "会話は、こんなふうに進みます。",
+        title: "会⁠話⁠は⁠、こ⁠ん⁠な⁠ふ⁠う⁠に進⁠み⁠ま⁠す⁠。",
         description:
           "実際のZeabur Agentデプロイのリプレイです。あなたのチャットでも同じメッセージ、同じ選択肢、同じ結果が表示されます。",
         windowTitle: "ZEABUR AGENT",
@@ -2790,7 +4517,7 @@ export const dictionaries = {
         disclaimer: "シミュレーションによる再現 · 実際の流れと同じです",
       },
       cta: {
-        title: "次は、あなたの番です。",
+        title: "次⁠は⁠、あ⁠な⁠た⁠の⁠番⁠で⁠す⁠。",
         description:
           "プロンプトをコピーしてZeabur Agentを開けば、数分でダッシュボードが手に入ります。",
         primary: "Zeabur Agentを開く",
@@ -2800,16 +4527,16 @@ export const dictionaries = {
     },
     railwayAgentDeploy: {
       metadata: {
-        title: "自分のコーディングエージェントでRailwayへデプロイ | Threads Analytics",
+        title: "Threads Analytics を Railway にセルフホスト：コーディングエージェントでデプロイ",
         description:
-          "2つのプロンプトで、Claude CodeやCodexなど自分のエージェントがThreads AnalyticsをRailwayへデプロイ。PostgreSQL、マイグレーション、パスワード、公開URLまで自動です。",
+          "Threads Analytics を Railway にセルフホスト。2つのプロンプトで Claude Code や Codex などのエージェントが PostgreSQL、マイグレーション、公開 URL まで自動設定。",
       },
       hero: {
         kicker: "デプロイ / RAILWAY AGENT",
         lineOne: "プ⁠ロ⁠ン⁠プ⁠トは2つ。",
         lineTwo: "残りは自分のエ⁠ー⁠ジ⁠ェ⁠ン⁠トが。",
         description:
-          "最初のプロンプトで、普段使っているコーディングエージェント（Claude Code、Codex、Cursorなど）にRailwayのエージェントツールをインストール。次のプロンプトでテンプレートを渡せば、PostgreSQLの作成、マイグレーション、パスワード確認、公開URLの発行まで自動で進みます。",
+          "最初のプロンプトで Railway のツールをエージェントに導入。次のプロンプトでテンプレートを渡せば、PostgreSQL、マイグレーション、パスワード、公開 URL まで自動です。",
         copyCta: "インストール用プロンプトをコピー",
         copiedCta: "コピーしました",
         openCta: "Railway for Agentsを見る",
@@ -2851,7 +4578,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 実際の流れ",
-        title: "会話は、こんなふうに進みます。",
+        title: "会⁠話⁠は⁠、こ⁠ん⁠な⁠ふ⁠う⁠に進⁠み⁠ま⁠す⁠。",
         description:
           "Codexで実行した実際のデプロイのリプレイです。Railwayツールをインストールすれば、Claude Codeでもほかのエージェントでも同じ流れになります。",
         windowTitle: "YOUR CODING AGENT",
@@ -2886,7 +4613,7 @@ export const dictionaries = {
         disclaimer: "シミュレーションによる再現 · 実際の流れと同じです",
       },
       cta: {
-        title: "次は、あなたのエージェントの番です。",
+        title: "次⁠は⁠、あ⁠な⁠た⁠のエ⁠ー⁠ジ⁠ェ⁠ン⁠ト⁠の番⁠で⁠す⁠。",
         description:
           "インストール用プロンプトをコピーしてエージェントを開けば、プロンプト2つでダッシュボードが手に入ります。",
         primary: "Railway for Agentsを見る",
@@ -2896,16 +4623,16 @@ export const dictionaries = {
     },
     vercelAgentDeploy: {
       metadata: {
-        title: "自分のコーディングエージェントでVercelへデプロイ | Threads Analytics",
+        title: "Threads Analytics を Vercel にセルフホスト：Vercel MCP 経由でデプロイ",
         description:
-          "1つのプロンプトで、Claude CodeやCodexなどVercel MCPを接続したエージェントがThreads AnalyticsをVercelへデプロイ。Neon Postgres、機密変数、毎日のCron、検証済みの本番URLまで自動です。",
+          "Threads Analytics を Vercel にセルフホスト。1つのプロンプトで Vercel MCP を接続したエージェントが Neon Postgres、機密変数、Cron、本番 URL まで自動設定。",
       },
       hero: {
         kicker: "デプロイ / VERCEL AGENT",
         lineOne: "プ⁠ロ⁠ン⁠プ⁠トは1つ。",
         lineTwo: "残りはVercel MCPが。",
         description:
-          "このプロンプトはデプロイ手順書そのものです。エージェントはデプロイ操作をすべてVercel MCPで行い、Neonと機密変数の設定時だけダッシュボードを開いてサインインを待ち、本番デプロイを検証してから結果を報告します。",
+          "プロンプト 1 つが手順書。エージェントが Vercel MCP で各ステップを実行し、Neon と機密変数の設定時だけサインインを待ち、本番デプロイを検証します。",
         copyCta: "エージェント用プロンプトをコピー",
         copiedCta: "コピーしました",
         openCta: "Vercel MCPのドキュメントを見る",
@@ -2947,7 +4674,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 実際の流れ",
-        title: "会話は、こんなふうに進みます。",
+        title: "会⁠話⁠は⁠、こ⁠ん⁠な⁠ふ⁠う⁠に進⁠み⁠ま⁠す⁠。",
         description:
           "Claude Codeで実行した実際のデプロイのリプレイです。デプロイ操作はすべてVercel MCP、ブラウザはNeonと機密変数の設定のみに使い、ダッシュボードを変更する前には必ず一時停止します。",
         windowTitle: "YOUR CODING AGENT",
@@ -3008,7 +4735,7 @@ export const dictionaries = {
         disclaimer: "シミュレーションによる再現 · 実際の実行を凝縮",
       },
       cta: {
-        title: "次は、あなたのエージェントの番です。",
+        title: "次⁠は⁠、あ⁠な⁠た⁠のエ⁠ー⁠ジ⁠ェ⁠ン⁠ト⁠の番⁠で⁠す⁠。",
         description:
           "プロンプトをコピーし、Vercel MCPの接続を確認すれば、ダッシュボードは自動ででき上がります。",
         primary: "Vercel MCPのドキュメントを見る",
@@ -3018,9 +4745,11 @@ export const dictionaries = {
     },
     tokenGuide: tokenGuideJa,
     mcpGuide: mcpGuideJa,
+    giveawayGuide: giveawayGuideJa,
+    analyticsGuide: analyticsGuideJa,
     finalCta: {
       kicker: "自分のシグナルを読む",
-      title: "次の良い投稿は、すでに履歴の中にあります。",
+      title: "次⁠の⁠良⁠い⁠投⁠稿⁠は⁠、す⁠で⁠に履⁠歴⁠の⁠中⁠にあ⁠り⁠ま⁠す⁠。",
       description: "Threads Analyticsをセルフホストし、過去の投稿を次の判断材料に変えましょう。",
       primary: "ダッシュボードをデプロイ",
       secondary: "GitHubでスター",
@@ -3028,16 +4757,17 @@ export const dictionaries = {
     footer: {
       description: "Threadsで発信する人のためのオープンソース分析ツール。",
       product: "プロダクト",
-      resources: "リソース",
       liveDemo: "ライブデモ",
-      featureOverview: "機能一覧",
-      deployment: "デプロイ",
-      deployGuides: "デプロイガイド",
+      analytics: "分析機能",
+      mcp: "MCP サーバー",
+      giveaway: "抽選",
+      deploy: "デプロイ",
+      deployment: "デプロイ方法",
       railwayAgent: "Railway Agent",
       zeaburAgent: "Zeabur Agent",
       vercelAgent: "Vercel Agent",
+      resources: "リソース",
       tokenGuide: "アクセストークン生成ガイド",
-      mcpGuide: "MCP サーバーガイド",
       analyticsReference: "分析リファレンス",
       source: "ソースコード",
       readme: "ドキュメント",

@@ -3,7 +3,7 @@
 </p>
 <h1 align="center">Threads Analytics</h1>
 <p align="center">
-  自架的 Threads 數據分析儀表板。連接 Access Token，用詳細圖表與指標深入了解你的貼文表現。
+  Threads Analytics｜免費開源、可自架的 Threads 數據分析工具。連接 Access Token，用詳細圖表與指標深入了解你的貼文表現。
 </p>
 <p align="center">
   <a href="https://github.com/ridemountainpig/threads-analytics/stargazers"><img src="https://shieldcn.dev/github/stars/ridemountainpig/threads-analytics.svg?variant=secondary" alt="GitHub stars" /></a>
@@ -13,9 +13,12 @@
 <p align="center">
   <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a> · <a href="./README-ja.md">日本語</a>
 </p>
+<p align="center">
+  <a href="https://threads-analytics.app/zh-TW"><strong>官方網站</strong></a> · <a href="https://threads-analytics.app/zh-TW#demo">線上 Demo</a> · <a href="https://threads-analytics.app/zh-TW/token-guide">Token 取得教學</a>
+</p>
 
 <p align="center">
-  <img src="public/dashboard-zh.png" alt="Threads Analytics 儀表板" />
+  <a href="https://threads-analytics.app/zh-TW"><img src="public/dashboard-zh.png" alt="Threads Analytics 儀表板" /></a>
 </p>
 
 ---
@@ -40,7 +43,7 @@
 ## 功能
 
 - **總覽** — 數據卡（觀看、讚、回覆、轉發、引用、分享、互動率）含相對上期的漲跌幅、觀看趨勢圖（日／週／月）、最佳發文時段推薦、高曝光貼文
-- **分析** — 橫跨**成效**、**內容**與**受眾**三個分頁的 25+ 張圖表
+- **分析** — 橫跨**成效**、**內容**與**受眾**三個分頁的 31 張圖表
 - **貼文** — 可搜尋、可篩選的列表，點選後展開單篇詳細分析
 - **MCP server** — 讓 Claude 等 AI agent 透過 OAuth 保護的端點查詢你的分析數據
 - 多帳號支援，可隨時切換
@@ -283,7 +286,7 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 ## 分析功能說明
 
-儀表板在總覽、分析（成效／內容／受眾）與貼文頁面共提供 25+ 張圖表。每張圖表的內容說明，以及受眾指標背後的取樣規則，完整記錄在**[分析功能說明](./docs/analytics-zh.md)**。
+儀表板在總覽、分析（成效／內容／受眾）與貼文頁面共提供 31 張圖表。每張圖表的內容說明，以及受眾指標背後的取樣規則，完整記錄在**[分析功能說明](./docs/analytics-zh.md)**。
 
 ---
 

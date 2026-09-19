@@ -27,7 +27,7 @@ export function localizedPageMetadata({
     url: ogImageSet ? `/og/${ogImageSet}-${locale}.png` : `/og/${locale}.png`,
     width: 1200,
     height: 630,
-    alt: siteConfig.name,
+    alt: title,
     type: "image/png",
   };
 

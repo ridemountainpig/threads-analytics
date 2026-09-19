@@ -126,14 +126,46 @@ const arrowGlyph = (
 // and control the headline break explicitly via \n + pre-line instead.
 const stripWordJoiners = (text: string) => text.replace(/⁠/g, "");
 
+// Headlines are sized for two Latin lines; a CJK line runs about twice as
+// wide per glyph, so shrink the font until the longest line fits the box.
+const HEADLINE_MAX_WIDTH = 1010;
+const HEADLINE_FONT_SIZE = 74;
+function headlineFontSize(headline: string) {
+  const widest = Math.max(
+    ...stripWordJoiners(headline)
+      .split("\n")
+      .map((line) =>
+        [...line].reduce((units, ch) => {
+          if (ch === " " || ch === "\u00a0") return units + 0.28;
+          if (/[0-9]/.test(ch)) return units + 0.58;
+          if (/[A-Z]/.test(ch)) return units + 0.68;
+          if (/[a-z]/.test(ch)) return units + 0.52;
+          if (/[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(ch)) return units + 0.96;
+          return units + 0.5;
+        }, 0),
+      ),
+  );
+  return Math.min(HEADLINE_FONT_SIZE, Math.floor(HEADLINE_MAX_WIDTH / widest));
+}
+
+// The searchable local name for the product, shown beside the wordmark:
+// the descriptor people actually type, so the card reads as one of them.
+const brandLabels: Record<Locale, string> = {
+  en: "",
+  "zh-TW": "Threads 數據分析工具",
+  ja: "Threads 分析ツール",
+};
+
 function renderOpenGraphImage({
   brandIconSrc,
+  brandLabel,
   headline,
   description,
   footerLeft,
   footerRight,
 }: {
   brandIconSrc: string;
+  brandLabel: string;
   headline: string;
   description: string;
   footerLeft: ReactElement | string;
@@ -169,6 +201,25 @@ function renderOpenGraphImage({
             rounded dark background, so no wrapper box. */}
         <img src={brandIconSrc} width={36} height={36} />
         Threads Analytics
+        {brandLabel ? (
+          <span
+            style={{
+              display: "flex",
+              alignItems: "center",
+              marginLeft: 6,
+              padding: "7px 16px",
+              border: "1px solid rgba(25, 17, 33, 0.14)",
+              borderRadius: 999,
+              background: "rgba(255, 255, 255, 0.55)",
+              color: "#5b5566",
+              fontSize: 18,
+              fontWeight: 600,
+              letterSpacing: "0.01em",
+            }}
+          >
+            {brandLabel}
+          </span>
+        ) : null}
       </div>
       <div
         style={{
@@ -176,8 +227,8 @@ function renderOpenGraphImage({
           position: "absolute",
           top: 190,
           left: 72,
-          maxWidth: 1010,
-          fontSize: 74,
+          maxWidth: HEADLINE_MAX_WIDTH,
+          fontSize: headlineFontSize(headline),
           lineHeight: 1.02,
           letterSpacing: "-0.05em",
           fontWeight: 650,
@@ -235,9 +286,10 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale);
       return renderOpenGraphImage({
         brandIconSrc,
+        brandLabel: brandLabels[locale],
         headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
-        footerLeft: <span>15+ ANALYSES · SELF-HOSTED</span>,
+        footerLeft: <span>31 ANALYSES · SELF-HOSTED</span>,
         footerRight: (
           <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
             OPEN SOURCE
@@ -253,6 +305,7 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale).railwayAgentDeploy;
       return renderOpenGraphImage({
         brandIconSrc,
+        brandLabel: brandLabels[locale],
         headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
@@ -271,6 +324,7 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale).zeaburAgentDeploy;
       return renderOpenGraphImage({
         brandIconSrc,
+        brandLabel: brandLabels[locale],
         headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
@@ -289,6 +343,7 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale).tokenGuide;
       return renderOpenGraphImage({
         brandIconSrc,
+        brandLabel: brandLabels[locale],
         headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
@@ -307,6 +362,7 @@ const variants: OgVariant[] = [
       const copy = getDictionary(locale).mcpGuide;
       return renderOpenGraphImage({
         brandIconSrc,
+        brandLabel: brandLabels[locale],
         headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
@@ -320,11 +376,50 @@ const variants: OgVariant[] = [
     },
   },
   {
+    prefix: "analytics",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale).analyticsGuide;
+      return renderOpenGraphImage({
+        brandIconSrc,
+        brandLabel: brandLabels[locale],
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+            31 ANALYSES
+            {arrowGlyph}
+          </span>
+        ),
+      });
+    },
+  },
+  {
+    prefix: "giveaway",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale).giveawayGuide;
+      return renderOpenGraphImage({
+        brandIconSrc,
+        brandLabel: brandLabels[locale],
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+            FAIR DRAW
+            {arrowGlyph}
+          </span>
+        ),
+      });
+    },
+  },
+  {
     prefix: "vercel-agent",
     render: (locale, brandIconSrc) => {
       const copy = getDictionary(locale).vercelAgentDeploy;
       return renderOpenGraphImage({
         brandIconSrc,
+        brandLabel: brandLabels[locale],
         headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,

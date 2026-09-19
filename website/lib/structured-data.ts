@@ -2,7 +2,7 @@ import type { Dictionary, Locale, TokenGuideCopy } from "@/lib/i18n";
 import { locales } from "@/lib/locales";
 import { siteConfig } from "@/lib/site";
 
-// Dictionary titles end with "… | Threads Analytics"; schema names should
+// Home titles may end with "… | Threads Analytics"; schema names should
 // carry just the page name.
 function stripBrandSuffix(title: string) {
   return title.split(" | ")[0];
@@ -24,7 +24,12 @@ export function getStructuredData(locale: Locale, copy: Dictionary) {
         "@id": `${siteConfig.url}/#website`,
         url: siteConfig.url,
         name: siteConfig.name,
-        alternateName: "Threads Analytics Dashboard",
+        alternateName: [
+          "Threads Analytics Dashboard",
+          "Threads 數據分析工具",
+          "Threads 分析工具",
+          "Threads 分析ツール",
+        ],
         inLanguage: [...locales],
       },
       {

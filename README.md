@@ -13,9 +13,12 @@
 <p align="center">
   <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a> · <a href="./README-ja.md">日本語</a>
 </p>
+<p align="center">
+  <a href="https://threads-analytics.app/en"><strong>Website</strong></a> · <a href="https://threads-analytics.app/en#demo">Live demo</a> · <a href="https://threads-analytics.app/en/token-guide">Token guide</a>
+</p>
 
 <p align="center">
-  <img src="public/dashboard.png" alt="Threads Analytics dashboard" />
+  <a href="https://threads-analytics.app/en"><img src="public/dashboard.png" alt="Threads Analytics dashboard" /></a>
 </p>
 
 ---
@@ -40,7 +43,7 @@
 ## Features
 
 - **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts
-- **Analytics** — 25+ charts across **Performance**, **Content**, and **Audience** tabs
+- **Analytics** — 31 charts across **Performance**, **Content**, and **Audience** tabs
 - **Posts** — searchable, filterable list with per-post analytics panel
 - **MCP server** — let Claude and other AI agents query your analytics through an OAuth-protected endpoint
 - Multi-account support with account switching
@@ -283,7 +286,7 @@ npx prisma migrate dev --name <name>  # Create a new migration
 
 ## Analytics Reference
 
-The dashboard ships 25+ charts across the Overview, Analytics (Performance / Content / Audience), and Posts pages. What every chart shows — and the sampling rules behind the audience metrics — is documented in the **[Analytics Reference](./docs/analytics.md)**.
+The dashboard ships 31 charts across the Overview, Analytics (Performance / Content / Audience), and Posts pages. What every chart shows — and the sampling rules behind the audience metrics — is documented in the **[Analytics Reference](./docs/analytics.md)**.
 
 ---
 

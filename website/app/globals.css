@@ -360,6 +360,19 @@ summary:focus-visible {
   transition: transform 160ms var(--ease-out);
 }
 
+.brand-tag {
+  margin-left: 2px;
+  padding: 4px 10px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0;
+  white-space: nowrap;
+}
+
 .brand-link:active {
   transform: scale(0.97);
 }
@@ -385,6 +398,110 @@ summary:focus-visible {
 
 .desktop-nav a:hover {
   color: var(--accent);
+}
+
+/* Feature group in the primary nav: the same <details> popover as the
+   language menu, with a trigger that reads as one of the nav links. */
+.nav-menu {
+  position: relative;
+}
+
+.nav-menu summary {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+  color: inherit;
+  cursor: pointer;
+  list-style: none;
+  transition: color 160ms ease;
+}
+
+.nav-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-menu summary:hover,
+.nav-menu[open] summary {
+  color: var(--accent);
+}
+
+.nav-menu-chevron {
+  width: 13px;
+  height: 13px;
+  transition: transform 220ms var(--ease-out);
+}
+
+.nav-menu[open] .nav-menu-chevron {
+  transform: rotate(180deg);
+}
+
+/* Left-aligned (not centred) so the entrance keyframes own `transform`. */
+.nav-menu-popover {
+  position: absolute;
+  top: calc(100% + 14px);
+  left: -10px;
+  display: grid;
+  min-width: 196px;
+  padding: 6px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-strong);
+  box-shadow: 0 16px 45px rgba(26, 22, 18, 0.12);
+  transform-origin: top left;
+  animation: menu-in 150ms ease-out both;
+}
+
+/* Invisible bridge over the gap to the trigger: without it the pointer
+   leaves the menu on the way down and hover-close fires mid-travel. */
+.nav-menu-popover::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 14px;
+}
+
+.nav-menu-popover a {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  padding: 9px 12px;
+  border-radius: 8px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  font-weight: 600;
+  white-space: nowrap;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.nav-menu-popover a:hover {
+  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+  color: var(--ink);
+}
+
+.nav-menu-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  border-radius: 7px;
+  background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
+  color: var(--accent-strong);
+  transition: background-color 140ms ease;
+}
+
+.nav-menu-icon svg {
+  width: 13px;
+  height: 13px;
+}
+
+.nav-menu-popover a:hover .nav-menu-icon {
+  background: var(--paper-strong);
 }
 
 /* Matches .button-ghost:hover — the "star on GitHub" pink. */
@@ -487,7 +604,8 @@ summary:focus-visible {
    <details> content; elsewhere they keep the instant native close. */
 @supports selector(::details-content) {
   .language-menu::details-content,
-  .mobile-menu::details-content {
+  .mobile-menu::details-content,
+  .nav-menu::details-content {
     opacity: 1;
     transition:
       opacity 120ms var(--ease-out),
@@ -496,7 +614,8 @@ summary:focus-visible {
   }
 
   .language-menu:not([open])::details-content,
-  .mobile-menu:not([open])::details-content {
+  .mobile-menu:not([open])::details-content,
+  .nav-menu:not([open])::details-content {
     opacity: 0;
     transform: translateY(-4px);
   }
@@ -560,6 +679,24 @@ summary:focus-visible {
   box-shadow: 0 16px 45px rgba(26, 22, 18, 0.12);
   transform-origin: top right;
   animation: menu-in 150ms ease-out both;
+}
+
+.mobile-menu-label {
+  padding: 10px 12px 4px;
+  color: rgba(25, 17, 33, 0.42);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+/* Indent plus a hairline rail marks where the feature group starts and ends
+   without repeating a heading for the ungrouped items after it. */
+.mobile-menu-popover a.mobile-menu-sub {
+  margin-left: 18px;
+  padding-left: 12px;
+  border-left: 1px solid var(--rule);
+  border-radius: 0 8px 8px 0;
 }
 
 .mobile-menu-popover a {
@@ -748,10 +885,20 @@ summary:focus-visible {
 .hero-copy h1 {
   max-width: 1080px;
   margin: 0;
-  font-size: clamp(54px, 7.2vw, 104px);
+  font-size: clamp(50px, 6.5vw, 84px);
   font-weight: 590;
   letter-spacing: -0.046em;
   line-height: 0.98;
+}
+
+/* CJK glyphs run about twice as wide as Latin, so the same clamp() that
+   fits the English headline in two lines pushes 中文 / 日本語 into three or
+   four with orphaned words. */
+:lang(zh) .hero-copy h1,
+:lang(ja) .hero-copy h1 {
+  font-size: clamp(44px, 5vw, 64px);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
 }
 
 .hero-copy h1 span,
@@ -790,6 +937,15 @@ summary:focus-visible {
   letter-spacing: -0.015em;
   line-height: 1.55;
   text-wrap: pretty;
+}
+
+/* Full-width glyphs need looser tracking and leading than Inter does. */
+:lang(zh) .hero-description,
+:lang(ja) .hero-description {
+  max-width: 640px;
+  font-size: clamp(17px, 1.8vw, 21px);
+  letter-spacing: 0;
+  line-height: 1.75;
 }
 
 .hero-actions {
@@ -1280,6 +1436,22 @@ summary:focus-visible {
   letter-spacing: -0.046em;
   line-height: 1.055;
   text-wrap: balance;
+}
+
+/* CJK headings: Latin-tight tracking crowds full-width glyphs, and the
+   phone size drops so a joiner-pinned phrase still fits one line. */
+:lang(zh) .section-heading h2,
+:lang(ja) .section-heading h2,
+:lang(zh) .section-heading-inverse h2,
+:lang(ja) .section-heading-inverse h2,
+:lang(zh) .final-cta h2,
+:lang(ja) .final-cta h2,
+:lang(zh) .agent-cta h2,
+:lang(ja) .agent-cta h2,
+:lang(zh) .guide-phase-heading h2,
+:lang(ja) .guide-phase-heading h2 {
+  letter-spacing: -0.02em;
+  line-height: 1.14;
 }
 
 .section-description {
@@ -4335,7 +4507,7 @@ a.deploy-card:active {
 .deploy-eyebrow {
   color: var(--accent);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.09em;
 }
 
@@ -4490,7 +4662,7 @@ a.deploy-card-code:hover .deploy-package-link {
   background: rgba(255, 255, 255, 0.05);
   color: rgba(255, 255, 255, 0.72);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 11px;
   line-height: 1.5;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -4923,8 +5095,8 @@ a.deploy-card-code:hover .deploy-package-link {
     min-height: 260px;
   }
 
-  /* Five nav items no longer fit this band at full size (widest labels in
-     zh-TW/ja), so tighten the nav and collapse the GitHub button to icon-only. */
+  /* The nav no longer fits this band at full size (widest labels in
+     zh-TW/ja), so tighten it and collapse the GitHub button to icon-only. */
   .desktop-nav {
     gap: 16px;
     font-size: 12.5px;
@@ -4939,6 +5111,18 @@ a.deploy-card-code:hover .deploy-package-link {
     min-height: 40px;
     padding: 0;
     justify-content: center;
+  }
+
+  /* The link columns get too narrow for the longest labels beside the brand
+     here, so the brand takes its own row and they keep full width. */
+  .footer-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 44px 32px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+    max-width: 420px;
   }
 }
 
@@ -5008,6 +5192,12 @@ a.deploy-card-code:hover .deploy-package-link {
   .hero-copy h1 {
     font-size: clamp(42px, 12vw, 60px);
     letter-spacing: -0.04em;
+  }
+
+  :lang(zh) .hero-copy h1,
+  :lang(ja) .hero-copy h1 {
+    font-size: clamp(34px, 9.6vw, 48px);
+    letter-spacing: -0.02em;
   }
 
   .hero-copy h1 em {
@@ -5093,8 +5283,26 @@ a.deploy-card-code:hover .deploy-package-link {
     margin-bottom: 36px;
   }
 
+  .brand-tag {
+    display: none;
+  }
+
   .section-heading h2 {
     font-size: clamp(37px, 10vw, 52px);
+  }
+
+  :lang(zh) .section-heading h2,
+  :lang(ja) .section-heading h2,
+  :lang(zh) .section-heading-inverse h2,
+  :lang(ja) .section-heading-inverse h2 {
+    font-size: clamp(30px, 8.6vw, 44px);
+  }
+
+  :lang(zh) .final-cta h2,
+  :lang(ja) .final-cta h2,
+  :lang(zh) .agent-cta h2,
+  :lang(ja) .agent-cta h2 {
+    font-size: clamp(32px, 9vw, 46px);
   }
 
   .section-description {
@@ -6015,7 +6223,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 .agent-works-label {
   color: var(--ink-soft);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.09em;
 }
 
@@ -6082,10 +6290,17 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
 .agent-hero-copy h1 {
   margin: 26px 0 0;
-  font-size: clamp(44px, 5.4vw, 76px);
+  font-size: clamp(44px, 4.6vw, 64px);
   font-weight: 590;
   letter-spacing: -0.046em;
   line-height: 1;
+}
+
+:lang(zh) .agent-hero-copy h1,
+:lang(ja) .agent-hero-copy h1 {
+  font-size: clamp(38px, 4.6vw, 64px);
+  letter-spacing: -0.02em;
+  line-height: 1.08;
 }
 
 .agent-hero-copy h1 span,
@@ -7350,7 +7565,7 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 .agent-cta-others-label {
   color: rgba(255, 255, 255, 0.55);
   font-family: var(--mono);
-  font-size: 9px;
+  font-size: 10px;
   letter-spacing: 0.09em;
 }
 
@@ -9244,6 +9459,959 @@ button.mcp-mock-btn:active {
   }
 }
 
+/* ---------- Giveaway (homepage section + /giveaway) ---------- */
+
+/* Homepage giveaway section: copy column + the looping winner reveal. The
+   card sits left on desktop so it alternates with the MCP section above. */
+.giveaway-home-section {
+  padding: 124px 0;
+  border-bottom: 1px solid var(--rule);
+}
+
+.giveaway-home-grid {
+  display: grid;
+  grid-template-columns: 1.05fr 0.95fr;
+  gap: 80px;
+  align-items: center;
+}
+
+.giveaway-home-copy {
+  order: 2;
+}
+
+.giveaway-home-copy .section-heading {
+  display: block;
+  margin-bottom: 40px;
+}
+
+.giveaway-home-copy .section-kicker {
+  margin-bottom: 32px;
+}
+
+.giveaway-home-copy .section-description {
+  margin-top: 28px;
+}
+
+.giveaway-home-demo {
+  order: 1;
+}
+
+/* Winner reveal card — dark surface shared with the token guide's check card. */
+.giveaway-result-card {
+  gap: 20px;
+  min-height: 292px;
+}
+
+.giveaway-result-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.giveaway-result-badge {
+  padding: 4px 11px;
+  border: 1px solid rgba(243, 171, 211, 0.4);
+  border-radius: 999px;
+  color: #f3abd3;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.giveaway-result-shuffle {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 16px;
+  justify-content: center;
+}
+
+.giveaway-shuffle-line {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13.5px;
+}
+
+.giveaway-shuffle-line svg {
+  width: 15px;
+  height: 15px;
+}
+
+.giveaway-shuffle-reel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.giveaway-shuffle-reel b {
+  padding: 7px 13px;
+  border: 1px dashed rgba(255, 255, 255, 0.2);
+  border-radius: 999px;
+  color: rgba(255, 255, 255, 0.44);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 500;
+}
+
+.giveaway-result-prizes {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 18px;
+  justify-content: center;
+}
+
+.giveaway-result-prize {
+  display: flex;
+  flex-direction: column;
+  gap: 9px;
+}
+
+.giveaway-result-prize-name {
+  color: rgba(255, 255, 255, 0.5);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.giveaway-result-winners {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.giveaway-result-winners b {
+  padding: 7px 14px;
+  border: 1px solid rgba(255, 255, 255, 0.16);
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.giveaway-result-foot {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.giveaway-result-foot .guide-check-note {
+  flex: 1;
+}
+
+.giveaway-result-replay {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  align-items: center;
+  margin-top: 15px;
+  padding: 7px 13px;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 999px;
+  background: none;
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 12px;
+  font-weight: 600;
+  cursor: pointer;
+  transition:
+    color 180ms ease,
+    border-color 180ms ease,
+    background-color 180ms ease;
+}
+
+.giveaway-result-replay svg {
+  width: 12px;
+  height: 12px;
+}
+
+.giveaway-result-replay:hover {
+  border-color: rgba(255, 255, 255, 0.34);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+}
+
+.giveaway-result-replay:active {
+  transform: scale(0.97);
+}
+
+/* The shared .agent-prompt-hint is white for dark hero cards; this one sits
+   on the light hero background. */
+.giveaway-hero-hint {
+  color: var(--ink-soft);
+}
+
+/* --- /giveaway page --- */
+
+/* Four steps instead of the MCP guide's three. */
+.giveaway-steps-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.giveaway-fairness-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+/* Playable replica of the dashboard's giveaway panel. */
+.giveaway-demo {
+  display: grid;
+  grid-template-columns: 0.85fr 1.15fr;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--rule);
+  border-radius: 18px;
+  background: var(--paper-strong);
+  box-shadow: 0 24px 64px rgba(66, 40, 86, 0.1);
+}
+
+.giveaway-demo-setup {
+  display: flex;
+  flex-direction: column;
+  gap: 26px;
+  padding: 28px;
+  border-right: 1px solid var(--rule);
+  background: color-mix(in srgb, var(--accent-soft) 22%, var(--paper-strong));
+}
+
+.giveaway-demo-block {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.giveaway-demo-label {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.giveaway-switch-list,
+.giveaway-prize-list {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.giveaway-switch {
+  display: flex;
+  gap: 11px;
+  align-items: flex-start;
+  width: 100%;
+  padding: 11px 12px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-strong);
+  text-align: left;
+  cursor: pointer;
+  transition:
+    border-color 180ms ease,
+    background-color 180ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.giveaway-switch:hover {
+  border-color: var(--rule-strong);
+}
+
+.giveaway-switch:active {
+  transform: scale(0.99);
+}
+
+.giveaway-switch.is-on {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 42%, var(--paper-strong));
+}
+
+.giveaway-switch-track {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  width: 32px;
+  height: 19px;
+  margin-top: 1px;
+  padding: 2px;
+  border-radius: 999px;
+  background: var(--rule-strong);
+  transition: background-color 200ms ease;
+}
+
+.giveaway-switch-track i {
+  width: 15px;
+  height: 15px;
+  border-radius: 999px;
+  background: #fff;
+  box-shadow: 0 1px 3px rgba(25, 17, 33, 0.3);
+  transition: transform 220ms var(--ease-out);
+}
+
+.giveaway-switch.is-on .giveaway-switch-track {
+  background: var(--accent);
+}
+
+.giveaway-switch.is-on .giveaway-switch-track i {
+  transform: translateX(13px);
+}
+
+.giveaway-switch-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.giveaway-switch-copy strong {
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.giveaway-switch-copy small {
+  color: var(--ink-soft);
+  font-size: 11.5px;
+  line-height: 1.45;
+}
+
+.giveaway-prize-list li {
+  display: flex;
+  gap: 9px;
+  align-items: center;
+  padding: 10px 13px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-strong);
+  font-size: 13.5px;
+}
+
+.giveaway-prize-list svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  color: var(--accent);
+}
+
+.giveaway-prize-list span {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.giveaway-prize-list b {
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.giveaway-draw-button {
+  justify-content: center;
+  width: 100%;
+  margin-top: auto;
+}
+
+.giveaway-draw-button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.giveaway-draw-count {
+  color: rgba(255, 255, 255, 0.6);
+  font-variant-numeric: tabular-nums;
+}
+
+.giveaway-demo-pool {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  padding: 28px;
+}
+
+.giveaway-pool-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.giveaway-pool-counts {
+  display: inline-flex;
+  gap: 10px;
+  align-items: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.giveaway-pool-counts b {
+  display: inline-flex;
+  gap: 5px;
+  align-items: center;
+  padding: 4px 11px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  color: var(--accent-strong);
+  font-size: 12px;
+  font-weight: 650;
+}
+
+.giveaway-pool-counts b svg {
+  width: 13px;
+  height: 13px;
+}
+
+.giveaway-pool-counts i {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.giveaway-results {
+  padding: 16px 18px;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-soft) 26%, var(--paper-strong));
+}
+
+.giveaway-results-empty {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 12.5px;
+  line-height: 1.6;
+}
+
+.giveaway-results-list {
+  display: flex;
+  flex-direction: column;
+  gap: 13px;
+}
+
+.giveaway-results-prize {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+}
+
+.giveaway-results-prize strong {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  font-size: 12.5px;
+  font-weight: 650;
+}
+
+.giveaway-results-prize strong svg {
+  width: 14px;
+  height: 14px;
+  color: var(--accent);
+}
+
+.giveaway-results-prize span {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.giveaway-results-prize span b {
+  padding: 5px 12px;
+  border-radius: 999px;
+  background: var(--ink);
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.giveaway-results-summary {
+  margin: 13px 0 0;
+  padding-top: 12px;
+  border-top: 1px solid var(--rule);
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+
+.giveaway-entry-list {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.giveaway-entry {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  padding: 9px 11px;
+  border-radius: 10px;
+  font-size: 13px;
+  transition:
+    opacity 200ms ease,
+    background-color 200ms ease;
+}
+
+.giveaway-entry-user {
+  flex: 0 0 auto;
+  font-family: var(--mono);
+  font-size: 12.5px;
+  font-weight: 600;
+}
+
+.giveaway-entry-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--ink-soft);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.giveaway-entry.is-filtered {
+  opacity: 0.42;
+}
+
+.giveaway-entry-reason {
+  flex: 0 0 auto;
+  padding: 2px 8px;
+  border: 1px dashed var(--rule-strong);
+  border-radius: 999px;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 10.5px;
+}
+
+.giveaway-entry.is-winner {
+  background: color-mix(in srgb, var(--accent) 11%, transparent);
+}
+
+.giveaway-entry-trophy {
+  display: inline-flex;
+  flex: 0 0 auto;
+}
+
+.giveaway-entry-trophy svg {
+  width: 13px;
+  height: 13px;
+  color: var(--accent-strong);
+}
+
+.giveaway-demo-note {
+  margin: 22px 0 0;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Token requirement callout under the fairness cards. */
+.giveaway-token-note {
+  display: flex;
+  gap: 14px;
+  align-items: center;
+  margin-top: 26px;
+  padding: 18px 22px;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-strong);
+}
+
+.giveaway-token-mark {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+}
+
+.giveaway-token-mark svg {
+  width: 15px;
+  height: 15px;
+  color: #fff;
+}
+
+.giveaway-token-note p {
+  flex: 1;
+  margin: 0;
+  font-size: 13.5px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.giveaway-token-link {
+  display: inline-flex;
+  flex: 0 0 auto;
+  gap: 6px;
+  align-items: center;
+  color: var(--accent-strong);
+  font-size: 13.5px;
+  font-weight: 600;
+  transition: gap 180ms var(--ease-out);
+}
+
+.giveaway-token-link svg {
+  width: 14px;
+  height: 14px;
+}
+
+.giveaway-token-link:hover {
+  gap: 9px;
+}
+
+@media (prefers-reduced-motion: no-preference) {
+  .giveaway-result-winners b {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  .giveaway-result-winners b.is-landed {
+    animation: giveaway-winner-land 520ms var(--ease-bounce) forwards;
+  }
+
+  .giveaway-results-list {
+    animation: giveaway-results-in 420ms var(--ease-out) both;
+  }
+}
+
+@keyframes giveaway-winner-land {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@keyframes giveaway-results-in {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@media (max-width: 1000px) {
+  .giveaway-home-grid {
+    grid-template-columns: 1fr;
+    gap: 60px;
+  }
+
+  /* Stacked order stays copy-first even though desktop puts the card left. */
+  .giveaway-home-copy {
+    order: 1;
+  }
+
+  .giveaway-home-demo {
+    order: 2;
+    max-width: 720px;
+    margin: 0 auto;
+    width: 100%;
+  }
+
+  .giveaway-steps-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 22px;
+  }
+
+  .giveaway-demo {
+    grid-template-columns: 1fr;
+  }
+
+  .giveaway-demo-setup {
+    border-right: none;
+    border-bottom: 1px solid var(--rule);
+  }
+}
+
+@media (max-width: 780px) {
+  .giveaway-home-section {
+    padding: 88px 0;
+  }
+
+  .giveaway-steps-strip,
+  .giveaway-fairness-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .giveaway-token-note {
+    flex-wrap: wrap;
+  }
+
+  .giveaway-result-foot {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .giveaway-result-replay {
+    align-self: flex-start;
+    margin-top: 0;
+  }
+}
+
+@media (max-width: 480px) {
+  .giveaway-demo-setup,
+  .giveaway-demo-pool {
+    padding: 20px;
+  }
+
+  .giveaway-entry-text {
+    display: none;
+  }
+}
+
+/* Link out of the homepage feature summary into the full inventory page. */
+.features-cta {
+  display: flex;
+  justify-content: center;
+  margin-top: 44px;
+}
+
+/* ---------- Analytics inventory (/analytics) ---------- */
+
+/* Hero side card: section counts that double as a table of contents. */
+.analytics-summary-card {
+  gap: 16px;
+}
+
+.analytics-summary-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.analytics-summary-badge {
+  padding: 4px 11px;
+  border: 1px solid rgba(243, 171, 211, 0.4);
+  border-radius: 999px;
+  color: #f3abd3;
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.analytics-summary-total {
+  display: flex;
+  gap: 10px;
+  align-items: baseline;
+  margin: 0;
+  padding-bottom: 15px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.analytics-summary-total strong {
+  background: linear-gradient(120deg, #ffb18a 0%, #ec7dbc 46%, #9e5bef 100%);
+  background-clip: text;
+  color: transparent;
+  font-size: 40px;
+  font-weight: 680;
+  letter-spacing: -0.03em;
+  -webkit-text-fill-color: transparent;
+}
+
+.analytics-summary-total span {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 13px;
+}
+
+.analytics-summary-rows {
+  display: grid;
+  gap: 2px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.analytics-summary-rows a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin: 0 -10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.82);
+  font-size: 13.5px;
+  transition: background-color 160ms ease;
+}
+
+.analytics-summary-rows a:hover {
+  background: rgba(255, 255, 255, 0.07);
+}
+
+.analytics-summary-rows b {
+  color: #fff;
+  font-family: var(--mono);
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* The shared .agent-prompt-hint is white for dark hero cards. */
+.analytics-hero-hint {
+  color: var(--ink-soft);
+}
+
+/* Stat strip above a tab's chart panel — the numbers the dashboard pins to
+   the top of that tab, before any chart. */
+.analytics-stat-strip {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px 14px;
+  align-items: center;
+  margin-bottom: 18px;
+}
+
+.analytics-stat-label {
+  color: var(--ink-soft);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.analytics-stat-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+}
+
+.analytics-stat-chips b {
+  padding: 4px 11px;
+  border: 1px solid var(--rule);
+  border-radius: 999px;
+  background: var(--paper-strong);
+  font-size: 12px;
+  font-weight: 600;
+}
+
+/* The numbering chip carries no meaning beyond order, so it stays quiet. */
+.analytics-inventory .mcp-tool-row code {
+  color: rgba(255, 255, 255, 0.34);
+}
+
+.analytics-section-note {
+  display: flex;
+  gap: 10px;
+  align-items: flex-start;
+  margin: 18px 0 0;
+  padding: 15px 18px;
+  border: 1px solid var(--rule);
+  border-radius: 12px;
+  background: var(--paper-strong);
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+.analytics-section-note svg {
+  flex: 0 0 auto;
+  width: 15px;
+  height: 15px;
+  margin-top: 2px;
+  color: var(--accent);
+}
+
+.analytics-method-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.analytics-method-card {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 24px;
+  border: 1px solid var(--rule);
+  border-radius: 16px;
+  background: var(--paper-strong);
+  transition:
+    transform 220ms var(--ease-out),
+    border-color 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .analytics-method-card:hover {
+    border-color: var(--rule-strong);
+    transform: translateY(-3px);
+  }
+}
+
+.analytics-method-mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 10px;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+}
+
+.analytics-method-mark svg {
+  width: 15px;
+  height: 15px;
+  color: #fff;
+}
+
+.analytics-method-card strong {
+  font-size: 17px;
+  font-weight: 620;
+  letter-spacing: -0.01em;
+}
+
+.analytics-method-card p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.65;
+  text-wrap: pretty;
+}
+
+/* Each inventory section is its own scroll target, so it needs the gap the
+   step flow gives the token guide's phases. */
+.guide-steps-flow > .guide-phase + .guide-phase {
+  margin-top: 96px;
+}
+
+@media (max-width: 780px) {
+  .analytics-method-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .guide-steps-flow > .guide-phase + .guide-phase {
+    margin-top: 64px;
+  }
+
+  .analytics-summary-total strong {
+    font-size: 34px;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;
@@ -9268,6 +10436,8 @@ button.mcp-mock-btn:active {
   .header-github,
   .language-menu summary,
   .language-popover a,
+  .nav-menu summary,
+  .nav-menu-popover a,
   .segmented-control button,
   .deploy-tabs button,
   .guide-progress-list a,

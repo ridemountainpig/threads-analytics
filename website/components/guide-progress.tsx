@@ -9,22 +9,26 @@ type GuideProgressPhase = {
   title: string;
 };
 
-// Sticky table of contents for the token guide's step flow. Tracks which
-// phase section is closest to the reading line and marks earlier phases as
-// done, so the 18-step page always shows where the reader is.
+// Sticky table of contents for a long sectioned page. Tracks which section
+// is closest to the reading line and marks earlier ones as done, so the token
+// guide's 18 steps and the analytics inventory both show where the reader is.
 export function GuideProgress({
   label,
   stepsLabel,
+  idPrefix = "phase",
   phases,
 }: {
   label: string;
-  stepsLabel: string;
+  /** Prefix before each phase's `range`, e.g. "STEPS" for the token guide. */
+  stepsLabel?: string;
+  /** Section ids are `${idPrefix}-1`, `${idPrefix}-2`, … */
+  idPrefix?: string;
   phases: GuideProgressPhase[];
 }) {
   const [active, setActive] = useState(0);
 
   useEffect(() => {
-    const ids = phases.map((_, i) => `phase-${i + 1}`);
+    const ids = phases.map((_, i) => `${idPrefix}-${i + 1}`);
     const targets = ids
       .map((id) => document.getElementById(id))
       .filter((element): element is HTMLElement => element !== null);
@@ -59,7 +63,7 @@ export function GuideProgress({
     targets.forEach((target) => observer.observe(target));
 
     return () => observer.disconnect();
-  }, [phases]);
+  }, [phases, idPrefix]);
 
   return (
     <nav className="guide-progress" aria-label={label}>
@@ -69,7 +73,7 @@ export function GuideProgress({
           const state = i === active ? "is-active" : i < active ? "is-done" : undefined;
           return (
             <li key={phase.index}>
-              <a href={`#phase-${i + 1}`} className={state}>
+              <a href={`#${idPrefix}-${i + 1}`} className={state}>
                 {/* Digit and check stay stacked so the done state crossfades
                     instead of swapping glyphs in a hard cut. */}
                 <span className="guide-progress-index" aria-hidden="true">
@@ -80,9 +84,7 @@ export function GuideProgress({
                 </span>
                 <span className="guide-progress-text">
                   <strong>{phase.title}</strong>
-                  <span>
-                    {stepsLabel} {phase.range}
-                  </span>
+                  <span>{[stepsLabel, phase.range].filter(Boolean).join(" ")}</span>
                 </span>
               </a>
             </li>

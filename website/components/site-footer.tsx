@@ -26,14 +26,17 @@ export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary[
           </div>
           <p>{copy.description}</p>
         </div>
+        {/* Same split as the primary nav: capabilities, deployment, reading. */}
         <div>
           <strong>{copy.product}</strong>
           <a href={`/${locale}#demo`}>{copy.liveDemo}</a>
-          <a href={`/${locale}#features`}>{copy.featureOverview}</a>
-          <a href={`/${locale}#deploy`}>{copy.deployment}</a>
+          <a href={`/${locale}/analytics`}>{copy.analytics}</a>
+          <a href={`/${locale}/mcp`}>{copy.mcp}</a>
+          <a href={`/${locale}/giveaway`}>{copy.giveaway}</a>
         </div>
         <div>
-          <strong>{copy.deployGuides}</strong>
+          <strong>{copy.deploy}</strong>
+          <a href={`/${locale}#deploy`}>{copy.deployment}</a>
           <a href={`/${locale}/deploy/railway-agent`}>{copy.railwayAgent}</a>
           <a href={`/${locale}/deploy/zeabur-agent`}>{copy.zeaburAgent}</a>
           <a href={`/${locale}/deploy/vercel-agent`}>{copy.vercelAgent}</a>
@@ -41,7 +44,6 @@ export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary[
         <div>
           <strong>{copy.resources}</strong>
           <a href={`/${locale}/token-guide`}>{copy.tokenGuide}</a>
-          <a href={`/${locale}/mcp`}>{copy.mcpGuide}</a>
           <a
             href={`${siteConfig.github}/blob/main/docs/${analyticsDocFile[locale]}`}
             target="_blank"

@@ -13,9 +13,12 @@
 <p align="center">
   <a href="./README-zh.md">繁體中文</a> · <a href="./README.md">English</a> · <a href="./README-ja.md">日本語</a>
 </p>
+<p align="center">
+  <a href="https://threads-analytics.app/ja"><strong>公式サイト</strong></a> · <a href="https://threads-analytics.app/ja#demo">ライブデモ</a> · <a href="https://threads-analytics.app/ja/token-guide">トークン取得ガイド</a>
+</p>
 
 <p align="center">
-  <img src="public/dashboard-ja.png" alt="Threads Analytics ダッシュボード" />
+  <a href="https://threads-analytics.app/ja"><img src="public/dashboard-ja.png" alt="Threads Analytics ダッシュボード" /></a>
 </p>
 
 ---
@@ -40,7 +43,7 @@
 ## 機能
 
 - **概要** — 統計カード（ビュー、いいね、リプライ、リポスト、引用、シェア、エンゲージメント率）と前期比、ビュー推移チャート（日／週／月）、最適投稿時間の推奨、バイラル投稿
-- **アナリティクス** — **パフォーマンス**、**コンテンツ**、**オーディエンス**の 3 タブにまたがる 25 種類以上のチャート
+- **アナリティクス** — **パフォーマンス**、**コンテンツ**、**オーディエンス**の 3 タブにまたがる 31 種類のチャート
 - **投稿** — 検索・フィルタ可能なリストと投稿ごとのアナリティクスパネル
 - **MCP サーバー** — Claude などの AI エージェントが OAuth 保護されたエンドポイント経由でアナリティクスを照会可能
 - 複数アカウント対応、アカウント切り替え可能
@@ -283,7 +286,7 @@ npx prisma migrate dev --name <name>  # 新しいマイグレーションを作�
 
 ## アナリティクスリファレンス
 
-ダッシュボードは概要、アナリティクス（パフォーマンス／コンテンツ／オーディエンス）、投稿の各ページで 25 種類以上のチャートを提供します。各チャートの表示内容とオーディエンス指標のサンプリングルールは、**[アナリティクスリファレンス](./docs/analytics-ja.md)**に完全にまとめられています。
+ダッシュボードは概要、アナリティクス（パフォーマンス／コンテンツ／オーディエンス）、投稿の各ページで 31 種類のチャートを提供します。各チャートの表示内容とオーディエンス指標のサンプリングルールは、**[アナリティクスリファレンス](./docs/analytics-ja.md)**に完全にまとめられています。
 
 ---
 
