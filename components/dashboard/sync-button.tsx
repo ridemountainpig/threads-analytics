@@ -34,6 +34,7 @@ interface SyncButtonProps {
     staleHintManual?: string;
     staleHintAuto?: string;
     goToSettings?: string;
+    repliesPermissionMissing?: string;
   };
   dateLocale?: string;
 }
@@ -84,6 +85,9 @@ export default function SyncButton({
         toast.error(`${copy.failed} ${result.error}`);
       } else {
         toast.success(copy.synced.replace("{count}", String(result.postsCount)));
+        if (result.repliesPermissionMissing && copy.repliesPermissionMissing) {
+          toast.info(copy.repliesPermissionMissing);
+        }
       }
     });
   }

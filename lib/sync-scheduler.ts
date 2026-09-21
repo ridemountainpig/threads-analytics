@@ -20,6 +20,8 @@ export type ScheduledAccountResult = { username: string } & (
       status: "synced";
       postsCount: number;
       insightsFailed?: number;
+      threadRepliesCount?: number;
+      repliesPermissionMissing?: boolean;
       startedAt: string;
       finishedAt: string;
     }
@@ -179,6 +181,10 @@ async function syncAccountIfDue(
     status: "synced",
     postsCount: result.postsCount ?? 0,
     ...(result.insightsFailed ? { insightsFailed: result.insightsFailed } : {}),
+    ...(result.threadRepliesCount !== undefined
+      ? { threadRepliesCount: result.threadRepliesCount }
+      : {}),
+    ...(result.repliesPermissionMissing ? { repliesPermissionMissing: true } : {}),
     startedAt: startedAt.toISOString(),
     finishedAt: new Date().toISOString(),
   };

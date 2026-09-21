@@ -98,6 +98,8 @@ export const dictionaries = {
       staleHintAuto:
         "Auto sync doesn't seem to be running. Check your deployment or sync manually.",
       goToSettings: "Open Settings",
+      repliesPermissionMissing:
+        "Thread parts were skipped: this token lacks the threads_read_replies permission. Re-generate it with reply permissions to track them.",
     },
     overview: {
       title: "Overview",
@@ -384,6 +386,15 @@ export const dictionaries = {
       textFeatures: "Text Features",
       featureQuestion: "Question",
       featureLink: "Link",
+      threadBadge: "{count}-part thread",
+      threadSection: "Thread",
+      retention: "Part 2 Retention",
+      retentionHelp: "Views of part 2 as a share of part 1",
+      part2Kind: "Part 2 Type",
+      part2KindHelp: "Median part-2 retention by type",
+      kindLabels: { link: "Link only", linkText: "Link + note", text: "Text only" },
+      threadsCount: "{count} threads",
+      threadsCountOne: "{count} thread",
       previousPage: "Previous",
       nextPage: "Next",
       pageStatus: "Page {page} of {total}",
@@ -632,6 +643,8 @@ export const dictionaries = {
       staleHintManual: "建議立即同步；也可以到設定開啟自動同步，之後就不用手動更新。",
       staleHintAuto: "自動同步似乎沒有正常執行，請檢查部署環境或手動同步一次。",
       goToSettings: "前往設定",
+      repliesPermissionMissing:
+        "已略過串文：此 access token 缺少 threads_read_replies 權限，請重新產生含回覆權限的 token。",
     },
     overview: {
       title: "總覽",
@@ -905,6 +918,14 @@ export const dictionaries = {
       textFeatures: "文字特徵",
       featureQuestion: "問句",
       featureLink: "連結",
+      threadBadge: "{count} 則串文",
+      threadSection: "串文",
+      retention: "第 2 則保留率",
+      retentionHelp: "第 2 則觀看數佔第 1 則的比例",
+      part2Kind: "第 2 則類型",
+      part2KindHelp: "各類型的第 2 則保留率中位數",
+      kindLabels: { link: "純連結", linkText: "連結加說明", text: "純文字" },
+      threadsCount: "{count} 篇",
       previousPage: "上一頁",
       nextPage: "下一頁",
       pageStatus: "第 {page} / {total} 頁",
@@ -1152,6 +1173,8 @@ export const dictionaries = {
       staleHintAuto:
         "自動同期が動作していないようです。デプロイ環境を確認するか手動で同期してください。",
       goToSettings: "設定を開く",
+      repliesPermissionMissing:
+        "スレッドの続きはスキップされました。このトークンには threads_read_replies 権限がないため、返信権限を含めて再生成してください。",
     },
     overview: {
       title: "概要",
@@ -1437,6 +1460,14 @@ export const dictionaries = {
       textFeatures: "テキストの特徴",
       featureQuestion: "質問",
       featureLink: "リンク",
+      threadBadge: "{count}件のスレッド",
+      threadSection: "スレッド",
+      retention: "2件目継続率",
+      retentionHelp: "1件目に対する2件目のビュー比率",
+      part2Kind: "2件目のタイプ",
+      part2KindHelp: "タイプ別の2件目継続率の中央値",
+      kindLabels: { link: "リンクのみ", linkText: "リンク＋一言", text: "テキストのみ" },
+      threadsCount: "{count}件",
       previousPage: "前へ",
       nextPage: "次へ",
       pageStatus: "{page} / {total} ページ",

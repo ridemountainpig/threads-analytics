@@ -1,6 +1,7 @@
 import { db } from "@/lib/db";
 import { Prisma } from "@/lib/generated/prisma";
 import { getPostBenchmarks } from "@/lib/post-benchmarks";
+import { buildRetentionBenchmark } from "@/lib/thread-part-kind";
 import { getTimeRange } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
@@ -167,19 +168,72 @@ export default async function PostsPage({ searchParams }: PageProps) {
 
   // Benchmarks (medians, per-type medians, per-metric rate medians, text-feature
   // deltas, and each visible post's percentiles) — all aggregated in Postgres.
-  const benchmarks = await getPostBenchmarks(
-    account.id,
-    since,
-    until,
-    posts.map((p) => p.id),
-  );
+  const pageIds = posts.map((p) => p.id);
+  const [benchmarks, threadReplies, retentionRows] = await Promise.all([
+    getPostBenchmarks(account.id, since, until, pageIds),
+    pageIds.length
+      ? db.threadReply.findMany({
+          where: { rootPostId: { in: pageIds } },
+          orderBy: [{ timestamp: "asc" }],
+          select: {
+            id: true,
+            rootPostId: true,
+            position: true,
+            gapSeconds: true,
+            text: true,
+            timestamp: true,
+            permalink: true,
+            views: true,
+            likes: true,
+            replies: true,
+            reposts: true,
+            quotes: true,
+            shares: true,
+          },
+        })
+      : Promise.resolve([]),
+    // Every second part in range, so one thread's retention can be read
+    // against this account's typical figure, overall and per part-2 kind.
+    db.threadReply.findMany({
+      where: { position: 2, rootPost: { ...rangeWhere, views: { gt: 0 } } },
+      orderBy: [{ timestamp: "asc" }],
+      select: {
+        rootPostId: true,
+        text: true,
+        views: true,
+        rootPost: { select: { views: true } },
+      },
+    }),
+  ]);
   const medianViews = benchmarks.overallMedianViews;
+  // Replying to the root twice leaves two parts at position 2; the thread reads
+  // as the earlier one, so only it may weigh on the median (same pick as the
+  // detail panel and the CSV export).
+  const firstPart2ByRoot = new Map<string, (typeof retentionRows)[number]>();
+  for (const row of retentionRows) {
+    if (!firstPart2ByRoot.has(row.rootPostId)) firstPart2ByRoot.set(row.rootPostId, row);
+  }
+  const retention = buildRetentionBenchmark(
+    [...firstPart2ByRoot.values()].map((r) => ({
+      text: r.text,
+      views: r.views,
+      rootViews: r.rootPost.views,
+    })),
+  );
+
+  const threadPartsByRoot = new Map<string, typeof threadReplies>();
+  for (const reply of threadReplies) {
+    const list = threadPartsByRoot.get(reply.rootPostId) ?? [];
+    list.push(reply);
+    threadPartsByRoot.set(reply.rootPostId, list);
+  }
 
   const postsWithBenchmarks = posts.map((post) => {
     const typeMedian = benchmarks.typeMedianViews[post.mediaType] ?? medianViews;
     const pp = benchmarks.perPost[post.id];
     return {
       ...post,
+      threadParts: threadPartsByRoot.get(post.id) ?? [],
       typeMedianViews: typeMedian,
       viewsVsTypeMedian: typeMedian > 0 ? Math.round((post.views / typeMedian) * 10) / 10 : 0,
       viewPercentile: pp?.viewPercentile ?? 0,
@@ -254,6 +308,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
         medianViews={medianViews}
         metricRateMedians={benchmarks.metricRateMedians}
         engagementRateMedian={benchmarks.engagementRateMedian}
+        retention={retention}
         features={benchmarks.features}
         currentSort={sort}
         currentDir={dir}

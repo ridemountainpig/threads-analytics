@@ -76,6 +76,18 @@ The posts list supports:
 
 Clicking any post opens a detail panel with views, engagement rate, vs-median multiplier, view percentile, and a per-action engagement breakdown.
 
+### Threads (multi-part posts)
+
+Posts you continue in your own replies (the "2/", "3/" parts) are synced alongside the root post. Only replies that chain from your own root post count as parts; replies to commenters and replies under other accounts' posts are ignored. Parts are stored separately and never counted as posts anywhere else in the dashboard.
+
+- Multi-part posts show an **N-part thread** badge in the list and detail header.
+- The detail panel shows **Part 2 Retention**: views of part 2 as a share of part 1, i.e. how much of the audience read on.
+- A **Thread** section lists every part with its views (as a bar relative to part 1), likes, replies, and how long after the previous part it was posted.
+- **Part 2 Type** compares retention by what part 2 is made of: link only, link + note, or text only. Each chip shows that type's median retention across the period and how many threads it's based on; a type with fewer than 5 threads shows no median.
+- The CSV export includes `thread_parts` and `part2_retention_pct` columns.
+
+Fetching parts needs a token with the `threads_read_replies` permission; without it, posts still sync and thread parts are skipped.
+
 ---
 
 [← Back to README](../README.md)

@@ -25,8 +25,9 @@ export async function syncDataAction(): Promise<SyncResult> {
     revalidatePath("/dashboard");
   }
 
-  const { postsCount, insightsFailed, error } = results[0];
-  return { postsCount, insightsFailed, error };
+  const { postsCount, insightsFailed, threadRepliesCount, repliesPermissionMissing, error } =
+    results[0];
+  return { postsCount, insightsFailed, threadRepliesCount, repliesPermissionMissing, error };
 }
 
 // Syncs a specific account regardless of which one is active, so a newly

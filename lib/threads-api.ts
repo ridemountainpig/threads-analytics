@@ -349,6 +349,82 @@ export interface ThreadsReply {
   permalink: string;
 }
 
+function isMissingReplyPermission(err: unknown): boolean {
+  return (
+    err instanceof Error &&
+    (err.message.includes("threads_read_replies") || /"code":10\b/.test(err.message))
+  );
+}
+
+export interface ThreadsUserReply {
+  id: string;
+  text: string;
+  timestamp: string;
+  media_type: string;
+  permalink: string;
+  rootPostId: string;
+  repliedToId: string;
+}
+
+/**
+ * One page of every reply the user has written — under their own posts and
+ * under anyone else's. Sorting them into thread continuations is the caller's
+ * job (see lib/thread-replies.ts). `since` is a unix timestamp in seconds.
+ */
+export async function getUserReplies(
+  userId: string,
+  accessToken: string,
+  options: { since?: number; after?: string } = {},
+): Promise<{ replies: ThreadsUserReply[]; nextCursor?: string }> {
+  interface RepliesResponse {
+    data: Array<{
+      id: string;
+      text?: string;
+      timestamp?: string;
+      media_type?: string;
+      permalink?: string;
+      root_post?: { id?: string };
+      replied_to?: { id?: string };
+    }>;
+    paging?: { cursors?: { after?: string }; next?: string };
+  }
+
+  const params: Record<string, string> = {
+    fields: "id,text,timestamp,media_type,permalink,root_post,replied_to",
+    limit: "100",
+    access_token: accessToken,
+  };
+  if (options.since !== undefined) params["since"] = String(options.since);
+  if (options.after) params["after"] = options.after;
+
+  let data: RepliesResponse;
+  try {
+    data = await apiGet<RepliesResponse>(`/${userId}/replies`, params);
+  } catch (err) {
+    if (isMissingReplyPermission(err))
+      throw new MissingReplyPermissionError((err as Error).message);
+    throw err;
+  }
+
+  const replies: ThreadsUserReply[] = [];
+  for (const r of data.data ?? []) {
+    if (!r.timestamp || !r.root_post?.id || !r.replied_to?.id) continue;
+    replies.push({
+      id: r.id,
+      text: r.text ?? "",
+      timestamp: r.timestamp,
+      media_type: r.media_type ?? "TEXT_POST",
+      permalink: r.permalink ?? "",
+      rootPostId: r.root_post.id,
+      repliedToId: r.replied_to.id,
+    });
+  }
+
+  const nextCursor =
+    data.paging?.cursors?.after && data.paging.next ? data.paging.cursors.after : undefined;
+  return { replies, nextCursor };
+}
+
 // 100 pages × limit 100 ≈ 10k replies; past that a giveaway draw is stale data
 // anyway and the loop must not spin on the rate limit.
 const REPLY_PAGE_LIMIT = 100;
@@ -388,12 +464,8 @@ export async function getAllReplies(
     try {
       data = await apiGet<ConversationResponse>(`/${mediaId}/conversation`, params);
     } catch (err) {
-      if (
-        err instanceof Error &&
-        (err.message.includes("threads_read_replies") || /"code":10\b/.test(err.message))
-      ) {
-        throw new MissingReplyPermissionError(err.message);
-      }
+      if (isMissingReplyPermission(err))
+        throw new MissingReplyPermissionError((err as Error).message);
       throw err;
     }
 

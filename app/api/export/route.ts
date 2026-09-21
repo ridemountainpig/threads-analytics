@@ -23,6 +23,8 @@ const CSV_COLUMNS = [
   "quotes",
   "shares",
   "engagement_rate_pct",
+  "thread_parts",
+  "part2_retention_pct",
   "text",
 ] as const;
 
@@ -72,6 +74,29 @@ export async function GET(request: NextRequest) {
 
   const posts = await db.post.findMany({ where, orderBy, take: EXPORT_LIMIT });
 
+  // Thread parts per root: how many parts the thread has (root included) and
+  // how much of the root's reach carried into part 2.
+  const threadParts = posts.length
+    ? await db.threadReply.findMany({
+        where: { rootPostId: { in: posts.map((p) => p.id) } },
+        orderBy: [{ timestamp: "asc" }],
+        select: { rootPostId: true, position: true, views: true },
+      })
+    : [];
+  const partCount = new Map<string, number>();
+  const part2Views = new Map<string, number>();
+  for (const part of threadParts) {
+    partCount.set(part.rootPostId, (partCount.get(part.rootPostId) ?? 0) + 1);
+    if (part.position === 2 && !part2Views.has(part.rootPostId)) {
+      part2Views.set(part.rootPostId, part.views);
+    }
+  }
+  const retentionOf = (p: (typeof posts)[number]) => {
+    const views = part2Views.get(p.id);
+    if (views === undefined || p.views <= 0) return "";
+    return Math.round((views / p.views) * 1000) / 10;
+  };
+
   const engRateOf = (p: (typeof posts)[number]) =>
     p.views > 0 ? (p.likes + p.replies + p.reposts + p.quotes) / p.views : 0;
 
@@ -94,6 +119,8 @@ export async function GET(request: NextRequest) {
       p.quotes,
       p.shares,
       Math.round(engRateOf(p) * 10000) / 100,
+      (partCount.get(p.id) ?? 0) + 1,
+      retentionOf(p),
       p.text,
     ]
       .map(csvCell)

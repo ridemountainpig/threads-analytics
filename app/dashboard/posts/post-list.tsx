@@ -2,9 +2,24 @@
 
 import { useState, useEffect, useRef } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
-import { ArrowDown, ArrowUp, ChevronDown, ChevronUp, ExternalLink, Search, X } from "lucide-react";
+import {
+  ArrowDown,
+  ArrowUp,
+  ChevronDown,
+  ChevronUp,
+  ExternalLink,
+  Layers,
+  Search,
+  X,
+} from "lucide-react";
 import { cn, normalizeIntlSpaces } from "@/lib/utils";
 import { chartColors, chartPalette } from "@/components/charts/chart-style";
+import {
+  classifyThreadPartKind,
+  THREAD_PART_KINDS,
+  type RetentionBenchmark,
+  type ThreadPartKind,
+} from "@/lib/thread-part-kind";
 
 // Capsule filter chip shared by the sort row and media-type row: filled when
 // selected, instant pressed-state feedback, consistent with chart filters.
@@ -58,6 +73,21 @@ interface MetricRateMedians {
   shares: number;
 }
 
+interface ThreadPart {
+  id: string;
+  position: number;
+  gapSeconds: number;
+  text: string;
+  timestamp: Date;
+  permalink: string;
+  views: number;
+  likes: number;
+  replies: number;
+  reposts: number;
+  quotes: number;
+  shares: number;
+}
+
 interface Post {
   id: string;
   text: string;
@@ -70,6 +100,8 @@ interface Post {
   reposts: number;
   quotes: number;
   shares: number;
+  /** The author's own continuations under this post, oldest first. */
+  threadParts: ThreadPart[];
   typeMedianViews: number;
   viewsVsTypeMedian: number;
   viewPercentile: number;
@@ -81,6 +113,8 @@ interface PostListProps {
   medianViews: number;
   metricRateMedians: MetricRateMedians;
   engagementRateMedian: number;
+  /** Part-2 retention medians across the range's threads, overall and per kind. */
+  retention: RetentionBenchmark;
   features: FeatureDelta[];
   currentSort: string;
   currentDir: string;
@@ -112,6 +146,15 @@ interface PostListProps {
     textFeatures?: string;
     featureQuestion?: string;
     featureLink?: string;
+    threadBadge?: string;
+    threadSection?: string;
+    retention?: string;
+    retentionHelp?: string;
+    part2Kind?: string;
+    part2KindHelp?: string;
+    kindLabels?: Record<ThreadPartKind, string>;
+    threadsCount?: string;
+    threadsCountOne?: string;
     engagementBreakdown: string;
     selectPost: string;
     reposts: string;
@@ -128,6 +171,106 @@ interface PostListProps {
 
 const hasLink = (text: string) => /https?:\/\//i.test(text);
 const hasQuestion = (text: string) => /[?？]/.test(text);
+
+// Threads is a tree, not a list: replying twice to the root gives two parts at
+// position 2. The earliest is the one the thread reads as, and the benchmark
+// samples it the same way, so the figure and its median stay comparable.
+function findPart2(post: Post): ThreadPart | null {
+  return post.threadParts.find((p) => p.position === 2) ?? null;
+}
+
+/** Share of the root's views that reached part 2, in %. */
+function part2Retention(post: Post): number | null {
+  const part2 = findPart2(post);
+  if (!part2 || post.views <= 0) return null;
+  return Math.round((part2.views / post.views) * 1000) / 10;
+}
+
+// Compact "+45s / +3m / +2h / +5d" — the unit letters read the same in every
+// locale the app ships, so this stays out of the dictionaries.
+function formatGap(seconds: number): string {
+  if (seconds < 60) return `+${seconds}s`;
+  if (seconds < 3600) return `+${Math.round(seconds / 60)}m`;
+  if (seconds < 86400) return `+${Math.round(seconds / 3600)}h`;
+  return `+${Math.round(seconds / 86400)}d`;
+}
+
+/**
+ * One part's text: a single clamped line that opens to the full text. The
+ * disclosure chevron only appears when there is something hidden to reveal,
+ * and rotates like a system disclosure so the state reads at a glance.
+ */
+function ThreadPartText({
+  text,
+  expanded,
+  onToggle,
+  fallback,
+}: {
+  text: string;
+  expanded: boolean;
+  onToggle: () => void;
+  fallback: string;
+}) {
+  const textRef = useRef<HTMLSpanElement>(null);
+  const [clamped, setClamped] = useState(false);
+
+  useEffect(() => {
+    const el = textRef.current;
+    if (!el) return;
+    const check = () => setClamped(el.scrollHeight > el.clientHeight + 1);
+    check();
+    const observer = new ResizeObserver(check);
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [text, expanded]);
+
+  const canToggle = clamped || expanded;
+
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      disabled={!canToggle}
+      aria-expanded={canToggle ? expanded : undefined}
+      className={cn(
+        "group flex min-w-0 flex-1 items-start gap-2 text-left text-sm transition-opacity duration-100 motion-reduce:transition-none",
+        canToggle ? "cursor-pointer active:opacity-60" : "cursor-default",
+      )}
+    >
+      <span
+        ref={textRef}
+        className={cn(
+          "min-w-0 flex-1",
+          expanded ? "whitespace-pre-wrap" : "line-clamp-1 break-all",
+        )}
+      >
+        {text || fallback}
+      </span>
+      {canToggle && (
+        <span
+          aria-hidden
+          className="bg-muted text-foreground/70 group-hover:bg-foreground/10 group-hover:text-foreground mt-px inline-flex size-5 shrink-0 items-center justify-center rounded-full transition-[background-color,color] duration-150 motion-reduce:transition-none"
+        >
+          <ChevronDown
+            className={cn(
+              "size-3.5 transition-[rotate] duration-200 ease-out motion-reduce:transition-none",
+              expanded && "rotate-180",
+            )}
+          />
+        </span>
+      )}
+    </button>
+  );
+}
+
+function ThreadBadge({ count, label }: { count: number; label?: string }) {
+  return (
+    <span className="bg-tint/12 text-tint inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums">
+      <Layers className="size-3" />
+      {(label ?? "{count}-part thread").replace("{count}", String(count))}
+    </span>
+  );
+}
 
 const SORT_OPTIONS = ["date", "views", "likes", "replies", "shares", "engRate"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
@@ -185,6 +328,7 @@ function PostDetail({
   medianViews,
   metricRateMedians,
   engagementRateMedian,
+  retention: retentionBenchmark,
   features,
   labels,
   dateLocale,
@@ -194,6 +338,7 @@ function PostDetail({
   medianViews: number;
   metricRateMedians: MetricRateMedians;
   engagementRateMedian: number;
+  retention: RetentionBenchmark;
   features: FeatureDelta[];
   labels: PostListProps["labels"];
   dateLocale?: string;
@@ -224,6 +369,39 @@ function PostDetail({
     { key: "shares" as const, label: labels.shares, color: chartColors.share },
   ];
   const maxMetric = Math.max(1, ...engagementMetrics.map(({ key }) => post[key]));
+  const partCount = post.threadParts.length + 1;
+  // Parts whose full text is shown; the row's one-line clamp is the default.
+  const [expandedParts, setExpandedParts] = useState<Set<string>>(() => new Set());
+  const togglePart = (id: string) =>
+    setExpandedParts((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  const retention = part2Retention(post);
+  const retentionMedian = retentionBenchmark.median;
+  const part2 = findPart2(post);
+  const part2Kind = part2 ? classifyThreadPartKind(part2.text) : null;
+  const kindLabels: Record<ThreadPartKind, string> = {
+    link: labels.kindLabels?.link ?? "Link only",
+    linkText: labels.kindLabels?.linkText ?? "Link + note",
+    text: labels.kindLabels?.text ?? "Text only",
+  };
+  // Every part in reading order, root first, so the bars read as a drop-off.
+  const threadRows = [
+    {
+      id: post.id,
+      position: 1,
+      gapSeconds: 0,
+      text: post.text,
+      permalink: post.permalink,
+      views: post.views,
+      likes: post.likes,
+      replies: post.replies,
+    },
+    ...post.threadParts,
+  ];
 
   return (
     <div className="divide-border/60 divide-y">
@@ -237,6 +415,9 @@ function PostDetail({
           <span className="bg-muted text-muted-foreground rounded-full px-2.5 py-0.5 text-xs font-medium">
             {mediaTypeLabel}
           </span>
+          {post.threadParts.length > 0 && (
+            <ThreadBadge count={partCount} label={labels.threadBadge} />
+          )}
           {post.permalink && (
             <a
               href={post.permalink}
@@ -274,35 +455,182 @@ function PostDetail({
           <p className="text-muted-foreground text-[11px] leading-4 font-semibold tracking-[0.08em] uppercase">
             {labels.vsTypeMedian ?? labels.vsMedianViews ?? labels.vsAvgViews}
           </p>
-          <p className="mt-1.5 flex items-baseline gap-2">
-            <span
-              className={cn(
-                "text-2xl leading-7 font-semibold tracking-[-0.01em] tabular-nums",
-                post.viewsVsTypeMedian >= 1
-                  ? "text-green-700 dark:text-green-400"
-                  : "text-red-600 dark:text-red-400",
-              )}
+          <p
+            className={cn(
+              "mt-1.5 text-2xl leading-7 font-semibold tracking-[-0.01em] tabular-nums",
+              post.viewsVsTypeMedian >= 1
+                ? "text-green-700 dark:text-green-400"
+                : "text-red-600 dark:text-red-400",
+            )}
+          >
+            <svg
+              aria-hidden
+              width="9"
+              height="9"
+              viewBox="0 0 8 8"
+              className={cn("mr-1 inline-block", post.viewsVsTypeMedian < 1 && "rotate-180")}
             >
-              <svg
-                aria-hidden
-                width="9"
-                height="9"
-                viewBox="0 0 8 8"
-                className={cn(
-                  "mr-1 inline-block shrink-0",
-                  post.viewsVsTypeMedian < 1 && "rotate-180",
-                )}
-              >
-                <path d="M4 0.5 L7.5 6.5 L0.5 6.5 Z" fill="currentColor" />
-              </svg>
-              {post.viewsVsTypeMedian}x
-            </span>
-            <span className="text-muted-foreground text-[11px] leading-4 tabular-nums">
-              {mediaTypeLabel} · {post.typeMedianViews.toLocaleString(locale)}
-            </span>
+              <path d="M4 0.5 L7.5 6.5 L0.5 6.5 Z" fill="currentColor" />
+            </svg>
+            {post.viewsVsTypeMedian}x
+          </p>
+          <p className="text-muted-foreground text-[11px] leading-4 tabular-nums">
+            {mediaTypeLabel} · {post.typeMedianViews.toLocaleString(locale)}
           </p>
         </div>
       </div>
+
+      {/* Thread parts: each continuation's reach as a share of the root's */}
+      {post.threadParts.length > 0 && (
+        <div className="py-5">
+          <div className="mb-3 flex flex-wrap items-baseline justify-between gap-x-3 gap-y-1">
+            <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
+              {labels.threadSection ?? "Thread"} · {partCount}
+            </p>
+            {retention !== null && (
+              <p className="flex items-baseline gap-1.5" title={labels.retentionHelp}>
+                <span className="text-muted-foreground text-[11px]">
+                  {labels.retention ?? "Part 2 Retention"}
+                </span>
+                <span
+                  className={cn(
+                    "text-sm font-semibold tabular-nums",
+                    retentionMedian === null
+                      ? ""
+                      : retention >= retentionMedian
+                        ? "text-green-700 dark:text-green-400"
+                        : "text-red-600 dark:text-red-400",
+                  )}
+                >
+                  {retention}%
+                </span>
+                {retentionMedian !== null && (
+                  <span className="text-muted-foreground text-[11px] tabular-nums">
+                    ({labels.medianShort ?? "Median"} {retentionMedian}%)
+                  </span>
+                )}
+              </p>
+            )}
+          </div>
+          <div className="space-y-4">
+            {threadRows.map((row) => {
+              const share = post.views > 0 ? (row.views / post.views) * 100 : 0;
+              const isLast = row.id === threadRows[threadRows.length - 1].id;
+              return (
+                <div key={row.id} className="flex items-stretch gap-3">
+                  {/* Threads' own thread line: the number badge connects down to the next part */}
+                  <div className="flex shrink-0 flex-col items-center">
+                    <span className="bg-muted text-muted-foreground mt-0.5 inline-flex h-5 min-w-5 items-center justify-center rounded-full px-1.5 text-[11px] font-semibold tabular-nums">
+                      {row.position}
+                    </span>
+                    {!isLast && (
+                      <span aria-hidden className="bg-foreground/15 mt-1.5 -mb-4 w-px flex-1" />
+                    )}
+                  </div>
+                  <div className="min-w-0 flex-1">
+                    <div className="flex items-baseline justify-between gap-3">
+                      <ThreadPartText
+                        text={row.text}
+                        expanded={expandedParts.has(row.id)}
+                        onToggle={() => togglePart(row.id)}
+                        fallback={labels.noText}
+                      />
+                      <span className="flex shrink-0 items-baseline gap-1.5 tabular-nums">
+                        <span className="text-sm font-semibold">
+                          {row.views.toLocaleString(locale)}
+                        </span>
+                        <span className="text-muted-foreground text-xs">{Math.round(share)}%</span>
+                      </span>
+                    </div>
+                    <div className="mt-1.5 flex items-center gap-3">
+                      <div className="bg-muted/60 h-1.5 flex-1 overflow-hidden rounded-full">
+                        <div
+                          className="h-full rounded-full transition-[width] duration-500 ease-out motion-reduce:transition-none"
+                          style={{
+                            width: `${Math.min(100, share)}%`,
+                            backgroundColor: chartPalette.blue,
+                          }}
+                        />
+                      </div>
+                      <span className="text-muted-foreground w-36 shrink-0 text-right text-[11px] tabular-nums">
+                        {row.position > 1 && `${formatGap(row.gapSeconds)} · `}
+                        {row.likes} {labels.likes.toLowerCase()} · {row.replies}{" "}
+                        {labels.replies.toLowerCase()}
+                      </span>
+                    </div>
+                  </div>
+                  {row.position > 1 && row.permalink ? (
+                    <a
+                      href={row.permalink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      aria-label={labels.viewOnThreads}
+                      title={labels.viewOnThreads}
+                      className="text-muted-foreground hover:text-tint mt-0.5 shrink-0"
+                    >
+                      <ExternalLink className="size-3.5" />
+                    </a>
+                  ) : (
+                    <span className="mt-0.5 inline-block size-3.5 shrink-0" />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {part2Kind && (
+            <div className="mt-5">
+              <div className="mb-2 flex items-baseline justify-between gap-3">
+                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
+                  {labels.part2Kind ?? "Part 2 Type"}
+                </p>
+                <span className="text-muted-foreground text-[11px]">
+                  {labels.part2KindHelp ?? "Median part-2 retention by type"}
+                </span>
+              </div>
+              <div className="flex flex-wrap gap-2">
+                {THREAD_PART_KINDS.map((kind) => {
+                  const stat = retentionBenchmark.kinds[kind];
+                  const isCurrent = kind === part2Kind;
+                  return (
+                    <span
+                      key={kind}
+                      className={cn(
+                        "flex items-center gap-1.5 rounded-full py-1 pr-2 pl-2.5 text-xs font-medium",
+                        isCurrent
+                          ? "bg-primary text-primary-foreground"
+                          : "bg-muted/70 text-foreground/70",
+                      )}
+                    >
+                      {kindLabels[kind]}
+                      <span
+                        className={cn(
+                          "rounded-full px-1.5 py-0.5 text-[11px] leading-4 font-semibold tabular-nums",
+                          isCurrent
+                            ? "bg-primary-foreground/15"
+                            : "bg-background/70 text-foreground",
+                        )}
+                      >
+                        {stat.median === null ? "—" : `${stat.median}%`}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[11px] tabular-nums",
+                          isCurrent ? "text-primary-foreground/70" : "text-muted-foreground",
+                        )}
+                      >
+                        {(stat.count === 1
+                          ? (labels.threadsCountOne ?? labels.threadsCount ?? "{count}")
+                          : (labels.threadsCount ?? "{count}")
+                        ).replace("{count}", String(stat.count))}
+                      </span>
+                    </span>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+        </div>
+      )}
 
       {/* Percentiles: reach and engagement rate against the whole range */}
       <div className="space-y-4 py-5">
@@ -419,6 +747,7 @@ export default function PostList({
   medianViews,
   metricRateMedians,
   engagementRateMedian,
+  retention,
   features,
   currentSort,
   currentDir,
@@ -638,6 +967,9 @@ export default function PostList({
                   {post.likes} {labels.likes.toLowerCase()} · {post.replies}{" "}
                   {labels.replies.toLowerCase()}
                 </span>
+                {post.threadParts.length > 0 && (
+                  <ThreadBadge count={post.threadParts.length + 1} label={labels.threadBadge} />
+                )}
                 <span className="text-muted-foreground/80 ml-auto text-[11px] tabular-nums">
                   {formatPostDate(post.timestamp, locale, timeZone)}
                 </span>
@@ -652,10 +984,12 @@ export default function PostList({
         {selectedPost ? (
           <div className="p-6">
             <PostDetail
+              key={selectedPost.id}
               post={selectedPost}
               medianViews={medianViews}
               metricRateMedians={metricRateMedians}
               engagementRateMedian={engagementRateMedian}
+              retention={retention}
               features={features}
               labels={labels}
               dateLocale={dateLocale}

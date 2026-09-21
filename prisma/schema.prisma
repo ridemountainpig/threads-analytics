@@ -24,30 +24,64 @@ model ThreadsAccount {
   createdAt         DateTime           @default(now()) @db.Timestamptz(3)
   isActive          Boolean            @default(false)
   posts             Post[]
+  threadReplies     ThreadReply[]
   syncState         SyncState?
   followerSnapshots FollowerSnapshot[]
 }
 
 model Post {
-  id        String         @id
-  accountId String
-  account   ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  text      String
-  timestamp DateTime       @db.Timestamptz(3)
-  mediaType String
-  permalink String
-  views     Int            @default(0)
-  likes     Int            @default(0)
-  replies   Int            @default(0)
-  reposts   Int            @default(0)
-  quotes    Int            @default(0)
-  shares    Int            @default(0)
-  syncedAt  DateTime       @default(now()) @db.Timestamptz(3)
+  id            String         @id
+  accountId     String
+  account       ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  text          String
+  timestamp     DateTime       @db.Timestamptz(3)
+  mediaType     String
+  permalink     String
+  views         Int            @default(0)
+  likes         Int            @default(0)
+  replies       Int            @default(0)
+  reposts       Int            @default(0)
+  quotes        Int            @default(0)
+  shares        Int            @default(0)
+  syncedAt      DateTime       @default(now()) @db.Timestamptz(3)
+  threadReplies ThreadReply[]
 
   @@index([accountId, timestamp])
   @@index([accountId, views])
   @@index([accountId, likes])
   @@index([accountId, mediaType])
+}
+
+// The author's own continuations of a root post (the "2/", "3/" parts of a
+// thread). Kept apart from Post so nothing that aggregates posts can count a
+// part as a post. Replies to commenters and replies under other accounts'
+// posts are never stored — see lib/thread-replies.ts for the rule.
+model ThreadReply {
+  id          String         @id
+  accountId   String
+  account     ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  rootPostId  String
+  rootPost    Post           @relation(fields: [rootPostId], references: [id], onDelete: Cascade)
+  repliedToId String
+  // Part number within the thread; the root post is part 1.
+  position    Int
+  // Seconds after the part it replies to — near zero when the thread was
+  // composed in one go, large when the author came back to add to it.
+  gapSeconds  Int
+  text        String
+  timestamp   DateTime       @db.Timestamptz(3)
+  mediaType   String
+  permalink   String
+  views       Int            @default(0)
+  likes       Int            @default(0)
+  replies     Int            @default(0)
+  reposts     Int            @default(0)
+  quotes      Int            @default(0)
+  shares      Int            @default(0)
+  syncedAt    DateTime       @default(now()) @db.Timestamptz(3)
+
+  @@index([rootPostId, position])
+  @@index([accountId, timestamp])
 }
 
 // followers_count and follower_demographics are lifetime snapshots: the Threads
@@ -68,9 +102,12 @@ model FollowerSnapshot {
 }
 
 model SyncState {
-  accountId    String         @id
-  account      ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  lastSyncedAt DateTime       @db.Timestamptz(3)
+  accountId       String         @id
+  account         ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  lastSyncedAt    DateTime       @db.Timestamptz(3)
+  // Advances only when a thread-reply pull completes, so a failed pull is
+  // retried over the same window instead of being skipped by the next sync.
+  repliesSyncedAt DateTime?      @db.Timestamptz(3)
 }
 
 model AppSettings {
@@ -79,11 +116,11 @@ model AppSettings {
 }
 
 model OAuthClient {
-  id           String      @id @default(cuid())
+  id           String       @id @default(cuid())
   name         String
   redirectUris Json
-  createdAt    DateTime    @default(now()) @db.Timestamptz(3)
-  authorizedAt DateTime?   @db.Timestamptz(3)
+  createdAt    DateTime     @default(now()) @db.Timestamptz(3)
+  authorizedAt DateTime?    @db.Timestamptz(3)
   codes        OAuthCode[]
   tokens       OAuthToken[]
 }
