@@ -366,12 +366,15 @@ export function computeBestTimeToPost(
     .sort((a, b) => a.hour - b.hour);
 }
 
-export function computeContentTypeAnalysis(posts: PostWithInsights[]): CategoryPerformancePoint[] {
+export function computeGroupedPerformance(
+  posts: PostWithInsights[],
+  groupOf: (post: PostWithInsights) => string,
+): CategoryPerformancePoint[] {
   const baselineMedianViews = getBaselineMedianViews(posts);
   const buckets = new Map<string, AggregateBucket>();
 
   for (const post of posts) {
-    const type = post.mediaType;
+    const type = groupOf(post);
     const existing = buckets.get(type) ?? emptyBucket();
     addPostToBucket(existing, post);
     buckets.set(type, existing);
@@ -393,6 +396,10 @@ export function computeContentTypeAnalysis(posts: PostWithInsights[]): CategoryP
       }),
     }))
     .sort((a, b) => b.medianViews - a.medianViews);
+}
+
+export function computeContentTypeAnalysis(posts: PostWithInsights[]): CategoryPerformancePoint[] {
+  return computeGroupedPerformance(posts, (post) => post.mediaType);
 }
 
 export function computeDayHourHeatmap(
@@ -1604,28 +1611,30 @@ export interface TextFeatureComparisonPoint {
 const hasLink = (text: string) => /https?:\/\//i.test(text);
 const hasQuestion = (text: string) => text.includes("?") || text.includes("？");
 
+export function computeTextFeatureStats(subset: PostWithInsights[]): TextFeatureStats {
+  const bucket = emptyBucket();
+  for (const post of subset) addPostToBucket(bucket, post);
+  const rates = getMetricRates({
+    views: bucket.totalViews,
+    likes: bucket.totalLikes,
+    replies: bucket.totalReplies,
+    reposts: bucket.totalReposts,
+    quotes: bucket.totalQuotes,
+    shares: bucket.totalShares,
+  });
+  return {
+    postCount: bucket.count,
+    medianViews: getMedian(bucket.views),
+    engagementRate: rates.engagementRate,
+    replyRate: rates.replyRate,
+    shareRate: rates.shareRate,
+  };
+}
+
 export function computeTextFeatureComparison(
   posts: PostWithInsights[],
 ): TextFeatureComparisonPoint[] {
-  const statsFor = (subset: PostWithInsights[]): TextFeatureStats => {
-    const bucket = emptyBucket();
-    for (const post of subset) addPostToBucket(bucket, post);
-    const rates = getMetricRates({
-      views: bucket.totalViews,
-      likes: bucket.totalLikes,
-      replies: bucket.totalReplies,
-      reposts: bucket.totalReposts,
-      quotes: bucket.totalQuotes,
-      shares: bucket.totalShares,
-    });
-    return {
-      postCount: bucket.count,
-      medianViews: getMedian(bucket.views),
-      engagementRate: rates.engagementRate,
-      replyRate: rates.replyRate,
-      shareRate: rates.shareRate,
-    };
-  };
+  const statsFor = computeTextFeatureStats;
 
   const features: Array<{
     feature: TextFeatureComparisonPoint["feature"];
