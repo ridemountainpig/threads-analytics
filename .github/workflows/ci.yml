@@ -52,6 +52,10 @@ jobs:
 
   native-shell:
     runs-on: macos-14
+    permissions:
+      contents: read
+      # Only used to post the test-build download link on the PR.
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v7
@@ -85,3 +89,66 @@ jobs:
 
       - name: Test Native SDK shell
         run: node_modules/.bin/native test desktop --yes
+
+      # ditto keeps the bundle's symlinks and executable bits, which
+      # upload-artifact's own zipping would drop; archive: false then uploads
+      # that zip as-is instead of wrapping it in a second archive.
+      - name: Zip test build
+        id: test-build
+        working-directory: desktop/zig-out/package
+        env:
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+        run: |
+          set -euo pipefail
+          label="${HEAD_SHA:0:7}"
+          if [[ -n "$PR_NUMBER" ]]; then label="pr${PR_NUMBER}-${label}"; fi
+          asset="Threads-Analytics-${label}-macos-arm64.zip"
+          ditto -c -k --keepParent Threads-Analytics.app "$RUNNER_TEMP/$asset"
+          echo "path=$RUNNER_TEMP/$asset" >> "$GITHUB_OUTPUT"
+          echo "asset=$asset" >> "$GITHUB_OUTPUT"
+
+      - name: Upload test build
+        id: upload
+        uses: actions/upload-artifact@v7
+        with:
+          path: ${{ steps.test-build.outputs.path }}
+          archive: false
+          retention-days: 14
+          if-no-files-found: error
+
+      # Fork PRs get a read-only token, so they only get the artifact on the
+      # run page. One comment per PR, updated in place on every push.
+      - name: Comment test build link on PR
+        if: github.event_name == 'pull_request' && github.event.pull_request.head.repo.full_name == github.repository
+        env:
+          GH_TOKEN: ${{ github.token }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          ASSET: ${{ steps.test-build.outputs.asset }}
+          ARTIFACT_URL: ${{ steps.upload.outputs.artifact-url }}
+          RUN_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+        run: |
+          set -euo pipefail
+          marker="<!-- desktop-test-build -->"
+          body="$(cat <<BODY
+          $marker
+          ### macOS test build
+
+          [\`$ASSET\`]($ARTIFACT_URL) — built from $HEAD_SHA ([run]($RUN_URL)). Apple silicon only; the download needs a GitHub login and expires after 14 days.
+
+          The build is ad-hoc signed and not notarized, so after unzipping, clear the quarantine flag before the first launch:
+
+          \`\`\`bash
+          xattr -dr com.apple.quarantine Threads-Analytics.app
+          \`\`\`
+          BODY
+          )"
+          comment_id="$(gh api "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" --paginate \
+            --jq ".[] | select(.user.login == \"github-actions[bot]\" and (.body | startswith(\"$marker\"))) | .id")"
+          comment_id="${comment_id%%$'\n'*}"
+          if [[ -n "$comment_id" ]]; then
+            gh api --method PATCH "repos/$GITHUB_REPOSITORY/issues/comments/$comment_id" -f body="$body" > /dev/null
+          else
+            gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$body" > /dev/null
+          fi
