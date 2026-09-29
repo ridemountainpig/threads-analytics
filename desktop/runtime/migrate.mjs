@@ -1,4 +1,5 @@
 import Database from "better-sqlite3";
+import { randomBytes } from "node:crypto";
 import { chmodSync, existsSync, mkdirSync, readdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 
@@ -69,7 +70,13 @@ export async function migrateDatabase({
     let backupPath = null;
     if (databaseExisted) {
       const timestamp = new Date().toISOString().replaceAll(":", "-");
-      backupPath = path.join(backupDirectory, `${BACKUP_PREFIX}${timestamp}${BACKUP_SUFFIX}`);
+      // The random tail keeps two launches in the same millisecond from
+      // writing the same file; the timestamp prefix still sorts by age.
+      const unique = randomBytes(4).toString("hex");
+      backupPath = path.join(
+        backupDirectory,
+        `${BACKUP_PREFIX}${timestamp}-${unique}${BACKUP_SUFFIX}`,
+      );
       await database.backup(backupPath);
       chmodSync(backupPath, 0o600);
       pruneBackups(backupDirectory, backupRetention);
