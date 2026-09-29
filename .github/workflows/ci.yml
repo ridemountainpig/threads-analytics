@@ -1,7 +1,10 @@
 name: CI
 
+# Branch pushes are covered by their pull_request run; only main gets a push
+# run, so each PR update runs CI once instead of twice.
 on:
   push:
+    branches: [main]
   pull_request:
 
 permissions:
