@@ -26,6 +26,7 @@
 ## 目次
 
 - [機能](#機能)
+- [macOS デスクトップ版](#macos-デスクトップ版)
 - [クイックスタート](#クイックスタート)
 - [Threads アクセストークンの取得](#threads-アクセストークンの取得)
 - [MCP サーバー](#mcp-サーバー)
@@ -62,6 +63,16 @@
     <td width="50%"><img src="public/demo/content.png" alt="アナリティクス — コンテンツ傾向と投稿アクティビティ" /></td>
   </tr>
 </table>
+
+---
+
+## macOS デスクトップ版
+
+Apple Silicon 搭載 Mac（M1 以降）では、[GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) からデスクトップ版を直接ダウンロードできます。Node.js、pnpm、PostgreSQL を別途インストールする必要はありません。現在、Intel Mac 版は提供していません。
+
+ダウンロード、初回起動、アップデート、アンインストールの手順は、[macOS インストールガイド](./desktop/docs/install-macos-ja.md)を参照してください。
+
+デスクトップ版をソースからビルドする場合は、[デスクトップ版 README](./desktop/README-ja.md)を参照してください。
 
 ---
 

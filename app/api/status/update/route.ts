@@ -1,17 +1,13 @@
 import { NextResponse } from "next/server";
 import { requireApiSession, unauthorizedResponse } from "@/lib/api-auth";
-import {
-  getImageUpdateStatus,
-  getResolvedImageVersionLink,
-  type ImageUpdateStatusPayload,
-} from "@/lib/image-update";
+import { getResolvedUpdateStatus } from "@/lib/update-check";
+import type { UpdateStatusPayload } from "@/lib/update-status";
 
 export async function GET() {
   if (!(await requireApiSession())) return unauthorizedResponse();
 
-  const [status, versionLink] = await Promise.all([
-    getImageUpdateStatus(),
-    getResolvedImageVersionLink(),
-  ]);
-  return NextResponse.json({ ...status, versionLink } satisfies ImageUpdateStatusPayload);
+  const status = await getResolvedUpdateStatus();
+  return NextResponse.json(status satisfies UpdateStatusPayload, {
+    headers: { "Cache-Control": "no-store" },
+  });
 }

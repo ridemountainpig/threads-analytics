@@ -4,36 +4,36 @@ import { useEffect, useState } from "react";
 import { RefreshCw, X } from "lucide-react";
 import { Collapse } from "@/components/ui/collapse";
 import type { Locale } from "@/lib/i18n";
-import { UPDATE_GUIDE_URLS } from "@/lib/update-guide";
-import { useImageUpdateStatus } from "@/components/dashboard/use-image-update-status";
+import { updateGuideUrl } from "@/lib/update-guide";
+import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
-const DISMISSED_DIGEST_KEY = "threads_analytics_dismissed_image_digest";
+const DISMISSED_UPDATE_KEY = "threads_analytics_dismissed_update";
 
-export default function ImageUpdateBanner({
+export default function UpdateBanner({
   locale,
   labels,
 }: {
   locale: Locale;
-  labels: { newImageAvailable: string; howToUpdate: string; dismiss: string };
+  labels: { newVersionAvailable: string; howToUpdate: string; dismiss: string };
 }) {
-  const [latestDigest, setLatestDigest] = useState<string | null>(null);
+  const [updateId, setUpdateId] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   // The banner is best-effort; a failed check should never disturb the dashboard.
-  const { status } = useImageUpdateStatus();
+  const { status } = useUpdateStatus();
 
   useEffect(() => {
-    if (!status?.updateAvailable || !status.latestDigest) return;
+    if (!status?.updateAvailable || !status.updateId) return;
     try {
-      if (window.localStorage.getItem(DISMISSED_DIGEST_KEY) === status.latestDigest) return;
+      if (window.localStorage.getItem(DISMISSED_UPDATE_KEY) === status.updateId) return;
     } catch {
       // Private browsing modes may block localStorage; show the banner anyway.
     }
-    setLatestDigest(status.latestDigest);
+    setUpdateId(status.updateId);
   }, [status]);
 
   function dismiss() {
     try {
-      if (latestDigest) window.localStorage.setItem(DISMISSED_DIGEST_KEY, latestDigest);
+      if (updateId) window.localStorage.setItem(DISMISSED_UPDATE_KEY, updateId);
     } catch {
       // Private browsing modes may block localStorage; still hide the banner.
     }
@@ -43,13 +43,13 @@ export default function ImageUpdateBanner({
   // The banner arrives after an async check, so it eases in (and out on
   // dismiss) instead of shoving the dashboard down mid-read.
   return (
-    <Collapse open={Boolean(latestDigest) && !dismissed}>
+    <Collapse open={Boolean(updateId) && !dismissed}>
       <div className="bg-muted/50 border-border/60 flex items-center gap-3 border-b px-4 py-2.5 text-sm">
         <RefreshCw className="text-muted-foreground size-4 shrink-0" />
         <p className="min-w-0 flex-1">
-          {labels.newImageAvailable}{" "}
+          {labels.newVersionAvailable}{" "}
           <a
-            href={UPDATE_GUIDE_URLS[locale]}
+            href={updateGuideUrl(locale)}
             target="_blank"
             rel="noreferrer"
             className="text-tint font-medium underline underline-offset-2"

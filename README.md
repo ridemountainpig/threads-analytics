@@ -26,6 +26,7 @@
 ## Table of Contents
 
 - [Features](#features)
+- [macOS Desktop App](#macos-desktop-app)
 - [Quick Start](#quick-start)
 - [Getting Your Threads Access Token](#getting-your-threads-access-token)
 - [MCP Server](#mcp-server)
@@ -62,6 +63,16 @@
     <td width="50%"><img src="public/demo/content.png" alt="Analytics — Content patterns and posting activity" /></td>
   </tr>
 </table>
+
+---
+
+## macOS Desktop App
+
+Macs with Apple silicon (M1 or later) can download the desktop app directly from [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases), with no need to install Node.js, pnpm, or PostgreSQL. An Intel Mac build is not currently available.
+
+See the [macOS installation guide](./desktop/docs/install-macos.md) for download, first launch, update, and uninstall instructions.
+
+To build the desktop app from source, see the [desktop README](./desktop/README.md).
 
 ---
 

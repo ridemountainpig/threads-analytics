@@ -1,0 +1,16 @@
+{
+  "extends": "./tsconfig.json",
+  "compilerOptions": {
+    "moduleSuffixes": [".desktop", ""],
+    "tsBuildInfoFile": "./desktop/tsconfig.tsbuildinfo"
+  },
+  "exclude": [
+    "node_modules",
+    "website",
+    "desktop/dist",
+    "desktop/zig-out",
+    "lib/database/target.web.ts",
+    "lib/database/sync-lock-target.web.ts",
+    "lib/database/post-benchmarks-target.web.ts"
+  ]
+}

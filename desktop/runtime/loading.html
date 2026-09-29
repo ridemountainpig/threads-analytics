@@ -1,0 +1,129 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Threads Analytics</title>
+    <style>
+      :root {
+        color-scheme: light dark;
+        font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+      }
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        background: Canvas;
+        color: CanvasText;
+      }
+      main {
+        display: grid;
+        gap: 14px;
+        justify-items: center;
+      }
+      .spinner {
+        width: 28px;
+        height: 28px;
+        border: 3px solid color-mix(in srgb, CanvasText 18%, transparent);
+        border-top-color: CanvasText;
+        border-radius: 999px;
+        animation: spin 0.8s linear infinite;
+      }
+      p {
+        margin: 0;
+        opacity: 0.7;
+        font-size: 14px;
+        max-width: 320px;
+        text-align: center;
+      }
+      #error[hidden] {
+        display: none;
+      }
+      #error {
+        display: grid;
+        gap: 14px;
+        justify-items: center;
+      }
+      #error p {
+        opacity: 1;
+      }
+      button {
+        font: inherit;
+        padding: 8px 18px;
+        border-radius: 8px;
+        border: 1px solid color-mix(in srgb, CanvasText 25%, transparent);
+        background: color-mix(in srgb, CanvasText 8%, transparent);
+        color: CanvasText;
+        cursor: pointer;
+      }
+      button:hover {
+        background: color-mix(in srgb, CanvasText 14%, transparent);
+      }
+      @keyframes spin {
+        to {
+          transform: rotate(360deg);
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <main>
+      <div class="spinner" id="spinner"></div>
+      <p id="status">Starting Threads Analytics…</p>
+      <div id="error" hidden>
+        <p>Threads Analytics couldn't reach its local server.</p>
+        <button id="retry" type="button">Try again</button>
+      </div>
+    </main>
+    <script>
+      const target = "http://127.0.0.1:43127/";
+      const softTimeoutMs = 15000;
+      const hardTimeoutMs = 60000;
+      const spinner = document.getElementById("spinner");
+      const status = document.getElementById("status");
+      const errorBox = document.getElementById("error");
+      const retry = document.getElementById("retry");
+
+      let startedAt = Date.now();
+      let stopped = false;
+
+      function showError() {
+        stopped = true;
+        spinner.hidden = true;
+        status.hidden = true;
+        errorBox.hidden = false;
+      }
+
+      async function connect() {
+        if (stopped) return;
+        const elapsed = Date.now() - startedAt;
+        if (elapsed >= hardTimeoutMs) {
+          showError();
+          return;
+        }
+        if (elapsed >= softTimeoutMs) {
+          status.textContent = "Still starting… the first launch can take a moment.";
+        }
+        try {
+          await fetch(target + "api/status", { mode: "no-cors", cache: "no-store" });
+          location.replace(target);
+        } catch {
+          setTimeout(connect, 350);
+        }
+      }
+
+      retry.addEventListener("click", () => {
+        errorBox.hidden = true;
+        spinner.hidden = false;
+        status.hidden = false;
+        status.textContent = "Starting Threads Analytics…";
+        startedAt = Date.now();
+        stopped = false;
+        connect();
+      });
+
+      connect();
+    </script>
+  </body>
+</html>

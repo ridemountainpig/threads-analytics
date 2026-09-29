@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  application:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate Prisma clients
+        run: |
+          pnpm prisma:generate
+          pnpm desktop:prisma:generate
+
+      - name: Validate Prisma schemas
+        run: |
+          pnpm prisma:validate
+          pnpm desktop:prisma:validate
+
+      - name: Type-check web and desktop targets
+        run: |
+          pnpm typecheck
+          pnpm desktop:typecheck
+
+      - name: Test desktop runtime contracts
+        run: pnpm desktop:test
+
+      - name: Build desktop Next.js runtime
+        run: pnpm desktop:build:web
+
+  native-shell:
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Validate packaging runtime
+        run: pnpm desktop:package:check
+
+      - name: Validate Native SDK manifest
+        run: node_modules/.bin/native validate desktop/app.json
+
+      # Builds the web runtime and the Native SDK shell, then bundles both.
+      - name: Package macOS app
+        run: pnpm desktop:package:macos
+
+      # Boots the packaged sidecar from outside the checkout, where the repo's
+      # node_modules cannot mask a dependency missing from the bundle.
+      - name: Smoke-test packaged app
+        run: pnpm desktop:smoke:macos
+
+      - name: Test Native SDK shell
+        run: node_modules/.bin/native test desktop --yes

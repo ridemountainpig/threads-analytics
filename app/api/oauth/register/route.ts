@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { createIpRateLimiter, getClientIp } from "@/lib/login-rate-limit";
 import { isAllowedRedirectUri, registerClient } from "@/lib/oauth";
+import { isDesktopApp } from "@/lib/runtime-target";
 
 const CORS = {
   "Access-Control-Allow-Origin": "*",
@@ -37,7 +38,9 @@ export async function POST(request: Request) {
   ) {
     return errorResponse(
       "invalid_redirect_uri",
-      "redirect_uris must be https or loopback http URLs",
+      isDesktopApp
+        ? "redirect_uris must be loopback http URLs"
+        : "redirect_uris must be https or loopback http URLs",
     );
   }
 

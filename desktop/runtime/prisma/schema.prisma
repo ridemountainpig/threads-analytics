@@ -1,0 +1,156 @@
+generator client {
+  provider = "prisma-client-js"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Session {
+  id        String   @id @default(cuid())
+  token     String   @unique
+  createdAt DateTime @default(now())
+  expiresAt DateTime
+}
+
+model ThreadsAccount {
+  id                String             @id
+  username          String
+  accessToken       String
+  expiresAt         DateTime
+  tokenRefreshedAt  DateTime?
+  tokenCheckedAt    DateTime?
+  createdAt         DateTime           @default(now())
+  isActive          Boolean            @default(false)
+  posts             Post[]
+  threadReplies     ThreadReply[]
+  syncState         SyncState?
+  followerSnapshots FollowerSnapshot[]
+}
+
+model Post {
+  id            String         @id
+  accountId     String
+  account       ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  text          String
+  timestamp     DateTime
+  mediaType     String
+  permalink     String
+  views         Int            @default(0)
+  likes         Int            @default(0)
+  replies       Int            @default(0)
+  reposts       Int            @default(0)
+  quotes        Int            @default(0)
+  shares        Int            @default(0)
+  syncedAt      DateTime       @default(now())
+  threadReplies ThreadReply[]
+
+  @@index([accountId, timestamp])
+  @@index([accountId, views])
+  @@index([accountId, likes])
+  @@index([accountId, mediaType])
+}
+
+// The author's own continuations of a root post (the "2/", "3/" parts of a
+// thread). Kept apart from Post so nothing that aggregates posts can count a
+// part as a post. Replies to commenters and replies under other accounts'
+// posts are never stored — see lib/thread-replies.ts for the rule.
+model ThreadReply {
+  id          String         @id
+  accountId   String
+  account     ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  rootPostId  String
+  rootPost    Post           @relation(fields: [rootPostId], references: [id], onDelete: Cascade)
+  repliedToId String
+  // Part number within the thread; the root post is part 1.
+  position    Int
+  // Seconds after the part it replies to — near zero when the thread was
+  // composed in one go, large when the author came back to add to it.
+  gapSeconds  Int
+  text        String
+  timestamp   DateTime
+  mediaType   String
+  permalink   String
+  views       Int            @default(0)
+  likes       Int            @default(0)
+  replies     Int            @default(0)
+  reposts     Int            @default(0)
+  quotes      Int            @default(0)
+  shares      Int            @default(0)
+  syncedAt    DateTime       @default(now())
+
+  @@index([rootPostId, position])
+  @@index([accountId, timestamp])
+}
+
+// followers_count and follower_demographics are lifetime snapshots: the Threads
+// API rejects since/until on them and only ever reports "right now". History can
+// therefore never be backfilled — it only exists because each sync writes one
+// row per local calendar day here.
+model FollowerSnapshot {
+  accountId      String
+  account        ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  date           DateTime
+  followersCount Int
+  // { country: [{ key, value }], city: [...], age: [...], gender: [...] }
+  // Null until the profile crosses the API's 100-follower threshold.
+  demographics   Json?
+  capturedAt     DateTime       @default(now())
+
+  @@id([accountId, date])
+}
+
+model SyncState {
+  accountId       String         @id
+  account         ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  lastSyncedAt    DateTime
+  // Advances only when a thread-reply pull completes, so a failed pull is
+  // retried over the same window instead of being skipped by the next sync.
+  repliesSyncedAt DateTime?
+}
+
+model AppSettings {
+  key   String @id
+  value String
+}
+
+model OAuthClient {
+  id           String       @id @default(cuid())
+  name         String
+  redirectUris Json
+  createdAt    DateTime     @default(now())
+  authorizedAt DateTime?
+  codes        OAuthCode[]
+  tokens       OAuthToken[]
+}
+
+// code / accessToken / refreshToken store SHA-256 hashes; the raw values only
+// ever exist in the redirect and token responses handed to the client.
+model OAuthCode {
+  code          String      @id
+  clientId      String
+  client        OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  redirectUri   String
+  codeChallenge String
+  scope         String
+  expiresAt     DateTime
+  createdAt     DateTime    @default(now())
+}
+
+model OAuthToken {
+  id               String      @id @default(cuid())
+  accessToken      String      @unique
+  refreshToken     String      @unique
+  clientId         String
+  client           OAuthClient @relation(fields: [clientId], references: [id], onDelete: Cascade)
+  scope            String
+  familyId         String
+  accessExpiresAt  DateTime
+  refreshExpiresAt DateTime
+  rotatedAt        DateTime?
+  createdAt        DateTime    @default(now())
+  lastUsedAt       DateTime?
+
+  @@index([familyId])
+}

@@ -8,8 +8,9 @@ import ConnectedAgents from "./connected-agents";
 import SyncButton from "@/components/dashboard/sync-button";
 import SyncIntervalSetting from "./sync-interval-setting";
 import VersionInfo from "./version-info";
-import { getImageVersionLink } from "@/lib/image-update";
+import { getCurrentVersionLink } from "@/lib/update-check";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
+import { isDesktopApp } from "@/lib/runtime-target";
 import { getServerTimezone } from "@/lib/server-timezone";
 
 export default async function SettingsPage() {
@@ -98,7 +99,9 @@ export default async function SettingsPage() {
 
               <div className="border-t pt-5">
                 <p className="mb-1 text-sm font-medium">{t.settingsPage.autoSync}</p>
-                <p className="text-muted-foreground mb-3 text-sm">{t.settingsPage.autoSyncSub}</p>
+                <p className="text-muted-foreground mb-3 text-sm">
+                  {isDesktopApp ? t.settingsPage.autoSyncSubDesktop : t.settingsPage.autoSyncSub}
+                </p>
                 <SyncIntervalSetting
                   currentInterval={syncInterval}
                   labels={{
@@ -132,16 +135,29 @@ export default async function SettingsPage() {
           </CardContent>
         </Card>
 
+        {/* Web deployments track the published Docker image; the desktop app
+            tracks GitHub Releases. Both surface through the same card. */}
         <Card>
           <CardHeader>
             <CardTitle className="text-base">{t.versionInfo.title}</CardTitle>
-            <CardDescription>{t.versionInfo.subtitle}</CardDescription>
+            <CardDescription>
+              {isDesktopApp ? t.versionInfo.subtitleDesktop : t.versionInfo.subtitle}
+            </CardDescription>
           </CardHeader>
           <CardContent>
             <VersionInfo
-              version={getImageVersionLink()}
+              version={getCurrentVersionLink()}
               locale={locale}
-              labels={{ ...t.versionInfo, howToUpdate: t.updateBanner.howToUpdate }}
+              labels={{
+                ...t.versionInfo,
+                sourceBuild: isDesktopApp
+                  ? t.versionInfo.sourceBuildDesktop
+                  : t.versionInfo.sourceBuild,
+                sourceBuildHelp: isDesktopApp
+                  ? t.versionInfo.sourceBuildHelpDesktop
+                  : t.versionInfo.sourceBuildHelp,
+                howToUpdate: t.updateBanner.howToUpdate,
+              }}
             />
           </CardContent>
         </Card>

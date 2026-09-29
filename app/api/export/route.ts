@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
+import { textContainsInsensitive } from "@/lib/database/text-search";
 import { Prisma } from "@/lib/generated/prisma";
 import { requireApiSession, unauthorizedResponse } from "@/lib/api-auth";
 import { getTimeRange } from "@/lib/time-range";
@@ -62,7 +63,7 @@ export async function GET(request: NextRequest) {
     accountId: account.id,
     timestamp: { gte: since, lte: until },
     mediaType: { not: "REPOST_FACADE" },
-    ...(query ? { text: { contains: query, mode: "insensitive" as const } } : {}),
+    ...(query ? { text: textContainsInsensitive(query) } : {}),
     ...(mediaFilter && mediaFilter !== "REPOST_FACADE" ? { mediaType: mediaFilter } : {}),
   };
 
