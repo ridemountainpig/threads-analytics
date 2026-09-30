@@ -1,25 +1,33 @@
 import type { MetadataRoute } from "next";
+import { guideMeta, guideSlugs } from "@/lib/guides";
 import { defaultLocale, locales } from "@/lib/locales";
 import { siteConfig } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
-  const routes = [
-    "",
-    "/deploy/railway-agent",
-    "/deploy/zeabur-agent",
-    "/deploy/vercel-agent",
-    "/token-guide",
-    "/mcp",
-    "/giveaway",
-    "/analytics",
+  const guideDates = guideSlugs.map((slug) => guideMeta[slug].modified);
+  const routes: { path: string; lastModified?: string }[] = [
+    { path: "" },
+    { path: "/deploy/railway-agent" },
+    { path: "/deploy/zeabur-agent" },
+    { path: "/deploy/vercel-agent" },
+    { path: "/token-guide" },
+    { path: "/mcp" },
+    { path: "/giveaway" },
+    { path: "/analytics" },
+    { path: "/guides", lastModified: guideDates.toSorted().at(-1) },
+    ...guideSlugs.map((slug) => ({
+      path: `/guides/${slug}`,
+      lastModified: guideMeta[slug].modified,
+    })),
   ];
 
-  // No lastModified: stamping every URL with the build date would tell
-  // crawlers the whole site changed on every deploy, which teaches them to
-  // ignore the field entirely.
-  return routes.flatMap((route) =>
+  // Only the guides carry lastModified, from their hand-kept dates. Stamping
+  // every URL with the build date would tell crawlers the whole site changed
+  // on every deploy, which teaches them to ignore the field entirely.
+  return routes.flatMap(({ path: route, lastModified }) =>
     locales.map((locale) => ({
       url: `${siteConfig.url}/${locale}${route}`,
+      ...(lastModified && { lastModified }),
       alternates: {
         languages: {
           ...Object.fromEntries(locales.map((item) => [item, `${siteConfig.url}/${item}${route}`])),

@@ -334,6 +334,37 @@ summary:focus-visible {
   }
 }
 
+/* The rule fades in over the first stretch of scroll, so the bar sits flush
+   on the hero and only separates once content slides under it. Colour-only,
+   so it stays on under reduced motion; without support the rule is static. */
+@supports (animation-timeline: scroll()) {
+  .site-header {
+    border-bottom-color: transparent;
+    animation: header-scrolled linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 72px;
+  }
+
+  @media (prefers-reduced-motion: no-preference) {
+    .site-header {
+      animation:
+        header-enter 480ms var(--ease-out) both,
+        header-scrolled linear both;
+      animation-timeline: auto, scroll(root);
+      animation-range:
+        normal,
+        0 72px;
+    }
+  }
+}
+
+@keyframes header-scrolled {
+  to {
+    border-bottom-color: var(--rule);
+    box-shadow: 0 10px 30px -22px rgba(43, 26, 56, 0.4);
+  }
+}
+
 /* Suspend infinite/ambient loops while their section is off-screen. */
 .is-motion-paused,
 .is-motion-paused *,
@@ -357,6 +388,7 @@ summary:focus-visible {
   font-size: 14px;
   font-weight: 680;
   letter-spacing: -0.02em;
+  white-space: nowrap;
   transition: transform 160ms var(--ease-out);
 }
 
@@ -385,23 +417,18 @@ summary:focus-visible {
 .desktop-nav {
   display: flex;
   align-items: center;
-  gap: 30px;
+  gap: 4px;
   color: var(--ink-soft);
   font-size: 13px;
   font-weight: 520;
 }
 
-.desktop-nav a,
 .site-footer a {
   transition: color 160ms ease;
 }
 
-.desktop-nav a:hover {
-  color: var(--accent);
-}
-
-/* Feature group in the primary nav: the same <details> popover as the
-   language menu, with a trigger that reads as one of the nav links. */
+/* Each primary-nav group is the same <details> popover as the language
+   menu, with a pill trigger that reads as a nav link. */
 .nav-menu {
   position: relative;
 }
@@ -410,10 +437,15 @@ summary:focus-visible {
   display: inline-flex;
   gap: 4px;
   align-items: center;
+  min-height: 34px;
+  padding: 0 12px;
+  border-radius: 999px;
   color: inherit;
   cursor: pointer;
   list-style: none;
-  transition: color 160ms ease;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease;
 }
 
 .nav-menu summary::-webkit-details-marker {
@@ -422,7 +454,14 @@ summary:focus-visible {
 
 .nav-menu summary:hover,
 .nav-menu[open] summary {
-  color: var(--accent);
+  background: color-mix(in srgb, var(--accent-soft) 50%, transparent);
+  color: var(--ink);
+}
+
+/* The group holding the current page reads in ink; the dropdown marks the
+   page itself. */
+.nav-menu[data-current] summary {
+  color: var(--ink);
 }
 
 .nav-menu-chevron {
@@ -438,13 +477,13 @@ summary:focus-visible {
 /* Left-aligned (not centred) so the entrance keyframes own `transform`. */
 .nav-menu-popover {
   position: absolute;
-  top: calc(100% + 14px);
-  left: -10px;
+  top: calc(100% + 10px);
+  left: 0;
   display: grid;
-  min-width: 196px;
+  min-width: 290px;
   padding: 6px;
   border: 1px solid var(--rule);
-  border-radius: 12px;
+  border-radius: 14px;
   background: var(--paper-strong);
   box-shadow: 0 16px 45px rgba(26, 22, 18, 0.12);
   transform-origin: top left;
@@ -459,27 +498,48 @@ summary:focus-visible {
   right: 0;
   bottom: 100%;
   left: 0;
-  height: 14px;
+  height: 10px;
 }
 
 .nav-menu-popover a {
   display: flex;
-  gap: 10px;
+  gap: 12px;
   align-items: center;
-  padding: 9px 12px;
-  border-radius: 8px;
-  color: var(--ink-soft);
-  font-size: 13.5px;
-  font-weight: 600;
+  padding: 8px 14px 8px 8px;
+  border-radius: 10px;
   white-space: nowrap;
-  transition:
-    color 140ms ease,
-    background-color 140ms ease;
+  transition: background-color 140ms ease;
 }
 
 .nav-menu-popover a:hover {
-  background: color-mix(in srgb, var(--accent-soft) 55%, transparent);
+  background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
+}
+
+.nav-menu-popover a[aria-current="page"] {
+  background: color-mix(in srgb, var(--accent-soft) 70%, transparent);
+}
+
+.nav-menu-text {
+  display: grid;
+  gap: 2px;
+}
+
+.nav-menu-label {
   color: var(--ink);
+  font-size: 13.5px;
+  font-weight: 620;
+  line-height: 1.3;
+}
+
+.nav-menu-description {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 450;
+  line-height: 1.35;
+}
+
+.nav-menu-popover a[aria-current="page"] .nav-menu-label {
+  color: var(--accent-strong);
 }
 
 .nav-menu-icon {
@@ -487,20 +547,28 @@ summary:focus-visible {
   flex: 0 0 auto;
   align-items: center;
   justify-content: center;
-  width: 24px;
-  height: 24px;
-  border-radius: 7px;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
   background: color-mix(in srgb, var(--accent-soft) 60%, transparent);
   color: var(--accent-strong);
   transition: background-color 140ms ease;
 }
 
 .nav-menu-icon svg {
-  width: 13px;
-  height: 13px;
+  width: 16px;
+  height: 16px;
 }
 
-.nav-menu-popover a:hover .nav-menu-icon {
+/* Multi-colour brand marks on a neutral chip, so they aren't tinted purple. */
+.nav-menu-icon-brand {
+  border: 1px solid var(--rule);
+  background: var(--paper-strong);
+  color: var(--ink);
+}
+
+.nav-menu-popover a:hover .nav-menu-icon,
+.nav-menu-popover a[aria-current="page"] .nav-menu-icon {
   background: var(--paper-strong);
 }
 
@@ -666,13 +734,18 @@ summary:focus-visible {
   height: 17px;
 }
 
+/* Three groups of four outgrow a short phone screen, so the list scrolls
+   inside the popover instead of running off the bottom. */
 .mobile-menu-popover {
   position: absolute;
   top: calc(100% + 9px);
   right: 0;
   display: grid;
-  min-width: 190px;
+  min-width: 220px;
+  max-height: calc(100dvh - 76px);
   padding: 6px;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   border: 1px solid var(--rule);
   border-radius: 12px;
   background: var(--paper-strong);
@@ -681,8 +754,18 @@ summary:focus-visible {
   animation: menu-in 150ms ease-out both;
 }
 
+.mobile-menu-group {
+  display: grid;
+}
+
+.mobile-menu-group + .mobile-menu-group {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--rule);
+}
+
 .mobile-menu-label {
-  padding: 10px 12px 4px;
+  padding: 8px 12px 4px;
   color: rgba(25, 17, 33, 0.42);
   font-size: 10.5px;
   font-weight: 700;
@@ -690,13 +773,9 @@ summary:focus-visible {
   text-transform: uppercase;
 }
 
-/* Indent plus a hairline rail marks where the feature group starts and ends
-   without repeating a heading for the ungrouped items after it. */
-.mobile-menu-popover a.mobile-menu-sub {
-  margin-left: 18px;
-  padding-left: 12px;
-  border-left: 1px solid var(--rule);
-  border-radius: 0 8px 8px 0;
+.mobile-menu-popover a[aria-current="page"] {
+  background: #f1eaf8;
+  color: var(--ink);
 }
 
 .mobile-menu-popover a {
@@ -4799,8 +4878,8 @@ a.deploy-card-code:hover .deploy-package-link {
 
 .footer-grid {
   display: grid;
-  grid-template-columns: 2fr 1fr 1fr 1fr;
-  gap: 56px;
+  grid-template-columns: 1.6fr 1fr 1fr 1fr 1fr;
+  gap: 48px;
   padding-bottom: 58px;
 }
 
@@ -5098,8 +5177,16 @@ a.deploy-card-code:hover .deploy-package-link {
   /* The nav no longer fits this band at full size (widest labels in
      zh-TW/ja), so tighten it and collapse the GitHub button to icon-only. */
   .desktop-nav {
-    gap: 16px;
+    gap: 0;
     font-size: 12.5px;
+  }
+
+  .nav-menu summary {
+    padding: 0 10px;
+  }
+
+  .brand-tag {
+    display: none;
   }
 
   .header-github span {
@@ -5116,8 +5203,8 @@ a.deploy-card-code:hover .deploy-package-link {
   /* The link columns get too narrow for the longest labels beside the brand
      here, so the brand takes its own row and they keep full width. */
   .footer-grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-    gap: 44px 32px;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 44px 28px;
   }
 
   .footer-brand {
@@ -5281,10 +5368,6 @@ a.deploy-card-code:hover .deploy-package-link {
 
   .section-heading {
     margin-bottom: 36px;
-  }
-
-  .brand-tag {
-    display: none;
   }
 
   .section-heading h2 {
@@ -5524,12 +5607,6 @@ a.deploy-card-code:hover .deploy-package-link {
   }
 
   .footer-brand {
-    grid-column: span 2;
-  }
-
-  /* Three link columns in a two-column grid: let the last one take the whole
-     final row instead of leaving an empty cell beside it. */
-  .footer-grid > div:last-child {
     grid-column: span 2;
   }
 }
@@ -5934,6 +6011,11 @@ a.deploy-card-code:hover .deploy-package-link {
 .final-cta.render-deferred,
 .footer-grid.render-deferred {
   contain-intrinsic-size: auto 320px;
+}
+
+/* Set by the anchor bootstrap in [locale]/layout.tsx before a hash jump. */
+.render-all .render-deferred {
+  content-visibility: visible;
 }
 
 @media (max-width: 780px) {
@@ -7923,6 +8005,655 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
 .guide-phase-card {
   cursor: pointer;
+}
+
+.guide-links-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 280px), 1fr));
+  gap: 20px;
+}
+
+.guide-link-card h3 {
+  margin: 0;
+  font-size: 19px;
+  font-weight: 600;
+  line-height: 1.4;
+  letter-spacing: -0.028em;
+}
+
+.guide-link-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: auto;
+  padding-top: 20px;
+  color: var(--accent-strong);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.guide-link-cta svg {
+  width: 15px;
+  height: 15px;
+  flex-shrink: 0;
+  transition: transform 180ms var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .guide-link-card:hover .guide-link-cta svg {
+    transform: translateX(3px);
+  }
+}
+
+.guide-links-all {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 28px;
+  color: var(--accent-strong);
+  font-size: 14px;
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 180ms ease;
+}
+
+.guide-links-all:hover {
+  text-decoration-color: currentColor;
+}
+
+.guide-links-all svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Guides hub: reading-path rows in the hero panel, then one wide row per
+   guide with its number, summary and first few section headings. */
+.guide-hub-path i {
+  display: inline-block;
+  width: 26px;
+  color: rgba(255, 255, 255, 0.42);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-style: normal;
+}
+
+.guide-hub-list {
+  display: grid;
+  gap: 16px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-hub-row {
+  display: grid;
+  grid-template-columns: 88px minmax(0, 1.2fr) minmax(0, 1fr);
+  gap: 36px;
+  padding: 32px;
+}
+
+.guide-hub-index {
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  background-clip: text;
+  color: transparent;
+  font-family: var(--mono);
+  font-size: 46px;
+  font-weight: 640;
+  letter-spacing: -0.05em;
+  line-height: 1;
+  opacity: 0.34;
+  transition: opacity 200ms ease;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .guide-hub-row:hover .guide-hub-index {
+    opacity: 0.72;
+  }
+}
+
+.guide-hub-main h3 {
+  margin: 18px 0 0;
+  font-size: 22px;
+  font-weight: 600;
+  line-height: 1.35;
+  letter-spacing: -0.028em;
+}
+
+.guide-hub-main p {
+  font-size: 15px;
+}
+
+.guide-hub-outline {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding-left: 32px;
+  border-left: 1px solid var(--rule);
+}
+
+.guide-hub-outline-label {
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.guide-hub-outline ul {
+  display: grid;
+  gap: 9px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.guide-hub-outline li {
+  position: relative;
+  padding-left: 16px;
+  color: var(--ink);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.guide-hub-outline li::before {
+  content: "";
+  position: absolute;
+  top: 0.62em;
+  left: 0;
+  width: 6px;
+  height: 6px;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--accent) 55%, transparent);
+}
+
+.guide-hub-foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px 16px;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: auto;
+  padding-top: 8px;
+  color: var(--ink-soft);
+  font-size: 13px;
+}
+
+.guide-hub-foot .guide-link-cta {
+  margin-top: 0;
+  padding-top: 0;
+}
+
+@media (max-width: 1000px) {
+  .guide-hub-row {
+    grid-template-columns: 64px minmax(0, 1fr);
+    gap: 24px 28px;
+  }
+
+  .guide-hub-outline {
+    grid-column: 2;
+    padding-top: 22px;
+    padding-left: 0;
+    border-top: 1px solid var(--rule);
+    border-left: 0;
+  }
+}
+
+@media (max-width: 780px) {
+  .guide-hub-row {
+    grid-template-columns: minmax(0, 1fr);
+    padding: 26px;
+  }
+
+  .guide-hub-index {
+    font-size: 36px;
+  }
+
+  .guide-hub-outline {
+    grid-column: auto;
+  }
+}
+
+.getting-started-section {
+  padding: clamp(64px, 8vw, 120px) 0;
+  border-block: 1px solid var(--rule);
+  background: var(--paper-strong);
+}
+
+.getting-started-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 340px), 1fr));
+  gap: 32px 40px;
+}
+
+.getting-started-item {
+  padding-top: 20px;
+  border-top: 1px solid var(--rule-strong);
+}
+
+.getting-started-item h3 {
+  margin: 0 0 12px;
+  font-size: 20px;
+  line-height: 1.5;
+  letter-spacing: -0.02em;
+}
+
+.getting-started-item p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.85;
+}
+
+.getting-started-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px 32px;
+  margin-top: 36px;
+}
+
+.getting-started-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.getting-started-links a {
+  color: var(--accent-strong);
+  text-decoration: underline;
+  text-underline-offset: 4px;
+}
+
+.getting-started-links svg {
+  flex-shrink: 0;
+}
+
+/* Long-form guides are laid out as blog articles: one centred reading
+   column, a byline, and figures that break slightly wider than the text. */
+.article {
+  padding: clamp(56px, 8vw, 96px) 0 clamp(80px, 10vw, 120px);
+}
+
+.article-header,
+.article-body {
+  width: min(calc(100% - 48px), 720px);
+  margin-inline: auto;
+}
+
+.article-category {
+  margin: 0 0 20px;
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.article-category a {
+  color: inherit;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 180ms ease;
+}
+
+.article-category a:hover {
+  text-decoration-color: currentColor;
+}
+
+.article-header h1 {
+  margin: 0;
+  font-size: clamp(32px, 4.2vw, 48px);
+  font-weight: 650;
+  letter-spacing: -0.035em;
+  line-height: 1.22;
+  text-wrap: balance;
+}
+
+/* The title is written as two halves; each gets its own line so CJK
+   titles break at the question mark rather than mid-phrase. */
+.article-header h1 span {
+  display: block;
+}
+
+.article-dek {
+  margin: 20px 0 0;
+  color: var(--ink-soft);
+  font-size: clamp(17px, 1.7vw, 20px);
+  line-height: 1.75;
+  text-wrap: pretty;
+}
+
+.article-byline {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 32px;
+  padding-bottom: 36px;
+  border-bottom: 1px solid var(--rule);
+}
+
+.article-avatar {
+  display: grid;
+  flex-shrink: 0;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  color: white;
+  font-size: 13px;
+  font-weight: 650;
+  letter-spacing: 0.02em;
+}
+
+.article-byline a {
+  color: var(--ink);
+  font-size: 15px;
+  font-weight: 600;
+}
+
+.article-byline p {
+  margin: 2px 0 0;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+}
+
+.article-body {
+  margin-top: 44px;
+  color: color-mix(in srgb, var(--ink) 88%, var(--paper));
+  font-size: 18px;
+  line-height: 1.9;
+}
+
+.article-body > p {
+  margin: 1.2em 0 0;
+  text-wrap: pretty;
+}
+
+.article-body > p:first-child {
+  margin-top: 0;
+}
+
+.article-body strong {
+  color: var(--ink);
+  font-weight: 620;
+}
+
+.article-body p a,
+.article-body li a,
+.article-callout a {
+  color: var(--accent-strong);
+  font-weight: 560;
+  text-decoration: underline;
+  text-decoration-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  text-underline-offset: 4px;
+  transition: text-decoration-color 160ms ease;
+}
+
+.article-body p a:hover,
+.article-body li a:hover,
+.article-callout a:hover {
+  text-decoration-color: currentColor;
+}
+
+.article-body > h2,
+.article-faq h2 {
+  margin: 2.6em 0 0;
+  color: var(--ink);
+  font-size: clamp(24px, 2.4vw, 30px);
+  font-weight: 650;
+  letter-spacing: -0.025em;
+  line-height: 1.35;
+  text-wrap: balance;
+}
+
+.article-body > h3 {
+  margin: 1.9em 0 0;
+  color: var(--ink);
+  font-size: 20px;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+  line-height: 1.45;
+}
+
+.article-body > h2 + p,
+.article-body > h3 + p {
+  margin-top: 0.6em;
+}
+
+.article-body > ul {
+  display: grid;
+  gap: 0.5em;
+  margin: 1em 0 0;
+  padding-left: 1.3em;
+}
+
+.article-body > ul li::marker {
+  color: var(--accent);
+}
+
+.article-callout {
+  margin: 1.6em 0 0;
+  padding: 18px 22px;
+  border: 1px solid color-mix(in srgb, var(--accent) 22%, transparent);
+  border-radius: 14px;
+  background: color-mix(in srgb, var(--accent-soft) 38%, var(--paper-strong));
+  color: var(--ink);
+  font-size: 16.5px;
+  line-height: 1.8;
+}
+
+.article-table,
+.article-figure {
+  margin: 1.8em 0 0;
+}
+
+.article-table-scroll {
+  overflow-x: auto;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-strong);
+}
+
+.article-table table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 15.5px;
+  font-variant-numeric: tabular-nums;
+  line-height: 1.5;
+}
+
+.article-table th,
+.article-table td {
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--rule);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.article-table th:first-child {
+  text-align: left;
+}
+
+.article-table thead th {
+  background: color-mix(in srgb, var(--accent-soft) 24%, var(--paper-strong));
+  color: var(--ink-soft);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.article-table tbody th {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.article-table tbody tr:last-child > * {
+  border-bottom: 0;
+}
+
+.article-figure img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  box-shadow: 0 18px 48px rgba(66, 40, 86, 0.12);
+}
+
+.article-table figcaption,
+.article-figure figcaption {
+  margin-top: 10px;
+  color: var(--ink-soft);
+  font-size: 13.5px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.article-faq {
+  margin-top: 0;
+}
+
+.article-faq h2 {
+  margin-bottom: 12px;
+}
+
+.article-faq details {
+  border-bottom: 1px solid var(--rule);
+}
+
+.article-faq summary {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 16px;
+  padding: 18px 0;
+  color: var(--ink);
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 1.55;
+  list-style: none;
+  cursor: pointer;
+}
+
+.article-faq summary::-webkit-details-marker {
+  display: none;
+}
+
+.article-faq summary svg {
+  flex-shrink: 0;
+  width: 18px;
+  height: 18px;
+  margin-top: 4px;
+  color: var(--ink-soft);
+  transition: transform 200ms var(--ease-out);
+}
+
+.article-faq details[open] summary svg {
+  transform: rotate(180deg);
+}
+
+.article-faq details p {
+  margin: 0 0 20px;
+  color: var(--ink-soft);
+  font-size: 16.5px;
+  line-height: 1.85;
+}
+
+.article-references {
+  margin-top: 64px;
+  padding-top: 28px;
+  border-top: 1px solid var(--rule);
+}
+
+.article-references h2 {
+  margin: 0;
+  color: var(--ink);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.article-references ul {
+  display: grid;
+  gap: 18px;
+  margin: 16px 0 0;
+  padding: 0;
+  list-style: none;
+}
+
+.article-references a {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  color: var(--accent-strong);
+  font-size: 15px;
+  font-weight: 560;
+  line-height: 1.5;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 160ms ease;
+}
+
+.article-references a:hover {
+  text-decoration-color: currentColor;
+}
+
+.article-references a svg {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+}
+
+.article-reference-meta {
+  display: block;
+  margin-top: 2px;
+  color: var(--ink-soft);
+  font-size: 13px;
+  line-height: 1.5;
+}
+
+.article-references p {
+  margin: 6px 0 0;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+  line-height: 1.7;
+}
+
+.article + .guide-overview-section {
+  border-top: 1px solid var(--rule);
+}
+
+@media (min-width: 900px) {
+  .article-figure {
+    margin-inline: -56px;
+  }
+}
+
+@media (max-width: 780px) {
+  .article-header,
+  .article-body {
+    width: calc(100% - 30px);
+  }
+
+  .article-body {
+    margin-top: 36px;
+    font-size: 17px;
+  }
+
+  .article-body > h3 {
+    font-size: 18px;
+  }
+
+  .article-table th,
+  .article-table td {
+    padding: 10px 14px;
+  }
 }
 
 .guide-phase-card:active {
@@ -10430,7 +11161,6 @@ button.mcp-mock-btn:active {
 
   /* Reduced motion means fewer and gentler animations, not zero: keep the
      color/opacity feedback that carries state changes, drop only movement. */
-  .desktop-nav a,
   .site-footer a,
   .button,
   .header-github,

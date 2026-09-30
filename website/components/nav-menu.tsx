@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
 import { useDetailsDismiss } from "@/components/use-details-dismiss";
 
@@ -12,16 +13,21 @@ const CLOSE_DELAY = 140;
 export type NavMenuItem = {
   href: string;
   label: string;
+  description: string;
   icon: ReactNode;
+  /** Multi-colour brand mark: sits on a plain chip instead of the accent tint. */
+  brandIcon?: boolean;
   /** Route rather than an in-page anchor, so it prefetches through <Link>. */
   page?: boolean;
 };
 
-// Groups the feature pages under one primary-nav entry — same <details>
-// popover as the language menu, but the trigger reads as a nav link.
+// One primary-nav group — same <details> popover as the language menu, but
+// the trigger reads as a nav link.
 export function NavMenu({ label, items }: { label: string; items: NavMenuItem[] }) {
   const menuRef = useRef<HTMLDetailsElement>(null);
   useDetailsDismiss(menuRef);
+  const pathname = usePathname();
+  const currentHref = items.find((item) => item.page && item.href === pathname)?.href;
 
   // Open on hover where hovering is real. Touch devices have no hover state
   // and would fire this on the tap that already toggles the menu, so they
@@ -61,7 +67,7 @@ export function NavMenu({ label, items }: { label: string; items: NavMenuItem[] 
   };
 
   return (
-    <details className="nav-menu" ref={menuRef}>
+    <details className="nav-menu" ref={menuRef} data-current={currentHref ? "" : undefined}>
       <summary>
         {label}
         <ChevronDown className="nav-menu-chevron" aria-hidden="true" strokeWidth={2} />
@@ -70,15 +76,22 @@ export function NavMenu({ label, items }: { label: string; items: NavMenuItem[] 
         {items.map((item) => {
           const content = (
             <>
-              <span className="nav-menu-icon" aria-hidden="true">
+              <span
+                className={item.brandIcon ? "nav-menu-icon nav-menu-icon-brand" : "nav-menu-icon"}
+                aria-hidden="true"
+              >
                 {item.icon}
               </span>
-              {item.label}
+              <span className="nav-menu-text">
+                <span className="nav-menu-label">{item.label}</span>
+                <span className="nav-menu-description">{item.description}</span>
+              </span>
             </>
           );
+          const current = item.href === currentHref ? "page" : undefined;
 
           return item.page ? (
-            <Link key={item.href} href={item.href} onClick={close}>
+            <Link key={item.href} href={item.href} aria-current={current} onClick={close}>
               {content}
             </Link>
           ) : (

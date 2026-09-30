@@ -9,6 +9,8 @@ import { ClosingCurves } from "@/components/closing-curves";
 import { DeployTabsCard } from "@/components/deploy-tabs-card";
 import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
 import { FeatureGrid } from "@/components/feature-grid";
+import { GettingStarted } from "@/components/getting-started";
+import { GuideLinks } from "@/components/guide-links";
 import { GiveawayWinnersCard } from "@/components/giveaway-winners-card";
 import { HeroCurve } from "@/components/hero-curve";
 import { HeroVisual } from "@/components/hero-visual";
@@ -274,6 +276,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
           </div>
         </section>
 
+        <GettingStarted locale={locale} />
+
         <section className="deploy-section" id="deploy">
           <div className="site-shell">
             <div data-reveal="up">
@@ -346,6 +350,8 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
             </div>
           </div>
         </section>
+
+        <GuideLinks locale={locale} />
 
         <section className="final-cta-section">
           <ClosingCurves />

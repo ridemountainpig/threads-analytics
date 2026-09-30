@@ -1174,7 +1174,7 @@ const mcpGuideZh: McpGuideCopy = {
     kicker: "03 / 如何使用",
     title: "用⁠自⁠己⁠的⁠話⁠問⁠，或⁠從 P⁠r⁠o⁠m⁠p⁠t 範⁠本開⁠始⁠。",
     description:
-      "連接完成後工具會自動出現，不需要任何設定。直接詢問帳號的任何問題，或執行六個內建 Prompt；每個都能加上像 30d、90d 的期間參數。",
+      "連接完成後工具會自動出現，不需要任何設定。直接詢問帳號的任何問題，或執行六個內建 Prompt，每個都能加上像 30d、90d 的期間參數。",
     examplesLabel: "試著這樣問",
     examples: [
       {
@@ -2286,11 +2286,11 @@ const analyticsGuideEn: AnalyticsGuideCopy = {
         },
         {
           name: "Best Time to Post",
-          body: "Median views as an hour-by-hour heatmap, with sample count and confidence in the tooltip.",
+          body: "An hourly bar chart of median views, with weekday filters, sample counts and confidence labels.",
         },
         {
           name: "Engagement Rate Trend",
-          body: "Daily interactions ÷ views, with a 7-day smoothed line over the noise.",
+          body: "Engagement rate for the posts published each day, with a smoothed line over the last seven days that had posts.",
         },
         {
           name: "Best Day of Week",
@@ -2417,7 +2417,7 @@ const analyticsGuideEn: AnalyticsGuideCopy = {
           body: "Each group's share as a change in percentage points from the baseline — composition moves too slowly for absolute shares to show anything.",
         },
       ],
-      note: "Threads only reports followers as of right now, so history can't be backfilled. Audience data is captured at most once per calendar day no matter how often posts sync, and demographics need at least 100 followers before the API returns them.",
+      note: "Threads only reports followers as of right now, so history can't be backfilled. The follower count refreshes on every sync, demographics are fetched once a day with a retry six hours after a failed attempt, and the API only returns demographics once an account has at least 100 followers.",
     },
     {
       index: "05",
@@ -2457,8 +2457,8 @@ const analyticsGuideEn: AnalyticsGuideCopy = {
       },
       {
         index: "02",
-        title: "Sample size decides confidence",
-        body: "Three posts at 8 PM is not a finding. Buckets with thin samples are faded, labelled low-confidence, or left out of the ranking — the dashboard says “not enough data yet” rather than inventing a best hour.",
+        title: "Confidence is a post count",
+        body: "Three posts at 8 PM is not a finding. Confidence labels show how many posts back a result: low under 3, medium 3–9, high 10 or more. Treat a ranking built on a handful of posts as a lead to test, not an answer.",
       },
       {
         index: "03",
@@ -2475,10 +2475,10 @@ const analyticsGuideEn: AnalyticsGuideCopy = {
   cta: {
     title: "Point all of this at your own account.",
     description:
-      "Deploy the dashboard, connect your Threads account, and the first sync fills in every chart on this page from your own history.",
+      "Deploy the dashboard and connect your Threads account. Post charts fill in from your first sync, and follower and audience charts build up day by day from there.",
     primary: "Deploy the dashboard",
     secondary: "View on GitHub",
-    note: "Every chart recomputes on your server, from data that never leaves it.",
+    note: "Runs on your own deployment · Data stays with the providers you choose · Shared with AI only if you connect it",
   },
 };
 
@@ -2566,9 +2566,12 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
         },
         {
           name: "最佳發文時間",
-          body: "各小時中位數觀看的熱力圖，Tooltip 同時給出樣本數與可信度等級。",
+          body: "各小時觀看中位數的長條圖，可篩選星期，並查看樣本數與可信度標籤。",
         },
-        { name: "互動率趨勢", body: "每日互動 ÷ 觀看，並疊上 7 日平滑線濾掉雜訊。" },
+        {
+          name: "互動率趨勢",
+          body: "每天發布的貼文各自的互動率，平滑線取最近七個有發文的日子。",
+        },
         { name: "最佳星期", body: "依星期比較中位數觀看、互動率與發文數。" },
         {
           name: "格式 × 長度矩陣",
@@ -2657,7 +2660,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
           body: "各分類佔比相對基準日的百分點變化 — 組成移動太慢，只看絕對佔比什麼都讀不出來。",
         },
       ],
-      note: "Threads 只提供「當下」的追蹤者數字，歷史無法回補。受眾資料每個日曆日最多只抓一次，不論貼文同步多頻繁都不會多花 API 額度；追蹤者組成另需帳號追蹤人數達 100 以上，API 才會回傳。",
+      note: "Threads 只提供「當下」的追蹤者數字，歷史無法回補。追蹤者數每次同步都會更新，追蹤者組成則每天抓一次，失敗時會在六小時後重試。帳號追蹤人數要達 100 以上，API 才會回傳追蹤者組成。",
     },
     {
       index: "05",
@@ -2695,8 +2698,8 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
       },
       {
         index: "02",
-        title: "樣本數決定可信度",
-        body: "晚上八點發過三篇不算結論。樣本不足的欄位會被淡化、標示為低可信度，或直接不列入排名 — Dashboard 會說「資料還不夠」，而不是硬編一個最佳時段給你。",
+        title: "可信度看的是篇數",
+        body: "晚上八點發過三篇不算結論。可信度標籤反映結果背後有幾篇貼文：少於 3 篇為低、3–9 篇為中、10 篇以上為高。只靠少數貼文排出的名次，當作待測試的線索就好。",
       },
       {
         index: "03",
@@ -2713,10 +2716,10 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
   cta: {
     title: "把⁠這⁠一⁠整⁠套指⁠向你⁠自⁠己⁠的⁠帳⁠號⁠。",
     description:
-      "部署 Dashboard、連接 Threads 帳號，第一次同步就會用你自己的歷史資料，把這頁上的每一張圖表填滿。",
+      "部署 Dashboard 並連接 Threads 帳號。貼文相關圖表在第一次同步後就會出現，粉絲與受眾圖表則從那天起逐日累積。",
     primary: "部署 Dashboard",
     secondary: "在 GitHub 上查看",
-    note: "每張圖表都在你自己的伺服器上運算，資料不會離開。",
+    note: "在你自己的部署運算 · 資料存在你選的平台 · 只有連接 AI 時才會分享",
   },
 };
 
@@ -2808,11 +2811,11 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
         },
         {
           name: "最適な投稿時間",
-          body: "時間帯別の中央値ビューをヒートマップで表示。Tooltip にサンプル数と信頼度を添えます。",
+          body: "時間帯別の閲覧数の中央値を棒グラフで表示。曜日で絞り込み、投稿数と信頼度を確認できます。",
         },
         {
           name: "エンゲージメント率の推移",
-          body: "日次のインタラクション ÷ ビューに、7 日平滑線を重ねてノイズを抑えます。",
+          body: "その日に公開した投稿のエンゲージメント率と、投稿のあった直近7日分の平滑線。",
         },
         {
           name: "最適な曜日",
@@ -2936,7 +2939,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
           body: "各グループの比率を基準日からの％ポイント変化で表示 — 構成の動きは遅く、絶対比率では何も見えないためです。",
         },
       ],
-      note: "Threads は「現時点」のフォロワー情報しか返さないため、履歴は遡れません。オーディエンスのデータは投稿の同期頻度にかかわらず 1 暦日につき最大 1 回だけ取得され、フォロワー構成は 100 フォロワー以上でないと API が返しません。",
+      note: "Threads は「現時点」のフォロワー情報しか返さないため、履歴は遡れません。フォロワー数は同期のたびに更新され、フォロワー構成は 1 日 1 回取得し、失敗した場合は 6 時間後に再試行します。フォロワー構成は 100 フォロワー以上でないと API が返しません。",
     },
     {
       index: "05",
@@ -2975,8 +2978,8 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
       },
       {
         index: "02",
-        title: "サンプル数が信頼度を決める",
-        body: "20 時の投稿が 3 本では結論になりません。サンプルの少ない区分は薄く表示され、低信頼と明示されるか、ランキングから外れます。最適な時間をでっち上げるのではなく「まだデータが足りない」と言います。",
+        title: "信頼度は投稿数で決まる",
+        body: "20時の投稿が3本では結論になりません。信頼度ラベルは結果を支える投稿数を表し、3件未満は低、3〜9件は中、10件以上は高です。少ない投稿から出た順位は、答えではなく試すべき手がかりとして扱いましょう。",
       },
       {
         index: "03",
@@ -2993,10 +2996,10 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
   cta: {
     title: "こ⁠れ⁠ら⁠す⁠べ⁠て⁠を自⁠分⁠のア⁠カ⁠ウ⁠ン⁠ト⁠に向⁠け⁠る⁠。",
     description:
-      "ダッシュボードをデプロイして Threads アカウントを接続すれば、最初の同期でこのページのすべてのチャートが自分の履歴で埋まります。",
+      "ダッシュボードをデプロイして Threads アカウントを接続しましょう。投稿のグラフは最初の同期から表示され、フォロワーやオーディエンスのグラフはその日から少しずつ蓄積されます。",
     primary: "ダッシュボードをデプロイ",
     secondary: "GitHub で見る",
-    note: "どのチャートも自分のサーバー上で計算され、データが外に出ることはありません。",
+    note: "自分の環境で計算 · 選んだサービスに保存 · AI を接続したときだけ共有",
   },
 };
 
@@ -3010,16 +3013,25 @@ export const dictionaries = {
     nav: {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
       brandTag: "",
-      demo: "Live demo",
-      // Trigger for the feature menu; `analytics` is the homepage section it
-      // opens with, so the two read as a group instead of repeating "features".
+      // Menu triggers; they double as the footer column headings.
       features: "Features",
-      analytics: "Analytics",
-      mcp: "MCP server",
-      giveaway: "Giveaway",
       deploy: "Deploy",
-      tokenGuide: "Token guide",
+      guides: "Guides",
       github: "GitHub",
+      // Menu entries: the label, plus one line shown under it in the desktop
+      // dropdowns. Keep descriptions short enough for a single line.
+      demo: { label: "Live demo", description: "Try the dashboard with sample data" },
+      analytics: { label: "Analytics", description: "31 analyses of your own posts" },
+      mcp: { label: "MCP server", description: "Ask Claude or Cursor about your data" },
+      giveaway: { label: "Giveaway", description: "Draw winners from post replies" },
+      deployOptions: {
+        label: "All deploy options",
+        description: "One-click templates, Docker, and agents",
+      },
+      railwayAgent: { label: "Railway Agent", description: "Two prompts to your coding agent" },
+      zeaburAgent: { label: "Zeabur Agent", description: "One prompt to Zeabur's AI agent" },
+      vercelAgent: { label: "Vercel Agent", description: "One prompt through Vercel MCP" },
+      tokenGuide: { label: "Token guide", description: "A Threads access token in 18 steps" },
     },
     hero: {
       eyebrow: "OPEN SOURCE · SELF-HOSTED · BUILT FOR THREADS",
@@ -3588,19 +3600,8 @@ export const dictionaries = {
     },
     footer: {
       description: "Open-source analytics for people building on Threads.",
-      // Column headings, each followed by that column's links. The grouping
-      // mirrors the primary nav: what the product does, how to deploy it,
-      // and what to read.
-      product: "Product",
-      liveDemo: "Live demo",
-      analytics: "Analytics",
-      mcp: "MCP server",
-      giveaway: "Giveaway",
-      deploy: "Deploy",
-      deployment: "Deployment options",
-      railwayAgent: "Railway Agent",
-      zeaburAgent: "Zeabur Agent",
-      vercelAgent: "Vercel Agent",
+      // Columns and headings come from lib/site-nav.ts, shared with the
+      // header; only the token guide gets longer anchor text here.
       resources: "Resources",
       tokenGuide: "Threads access token guide",
       analyticsReference: "Analytics reference",
@@ -3613,19 +3614,24 @@ export const dictionaries = {
     metadata: {
       title: "Threads 數據分析工具 Threads Analytics：免費開源、可自架的儀表板",
       description:
-        "Threads Analytics 是免費開源、可自架的 Threads 數據分析工具。找出最佳發文時間、內容形式、文字長度與關鍵字，追蹤粉絲成長，資料完全留在自己的伺服器。",
+        "Threads Analytics 是免費開源、可自架的 Threads 數據分析工具。比較發文時間、內容形式、文字長度與關鍵字，追蹤粉絲成長。需自行部署，主機與資料庫費用另計。",
     },
     nav: {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
       brandTag: "Threads 數據分析工具",
-      demo: "互動展示",
       features: "功能",
-      analytics: "分析功能",
-      mcp: "MCP 伺服器",
-      giveaway: "抽獎",
       deploy: "部署",
-      tokenGuide: "Token 生成教學",
+      guides: "指南",
       github: "GitHub",
+      demo: { label: "互動展示", description: "用範例數據直接試玩儀表板" },
+      analytics: { label: "分析功能", description: "31 種分析，全用你的貼文數據" },
+      mcp: { label: "MCP 伺服器", description: "讓 Claude、Cursor 直接查你的數據" },
+      giveaway: { label: "抽獎", description: "從貼文留言公平抽出得獎者" },
+      deployOptions: { label: "所有部署方式", description: "一鍵範本、Docker 與 Agent 部署" },
+      railwayAgent: { label: "Railway Agent", description: "兩段 Prompt，交給 Coding Agent" },
+      zeaburAgent: { label: "Zeabur Agent", description: "一段 Prompt，交給 Zeabur AI Agent" },
+      vercelAgent: { label: "Vercel Agent", description: "一段 Prompt，透過 Vercel MCP 部署" },
+      tokenGuide: { label: "Token 生成教學", description: "18 個步驟拿到 Access Token" },
     },
     hero: {
       eyebrow: "開源 · 自架 · 為 THREADS 打造",
@@ -4163,16 +4169,6 @@ export const dictionaries = {
     },
     footer: {
       description: "Threads Analytics：免費開源的 Threads 數據分析工具。",
-      product: "產品",
-      liveDemo: "互動展示",
-      analytics: "分析功能",
-      mcp: "MCP 伺服器",
-      giveaway: "抽獎",
-      deploy: "部署",
-      deployment: "部署方式",
-      railwayAgent: "Railway Agent",
-      zeaburAgent: "Zeabur Agent",
-      vercelAgent: "Vercel Agent",
       resources: "資源",
       tokenGuide: "Access Token 生成教學",
       analyticsReference: "分析指標說明",
@@ -4186,19 +4182,36 @@ export const dictionaries = {
       title:
         "Threads 分析ツール：無料・オープンソースのセルフホスト型ダッシュボード | Threads Analytics",
       description:
-        "Threads Analytics は無料・オープンソースのセルフホスト型 Threads 分析ツール。最適な投稿時間、コンテンツ形式、文章量、キーワード、フォロワー推移を自分のデータから分析。データは自分のサーバーに残ります。",
+        "Threads Analytics は無料・オープンソースのセルフホスト型 Threads 分析ツール。最適な投稿時間、コンテンツ形式、文章量、キーワード、フォロワー推移を自分のデータから分析。セルフホストが必要で、ホスティングとデータベースの費用は別途かかります。",
     },
     nav: {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
       brandTag: "Threads 分析ツール",
-      demo: "ライブデモ",
       features: "機能",
-      analytics: "分析機能",
-      mcp: "MCP サーバー",
-      giveaway: "抽選",
       deploy: "デプロイ",
-      tokenGuide: "トークン生成ガイド",
+      guides: "ガイド",
       github: "GitHub",
+      demo: { label: "ライブデモ", description: "サンプルデータでダッシュボードを試す" },
+      analytics: { label: "分析機能", description: "自分の投稿から 31 種類の分析" },
+      mcp: { label: "MCP サーバー", description: "Claude や Cursor からデータに質問" },
+      giveaway: { label: "抽選", description: "投稿のリプライから当選者を抽選" },
+      deployOptions: {
+        label: "デプロイ方法一覧",
+        description: "ワンクリック、Docker、エージェント",
+      },
+      railwayAgent: {
+        label: "Railway Agent",
+        description: "2 つのプロンプトでエージェントに任せる",
+      },
+      zeaburAgent: { label: "Zeabur Agent", description: "1 つのプロンプトを Zeabur AI Agent に" },
+      vercelAgent: {
+        label: "Vercel Agent",
+        description: "Vercel MCP 経由、1 プロンプトでデプロイ",
+      },
+      tokenGuide: {
+        label: "トークン生成ガイド",
+        description: "18 ステップでアクセストークンを取得",
+      },
     },
     hero: {
       eyebrow: "オープンソース · セルフホスト · THREADS 専用",
@@ -4756,16 +4769,6 @@ export const dictionaries = {
     },
     footer: {
       description: "Threadsで発信する人のためのオープンソース分析ツール。",
-      product: "プロダクト",
-      liveDemo: "ライブデモ",
-      analytics: "分析機能",
-      mcp: "MCP サーバー",
-      giveaway: "抽選",
-      deploy: "デプロイ",
-      deployment: "デプロイ方法",
-      railwayAgent: "Railway Agent",
-      zeaburAgent: "Zeabur Agent",
-      vercelAgent: "Vercel Agent",
       resources: "リソース",
       tokenGuide: "アクセストークン生成ガイド",
       analyticsReference: "分析リファレンス",

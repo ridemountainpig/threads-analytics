@@ -16,6 +16,7 @@ import type { ReactElement } from "react";
 import { ImageResponse } from "next/og";
 import { Railway, Vercel, Zeabur } from "../../components/deployment-logos";
 import { brandCurvePath } from "../../lib/brand-curve";
+import { getGuide, guideHub, guideSlugs } from "../../lib/guides";
 import { getDictionary, locales, type Locale } from "../../lib/i18n";
 
 const size = { width: 1200, height: 630 };
@@ -279,7 +280,49 @@ type OgVariant = {
   render: (locale: Locale, brandIconSrc: string) => ImageResponse;
 };
 
+const guideVariants: OgVariant[] = guideSlugs.map((slug) => ({
+  prefix: `guide-${slug}`,
+  render: (locale, brandIconSrc) => {
+    const copy = getGuide(slug, locale);
+    return renderOpenGraphImage({
+      brandIconSrc,
+      brandLabel: brandLabels[locale],
+      headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+      description: copy.metadata.description,
+      footerLeft: <span>{copy.hero.kicker}</span>,
+      footerRight: (
+        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          GUIDE
+          {arrowGlyph}
+        </span>
+      ),
+    });
+  },
+}));
+
+const guideHubVariant: OgVariant = {
+  prefix: "guides",
+  render: (locale, brandIconSrc) => {
+    const copy = guideHub[locale];
+    return renderOpenGraphImage({
+      brandIconSrc,
+      brandLabel: brandLabels[locale],
+      headline: `${copy.lineOne}\n${copy.lineTwo}`,
+      description: copy.metadata.description,
+      footerLeft: <span>{copy.kicker}</span>,
+      footerRight: (
+        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          GUIDE
+          {arrowGlyph}
+        </span>
+      ),
+    });
+  },
+};
+
 const variants: OgVariant[] = [
+  guideHubVariant,
+  ...guideVariants,
   {
     prefix: "",
     render: (locale, brandIconSrc) => {
