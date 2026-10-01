@@ -61,6 +61,12 @@ export async function generateMetadata({
 const revealBootstrap =
   "try{if('IntersectionObserver'in window&&!matchMedia('(prefers-reduced-motion: reduce)').matches)document.documentElement.classList.add('js-reveal')}catch(e){}";
 
+// .render-deferred sections sit at a placeholder height until they render,
+// so a jump to #deploy lands ~700px low and then snaps up. Before any hash
+// jump (a #link on load, or a click on one), lay them all out at full size.
+const anchorBootstrap =
+  "try{var r=function(){document.documentElement.classList.add('render-all')};if(location.hash)r();document.addEventListener('click',function(e){var a=e.target.closest&&e.target.closest('a[href*=\"#\"]');if(a&&a.hash)r()},true)}catch(e){}";
+
 export default async function LocaleLayout({
   children,
   params,
@@ -86,7 +92,12 @@ export default async function LocaleLayout({
             parser executes it before first paint on full page loads; on
             client navigations it stays inert and ViewportRevealController
             re-asserts the class instead. */}
-        <div hidden dangerouslySetInnerHTML={{ __html: `<script>${revealBootstrap}</script>` }} />
+        <div
+          hidden
+          dangerouslySetInnerHTML={{
+            __html: `<script>${revealBootstrap}${anchorBootstrap}</script>`,
+          }}
+        />
         {children}
       </body>
       {gaId ? <GoogleAnalytics gaId={gaId} /> : null}

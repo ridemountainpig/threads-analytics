@@ -13,7 +13,7 @@ import {
 import type { Dictionary } from "@/lib/i18n";
 
 const DEMO_URL = "https://threads-analytics.up.railway.app";
-const DEMO_PASSWORD = "TgV7#mKq2wRz8!pLd4Cx";
+const DEMO_PASSWORD_TEXT = "TgV7#mKq2wRz8!pLd4Cx";
 
 // Pause (ms) before entering each fixed step: 0 idle · 1 install prompt ·
 // 2 working spinner · 3 tools-ready card · 4 deploy prompt · 5 working
@@ -112,7 +112,7 @@ export function RailwayAgentDemo({
           urlLabel={copy.urlLabel}
           url={DEMO_URL}
           passwordLabel={copy.passwordLabel}
-          password={DEMO_PASSWORD}
+          password={DEMO_PASSWORD_TEXT}
           note={copy.passwordNote}
         />
       )}

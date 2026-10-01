@@ -1,14 +1,46 @@
 import Image from "next/image";
 import Link from "next/link";
-import { ChartNoAxesColumn, Plug, Ticket } from "lucide-react";
+import type { ReactNode } from "react";
+import {
+  ChartNoAxesColumn,
+  Clock,
+  Eye,
+  KeyRound,
+  MousePointerClick,
+  Plug,
+  Rocket,
+  Ticket,
+  TrendingDown,
+} from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
+import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
 import { LanguageMenu } from "@/components/language-menu";
 import { MobileMenu } from "@/components/mobile-menu";
 import { NavMenu } from "@/components/nav-menu";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
+import { getSiteNav, type SiteNavIcon } from "@/lib/site-nav";
+
+const navIcons: Record<SiteNavIcon, ReactNode> = {
+  demo: <MousePointerClick strokeWidth={2} />,
+  analytics: <ChartNoAxesColumn strokeWidth={2} />,
+  mcp: <Plug strokeWidth={2} />,
+  giveaway: <Ticket strokeWidth={2} />,
+  deploy: <Rocket strokeWidth={2} />,
+  railway: <Railway />,
+  zeabur: <Zeabur />,
+  vercel: <Vercel />,
+  token: <KeyRound strokeWidth={2} />,
+  "threads-insights": <Eye strokeWidth={2} />,
+  "best-time-to-post": <Clock strokeWidth={2} />,
+  "reach-drop": <TrendingDown strokeWidth={2} />,
+};
+
+const brandIcons = new Set<SiteNavIcon>(["railway", "zeabur", "vercel"]);
 
 export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary["nav"] }) {
+  const groups = getSiteNav(locale);
+
   return (
     <header className="site-header">
       <div className="site-shell header-inner">
@@ -26,34 +58,20 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
         </Link>
 
         <nav className="desktop-nav" aria-label="Primary navigation">
-          <a href={`/${locale}#demo`}>{copy.demo}</a>
-          {/* Analytics, MCP, and the giveaway are all product capabilities —
-              one entry keeps them together and off the guide shelf. */}
-          <NavMenu
-            label={copy.features}
-            items={[
-              {
-                href: `/${locale}/analytics`,
-                label: copy.analytics,
-                icon: <ChartNoAxesColumn strokeWidth={2} />,
-                page: true,
-              },
-              {
-                href: `/${locale}/mcp`,
-                label: copy.mcp,
-                icon: <Plug strokeWidth={2} />,
-                page: true,
-              },
-              {
-                href: `/${locale}/giveaway`,
-                label: copy.giveaway,
-                icon: <Ticket strokeWidth={2} />,
-                page: true,
-              },
-            ]}
-          />
-          <a href={`/${locale}#deploy`}>{copy.deploy}</a>
-          <Link href={`/${locale}/token-guide`}>{copy.tokenGuide}</Link>
+          {groups.map((group) => (
+            <NavMenu
+              key={group.id}
+              label={group.label}
+              items={group.items.map((item) => ({
+                href: item.href,
+                label: item.label,
+                description: item.description,
+                icon: navIcons[item.icon],
+                brandIcon: brandIcons.has(item.icon),
+                page: item.page,
+              }))}
+            />
+          ))}
         </nav>
 
         <div className="header-actions">
@@ -62,7 +80,13 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
             <FaGithub className="github-icon" aria-hidden="true" />
             <span>{copy.github}</span>
           </a>
-          <MobileMenu locale={locale} copy={copy} />
+          <MobileMenu
+            groups={groups.map((group) => ({
+              id: group.id,
+              label: group.label,
+              items: group.items.map(({ href, label, page }) => ({ href, label, page })),
+            }))}
+          />
         </div>
       </div>
     </header>

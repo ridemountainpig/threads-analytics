@@ -13,6 +13,7 @@ export function localizedPageMetadata({
   title,
   description,
   ogImageSet,
+  article,
 }: {
   locale: Locale;
   /** Route path after the locale segment: "" for home, "/deploy/railway-agent", … */
@@ -22,6 +23,8 @@ export function localizedPageMetadata({
   /** Basename prefix of a pre-rendered OG image set, e.g. "railway-agent" for
    * /og/railway-agent-en.png. Omit for the home set (/og/en.png). */
   ogImageSet?: string;
+  /** Marks the page as an Open Graph article, e.g. the long-form guides. */
+  article?: { publishedTime: string; modifiedTime: string; authors: string[] };
 }): Metadata {
   const ogImage = {
     url: ogImageSet ? `/og/${ogImageSet}-${locale}.png` : `/og/${locale}.png`,
@@ -42,7 +45,7 @@ export function localizedPageMetadata({
       },
     },
     openGraph: {
-      type: "website",
+      ...(article ? { type: "article" as const, ...article } : { type: "website" as const }),
       siteName: siteConfig.name,
       locale: openGraphLocales[locale],
       alternateLocale: locales

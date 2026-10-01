@@ -1,3 +1,11 @@
+import {
+  getGuide,
+  guideAuthor,
+  guideHub,
+  guideSlugs,
+  type GuideCopy,
+  type GuideSlug,
+} from "@/lib/guides";
 import type { Dictionary, Locale, TokenGuideCopy } from "@/lib/i18n";
 import { locales } from "@/lib/locales";
 import { siteConfig } from "@/lib/site";
@@ -61,37 +69,36 @@ export function getStructuredData(locale: Locale, copy: Dictionary) {
   };
 }
 
-/** Home → current page trail for subpages (deploy guides, token guide). */
+/** Home → (optional parent) → current page trail for subpages. */
 export function getBreadcrumbStructuredData({
   locale,
   path,
   title,
+  parent,
 }: {
   locale: Locale;
   /** Route path after the locale segment, e.g. "/token-guide". */
   path: string;
   /** Page title; a trailing "| Threads Analytics" is stripped. */
   title: string;
+  /** Section page between home and this one, e.g. the guides hub. */
+  parent?: { path: string; name: string };
 }) {
   const localizedUrl = `${siteConfig.url}/${locale}`;
+  const trail = [
+    { name: siteConfig.name, item: localizedUrl },
+    ...(parent ? [{ name: parent.name, item: `${localizedUrl}${parent.path}` }] : []),
+    { name: stripBrandSuffix(title), item: `${localizedUrl}${path}` },
+  ];
 
   return {
     "@type": "BreadcrumbList",
     "@id": `${localizedUrl}${path}#breadcrumb`,
-    itemListElement: [
-      {
-        "@type": "ListItem",
-        position: 1,
-        name: siteConfig.name,
-        item: localizedUrl,
-      },
-      {
-        "@type": "ListItem",
-        position: 2,
-        name: stripBrandSuffix(title),
-        item: `${localizedUrl}${path}`,
-      },
-    ],
+    itemListElement: trail.map((crumb, i) => ({
+      "@type": "ListItem",
+      position: i + 1,
+      ...crumb,
+    })),
   };
 }
 
@@ -140,6 +147,102 @@ export function getTokenGuideStructuredData(locale: Locale, copy: TokenGuideCopy
           ),
           url: `${pageUrl}#step-${i + 1}`,
         })),
+      },
+    ],
+  };
+}
+
+/**
+ * Article + FAQPage for the long-form guides. FAQPage rich results are
+ * limited to authoritative sites, but the markup still lets search and AI
+ * crawlers lift the question/answer pairs directly.
+ */
+export function getGuideStructuredData({
+  locale,
+  slug,
+  copy,
+  datePublished,
+  dateModified,
+}: {
+  locale: Locale;
+  slug: GuideSlug;
+  copy: GuideCopy;
+  datePublished: string;
+  dateModified: string;
+}) {
+  const path = `/guides/${slug}`;
+  const pageUrl = `${siteConfig.url}/${locale}${path}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      getBreadcrumbStructuredData({
+        locale,
+        path,
+        title: copy.metadata.title,
+        parent: { path: "/guides", name: guideHub[locale].label },
+      }),
+      {
+        "@type": "Article",
+        "@id": `${pageUrl}#article`,
+        headline: stripBrandSuffix(copy.metadata.title),
+        description: copy.metadata.description,
+        inLanguage: locale,
+        datePublished,
+        dateModified,
+        image: `${siteConfig.url}/og/guide-${slug}-${locale}.png`,
+        mainEntityOfPage: pageUrl,
+        author: {
+          "@type": "Person",
+          name: guideAuthor.name,
+          url: guideAuthor.url,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: siteConfig.name,
+          url: siteConfig.url,
+        },
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${pageUrl}#faq`,
+        inLanguage: locale,
+        mainEntity: copy.faq.items.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
+      },
+    ],
+  };
+}
+
+/** Breadcrumb + CollectionPage listing every guide, for the /guides hub. */
+export function getGuideHubStructuredData(locale: Locale) {
+  const path = "/guides";
+  const localizedUrl = `${siteConfig.url}/${locale}`;
+  const hub = guideHub[locale];
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      getBreadcrumbStructuredData({ locale, path, title: hub.label }),
+      {
+        "@type": "CollectionPage",
+        "@id": `${localizedUrl}${path}#collection`,
+        url: `${localizedUrl}${path}`,
+        name: hub.metadata.title,
+        description: hub.metadata.description,
+        inLanguage: locale,
+        mainEntity: {
+          "@type": "ItemList",
+          itemListElement: guideSlugs.map((slug, i) => ({
+            "@type": "ListItem",
+            position: i + 1,
+            url: `${localizedUrl}/guides/${slug}`,
+            name: getGuide(slug, locale).metadata.title,
+          })),
+        },
       },
     ],
   };

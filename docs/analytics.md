@@ -25,8 +25,8 @@ Stats at the top of the tab: **Total Views**, **Avg Views / Day**, **Eng. Rate**
 | **Overall Performance**       | Combined daily views, post count, and average views per post on one timeline.                                                                           |
 | **Post Quality Map**          | Scatter plot of every post by reach (views) vs. engagement rate. Dot size = shares. Four quadrants: Breakout, Conversation, Broadcast, Underperforming. |
 | **Views to Actions Funnel**   | Conversion rate from total views into each action type (likes, replies, reposts, quotes, shares).                                                       |
-| **Best Time to Post**         | Heatmap of median views by hour of day. Tooltip shows sample count and confidence level.                                                                |
-| **Engagement Rate Trend**     | Daily engagement rate (interactions ÷ views) with a 7-day smoothed average.                                                                             |
+| **Best Time to Post**         | An hourly bar chart of median views, with weekday filters, sample counts and confidence labels.                                                         |
+| **Engagement Rate Trend**     | Engagement rate for the posts published each day, with a smoothed line over the last seven days that had posts.                                         |
 | **Best Day of Week**          | Median views, engagement rate, and post count by weekday.                                                                                               |
 | **Format × Length Matrix**    | 2-D heatmap comparing every combination of content format and post length against your median reach.                                                    |
 | **Engagement Type Breakdown** | Pie chart of the proportion of likes, replies, reposts, quotes, and shares.                                                                             |
@@ -64,7 +64,9 @@ Stats at the top of the tab: **Followers**, **Net Growth** (with `+/−%`), **Av
 | **Follower Demographics** | One distribution per breakdown — country, city, age, gender — with a marker on each bar for the baseline date and both a head-count and a percentage-point delta.                                                                                 |
 | **Composition Trend**     | Each group's share as a change in percentage points from the baseline date, top 5 movers per breakdown. Composition shifts too slowly for absolute shares to show anything.                                                                       |
 
-> Threads only reports `followers_count` and `follower_demographics` as of right now — both reject `since` / `until` — so history can't be backfilled and builds up one row per day. Audience metrics are captured **at most once per calendar day**, however often posts are synced, so a frequent post schedule costs no extra API quota here. Demographics additionally require the profile to have at least 100 followers. Pick the two dates to compare with the date selectors; only days that were actually captured are offered.
+> Threads only reports follower counts and demographics as of right now, so history starts from your first sync and missed days can’t be filled in later. The follower count refreshes on every sync. Demographics are fetched once a day; if a fetch fails, the next sync at least six hours later retries it. Demographics require at least 100 followers. The date selectors only list days that have data.
+
+> Post metrics are running totals updated on each sync. The dashboard doesn’t keep snapshots at fixed points like 24 or 48 hours after posting, so comparing posts at the same age means recording those numbers yourself.
 
 ## Posts page
 

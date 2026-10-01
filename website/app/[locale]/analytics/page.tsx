@@ -5,6 +5,7 @@ import { ArrowRight, ArrowUpRight, ChartNoAxesColumn, Info, Ruler } from "lucide
 import { FaGithub } from "react-icons/fa6";
 import { ClosingCurves } from "@/components/closing-curves";
 import { GuideProgress } from "@/components/guide-progress";
+import { GuideLinks } from "@/components/guide-links";
 import { HeroCurve } from "@/components/hero-curve";
 import { JsonLd } from "@/components/json-ld";
 import { SiteFooter } from "@/components/site-footer";
@@ -198,6 +199,8 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ loca
             </div>
           </div>
         </section>
+
+        <GuideLinks locale={locale} />
 
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">

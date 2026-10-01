@@ -13,7 +13,7 @@ import {
 import type { Dictionary } from "@/lib/i18n";
 
 const DEMO_URL = "https://threads-analytics-xxxx.zeabur.app";
-const DEMO_PASSWORD = "PKLCY*SWm5vE9r*t@4FKMQIG";
+const DEMO_PASSWORD_TEXT = "PKLCY*SWm5vE9r*t@4FKMQIG";
 
 // Pause (ms) before entering each fixed step: 0 idle · 1 user prompt ·
 // 2 working spinner · 3-4 agent intro · 5 setup card · 6 password question ·
@@ -92,7 +92,7 @@ export function AgentDeployDemo({
           urlLabel={copy.urlLabel}
           url={DEMO_URL}
           passwordLabel={copy.passwordLabel}
-          password={DEMO_PASSWORD}
+          password={DEMO_PASSWORD_TEXT}
           note={copy.passwordNote}
         />
       )}

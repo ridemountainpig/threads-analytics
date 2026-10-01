@@ -9,7 +9,7 @@ import { AlertCircle } from "lucide-react";
 
 interface LoginFormProps {
   labels?: {
-    password: string;
+    passwordLabel: string;
     placeholder: string;
     signingIn: string;
     signIn: string;
@@ -23,7 +23,7 @@ interface LoginFormProps {
 export default function LoginForm({ labels, redirectTo }: LoginFormProps) {
   const [state, action, pending] = useActionState(loginAction, undefined);
   const copy = labels ?? {
-    password: "Password",
+    passwordLabel: "Password",
     placeholder: "Enter your password",
     signingIn: "Signing in...",
     signIn: "Sign in",
@@ -47,7 +47,7 @@ export default function LoginForm({ labels, redirectTo }: LoginFormProps) {
     <form action={action} className="space-y-4">
       {redirectTo && <input type="hidden" name="redirectTo" value={redirectTo} />}
       <div className="space-y-2">
-        <Label htmlFor="password">{copy.password}</Label>
+        <Label htmlFor="password">{copy.passwordLabel}</Label>
         <Input
           id="password"
           name="password"
