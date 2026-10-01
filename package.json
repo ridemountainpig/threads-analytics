@@ -23,7 +23,7 @@
     "desktop:package:check": "node desktop/scripts/package-macos.mjs --check",
     "desktop:package:macos": "node desktop/scripts/package-macos.mjs",
     "desktop:smoke:macos": "node desktop/scripts/smoke-test-app.mjs",
-    "desktop:open:macos": "open desktop/zig-out/package/Threads-Analytics.app",
+    "desktop:open:macos": "open 'desktop/zig-out/package/Threads Analytics.app'",
     "desktop:start:web": "node desktop/runtime/start-server.mjs",
     "desktop:test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test desktop/tests/*.test.mjs",
     "format": "prettier --write .",

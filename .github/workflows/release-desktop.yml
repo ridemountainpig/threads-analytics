@@ -32,7 +32,9 @@ concurrency:
   cancel-in-progress: false
 
 env:
-  APP_NAME: Threads-Analytics
+  APP_NAME: Threads Analytics
+  # GitHub rewrites spaces in release asset names, so the ZIP keeps a hyphen.
+  ASSET_PREFIX: Threads-Analytics
 
 # Actions are pinned to commit SHAs because this job can push tags and
 # publish releases (contents: write).
@@ -89,7 +91,7 @@ jobs:
           {
             echo "version=$VERSION"
             echo "tag=$tag"
-            echo "asset=${APP_NAME}-${VERSION}-macos-arm64.zip"
+            echo "asset=${ASSET_PREFIX}-${VERSION}-macos-arm64.zip"
             echo "prerelease=$prerelease"
           } >> "$GITHUB_OUTPUT"
 

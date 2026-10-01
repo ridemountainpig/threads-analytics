@@ -53,7 +53,7 @@ pnpm desktop:package:macos  # Build and package an ad-hoc-signed macOS app bundl
 pnpm desktop:open:macos     # Open the packaged app
 ```
 
-The packaged app is written to `desktop/zig-out/package/Threads-Analytics.app`.
+The packaged app is written to `desktop/zig-out/package/Threads Analytics.app`.
 
 ### Data locations
 

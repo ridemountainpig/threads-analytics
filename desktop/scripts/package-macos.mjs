@@ -17,7 +17,8 @@ import { fileURLToPath } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const desktopDirectory = path.join(repositoryRoot, "desktop");
-const appPath = path.join(desktopDirectory, "zig-out", "package", "Threads-Analytics.app");
+const appBundleName = "Threads Analytics.app";
+const appPath = path.join(desktopDirectory, "zig-out", "package", appBundleName);
 const resourcesDirectory = path.join(appPath, "Contents", "Resources");
 const mainExecutable = path.join(appPath, "Contents", "MacOS", "threads-analytics-desktop");
 const defaultBinary = path.join(desktopDirectory, "zig-out", "bin", "threads-analytics-desktop");
@@ -128,7 +129,7 @@ if (process.argv.includes("--check")) {
       "--assets",
       "dist",
       "--output",
-      "zig-out/package/Threads-Analytics.app",
+      path.join("zig-out", "package", appBundleName),
       "--signing",
       "none",
     ],

@@ -104,7 +104,7 @@ jobs:
           label="${HEAD_SHA:0:7}"
           if [[ -n "$PR_NUMBER" ]]; then label="pr${PR_NUMBER}-${label}"; fi
           asset="Threads-Analytics-${label}-macos-arm64.zip"
-          ditto -c -k --keepParent Threads-Analytics.app "$RUNNER_TEMP/$asset"
+          ditto -c -k --keepParent "Threads Analytics.app" "$RUNNER_TEMP/$asset"
           echo "path=$RUNNER_TEMP/$asset" >> "$GITHUB_OUTPUT"
           echo "asset=$asset" >> "$GITHUB_OUTPUT"
 
@@ -140,7 +140,7 @@ jobs:
           The build is ad-hoc signed and not notarized, so after unzipping, clear the quarantine flag before the first launch:
 
           \`\`\`bash
-          xattr -dr com.apple.quarantine Threads-Analytics.app
+          xattr -dr com.apple.quarantine "Threads Analytics.app"
           \`\`\`
           BODY
           )"

@@ -53,7 +53,7 @@ pnpm desktop:package:macos  # アドホック署名済み macOS app bundle を�
 pnpm desktop:open:macos     # パッケージ化された app を開く
 ```
 
-パッケージ化された app は `desktop/zig-out/package/Threads-Analytics.app` に出力されます。
+パッケージ化された app は `desktop/zig-out/package/Threads Analytics.app` に出力されます。
 
 ### データの保存場所
 

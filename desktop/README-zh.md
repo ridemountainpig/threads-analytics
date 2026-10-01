@@ -53,7 +53,7 @@ pnpm desktop:package:macos  # 建置並封裝經臨時簽署的 macOS app bundle
 pnpm desktop:open:macos     # 開啟封裝後的 app
 ```
 
-封裝後的 app 會輸出至 `desktop/zig-out/package/Threads-Analytics.app`。
+封裝後的 app 會輸出至 `desktop/zig-out/package/Threads Analytics.app`。
 
 ### 資料位置
 

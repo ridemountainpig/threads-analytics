@@ -3,7 +3,7 @@
 // parent-directory module lookup can fall back to the repo's node_modules and
 // hide a dependency the bundle forgot to ship.
 //
-//   node desktop/scripts/smoke-test-app.mjs [path/to/Threads-Analytics.app]
+//   node desktop/scripts/smoke-test-app.mjs ["path/to/Threads Analytics.app"]
 import { spawn, spawnSync } from "node:child_process";
 import { mkdtempSync, readFileSync, rmSync } from "node:fs";
 import http from "node:http";
@@ -14,7 +14,7 @@ import { fileURLToPath } from "node:url";
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const sourceApp = path.resolve(
   process.argv[2] ??
-    path.join(repositoryRoot, "desktop", "zig-out", "package", "Threads-Analytics.app"),
+    path.join(repositoryRoot, "desktop", "zig-out", "package", "Threads Analytics.app"),
 );
 const origin = "http://127.0.0.1:43127";
 const bootTimeoutMs = 60_000;
