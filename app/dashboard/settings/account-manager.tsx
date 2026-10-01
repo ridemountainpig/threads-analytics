@@ -36,7 +36,7 @@ interface AccountManagerLabels {
   lastSynced: string;
   switch: string;
   addAccount: string;
-  accessToken: string;
+  accessTokenLabel: string;
   accessTokenPlaceholder: string;
   tokenHelp: string;
   tokenGuideLink: string;
@@ -309,7 +309,7 @@ export default function AccountManager({
                 >
                   <div className="space-y-1.5">
                     <Label htmlFor={`accessToken-${account.id}`} className="text-sm">
-                      {labels.accessToken}
+                      {labels.accessTokenLabel}
                     </Label>
                     <Input
                       id={`accessToken-${account.id}`}
@@ -380,7 +380,7 @@ export default function AccountManager({
           <form action={handleAdd} className="bg-muted/40 w-full space-y-3 rounded-xl p-4">
             <div className="space-y-1.5">
               <Label htmlFor="accessToken" className="text-sm">
-                {labels.accessToken}
+                {labels.accessTokenLabel}
               </Label>
               <Input
                 id="accessToken"
