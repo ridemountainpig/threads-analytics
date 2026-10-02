@@ -46,16 +46,20 @@ export function toUnix(date: Date): number {
   return Math.floor(date.getTime() / 1000);
 }
 
-function normalizeTimeZone(timeZone: string) {
+export function isValidTimeZone(timeZone: string): boolean {
   try {
     Intl.DateTimeFormat(undefined, { timeZone });
-    return timeZone;
+    return true;
   } catch {
-    return DEFAULT_TIME_ZONE;
+    return false;
   }
 }
 
-function parseDateOnlyInTimeZone(value: string, timeZone: string, endOfDay: boolean) {
+function normalizeTimeZone(timeZone: string) {
+  return isValidTimeZone(timeZone) ? timeZone : DEFAULT_TIME_ZONE;
+}
+
+export function parseDateOnlyInTimeZone(value: string, timeZone: string, endOfDay: boolean) {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value);
   if (!match) return new Date(value);
 

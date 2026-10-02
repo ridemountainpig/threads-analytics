@@ -512,16 +512,20 @@ export async function getUserInsights(
   });
 
   const getMetric = (name: string) => (data.data ?? []).find((d) => d.name === name);
+  // Threads also returns the daily bucket that ends before `since`; it belongs to
+  // the previous range, and counting it would give adjacent ranges a shared day.
+  const inRange = (v: { end_time: string }) => new Date(v.end_time).getTime() > since * 1000;
 
   const viewsMetric = getMetric("views");
   const views: Array<{ end_time: string; value: number }> =
-    viewsMetric?.values?.map((v) => ({ end_time: v.end_time, value: v.value })) ?? [];
+    viewsMetric?.values?.filter(inRange).map((v) => ({ end_time: v.end_time, value: v.value })) ??
+    [];
 
   const sumMetric = (name: string): number => {
     const m = getMetric(name);
     if (!m) return 0;
     if (m.total_value !== undefined) return m.total_value.value ?? 0;
-    return (m.values ?? []).reduce((acc, v) => acc + (v.value ?? 0), 0);
+    return (m.values ?? []).filter(inRange).reduce((acc, v) => acc + (v.value ?? 0), 0);
   };
 
   return {

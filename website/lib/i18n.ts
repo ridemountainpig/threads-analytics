@@ -828,7 +828,7 @@ const mcpGuideEn: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / WHAT IT CAN DO",
-    title: "Six read-only tools. Six report prompts.",
+    title: "Seven read-only tools. Seven report prompts.",
     description:
       "The server turns your synced data into structured tools. You ask in plain language; your agent picks the right tool and reads only what it needs.",
     panelBadge: "READ-ONLY",
@@ -858,16 +858,16 @@ const mcpGuideEn: McpGuideCopy = {
         body: "Daily follower snapshots with a growth summary, plus the latest country, city, age, and gender demographics.",
       },
       {
-        tag: "compare_periods",
+        tag: "compare_periods · get_monthly_review",
         index: "05",
-        title: "Compare any two periods",
-        body: "Posts, views, engagement, and follower growth side by side, with absolute and percentage changes.",
+        title: "Compare periods, review a month",
+        body: "Posts, views, engagement, and follower growth side by side with their changes — or a full month against last month and your baseline, with last month's experiments scored.",
       },
       {
-        tag: "6 built-in prompts",
+        tag: "7 built-in prompts",
         index: "06",
         title: "Reports, ready to run",
-        body: "Performance review, content strategy, posting schedule, and three more — pick one from your client's prompt menu and get a full report back.",
+        body: "Monthly review, performance review, content strategy, and four more — pick one from your client's prompt menu and get a full report back.",
       },
     ],
   },
@@ -951,7 +951,7 @@ const mcpGuideEn: McpGuideCopy = {
     kicker: "03 / HOW TO USE IT",
     title: "Ask in your own words, or start from a prompt.",
     description:
-      "Once connected, the tools appear automatically — there is nothing to configure. Ask anything about your account, or run one of the six built-in prompts; each takes an optional period like 30d or 90d.",
+      "Once connected, the tools appear automatically — there is nothing to configure. Ask anything about your account, or run one of the seven built-in prompts; most take an optional period like 30d or 90d, and the monthly review takes a month.",
     examplesLabel: "TRY ASKING",
     examples: [
       {
@@ -1010,6 +1010,12 @@ const mcpGuideEn: McpGuideCopy = {
         title: "Topic analysis",
         body: "Which topics and writing patterns drive performance, plus five post ideas that apply them.",
       },
+      {
+        tag: "monthly-review",
+        index: "07",
+        title: "Monthly review",
+        body: "One month against last month and your baseline, last month's experiments scored, and three new ones to try.",
+      },
     ],
   },
   cta: {
@@ -1051,7 +1057,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / 它能做什麼",
-    title: "六⁠個唯⁠讀⁠工⁠具⁠，六⁠個報⁠告 P⁠r⁠o⁠m⁠p⁠t⁠。",
+    title: "七⁠個唯⁠讀⁠工⁠具⁠，七⁠個報⁠告 P⁠r⁠o⁠m⁠p⁠t⁠。",
     description:
       "MCP Server 把你同步好的數據整理成結構化工具。你用自然語言發問，Agent 自己挑選工具、只讀取需要的部分。",
     panelBadge: "唯讀",
@@ -1081,16 +1087,16 @@ const mcpGuideZh: McpGuideCopy = {
         body: "每日粉絲快照與成長摘要，還能加上最新的國家、城市、年齡與性別輪廓。",
       },
       {
-        tag: "compare_periods",
+        tag: "compare_periods · get_monthly_review",
         index: "05",
-        title: "比較任意兩個期間",
-        body: "貼文、瀏覽、互動與粉絲成長並列呈現，附上絕對值與百分比變化。",
+        title: "比較期間、回顧整月",
+        body: "貼文、瀏覽、互動與粉絲成長並列比較並附上變化 — 也能針對單一月份對照上月與基準完整回顧，並為上月的實驗打分數。",
       },
       {
-        tag: "6 個內建 Prompt",
+        tag: "7 個內建 Prompt",
         index: "06",
         title: "一鍵產出完整報告",
-        body: "成效回顧、內容策略、發文排程等六種範本 — 在客戶端選單點一下，就能拿到完整報告。",
+        body: "月報、成效回顧、內容策略等七種範本 — 在客戶端選單點一下，就能拿到完整報告。",
       },
     ],
   },
@@ -1174,7 +1180,7 @@ const mcpGuideZh: McpGuideCopy = {
     kicker: "03 / 如何使用",
     title: "用⁠自⁠己⁠的⁠話⁠問⁠，或⁠從 P⁠r⁠o⁠m⁠p⁠t 範⁠本開⁠始⁠。",
     description:
-      "連接完成後工具會自動出現，不需要任何設定。直接詢問帳號的任何問題，或執行六個內建 Prompt，每個都能加上像 30d、90d 的期間參數。",
+      "連接完成後工具會自動出現，不需要任何設定。直接詢問帳號的任何問題，或執行七個內建 Prompt，多數都能加上像 30d、90d 的期間參數，月報則指定月份。",
     examplesLabel: "試著這樣問",
     examples: [
       {
@@ -1232,6 +1238,12 @@ const mcpGuideZh: McpGuideCopy = {
         title: "主題分析",
         body: "哪些主題與寫作模式帶動成效，並附上五個套用這些模式的貼文靈感。",
       },
+      {
+        tag: "monthly-review",
+        index: "07",
+        title: "月報",
+        body: "單月表現對照上月與基準，為上月的實驗打分數，並提出三個下個月要試的新實驗。",
+      },
     ],
   },
   cta: {
@@ -1271,7 +1283,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / できること",
-    title: "読⁠み⁠取⁠り⁠専⁠用ツ⁠ー⁠ル 6 つ⁠、レ⁠ポ⁠ー⁠トプ⁠ロ⁠ン⁠プ⁠ト 6 つ⁠。",
+    title: "読⁠み⁠取⁠り⁠専⁠用ツ⁠ー⁠ル 7 つ⁠、レ⁠ポ⁠ー⁠トプ⁠ロ⁠ン⁠プ⁠ト 7 つ⁠。",
     description:
       "MCP サーバーは同期済みデータを構造化ツールとして公開します。自然な言葉で質問するだけで、エージェントが必要なツールを選び、必要な分だけ読み取ります。",
     panelBadge: "読み取り専用",
@@ -1301,16 +1313,16 @@ const mcpGuideJa: McpGuideCopy = {
         body: "日次フォロワースナップショットと成長サマリー、さらに最新の国・都市・年齢・性別の内訳も取得できます。",
       },
       {
-        tag: "compare_periods",
+        tag: "compare_periods · get_monthly_review",
         index: "05",
-        title: "任意の 2 期間を比較",
-        body: "投稿数・閲覧数・エンゲージメント・フォロワー成長を並べて、実数と変化率で比較します。",
+        title: "期間比較と月次レビュー",
+        body: "投稿数・閲覧数・エンゲージメント・フォロワー成長を並べて変化を比較。月単位なら前月と基準期間に対する月次レビューと、先月の実験の採点まで行います。",
       },
       {
-        tag: "内蔵プロンプト 6 種",
+        tag: "内蔵プロンプト 7 種",
         index: "06",
         title: "レポートはワンクリック",
-        body: "パフォーマンスレビュー、コンテンツ戦略、投稿スケジュールなど 6 種類 — クライアントのメニューから選ぶだけで完全なレポートが届きます。",
+        body: "月次レビュー、パフォーマンスレビュー、コンテンツ戦略など 7 種類 — クライアントのメニューから選ぶだけで完全なレポートが届きます。",
       },
     ],
   },
@@ -1394,7 +1406,7 @@ const mcpGuideJa: McpGuideCopy = {
     kicker: "03 / 使い方",
     title: "自⁠分⁠の⁠言⁠葉⁠で質⁠問⁠す⁠る⁠か⁠、プ⁠ロ⁠ン⁠プ⁠ト⁠か⁠ら始⁠め⁠る⁠。",
     description:
-      "接続すればツールは自動で現れ、設定は不要です。アカウントについて何でも質問するか、6 つの内蔵プロンプトを実行してください。どれも 30d や 90d のような期間指定に対応します。",
+      "接続すればツールは自動で現れ、設定は不要です。アカウントについて何でも質問するか、7 つの内蔵プロンプトを実行してください。多くは 30d や 90d のような期間指定に、月次レビューは月の指定に対応します。",
     examplesLabel: "こんな質問を",
     examples: [
       {
@@ -1452,6 +1464,12 @@ const mcpGuideJa: McpGuideCopy = {
         index: "06",
         title: "トピック分析",
         body: "成果を生むトピックと文章パターン、それを応用した投稿アイデア 5 つ。",
+      },
+      {
+        tag: "monthly-review",
+        index: "07",
+        title: "月次レビュー",
+        body: "1 か月を前月と基準期間で比較し、先月の実験を採点して、来月試す実験を 3 つ提案します。",
       },
     ],
   },

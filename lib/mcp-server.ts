@@ -7,8 +7,19 @@ import { textContainsInsensitive } from "@/lib/database/text-search";
 import { Prisma } from "./generated/prisma";
 import { decryptToken } from "./crypto";
 import { TokenExpiredError } from "./threads-api";
-import { getUserInsightsCached } from "./user-insights-cache";
-import { computeFollowerTrend, summarizeFollowerGrowth, parseDemographics } from "./followers";
+import { getAccountViewTotals, getUserInsightsCached } from "./user-insights-cache";
+import {
+  computeFollowerRangeTrend,
+  computeFollowerTrend,
+  dateKeyToUtcDate,
+  followerChangeBetween,
+  followerQueryStart,
+  parseDemographics,
+  snapshotDays,
+  summarizeFollowerGrowth,
+  utcDateToKey,
+} from "./followers";
+import { isValidTimeZone, parseDateOnlyInTimeZone } from "./time-range";
 import {
   computeActionFunnel,
   computeBestTimeToPost,
@@ -40,8 +51,12 @@ import {
   computeViralPosts,
   computeWeeklyFrequency,
   DEFAULT_TZ,
+  getBaselineMedianViews,
+  percentChange,
+  ratePct,
   type PostWithInsights,
 } from "./analytics";
+import { buildMonthlyReview, MONTH_PATTERN, REVIEW_METRICS } from "./monthly-review";
 
 const DEFAULT_RANGE_MS = 90 * 24 * 60 * 60 * 1000;
 const TEXT_PREVIEW_LENGTH = 300;
@@ -96,22 +111,27 @@ const dateArg = (description: string) =>
     .string()
     .regex(/^\d{4}-\d{2}-\d{2}(T[\d:.]+Z?)?$/, "Use YYYY-MM-DD or an ISO datetime")
     .optional()
-    .describe(description);
+    .describe(`${description}. YYYY-MM-DD covers that whole local day; a datetime is read as UTC.`);
 
-// Datetimes without a timezone would otherwise be parsed in the server's
-// local zone, while bare dates are parsed as UTC; pin everything to UTC.
-function parseUtc(value: string): Date {
-  return new Date(value.includes("T") && !value.endsWith("Z") ? `${value}Z` : value);
+// A bare YYYY-MM-DD is a whole day in `tz`. Datetimes without a zone would
+// otherwise be parsed in the server's local zone, so they are pinned to UTC.
+function parseDate(value: string, endOfDay: boolean, tz: string): Date {
+  if (!value.includes("T")) {
+    // Date.UTC would roll a month like 13 into next year instead of rejecting it.
+    if (Number.isNaN(new Date(value).getTime())) return new Date(NaN);
+    return parseDateOnlyInTimeZone(value, tz, endOfDay);
+  }
+  return new Date(value.endsWith("Z") ? value : `${value}Z`);
 }
 
-function parseRange(since?: string, until?: string) {
-  const untilDate = until ? parseUtc(until) : new Date();
-  const sinceDate = since ? parseUtc(since) : new Date(untilDate.getTime() - DEFAULT_RANGE_MS);
+function parseRange(since: string | undefined, until: string | undefined, tz: string) {
+  const untilDate = until ? parseDate(until, true, tz) : new Date();
+  const sinceDate = since
+    ? parseDate(since, false, tz)
+    : new Date(untilDate.getTime() - DEFAULT_RANGE_MS);
   if (Number.isNaN(untilDate.getTime()) || Number.isNaN(sinceDate.getTime())) {
     throw new Error("Invalid date parameters");
   }
-  // A bare YYYY-MM-DD "until" should include that whole day.
-  if (until && !until.includes("T")) untilDate.setUTCHours(23, 59, 59, 999);
   if (sinceDate > untilDate) {
     throw new Error("'since' must be on or before 'until'");
   }
@@ -169,9 +189,7 @@ function engagementRate(post: {
   reposts: number;
   quotes: number;
 }) {
-  if (post.views <= 0) return null;
-  const engagement = post.likes + post.replies + post.reposts + post.quotes;
-  return Math.round((engagement / post.views) * 10000) / 100;
+  return ratePct(post.likes + post.replies + post.reposts + post.quotes, post.views);
 }
 
 async function fetchPosts(accountId: string, since: Date, until: Date) {
@@ -199,37 +217,46 @@ async function fetchPosts(accountId: string, since: Date, until: Date) {
 }
 
 async function computePeriodStats(accountId: string, range: { since: Date; until: Date }) {
+  const { firstKey, lastKey } = snapshotDays(range);
   const [posts, snapshots] = await Promise.all([
     fetchPosts(accountId, range.since, range.until),
     db.followerSnapshot.findMany({
-      where: { accountId, date: { gte: range.since, lte: range.until } },
+      where: {
+        accountId,
+        date: {
+          gte: followerQueryStart(firstKey),
+          lte: dateKeyToUtcDate(lastKey),
+        },
+      },
       orderBy: { date: "asc" },
-      select: { followersCount: true },
+      select: { date: true, followersCount: true },
     }),
   ]);
   const sum = (pick: (p: PostWithInsights) => number) => posts.reduce((s, p) => s + pick(p), 0);
   const views = sum((p) => p.views);
   const engagement = sum((p) => p.likes + p.replies + p.reposts + p.quotes);
-  const sortedViews = posts.map((p) => p.views).sort((a, b) => a - b);
   return {
     postCount: posts.length,
     views,
     avgViewsPerPost: posts.length > 0 ? Math.round(views / posts.length) : 0,
-    medianViews: sortedViews.length > 0 ? sortedViews[Math.floor(sortedViews.length / 2)] : 0,
+    medianViews: getBaselineMedianViews(posts),
     likes: sum((p) => p.likes),
     replies: sum((p) => p.replies),
     reposts: sum((p) => p.reposts),
     quotes: sum((p) => p.quotes),
     shares: sum((p) => p.shares),
-    engagementRatePct: views > 0 ? Math.round((engagement / views) * 10000) / 100 : null,
-    followerChange:
-      snapshots.length >= 2
-        ? snapshots[snapshots.length - 1].followersCount - snapshots[0].followersCount
-        : null,
+    engagementRatePct: ratePct(engagement, views),
+    followerChange: followerChangeBetween(
+      snapshots.map((s) => ({ date: utcDateToKey(s.date), followers: s.followersCount })),
+      firstKey,
+      lastKey,
+    ).net,
   };
 }
 
-type PeriodStats = Awaited<ReturnType<typeof computePeriodStats>>;
+type PeriodStats = Awaited<ReturnType<typeof computePeriodStats>> & {
+  accountViews: number | null;
+};
 
 function diffPeriodStats(primary: PeriodStats, comparison: PeriodStats) {
   const change: Record<string, { change: number; changePct: number | null }> = {};
@@ -239,7 +266,7 @@ function diffPeriodStats(primary: PeriodStats, comparison: PeriodStats) {
     if (typeof a !== "number" || typeof b !== "number") continue;
     change[key] = {
       change: Math.round((a - b) * 100) / 100,
-      changePct: b !== 0 ? Math.round(((a - b) / Math.abs(b)) * 10000) / 100 : null,
+      changePct: percentChange(a, b, 2),
     };
   }
   return change;
@@ -344,16 +371,35 @@ export function registerMcpServer(server: McpServer) {
         query: z.string().optional().describe("Case-insensitive substring match on post text"),
         limit: z.number().int().min(1).max(200).optional().describe("Max rows (default 50)"),
         offset: z.number().int().min(0).optional().describe("Rows to skip, for pagination"),
+        timezone: z
+          .string()
+          .optional()
+          .describe(
+            "IANA timezone that YYYY-MM-DD dates are read in (default: the server's configured analytics timezone)",
+          ),
       }),
     },
-    async ({ account: accountRef, since, until, sort, media_type, query, limit, offset }) => {
+    async ({
+      account: accountRef,
+      since,
+      until,
+      sort,
+      media_type,
+      query,
+      limit,
+      offset,
+      timezone,
+    }) => {
       const resolved = await resolveAccount(accountRef);
       if ("error" in resolved) return errorResult(resolved.error);
       const { account } = resolved;
 
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
       let range;
       try {
-        range = parseRange(since, until);
+        range = parseRange(since, until, tz);
       } catch (err) {
         return errorResult((err as Error).message);
       }
@@ -471,7 +517,7 @@ export function registerMcpServer(server: McpServer) {
           .string()
           .optional()
           .describe(
-            "IANA timezone for day/hour bucketing, e.g. 'America/Los_Angeles' (default: the server's configured analytics timezone)",
+            "IANA timezone for YYYY-MM-DD dates and day/hour bucketing, e.g. 'America/Los_Angeles' (default: the server's configured analytics timezone)",
           ),
       }),
     },
@@ -480,18 +526,14 @@ export function registerMcpServer(server: McpServer) {
       if ("error" in resolved) return errorResult(resolved.error);
       const { account } = resolved;
 
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
       let range;
       try {
-        range = parseRange(since, until);
+        range = parseRange(since, until, tz);
       } catch (err) {
         return errorResult((err as Error).message);
-      }
-
-      const tz = timezone ?? DEFAULT_TZ;
-      try {
-        new Intl.DateTimeFormat("en-US", { timeZone: tz });
-      } catch {
-        return errorResult(`Unknown timezone: ${tz}`);
       }
 
       const wanted = new Set<SectionName>(sections?.length ? sections : DEFAULT_SECTIONS);
@@ -599,7 +641,7 @@ export function registerMcpServer(server: McpServer) {
       title: "Get follower history",
       annotations: READ_ONLY,
       description:
-        "Daily follower-count snapshots with growth summary, and optionally the latest audience demographics (country, city, age, gender).",
+        "Daily follower-count snapshots with growth summary, and optionally the latest audience demographics (country, city, age, gender). Snapshot days are calendar days in the server's configured analytics timezone.",
       inputSchema: z.object({
         account: accountArg,
         since: dateArg("Start of the date range (inclusive)"),
@@ -617,18 +659,21 @@ export function registerMcpServer(server: McpServer) {
 
       let range;
       try {
-        range = parseRange(since, until);
+        range = parseRange(since, until, DEFAULT_TZ);
       } catch (err) {
         return errorResult((err as Error).message);
       }
 
+      const { firstKey, lastKey } = snapshotDays(range);
       const snapshots = await db.followerSnapshot.findMany({
-        where: { accountId: account.id, date: { gte: range.since, lte: range.until } },
+        where: {
+          accountId: account.id,
+          date: { gte: followerQueryStart(firstKey), lte: dateKeyToUtcDate(lastKey) },
+        },
         orderBy: { date: "asc" },
+        select: { date: true, followersCount: true },
       });
-      const trend = computeFollowerTrend(
-        snapshots.map((s) => ({ date: s.date, followersCount: s.followersCount })),
-      );
+      const { trend, opening } = computeFollowerRangeTrend(snapshots, firstKey, lastKey);
 
       const latestWithDemographics = include_demographics
         ? await db.followerSnapshot.findFirst({
@@ -638,7 +683,7 @@ export function registerMcpServer(server: McpServer) {
         : null;
 
       return jsonResult({
-        summary: summarizeFollowerGrowth(trend),
+        summary: summarizeFollowerGrowth(trend, opening),
         trend,
         demographics: latestWithDemographics
           ? {
@@ -656,29 +701,38 @@ export function registerMcpServer(server: McpServer) {
       title: "Compare periods",
       annotations: READ_ONLY,
       description:
-        "Compare core metrics (posts, views, engagement, follower growth) between two periods, with absolute and percentage changes. Defaults: primary period = last 90 days, comparison period = the window of the same length immediately before it.",
+        "Compare core metrics (posts, views, engagement, follower growth) between two periods, with absolute and percentage changes. Dates without a time are whole days in the analytics timezone. 'views' counts views on posts published in each period; 'accountViews' is every view the account received in it (Threads account insights), older posts included. Defaults: primary period = last 90 days, comparison period = the window of the same length immediately before it — to compare calendar months, pass both periods explicitly or use get_monthly_review.",
       inputSchema: z.object({
         account: accountArg,
         since: dateArg("Start of the primary period (inclusive)"),
         until: dateArg("End of the primary period (inclusive)"),
         compare_since: dateArg("Start of the comparison period (inclusive)"),
         compare_until: dateArg("End of the comparison period (inclusive)"),
+        timezone: z
+          .string()
+          .optional()
+          .describe(
+            "IANA timezone that dates without a time are read in (default: the server's configured analytics timezone)",
+          ),
       }),
     },
-    async ({ account: accountRef, since, until, compare_since, compare_until }) => {
+    async ({ account: accountRef, since, until, compare_since, compare_until, timezone }) => {
       const resolved = await resolveAccount(accountRef);
       if ("error" in resolved) return errorResult(resolved.error);
       const { account } = resolved;
 
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
       let primary;
       let comparison;
       try {
-        primary = parseRange(since, until);
+        primary = parseRange(since, until, tz);
         if (compare_since || compare_until) {
           if (!compare_since || !compare_until) {
             return errorResult("Provide both compare_since and compare_until, or neither.");
           }
-          comparison = parseRange(compare_since, compare_until);
+          comparison = parseRange(compare_since, compare_until, tz);
         } else {
           const length = primary.until.getTime() - primary.since.getTime();
           const compareUntil = new Date(primary.since.getTime() - 1);
@@ -688,12 +742,20 @@ export function registerMcpServer(server: McpServer) {
         return errorResult((err as Error).message);
       }
 
-      const [primaryStats, comparisonStats] = await Promise.all([
+      const [accountViews, primaryCore, comparisonCore] = await Promise.all([
+        getAccountViewTotals(account, [
+          { label: "the primary period", ...primary },
+          { label: "the comparison period", ...comparison },
+        ]),
         computePeriodStats(account.id, primary),
         computePeriodStats(account.id, comparison),
       ]);
+      const primaryStats = { ...primaryCore, accountViews: accountViews.totals[0] };
+      const comparisonStats = { ...comparisonCore, accountViews: accountViews.totals[1] };
 
       return jsonResult({
+        timezone: tz,
+        ...(accountViews.warning && { warning: accountViews.warning }),
         primary: {
           range: { since: primary.since.toISOString(), until: primary.until.toISOString() },
           ...primaryStats,
@@ -704,6 +766,90 @@ export function registerMcpServer(server: McpServer) {
         },
         change: diffPeriodStats(primaryStats, comparisonStats),
       });
+    },
+  );
+
+  server.registerTool(
+    "get_monthly_review",
+    {
+      title: "Get monthly review",
+      annotations: READ_ONLY,
+      description:
+        "Everything needed to review one calendar month (bucketed in the analytics timezone): KPIs against a comparison month (the previous month by default, or any earlier month via compare_month, e.g. the same month last year) and a trailing baseline, top and bottom posts, follower gains with the posts around them, content mix, threads, weekly trajectory, and audience shift. Pass the experiments proposed in last month's review to have each one scored by comparing its metric in this month against the month before, whatever compare_month is. Post metrics are totals as of each post's last sync, so read dataQuality before drawing conclusions.",
+      inputSchema: z.object({
+        account: accountArg,
+        month: z
+          .string()
+          .regex(MONTH_PATTERN, "Use YYYY-MM")
+          .optional()
+          .describe("Month to review as YYYY-MM (default: the last complete month)"),
+        compare_month: z
+          .string()
+          .regex(MONTH_PATTERN, "Use YYYY-MM")
+          .optional()
+          .describe("Earlier month to compare against as YYYY-MM (default: the month before)"),
+        timezone: z
+          .string()
+          .optional()
+          .describe(
+            "IANA timezone for month and day boundaries (default: the server's configured analytics timezone)",
+          ),
+        baseline_months: z
+          .number()
+          .int()
+          .min(1)
+          .max(6)
+          .optional()
+          .describe("How many months before 'month' form the baseline (default 3)"),
+        experiments: z
+          .array(
+            z.object({
+              metric: z.enum(REVIEW_METRICS),
+              direction: z
+                .enum(["up", "down"])
+                .describe("Which way the experiment should move the metric"),
+              target: z
+                .number()
+                .optional()
+                .describe(
+                  "Value the metric should reach; without it, a move of 5% or more in the right direction counts as a hit",
+                ),
+              label: z
+                .string()
+                .max(200)
+                .optional()
+                .describe("What the experiment was, e.g. 'two multi-part threads a week'"),
+            }),
+          )
+          .max(10)
+          .optional()
+          .describe("Experiments from last month's review, to be scored against this month"),
+      }),
+    },
+    async ({
+      account: accountRef,
+      month,
+      compare_month,
+      timezone,
+      baseline_months,
+      experiments,
+    }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
+      const result = await buildMonthlyReview({
+        account: resolved.account,
+        month,
+        compareMonth: compare_month,
+        timezone: tz,
+        baselineMonths: baseline_months ?? 3,
+        experiments,
+      });
+      if ("error" in result) return errorResult(result.error);
+      return jsonResult(result.review);
     },
   );
 
@@ -832,5 +978,55 @@ export function registerMcpServer(server: McpServer) {
           `Tell me: my top-performing topics and why, which writing patterns (questions, links, length, format) help or hurt, ` +
           `which topics to double down on or drop, and 5 post ideas that apply the winning patterns.`,
       ),
+  );
+
+  server.registerPrompt(
+    "monthly-review",
+    {
+      title: "Monthly review",
+      description:
+        "Review one month against the previous month and a baseline, score last month's experiments, and set three new ones.",
+      argsSchema: z.object({
+        month: z
+          .string()
+          .optional()
+          .describe("Month to review as YYYY-MM (default: the last complete month)"),
+        compare_month: z
+          .string()
+          .optional()
+          .describe("Earlier month to compare against as YYYY-MM (default: the month before)"),
+        account: promptAccountArg,
+        previous_experiments: z
+          .string()
+          .optional()
+          .describe("The experiments JSON from last month's review, to score against this month"),
+      }),
+    },
+    ({ month, compare_month, account, previous_experiments }) => {
+      const toolArgs = [
+        month && `month "${month}"`,
+        compare_month && `compare_month "${compare_month}"`,
+      ]
+        .filter(Boolean)
+        .join(" and ");
+      return promptText(
+        accountLine(account) +
+          `Write my Threads monthly review for ${month ?? "the last complete month"}.\n\n` +
+          (previous_experiments
+            ? `Last month's experiments:\n${previous_experiments}\n\nPass them to get_monthly_review as 'experiments'.\n\n`
+            : `If you can read local files, look for last month's review at threads-reviews/YYYY-MM.md and pass the experiments from its JSON block to get_monthly_review as 'experiments'.\n\n`) +
+          `Call get_monthly_review${toolArgs ? ` with ${toolArgs}` : ""}, then read the top 3 and bottom 3 posts in full with get_post.\n\n` +
+          `Structure the report:\n` +
+          `1. TL;DR in three sentences.\n` +
+          `2. A KPI table (this month vs. the comparison month vs. baseline average) for posts, account views, median views, hit rate, engagement / reply / share rate, follower net, and followers per 1k views.\n` +
+          `3. What worked and what didn't, citing specific posts and why they landed or missed.\n` +
+          `4. Where new followers came from, using followers.topGainDays and the posts around them.\n` +
+          `5. Last month's experiments: each result with its numbers, and whether to keep, adjust, or drop it. Skip this section if there were none.\n` +
+          `6. Three experiments for next month, each tied to the one metric it should move.\n\n` +
+          `Call out anything in dataQuality.notes that limits the conclusions.\n\n` +
+          `End with the new experiments as a JSON array of { metric, direction, target?, label }, where metric is one of: ${REVIEW_METRICS.join(", ")}. ` +
+          `If you can write files, save the whole review to threads-reviews/<reviewed month>.md; otherwise tell me to keep that JSON and pass it as previous_experiments next month.`,
+      );
+    },
   );
 }
