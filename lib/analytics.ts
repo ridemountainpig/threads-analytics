@@ -155,6 +155,22 @@ function getHour(date: Date, tz: string): number {
   return getLocalDateTimeParts(date, tz).hour;
 }
 
+/** `part` as a percentage of `views` (two decimals); null when there are no views. */
+export function ratePct(part: number, views: number): number | null {
+  return views > 0 ? Math.round((part / views) * 10000) / 100 : null;
+}
+
+/** Percent change from `base`; null for a zero or negative base, where a percentage misleads. */
+export function percentChange(
+  value: number | null,
+  base: number | null,
+  digits = 1,
+): number | null {
+  if (value === null || base === null || base <= 0) return null;
+  const factor = 10 ** digits;
+  return Math.round(((value - base) / base) * 100 * factor) / factor;
+}
+
 function getMetricRates(data: {
   views: number;
   likes: number;
@@ -165,13 +181,13 @@ function getMetricRates(data: {
 }) {
   const engagement = data.likes + data.replies + data.reposts + data.quotes;
   return {
-    engagementRate: data.views > 0 ? Math.round((engagement / data.views) * 10000) / 100 : 0,
-    replyRate: data.views > 0 ? Math.round((data.replies / data.views) * 10000) / 100 : 0,
-    shareRate: data.views > 0 ? Math.round((data.shares / data.views) * 10000) / 100 : 0,
+    engagementRate: ratePct(engagement, data.views) ?? 0,
+    replyRate: ratePct(data.replies, data.views) ?? 0,
+    shareRate: ratePct(data.shares, data.views) ?? 0,
   };
 }
 
-function getPercentile(values: number[], percentile: number): number {
+export function getPercentile(values: number[], percentile: number): number {
   if (values.length === 0) return 0;
   const sorted = [...values].sort((a, b) => a - b);
   const index = Math.min(sorted.length - 1, Math.max(0, Math.ceil(percentile * sorted.length) - 1));
@@ -452,7 +468,7 @@ export function computePostLengthAnalysis(posts: PostWithInsights[]): LengthPerf
   });
 }
 
-function getLengthBucket(text: string) {
+export function getLengthBucket(text: string) {
   const len = text?.length ?? 0;
   return len <= 50 ? "0-50" : len <= 150 ? "51-150" : len <= 300 ? "151-300" : "301+";
 }

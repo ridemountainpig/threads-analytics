@@ -34,7 +34,6 @@ import {
   computeShareLeaders,
   computeTextFeatureComparison,
   computePostingGapAnalysis,
-  getDateString,
   DEFAULT_TZ,
   type PostWithInsights,
 } from "@/lib/analytics";
@@ -73,12 +72,14 @@ import FollowerDemographicsChart from "@/components/charts/follower-demographics
 import {
   compareDemographics,
   computeDemographicTrend,
-  computeFollowerTrend,
+  computeFollowerRangeTrend,
   dateKeyToUtcDate,
+  followerQueryStart,
   groupPostsByDay,
   utcDateToKey,
   hasDemographicData,
   parseDemographics,
+  snapshotDays,
   summarizeFollowerGrowth,
   type DemographicBreakdown,
   type DemographicSlice,
@@ -141,6 +142,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const { range, from, to } = resolved;
   const { since, until } = getTimeRange({ range, from, to }, tz);
   const dateLocale = dateLocales[locale];
+  const formatSignedCount = (value: number | null) =>
+    value === null ? "—" : `${value > 0 ? "+" : ""}${value.toLocaleString(dateLocale)}`;
   const cardLabels = { expand: t.common.expand, close: t.common.close };
 
   if (!account) {
@@ -201,8 +204,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   // DEFAULT_TZ — the same zone captureFollowerSnapshot buckets days by — because
   // using the viewer's zone would put "today" on a different calendar day than
   // the row that was just written, dropping the newest point from the chart.
-  const sinceDate = dateKeyToUtcDate(getDateString(since, DEFAULT_TZ));
-  const untilDate = dateKeyToUtcDate(getDateString(until, DEFAULT_TZ));
+  const { firstKey: sinceKey, lastKey: untilKey } = snapshotDays({ since, until });
 
   const shouldFetchUserInsights = range !== "all";
   const [
@@ -236,7 +238,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
       orderBy: { timestamp: "asc" },
     }),
     db.followerSnapshot.findMany({
-      where: { accountId: account.id, date: { gte: sinceDate, lte: untilDate } },
+      where: {
+        accountId: account.id,
+        date: { gte: followerQueryStart(sinceKey), lte: dateKeyToUtcDate(untilKey) },
+      },
       select: { date: true, followersCount: true },
       orderBy: { date: "asc" },
     }),
@@ -370,8 +375,12 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const postingStreak = computePostingStreak(posts, tz);
 
   // Audience metrics
-  const followerTrend = computeFollowerTrend(followerSnapshots);
-  const followerGrowth = summarizeFollowerGrowth(followerTrend);
+  const { trend: followerTrend, opening: followerOpening } = computeFollowerRangeTrend(
+    followerSnapshots,
+    sinceKey,
+    untilKey,
+  );
+  const followerGrowth = summarizeFollowerGrowth(followerTrend, followerOpening);
   // Prefer the range's own snapshots so the headline figures and the comparison
   // describe the same two dates; fall back to the last capture of any date when
   // the range contains none.
@@ -1001,13 +1010,13 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 <StatCard title={t.analytics.followers} value={followerGrowth.current} />
                 <StatCard
                   title={t.analytics.followerNet}
-                  value={`${followerGrowth.net > 0 ? "+" : ""}${followerGrowth.net.toLocaleString(dateLocale)}`}
+                  value={formatSignedCount(followerGrowth.net)}
                   delta={followerGrowth.netPct}
                   deltaLabel={t.analytics.followerNetSub}
                 />
                 <StatCard
                   title={t.analytics.followerAvgPerDay}
-                  value={`${followerGrowth.avgPerDay > 0 ? "+" : ""}${followerGrowth.avgPerDay.toLocaleString(dateLocale)}`}
+                  value={formatSignedCount(followerGrowth.avgPerDay)}
                 />
                 <StatCard title={t.analytics.followerTrackedDays} value={followerGrowth.days} />
               </div>
@@ -1029,6 +1038,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                   labels={{
                     followers: t.chart.followers,
                     dailyChange: t.chart.dailyChange,
+                    changeSince: t.chart.followerChangeSince,
                     overall: t.chart.followerOverall,
                     posted: t.chart.posted,
                     postsThatDay: t.chart.postsThatDay,

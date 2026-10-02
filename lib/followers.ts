@@ -1,4 +1,4 @@
-import { getDateString } from "@/lib/analytics";
+import { DEFAULT_TZ, getDateString } from "@/lib/analytics";
 import {
   DEMOGRAPHIC_BREAKDOWNS,
   type DemographicBreakdown,
@@ -18,13 +18,16 @@ export interface FollowerTrendPoint {
   followers: number;
   /** Change against the previous snapshot; null for the first point. */
   change: number | null;
+  /** Date of the snapshot `change` is measured from, when not the day before (missed syncs). */
+  changeSince?: string;
 }
 
 export interface FollowerGrowthSummary {
   current: number;
-  net: number;
+  /** Null when only one snapshot covers the range, so there is no change to measure. */
+  net: number | null;
   netPct: number | null;
-  avgPerDay: number;
+  avgPerDay: number | null;
   /** Number of snapshots, i.e. days actually observed — not the range length. */
   days: number;
 }
@@ -56,16 +59,116 @@ export function utcDateToKey(date: Date): string {
   return date.toISOString().slice(0, 10);
 }
 
+export function shiftDateKey(key: string, days: number): string {
+  return utcDateToKey(new Date(dateKeyToUtcDate(key).getTime() + days * MS_PER_DAY));
+}
+
+/** How far back to look for the snapshot a range opens on, when the day before it was missed. */
+export const FOLLOWER_LOOKBACK_DAYS = 3;
+
+/** How recent `until` must be for a range to count as running up to the request. */
+const PRESENT_TOLERANCE_MS = 60_000;
+
+/**
+ * The snapshot days a range covers. Snapshot dates are DEFAULT_TZ calendar days
+ * holding each day's closing count, so a day belongs to the range its close
+ * falls in: the day `until` lands in only counts once `until` reaches that
+ * day's end — or when the range runs to the present (until ≈ now, or a day not
+ * over yet), whose snapshot is simply the latest sync. Adjacent ranges
+ * therefore never share a day.
+ */
+export function snapshotDays(range: { since: Date; until: Date }, now = new Date()) {
+  const untilKey = getDateString(range.until, DEFAULT_TZ);
+  const reachesDayEnd = getDateString(new Date(range.until.getTime() + 1), DEFAULT_TZ) !== untilKey;
+  // The tolerance covers a request whose "now" was read just before midnight.
+  const runsToPresent =
+    now.getTime() - range.until.getTime() < PRESENT_TOLERANCE_MS ||
+    untilKey >= getDateString(now, DEFAULT_TZ);
+  return {
+    firstKey: getDateString(range.since, DEFAULT_TZ),
+    lastKey: reachesDayEnd || runsToPresent ? untilKey : shiftDateKey(untilKey, -1),
+  };
+}
+
+/** Lower bound for a snapshot query, so the range's opening snapshot is fetched too. */
+export function followerQueryStart(firstKey: string): Date {
+  return dateKeyToUtcDate(shiftDateKey(firstKey, -FOLLOWER_LOOKBACK_DAYS));
+}
+
+/**
+ * The snapshots inside `firstKey`..`lastKey` and the one the range opens on.
+ * Each snapshot holds its day's closing count, so a range opens on the day
+ * before it; when that sync was missed, the latest snapshot in the lookback
+ * window stands in. `points` must be sorted by date.
+ */
+function followerRangeWindow<T extends { date: string }>(
+  points: T[],
+  firstKey: string,
+  lastKey: string,
+) {
+  const lookback = shiftDateKey(firstKey, -FOLLOWER_LOOKBACK_DAYS);
+  return {
+    inRange: points.filter((p) => p.date >= firstKey && p.date <= lastKey),
+    opening: points.filter((p) => p.date >= lookback && p.date < firstKey).at(-1) ?? null,
+  };
+}
+
+/**
+ * Net follower change across `firstKey`..`lastKey`, measured from `start`: the
+ * opening snapshot when there is one (`opening`), else the range's own first
+ * snapshot, which leaves out any change before it. Null when only one snapshot
+ * covers the range. `snapshots` must be sorted by date.
+ */
+export function followerChangeBetween<T extends { date: string; followers: number }>(
+  snapshots: T[],
+  firstKey: string,
+  lastKey: string,
+) {
+  const { inRange, opening } = followerRangeWindow(snapshots, firstKey, lastKey);
+  const start = opening ?? inRange[0] ?? null;
+  const closing = inRange.at(-1) ?? null;
+  const net = start && closing && start !== closing ? closing.followers - start.followers : null;
+  return { inRange, opening, start, closing, net };
+}
+
 export function computeFollowerTrend(snapshots: FollowerSnapshotRow[]): FollowerTrendPoint[] {
   const sorted = [...snapshots].sort((a, b) => a.date.getTime() - b.date.getTime());
   return sorted.map((snapshot, i) => {
     const prev = sorted[i - 1];
+    const date = utcDateToKey(snapshot.date);
+    const prevDate = prev && utcDateToKey(prev.date);
     return {
-      date: utcDateToKey(snapshot.date),
+      date,
       followers: snapshot.followersCount,
       change: prev ? snapshot.followersCount - prev.followersCount : null,
+      ...(prevDate && prevDate !== shiftDateKey(date, -1) && { changeSince: prevDate }),
     };
   });
+}
+
+/**
+ * The range's own trend plus the snapshot it opens on (see followerChangeBetween),
+ * so the first day's change is measured against that opening count instead of dropped.
+ */
+export function computeFollowerRangeTrend(
+  snapshots: FollowerSnapshotRow[],
+  firstKey: string,
+  lastKey: string,
+): { trend: FollowerTrendPoint[]; opening: FollowerTrendPoint | null } {
+  const { inRange, opening } = followerRangeWindow(
+    computeFollowerTrend(snapshots),
+    firstKey,
+    lastKey,
+  );
+  const [first, ...rest] = inRange;
+  if (!first) return { trend: [], opening: null };
+  const head: FollowerTrendPoint = {
+    date: first.date,
+    followers: first.followers,
+    change: opening ? first.followers - opening.followers : null,
+    ...(opening && opening.date !== shiftDateKey(first.date, -1) && { changeSince: opening.date }),
+  };
+  return { trend: [head, ...rest], opening };
 }
 
 export interface PostOnDay {
@@ -103,10 +206,18 @@ export function groupPostsByDay(
   return result;
 }
 
-export function summarizeFollowerGrowth(trend: FollowerTrendPoint[]): FollowerGrowthSummary | null {
+/** `opening` is the snapshot the range opens on, from computeFollowerRangeTrend. */
+export function summarizeFollowerGrowth(
+  trend: FollowerTrendPoint[],
+  opening: FollowerTrendPoint | null = null,
+): FollowerGrowthSummary | null {
   if (trend.length === 0) return null;
-  const first = trend[0]!;
+  const first = opening ?? trend[0]!;
   const last = trend[trend.length - 1]!;
+  // A single snapshot has no elapsed time to measure a change over.
+  if (first === last) {
+    return { current: last.followers, net: null, netPct: null, avgPerDay: null, days: 1 };
+  }
   const net = last.followers - first.followers;
   // Divide by the calendar days actually elapsed, not by the number of
   // snapshots: syncs get missed, and counting intervals instead of days would
@@ -121,8 +232,7 @@ export function summarizeFollowerGrowth(trend: FollowerTrendPoint[]): FollowerGr
     current: last.followers,
     net,
     netPct: first.followers > 0 ? Math.round((net / first.followers) * 1000) / 10 : null,
-    // A single snapshot has no elapsed time to average over.
-    avgPerDay: trend.length > 1 ? Math.round((net / elapsedDays) * 10) / 10 : 0,
+    avgPerDay: Math.round((net / elapsedDays) * 10) / 10,
     days: trend.length,
   };
 }
