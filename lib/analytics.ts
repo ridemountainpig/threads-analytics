@@ -1,3 +1,5 @@
+import { DESKTOP_TIME_ZONE } from "./time-range";
+
 export interface PostWithInsights {
   id: string;
   text: string;
@@ -84,7 +86,10 @@ export interface AnalyticsResult {
 // ── Helpers ────────────────────────────────────────────────────────────
 
 export const DEFAULT_TZ =
-  process.env.NEXT_PUBLIC_ANALYTICS_TIME_ZONE ?? process.env.ANALYTICS_TIME_ZONE ?? "Asia/Taipei";
+  DESKTOP_TIME_ZONE ??
+  process.env.NEXT_PUBLIC_ANALYTICS_TIME_ZONE ??
+  process.env.ANALYTICS_TIME_ZONE ??
+  "Asia/Taipei";
 
 const _fmtCache = new Map<string, Intl.DateTimeFormat>();
 

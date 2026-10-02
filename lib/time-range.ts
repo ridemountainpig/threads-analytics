@@ -1,6 +1,16 @@
+import { isDesktopApp } from "./runtime-target";
+
 export type RangeOption = "7" | "30" | "90" | "180" | "365" | "all";
 
-const DEFAULT_TIME_ZONE = process.env.ANALYTICS_TIME_ZONE ?? "Asia/Taipei";
+/**
+ * The Mac's timezone on desktop, null on web. The desktop server and its
+ * WebView run on the same machine, so dates there follow the system clock
+ * instead of the ANALYTICS_TIME_ZONE baked into the build. Read once at server
+ * start, so a timezone change applies after the app is reopened.
+ */
+export const DESKTOP_TIME_ZONE = isDesktopApp ? systemTimeZone() : null;
+
+const DEFAULT_TIME_ZONE = DESKTOP_TIME_ZONE ?? process.env.ANALYTICS_TIME_ZONE ?? "Asia/Taipei";
 
 const RANGE_DAYS: Record<string, number | null> = {
   "7": 7,
@@ -53,6 +63,11 @@ export function isValidTimeZone(timeZone: string): boolean {
   } catch {
     return false;
   }
+}
+
+function systemTimeZone(): string {
+  const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+  return isValidTimeZone(timeZone) ? timeZone : "UTC";
 }
 
 function normalizeTimeZone(timeZone: string) {

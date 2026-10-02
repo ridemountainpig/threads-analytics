@@ -147,7 +147,7 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 複数のアカウントを接続している場合、`get_account_overview` 以外のすべてのツールは `account` 引数（ユーザー名または id）を受け取ります。省略するとツールはアカウント一覧を返し、エージェントは推測せずにどのアカウントかを尋ねます。
 
-`YYYY-MM-DD` で指定した日付は、分析タイムゾーン（デフォルトは Asia/Taipei）の丸 1 日を表します。`list_posts`・`get_analytics`・`compare_periods`・`get_monthly_review` は `timezone` 引数で別のタイムゾーンを指定することもできます。
+`YYYY-MM-DD` で指定した日付は、分析タイムゾーン（デフォルトは Asia/Taipei、デスクトップアプリでは Mac のタイムゾーン）の丸 1 日を表します。`list_posts`・`get_analytics`・`compare_periods`・`get_monthly_review` は `timezone` 引数で別のタイムゾーンを指定することもできます。
 
 ### プロンプト
 

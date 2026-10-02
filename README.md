@@ -147,7 +147,7 @@ Connected clients appear in **Settings → Connected agents**, where each one ca
 
 With several accounts connected, every tool except `get_account_overview` takes an `account` argument (username or id). If it is omitted, the tool returns the list of accounts so the agent asks you which one you mean instead of guessing.
 
-Dates given as `YYYY-MM-DD` cover that whole day in the analytics timezone (Asia/Taipei by default); `list_posts`, `get_analytics`, `compare_periods`, and `get_monthly_review` also take a `timezone` argument to read them in another zone.
+Dates given as `YYYY-MM-DD` cover that whole day in the analytics timezone (Asia/Taipei by default; the desktop app uses the Mac's timezone); `list_posts`, `get_analytics`, `compare_periods`, and `get_monthly_review` also take a `timezone` argument to read them in another zone.
 
 ### Prompts
 

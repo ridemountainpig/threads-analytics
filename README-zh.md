@@ -147,7 +147,7 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 連接多個帳號時，除了 `get_account_overview` 以外的每個工具都接受 `account` 參數（帳號名稱或 id）。若未提供，工具會回傳帳號清單，讓 agent 先問你要查哪一個，而不是自行猜測。
 
-以 `YYYY-MM-DD` 指定的日期代表分析時區（預設 Asia/Taipei）的一整天；`list_posts`、`get_analytics`、`compare_periods` 與 `get_monthly_review` 也接受 `timezone` 參數，改用其他時區解讀。
+以 `YYYY-MM-DD` 指定的日期代表分析時區（預設 Asia/Taipei；桌面 App 使用 Mac 的系統時區）的一整天；`list_posts`、`get_analytics`、`compare_periods` 與 `get_monthly_review` 也接受 `timezone` 參數，改用其他時區解讀。
 
 ### Prompts
 

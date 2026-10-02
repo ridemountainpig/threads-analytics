@@ -484,7 +484,8 @@ export const dictionaries = {
       autoSync: "Auto Sync",
       autoSyncSub:
         "Works automatically on Docker and VPS. On Vercel, the built-in scheduler does not run — configure a Vercel Cron job to call /api/cron/sync at your chosen interval.",
-      autoSyncSubDesktop: "Runs in the background at your chosen interval while the app is open.",
+      autoSyncSubDesktop:
+        "Runs in the background at your chosen interval while the app is open. Even when it's off, the follower count is recorded once a day while the app is open, since past days can't be fetched later.",
       lastSynced: "Last synced",
       switch: "Switch",
       addAccount: "Add Threads account",
@@ -1020,7 +1021,8 @@ export const dictionaries = {
       autoSync: "自動同步",
       autoSyncSub:
         "Docker 與 VPS 部署會自動在背景執行。Vercel 不支援內建排程，請設定 Vercel Cron 定期呼叫 /api/cron/sync。",
-      autoSyncSubDesktop: "App 開啟期間會依你選擇的間隔自動在背景同步。",
+      autoSyncSubDesktop:
+        "App 開啟期間會依你選擇的間隔自動在背景同步。即使關閉自動同步，App 開啟時每天仍會記錄一次追蹤人數，因為過去的追蹤人數之後無法補抓。",
       lastSynced: "上次同步",
       switch: "切換",
       addAccount: "新增 Threads 帳號",
@@ -1572,7 +1574,7 @@ export const dictionaries = {
       autoSyncSub:
         "Docker と VPS では自動的に動作します。Vercel では内蔵スケジューラが動作しないため、Vercel Cron で /api/cron/sync を任意の間隔で呼び出してください。",
       autoSyncSubDesktop:
-        "アプリを開いている間、選択した間隔で自動的にバックグラウンド同期します。",
+        "アプリを開いている間、選択した間隔で自動的にバックグラウンド同期します。オフの場合も、過去のフォロワー数は後から取得できないため、アプリを開いている間は 1 日 1 回フォロワー数を記録します。",
       lastSynced: "最終同期",
       switch: "切り替え",
       addAccount: "Threads アカウントを追加",
