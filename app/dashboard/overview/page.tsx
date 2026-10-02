@@ -7,7 +7,6 @@ import { getTimeRange, toUnix } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
 import {
-  DEFAULT_TZ,
   computeBestTimeToPost,
   computeTopHours,
   computeViralPosts,
@@ -16,9 +15,11 @@ import {
   type PostWithInsights,
 } from "@/lib/analytics";
 import {
-  computeFollowerTrend,
+  computeFollowerRangeTrend,
   dateKeyToUtcDate,
+  followerQueryStart,
   parseDemographics,
+  snapshotDays,
   summarizeFollowerGrowth,
 } from "@/lib/followers";
 import { formatDemographicKey } from "@/lib/demographic-labels";
@@ -152,8 +153,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
 
   // Snapshot dates are bucketed by DEFAULT_TZ, the zone captureFollowerSnapshot
   // writes them in, so the range edges are reduced the same way.
-  const sinceDate = dateKeyToUtcDate(getDateString(since, DEFAULT_TZ));
-  const untilDate = dateKeyToUtcDate(getDateString(until, DEFAULT_TZ));
+  const { firstKey: sinceKey, lastKey: untilKey } = snapshotDays({ since, until });
 
   const [
     userInsights,
@@ -194,7 +194,10 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       : Promise.resolve([]),
     getSyncIntervalCached(),
     db.followerSnapshot.findMany({
-      where: { accountId: account.id, date: { gte: sinceDate, lte: untilDate } },
+      where: {
+        accountId: account.id,
+        date: { gte: followerQueryStart(sinceKey), lte: dateKeyToUtcDate(untilKey) },
+      },
       select: { date: true, followersCount: true },
       orderBy: { date: "asc" },
     }),
@@ -310,7 +313,8 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     .map((hour) => bestTimeToPost.find((point) => point.hour === hour))
     .filter((point) => point !== undefined);
 
-  const followerGrowth = summarizeFollowerGrowth(computeFollowerTrend(followerSnapshots));
+  const followerRange = computeFollowerRangeTrend(followerSnapshots, sinceKey, untilKey);
+  const followerGrowth = summarizeFollowerGrowth(followerRange.trend, followerRange.opening);
   const countryBreakdown = parseDemographics(latestDemographics?.demographics)?.country;
   const topCountryEntry = countryBreakdown?.entries.reduce<
     (typeof countryBreakdown.entries)[number] | null
@@ -335,7 +339,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       deltaPosts,
       // A single snapshot has no growth to report, only a count.
       followers:
-        followerGrowth && followerGrowth.days > 1
+        followerGrowth?.net != null
           ? { current: followerGrowth.current, net: followerGrowth.net }
           : null,
       topCountry,

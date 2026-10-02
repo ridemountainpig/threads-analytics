@@ -124,29 +124,33 @@ Connected clients appear in **Settings → Connected agents**, where each one ca
 
 ### Tools
 
-| Tool                   | What it does                                                                                                                                                       |
-| ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
-| `get_account_overview` | Every connected account's username, sync status, post count, data date range, and follower growth summary — the recommended first call                             |
-| `list_posts`           | Posts with metrics; supports date range, sorting (date / views / likes / engagement rate), media-type filter, full-text search, and pagination                     |
-| `get_post`             | Full detail of a single post, including its complete text                                                                                                          |
-| `get_analytics`        | 31 aggregated analytics sections over a date range (best time to post, keyword analysis, views distribution, posting streaks, …) — pick only the sections you need |
-| `get_follower_history` | Daily follower-count snapshots with growth summary, and optionally the latest audience demographics                                                                |
-| `compare_periods`      | Core metrics for two periods with absolute and percentage changes; the comparison period defaults to the same-length window immediately before                     |
+| Tool                   | What it does                                                                                                                                                                                                                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_account_overview` | Every connected account's username, sync status, post count, data date range, and follower growth summary — the recommended first call                                                                                                                                                                |
+| `list_posts`           | Posts with metrics; supports date range, sorting (date / views / likes / engagement rate), media-type filter, full-text search, and pagination                                                                                                                                                        |
+| `get_post`             | Full detail of a single post, including its complete text                                                                                                                                                                                                                                             |
+| `get_analytics`        | 31 aggregated analytics sections over a date range (best time to post, keyword analysis, views distribution, posting streaks, …) — pick only the sections you need                                                                                                                                    |
+| `get_follower_history` | Daily follower-count snapshots with growth summary, and optionally the latest audience demographics                                                                                                                                                                                                   |
+| `compare_periods`      | Core metrics for two periods with absolute and percentage changes, including account-level views; the comparison period defaults to the same-length window immediately before                                                                                                                         |
+| `get_monthly_review`   | One calendar month against a comparison month (the previous one by default, or any earlier month such as the same month last year) and a trailing baseline: KPIs, top and bottom posts, follower gains, content mix, threads, and weekly trend. Pass last month's experiments to have each one scored |
 
 With several accounts connected, every tool except `get_account_overview` takes an `account` argument (username or id). If it is omitted, the tool returns the list of accounts so the agent asks you which one you mean instead of guessing.
 
+Dates given as `YYYY-MM-DD` cover that whole day in the analytics timezone (Asia/Taipei by default); `list_posts`, `get_analytics`, `compare_periods`, and `get_monthly_review` also take a `timezone` argument to read them in another zone.
+
 ### Prompts
 
-The server also registers ready-made prompts, each taking an optional `period` argument (e.g. `30d`, `90d`, or a date range):
+The server also registers ready-made prompts. Most take an optional `period` argument (e.g. `30d`, `90d`, or a date range); `monthly-review` takes a `month` (`YYYY-MM`) and, optionally, the `previous_experiments` from last month's review:
 
-| Prompt                 | What it produces                                                             |
-| ---------------------- | ---------------------------------------------------------------------------- |
-| `performance-review`   | A full performance report: trends, best/worst posts, and actions to improve  |
-| `content-strategy`     | Which formats, lengths, and topics work, with a recommended content mix      |
-| `posting-schedule`     | A concrete weekly posting schedule based on when your audience engages       |
-| `viral-post-breakdown` | Deep-dive of outlier posts and the repeatable patterns behind them           |
-| `audience-insights`    | Follower growth and demographics, and what they imply for content and timing |
-| `topic-analysis`       | Which topics and writing patterns drive performance, plus new post ideas     |
+| Prompt                 | What it produces                                                                                                                                                                          |
+| ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `performance-review`   | A full performance report: trends, best/worst posts, and actions to improve                                                                                                               |
+| `content-strategy`     | Which formats, lengths, and topics work, with a recommended content mix                                                                                                                   |
+| `posting-schedule`     | A concrete weekly posting schedule based on when your audience engages                                                                                                                    |
+| `viral-post-breakdown` | Deep-dive of outlier posts and the repeatable patterns behind them                                                                                                                        |
+| `audience-insights`    | Follower growth and demographics, and what they imply for content and timing                                                                                                              |
+| `topic-analysis`       | Which topics and writing patterns drive performance, plus new post ideas                                                                                                                  |
+| `monthly-review`       | A monthly review that scores last month's experiments and sets three new ones; the experiments stay on your side (e.g. `threads-reviews/YYYY-MM.md`), so nothing is written to the server |
 
 ---
 

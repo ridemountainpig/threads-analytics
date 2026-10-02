@@ -53,13 +53,15 @@ const MAX_SPIKE_LABELS = 3;
 type Mode = "overall" | "change";
 
 interface FollowerTrendChartProps {
-  data: Array<{ date: string; followers: number; change: number | null }>;
+  data: Array<{ date: string; followers: number; change: number | null; changeSince?: string }>;
   postsByDate?: Record<string, PostsOnDay>;
   dateLocale?: string;
   timeZone: string;
   labels?: {
     followers: string;
     dailyChange: string;
+    /** Label for a change spanning missed syncs; `{date}` is replaced with where it starts. */
+    changeSince?: string;
     overall: string;
     posted: string;
     postsThatDay: string;
@@ -126,6 +128,7 @@ export default function FollowerTrendChart({
   const copy = labels ?? {
     followers: "Followers",
     dailyChange: "Daily Change",
+    changeSince: "Change since {date}",
     overall: "Overall",
     posted: "Posted",
     postsThatDay: "Posts that day",
@@ -179,12 +182,15 @@ export default function FollowerTrendChart({
 
   const tooltipRows = (point: (typeof chartData)[number]): ChartTooltipRow[] => {
     const change = point.change;
+    const changeLabel = point.changeSince
+      ? (copy.changeSince ?? "Change since {date}").replace("{date}", formatDate(point.changeSince))
+      : copy.dailyChange;
     const metricRows: ChartTooltipRow[] = isChange
       ? [
           ...(change !== null
             ? [
                 {
-                  label: copy.dailyChange,
+                  label: changeLabel,
                   value: formatSigned(change),
                   color: change < 0 ? negativeColor : chartColors.followers,
                 },
@@ -199,7 +205,7 @@ export default function FollowerTrendChart({
             color: chartColors.followers,
           },
           ...(change !== null
-            ? [{ label: copy.dailyChange, value: formatSigned(change), muted: true }]
+            ? [{ label: changeLabel, value: formatSigned(change), muted: true }]
             : []),
         ];
     const posts = postsByDate?.[point.date];
