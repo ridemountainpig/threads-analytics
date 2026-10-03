@@ -3151,7 +3151,7 @@ const desktopGuideEn: DesktopGuideCopy = {
       {
         icon: "sync",
         title: "Auto-sync built in",
-        body: "The scheduler ships switched on: pick an interval in Settings and the app syncs in the background while it's open.",
+        body: "The scheduler ships switched on: pick an interval in Settings and the app syncs in the background while it's open and your Mac is awake.",
       },
       {
         icon: "bell",
@@ -3177,7 +3177,11 @@ const desktopGuideEn: DesktopGuideCopy = {
       { aspect: "Database", desktop: "SQLite, stored on your Mac", web: "PostgreSQL" },
       { aspect: "Cost", desktop: "Free", web: "Your hosting and database plan" },
       { aspect: "Sign-in", desktop: "None needed", web: "APP_PASSWORD" },
-      { aspect: "Auto-sync", desktop: "While the app is open", web: "Around the clock" },
+      {
+        aspect: "Auto-sync",
+        desktop: "While the app is open and the Mac is awake",
+        web: "Around the clock",
+      },
       { aspect: "Open it from", desktop: "This Mac only", web: "Any browser, phone included" },
       {
         aspect: "MCP clients",
@@ -3190,7 +3194,7 @@ const desktopGuideEn: DesktopGuideCopy = {
         web: "Pull the new image or redeploy",
       },
     ],
-    note: "Sync and the daily follower snapshot only run while the app is open. A day the app is never opened gets no follower count, and Threads can't fill it in later — if you need round-the-clock tracking, deploy the web version.",
+    note: "Sync and the daily follower snapshot only run while the app is open and your Mac is awake: closing the window quits the app, and sleep pauses syncing until the Mac wakes. A day the app never runs gets no follower count, and Threads can't fill it in later — if you need round-the-clock tracking, deploy the web version.",
     noteCta: "See deploy options",
   },
   install: {
@@ -3371,7 +3375,7 @@ const desktopGuideZh: DesktopGuideCopy = {
       {
         icon: "sync",
         title: "內建自動同步",
-        body: "同步排程器預設就是開的：在「設定」選好間隔，App 開啟期間就會在背景自動同步。",
+        body: "同步排程器預設就是開的：在「設定」選好間隔，App 開著且 Mac 沒有睡眠時就會在背景自動同步。",
       },
       {
         icon: "bell",
@@ -3393,7 +3397,7 @@ const desktopGuideZh: DesktopGuideCopy = {
       { aspect: "資料庫", desktop: "SQLite，存在你的 Mac 上", web: "PostgreSQL" },
       { aspect: "費用", desktop: "免費", web: "依主機與資料庫方案計費" },
       { aspect: "登入", desktop: "不需要", web: "APP_PASSWORD" },
-      { aspect: "自動同步", desktop: "App 開啟期間", web: "全天候執行" },
+      { aspect: "自動同步", desktop: "App 開著且 Mac 沒有睡眠時", web: "全天候執行" },
       { aspect: "從哪裡打開", desktop: "只有這台 Mac", web: "任何瀏覽器，手機也可以" },
       {
         aspect: "MCP 用戶端",
@@ -3402,7 +3406,7 @@ const desktopGuideZh: DesktopGuideCopy = {
       },
       { aspect: "更新方式", desktop: "下載每個新版本", web: "拉取新映像檔或重新部署" },
     ],
-    note: "同步和每日追蹤人數紀錄只會在 App 開啟時執行。整天都沒打開 App 的日子不會有追蹤人數，之後也無法從 Threads 補抓 — 需要全天候追蹤的話，請部署網頁版。",
+    note: "同步和每日追蹤人數紀錄只會在 App 開著、Mac 沒有睡眠時執行：關閉視窗就會結束 App，Mac 睡眠時同步也會暫停，喚醒後才繼續。整天都沒執行 App 的日子不會有追蹤人數，之後也無法從 Threads 補抓 — 需要全天候追蹤的話，請部署網頁版。",
     noteCta: "看部署方式",
   },
   install: {
@@ -3581,7 +3585,7 @@ const desktopGuideJa: DesktopGuideCopy = {
       {
         icon: "sync",
         title: "自動同期を内蔵",
-        body: "同期スケジューラーは最初から有効。「設定」で間隔を選べば、アプリを開いている間はバックグラウンドで同期します。",
+        body: "同期スケジューラーは最初から有効。「設定」で間隔を選べば、アプリ起動中で Mac がスリープしていない間はバックグラウンドで同期します。",
       },
       {
         icon: "bell",
@@ -3603,7 +3607,7 @@ const desktopGuideJa: DesktopGuideCopy = {
       { aspect: "データベース", desktop: "Mac 内の SQLite", web: "PostgreSQL" },
       { aspect: "費用", desktop: "無料", web: "ホスティングとデータベースのプラン料金" },
       { aspect: "サインイン", desktop: "不要", web: "APP_PASSWORD" },
-      { aspect: "自動同期", desktop: "アプリを開いている間", web: "24 時間" },
+      { aspect: "自動同期", desktop: "アプリ起動中、Mac がスリープしていない間", web: "24 時間" },
       { aspect: "アクセス", desktop: "この Mac のみ", web: "どのブラウザからでも（スマホも可）" },
       {
         aspect: "MCP クライアント",
@@ -3616,7 +3620,7 @@ const desktopGuideJa: DesktopGuideCopy = {
         web: "新しいイメージを pull、または再デプロイ",
       },
     ],
-    note: "同期と毎日のフォロワー数記録は、アプリを開いている間だけ実行されます。一度もアプリを開かなかった日のフォロワー数は記録されず、後から Threads で補うこともできません — 24 時間の記録が必要なら Web 版をデプロイしてください。",
+    note: "同期と毎日のフォロワー数記録は、アプリ起動中かつ Mac がスリープしていない間だけ実行されます。ウィンドウを閉じるとアプリは終了し、スリープ中は同期が止まって復帰後に再開します。アプリを一度も起動しなかった日のフォロワー数は記録されず、後から Threads で補うこともできません — 24 時間の記録が必要なら Web 版をデプロイしてください。",
     noteCta: "デプロイ方法を見る",
   },
   install: {
