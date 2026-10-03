@@ -240,7 +240,7 @@ Your database (posts, insights, accounts) is preserved across updates.
 
 ## Development
 
-Requirements: Node.js 20.9+, pnpm, and a PostgreSQL database.
+Requirements: Node.js 22.12+ or 24+, pnpm, and a PostgreSQL database.
 
 ### 1. Clone and install
 

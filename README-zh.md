@@ -240,7 +240,7 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
 
 ## 開發設定
 
-系統需求：Node.js 20.9+、pnpm、PostgreSQL 資料庫。
+系統需求：Node.js 22.12+ 或 24+、pnpm、PostgreSQL 資料庫。
 
 ### 1. 複製專案並安裝套件
 
