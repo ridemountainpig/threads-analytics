@@ -112,6 +112,34 @@ jobs:
       - name: Build desktop Next.js runtime
         run: pnpm desktop:build:web
 
+  # Builds the self-hosted image and boots it against PostgreSQL on a network
+  # with no internet access (.github/scripts/docker-smoke-test.sh). An image
+  # that cannot start, downloads anything at startup, or ships desktop or
+  # build-only packages fails here instead of reaching docker-publish.yml.
+  docker:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v4
+
+      - name: Build image
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          load: true
+          provenance: false
+          tags: threads-analytics:ci
+          cache-from: type=gha,scope=ci-docker
+          cache-to: type=gha,scope=ci-docker,mode=max
+
+      - name: Smoke-test image
+        run: bash .github/scripts/docker-smoke-test.sh threads-analytics:ci
+
   native-shell:
     needs: changes
     if: needs.changes.outputs.app == 'true'
