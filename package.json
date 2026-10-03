@@ -59,7 +59,7 @@
   "devDependencies": {
     "@native-sdk/cli": "0.10.1",
     "@tailwindcss/postcss": "^4",
-    "@types/node": "^24",
+    "@types/node": "^26",
     "@types/pg": "^8.23.1",
     "@types/react": "^19",
     "@types/react-dom": "^19",
