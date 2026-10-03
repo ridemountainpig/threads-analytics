@@ -6,6 +6,7 @@ import { usePathname } from "next/navigation";
 import { RefreshCw, ArrowRight, TriangleAlert } from "lucide-react";
 import { syncDataAction } from "@/actions/sync";
 import { cn, normalizeIntlSpaces } from "@/lib/utils";
+import { isDesktopApp } from "@/lib/runtime-target";
 import { toast } from "sonner";
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -33,6 +34,7 @@ interface SyncButtonProps {
     staleNotice?: string;
     staleHintManual?: string;
     staleHintAuto?: string;
+    staleHintAutoDesktop?: string;
     goToSettings?: string;
     repliesPermissionMissing?: string;
   };
@@ -96,7 +98,12 @@ export default function SyncButton({
     ? Math.floor((Date.now() - new Date(lastSyncedAt).getTime()) / 86400000)
     : 0;
   const isStale = staleDays >= STALE_AFTER_DAYS && Boolean(copy.staleNotice);
-  const staleHint = syncInterval === "0" ? copy.staleHintManual : copy.staleHintAuto;
+  // On desktop the scheduler only runs while the app is open, so a stale sync
+  // means "you were away", not a broken deployment.
+  const staleHintAuto = isDesktopApp
+    ? (copy.staleHintAutoDesktop ?? copy.staleHintAuto)
+    : copy.staleHintAuto;
+  const staleHint = syncInterval === "0" ? copy.staleHintManual : staleHintAuto;
 
   return (
     <div className="flex max-w-full min-w-0 flex-col items-end gap-1">

@@ -26,6 +26,7 @@
 ## Table of Contents
 
 - [Features](#features)
+- [macOS Desktop App](#macos-desktop-app)
 - [Quick Start](#quick-start)
 - [Getting Your Threads Access Token](#getting-your-threads-access-token)
 - [MCP Server](#mcp-server)
@@ -62,6 +63,16 @@
     <td width="50%"><img src="public/demo/content.png" alt="Analytics — Content patterns and posting activity" /></td>
   </tr>
 </table>
+
+---
+
+## macOS Desktop App
+
+Macs with Apple silicon (M1 or later) can download the desktop app directly from [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases), with no need to install Node.js, pnpm, or PostgreSQL. An Intel Mac build is not currently available.
+
+See the [macOS installation guide](./desktop/docs/install-macos.md) for download, first launch, update, and uninstall instructions.
+
+To build the desktop app from source, see the [desktop README](./desktop/README.md).
 
 ---
 
@@ -136,7 +147,7 @@ Connected clients appear in **Settings → Connected agents**, where each one ca
 
 With several accounts connected, every tool except `get_account_overview` takes an `account` argument (username or id). If it is omitted, the tool returns the list of accounts so the agent asks you which one you mean instead of guessing.
 
-Dates given as `YYYY-MM-DD` cover that whole day in the analytics timezone (Asia/Taipei by default); `list_posts`, `get_analytics`, `compare_periods`, and `get_monthly_review` also take a `timezone` argument to read them in another zone.
+Dates given as `YYYY-MM-DD` cover that whole day in the analytics timezone (Asia/Taipei by default; the desktop app uses the Mac's timezone); `list_posts`, `get_analytics`, `compare_periods`, and `get_monthly_review` also take a `timezone` argument to read them in another zone.
 
 ### Prompts
 

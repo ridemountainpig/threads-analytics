@@ -1,4 +1,5 @@
 import { db } from "@/lib/db";
+import { textContainsInsensitive } from "@/lib/database/text-search";
 import { Prisma } from "@/lib/generated/prisma";
 import { getPostBenchmarks } from "@/lib/post-benchmarks";
 import { buildRetentionBenchmark } from "@/lib/thread-part-kind";
@@ -109,7 +110,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
   // The visible list, narrowed by the search box and media-type filter.
   const listWhere: Prisma.PostWhereInput = {
     ...rangeWhere,
-    ...(query ? { text: { contains: query, mode: "insensitive" as const } } : {}),
+    ...(query ? { text: textContainsInsensitive(query) } : {}),
     ...(mediaFilter && mediaFilter !== "REPOST_FACADE" ? { mediaType: mediaFilter } : {}),
   };
 
@@ -142,8 +143,10 @@ export default async function PostsPage({ searchParams }: PageProps) {
       Prisma.sql`"mediaType" <> 'REPOST_FACADE'`,
     ];
     if (query) {
-      const pattern = `%${query.replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
-      conds.push(Prisma.sql`"text" ILIKE ${pattern}`);
+      // lower() LIKE instead of ILIKE, and an explicit ESCAPE, so the same
+      // statement runs on Postgres (web) and SQLite (desktop).
+      const pattern = `%${query.toLowerCase().replace(/[\\%_]/g, (c) => `\\${c}`)}%`;
+      conds.push(Prisma.sql`lower("text") LIKE ${pattern} ESCAPE '\\'`);
     }
     if (mediaFilter && mediaFilter !== "REPOST_FACADE") {
       conds.push(Prisma.sql`"mediaType" = ${mediaFilter}`);
@@ -152,7 +155,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
     const dirSql = dir === "asc" ? Prisma.sql`ASC` : Prisma.sql`DESC`;
     const idRows = await db.$queryRaw<{ id: string }[]>(Prisma.sql`
       SELECT id FROM "Post" WHERE ${whereSql}
-      ORDER BY (likes + replies + reposts + quotes)::float / NULLIF(views, 0) ${dirSql} NULLS LAST,
+      ORDER BY (likes + replies + reposts + quotes) * 1.0 / NULLIF(views, 0) ${dirSql} NULLS LAST,
         timestamp DESC
       LIMIT ${POSTS_PER_PAGE} OFFSET ${skip}`);
     const ids = idRows.map((r) => r.id);

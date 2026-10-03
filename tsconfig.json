@@ -9,6 +9,7 @@
     "esModuleInterop": true,
     "module": "esnext",
     "moduleResolution": "bundler",
+    "moduleSuffixes": [".web", ""],
     "resolveJsonModule": true,
     "isolatedModules": true,
     "jsx": "react-jsx",
@@ -30,5 +31,14 @@
     ".next/dev/types/**/*.ts",
     "**/*.mts"
   ],
-  "exclude": ["node_modules", "website"]
+  "exclude": [
+    "node_modules",
+    "website",
+    "desktop/dist",
+    "desktop/zig-out",
+    "desktop/runtime/generated",
+    "lib/database/target.desktop.ts",
+    "lib/database/sync-lock-target.desktop.ts",
+    "lib/database/post-benchmarks-target.desktop.ts"
+  ]
 }

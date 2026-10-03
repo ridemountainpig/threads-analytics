@@ -16,9 +16,9 @@ import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
 import AccountSwitcher from "@/components/dashboard/account-switcher";
-import { useImageUpdateStatus } from "@/components/dashboard/use-image-update-status";
+import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 import type { Locale } from "@/lib/i18n";
-import type { ImageVersionLink } from "@/lib/image-update";
+import type { VersionLink } from "@/lib/update-status";
 
 const navItems = [
   { href: "/dashboard/overview", labelKey: "overview", icon: LayoutDashboard },
@@ -38,7 +38,8 @@ interface SidebarProps {
   accounts: Account[];
   locale: Locale;
   appName: string;
-  version: ImageVersionLink | null;
+  version: VersionLink | null;
+  showSignOut?: boolean;
   labels: {
     overview: string;
     analytics: string;
@@ -50,14 +51,21 @@ interface SidebarProps {
   };
 }
 
-export default function Sidebar({ accounts, locale, appName, version, labels }: SidebarProps) {
+export default function Sidebar({
+  accounts,
+  locale,
+  appName,
+  version,
+  labels,
+  showSignOut = true,
+}: SidebarProps) {
   const pathname = usePathname();
   const activeUsername = accounts.find((a) => a.isActive)?.username;
   const multiAccount = accounts.length > 1;
   // The server-rendered link may still be the package overview (the GHCR deep
   // link resolves in the background), so upgrade it from the status endpoint.
-  const { status } = useImageUpdateStatus(Boolean(version));
-  const versionLink = status?.versionLink ?? version;
+  const { status } = useUpdateStatus(Boolean(version));
+  const versionLink = status?.current ?? version;
 
   return (
     <>
@@ -111,15 +119,17 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
 
         <div className="border-border/60 space-y-2 border-t p-2">
           <LanguageSwitcher locale={locale} />
-          <form action={logoutAction}>
-            <button
-              type="submit"
-              className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,color,transform] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
-            >
-              <LogOut className="size-4 shrink-0" />
-              {labels.signOut}
-            </button>
-          </form>
+          {showSignOut && (
+            <form action={logoutAction}>
+              <button
+                type="submit"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,color,transform] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+              >
+                <LogOut className="size-4 shrink-0" />
+                {labels.signOut}
+              </button>
+            </form>
+          )}
           {versionLink && (
             <a
               href={versionLink.url}
@@ -131,7 +141,7 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
                 <Tag className="size-3.5" />
               </span>
               <span className="truncate font-mono text-[11px] tracking-[0.02em]">
-                {versionLink.tag}
+                {versionLink.label}
               </span>
               <ArrowUpRight className="size-3 shrink-0 -translate-x-0.5 opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:translate-x-0 motion-reduce:transition-[opacity]" />
             </a>
@@ -141,7 +151,12 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
 
       {/* Mobile tab bar: iOS grammar — the active tab is tinted, not boxed;
           translucent material with safe-area padding for the home indicator */}
-      <nav className="bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid grid-cols-6 border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden">
+      <nav
+        className={cn(
+          "bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden",
+          showSignOut ? "grid-cols-6" : "grid-cols-5",
+        )}
+      >
         {navItems.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -158,15 +173,17 @@ export default function Sidebar({ accounts, locale, appName, version, labels }: 
             </Link>
           );
         })}
-        <form action={logoutAction} className="flex min-w-0 flex-col items-center">
-          <button
-            type="submit"
-            className="text-muted-foreground flex w-full min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] leading-3 tracking-[0.01em] transition-[color,transform] duration-150 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100"
-          >
-            <LogOut className="size-5 shrink-0" />
-            <span className="max-w-full truncate">{labels.signOut}</span>
-          </button>
-        </form>
+        {showSignOut && (
+          <form action={logoutAction} className="flex min-w-0 flex-col items-center">
+            <button
+              type="submit"
+              className="text-muted-foreground flex w-full min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] leading-3 tracking-[0.01em] transition-[color,transform] duration-150 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100"
+            >
+              <LogOut className="size-5 shrink-0" />
+              <span className="max-w-full truncate">{labels.signOut}</span>
+            </button>
+          </form>
+        )}
       </nav>
     </>
   );

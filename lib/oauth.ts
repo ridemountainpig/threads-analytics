@@ -2,6 +2,7 @@ import "server-only";
 
 import { createHash, randomBytes } from "crypto";
 import { db } from "./db";
+import { isDesktopApp } from "./runtime-target";
 
 export const MCP_SCOPE = "analytics:read";
 
@@ -25,7 +26,11 @@ export function isAllowedRedirectUri(uri: string): boolean {
   } catch {
     return false;
   }
-  if (url.protocol === "https:") return true;
+  // The desktop server only listens on loopback, so only local MCP clients can
+  // reach it. An https redirect there can only belong to a website, which
+  // could otherwise register a client and collect the authorization code from
+  // a consent page that needs no login on desktop.
+  if (url.protocol === "https:") return !isDesktopApp;
   // Loopback redirect URIs are the standard flow for local MCP clients.
   return url.protocol === "http:" && ["localhost", "127.0.0.1", "[::1]"].includes(url.hostname);
 }

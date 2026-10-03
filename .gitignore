@@ -3,6 +3,7 @@
 # dependencies
 /node_modules
 /.pnp
+/.pnpm-store
 .pnp.*
 .pnpm-store/
 .yarn/*
@@ -42,5 +43,13 @@ yarn-error.log*
 next-env.d.ts
 
 /lib/generated/prisma
+/desktop/runtime/generated/prisma
+/desktop/runtime/dev.db*
+/desktop/runtime/build.db*
+/desktop/runtime/.dev-token-encryption-key
+/desktop/runtime/backups
+/desktop/dist
+/desktop/zig-out
+/desktop/.zig-cache
 
 !.env.example

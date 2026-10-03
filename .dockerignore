@@ -13,6 +13,7 @@ yarn-error.log*
 *.pem
 coverage
 .vercel
+desktop
 *.tsbuildinfo
 lib/generated
 README*.md

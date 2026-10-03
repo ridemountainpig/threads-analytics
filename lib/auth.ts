@@ -1,6 +1,7 @@
 import { cookies } from "next/headers";
 import { createHash, createHmac, timingSafeEqual, randomBytes } from "crypto";
 import { db } from "./db";
+import { isDesktopApp } from "./runtime-target";
 
 const SESSION_COOKIE = "ta_session";
 const SESSION_DURATION_MS = 7 * 24 * 60 * 60 * 1000; // 7 days
@@ -46,6 +47,8 @@ export async function createSession(): Promise<string> {
 }
 
 export async function getSession(): Promise<boolean> {
+  if (isDesktopApp) return true;
+
   const store = await cookies();
   const token = store.get(SESSION_COOKIE)?.value;
   if (!token) return false;
@@ -72,6 +75,11 @@ export async function setSessionCookie(token: string): Promise<void> {
 
 export async function clearSessionCookie(): Promise<void> {
   const store = await cookies();
+  if (isDesktopApp) {
+    store.delete(SESSION_COOKIE);
+    return;
+  }
+
   const token = store.get(SESSION_COOKIE)?.value;
   if (token) {
     await db.session.deleteMany({ where: { token: hashToken(token) } }).catch((err) => {

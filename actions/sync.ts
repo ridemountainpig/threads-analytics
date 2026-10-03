@@ -22,7 +22,7 @@ export async function syncDataAction(): Promise<SyncResult> {
   if (results.some((r) => !r.error)) {
     // revalidatePath doesn't touch unstable_cache entries, so expire them too.
     updateTag(USER_INSIGHTS_TAG);
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard", "layout");
   }
 
   const { postsCount, insightsFailed, threadRepliesCount, repliesPermissionMissing, error } =
@@ -46,7 +46,7 @@ export async function syncAccountAction(accountId: string): Promise<SyncResult> 
   if (!result.error) {
     // revalidatePath doesn't touch unstable_cache entries, so expire them too.
     updateTag(USER_INSIGHTS_TAG);
-    revalidatePath("/dashboard");
+    revalidatePath("/dashboard", "layout");
   }
 
   return result;

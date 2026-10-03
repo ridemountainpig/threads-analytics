@@ -2,11 +2,16 @@ import "server-only";
 
 import { db } from "@/lib/db";
 import type { Prisma } from "@/lib/generated/prisma";
-import { syncAccount } from "@/lib/sync-service";
+import { isDesktopApp } from "@/lib/runtime-target";
+import { captureMissingFollowerSnapshot, syncAccount } from "@/lib/sync-service";
 import { withSyncLock } from "@/lib/sync-lock";
 
 const DEFAULT_POLL_MS = 60_000;
 const INITIAL_DELAY_MS = 10_000;
+/** Spacing between follower-count retries while a day still has no snapshot. */
+const SNAPSHOT_RETRY_MS = 15 * 60_000;
+
+const snapshotAttemptedAt = new Map<string, number>();
 
 const globalForScheduler = globalThis as unknown as {
   threadsAnalyticsSyncSchedulerStarted?: boolean;
@@ -92,6 +97,10 @@ export function startSyncScheduler() {
       })
       .catch((error) => {
         console.error("[sync-scheduler] unexpected failure", error);
+      })
+      .then(() => (isDesktopApp ? captureMissingFollowerSnapshots() : undefined))
+      .catch((error) => {
+        console.error("[sync-scheduler] follower snapshot check failed", error);
       });
   };
 
@@ -100,6 +109,25 @@ export function startSyncScheduler() {
 
   const interval = setInterval(run, pollMs);
   interval.unref?.();
+}
+
+// Desktop only: the server runs only while the app is open, so a day on which
+// no scheduled sync comes due (auto sync off, or a daily interval still counting
+// from yesterday's sync) would get no follower snapshot, and the API can never
+// backfill one. Such a day gets just the follower count instead of a full sync.
+async function captureMissingFollowerSnapshots() {
+  await withSyncLock(async () => {
+    const accounts = await db.threadsAccount.findMany({
+      orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
+    });
+    for (const account of accounts) {
+      const attemptedAt = snapshotAttemptedAt.get(account.id);
+      if (attemptedAt !== undefined && Date.now() - attemptedAt < SNAPSHOT_RETRY_MS) continue;
+      if (await captureMissingFollowerSnapshot(account)) {
+        snapshotAttemptedAt.set(account.id, Date.now());
+      }
+    }
+  });
 }
 
 export async function runScheduledSync(

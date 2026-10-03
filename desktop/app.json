@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.native-sdk.dev/app/v1.json",
+  "id": "dev.ridemountainpig.threads-analytics",
+  "name": "threads-analytics-desktop",
+  "display_name": "Threads Analytics",
+  "version": "0.1.0",
+  "icons": ["assets/icon.png"],
+  "platforms": ["macos"],
+  "permissions": [],
+  "capabilities": ["webview"],
+  "frontend": {
+    "dist": "dist",
+    "entry": "index.html",
+    "spa_fallback": false,
+    "dev": {
+      "url": "http://127.0.0.1:43127/",
+      "command": ["pnpm", "--dir", "..", "run", "desktop:dev:web"],
+      "ready_path": "/api/status",
+      "timeout_ms": 60000
+    }
+  },
+  "security": {
+    "navigation": {
+      "allowed_origins": ["zero://app", "http://127.0.0.1:43127"],
+      "external_links": {
+        "action": "open_system_browser",
+        "allowed_urls": [
+          "https://www.threads.net/*",
+          "https://www.threads.com/*",
+          "https://github.com/ridemountainpig/threads-analytics/*",
+          "https://threads-analytics.app/*",
+          "https://developers.facebook.com/*"
+        ]
+      }
+    }
+  },
+  "web_engine": "system",
+  "cef": {
+    "dir": "third_party/cef/macos",
+    "auto_install": false
+  },
+  "windows": [
+    {
+      "label": "main",
+      "title": "Threads Analytics",
+      "width": 1280,
+      "height": 820,
+      "min_width": 960,
+      "min_height": 640,
+      "restore_state": true
+    }
+  ]
+}

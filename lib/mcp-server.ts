@@ -3,6 +3,7 @@ import "server-only";
 import { z } from "zod";
 import type { McpServer } from "@modelcontextprotocol/server";
 import { db } from "./db";
+import { textContainsInsensitive } from "@/lib/database/text-search";
 import { Prisma } from "./generated/prisma";
 import { decryptToken } from "./crypto";
 import { TokenExpiredError } from "./threads-api";
@@ -411,7 +412,7 @@ export function registerMcpServer(server: McpServer) {
         // Repost facades are never real posts, even when filtering by type.
         mediaType:
           media_type && media_type !== "REPOST_FACADE" ? media_type : { not: "REPOST_FACADE" },
-        ...(query ? { text: { contains: query, mode: "insensitive" as const } } : {}),
+        ...(query ? { text: textContainsInsensitive(query) } : {}),
       };
 
       const total = await db.post.count({ where });

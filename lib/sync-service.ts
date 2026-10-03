@@ -76,7 +76,7 @@ interface SyncAccount {
  * no matter what triggered the sync.
  */
 async function captureFollowerSnapshot(accountId: string, accessToken: string): Promise<void> {
-  const date = dateKeyToUtcDate(getDateString(new Date(), DEFAULT_TZ));
+  const date = todaySnapshotDate();
 
   let existing: { followersCount: number; demographics: unknown; capturedAt: Date } | null = null;
   try {
@@ -133,6 +133,42 @@ async function captureFollowerSnapshot(accountId: string, accessToken: string): 
       err instanceof Error ? err.message : err,
     );
   }
+}
+
+function todaySnapshotDate(): Date {
+  return dateKeyToUtcDate(getDateString(new Date(), DEFAULT_TZ));
+}
+
+/**
+ * Captures today's follower snapshot for an account that has none yet, without
+ * the rest of a sync. Returns whether it called the API, so the caller can space
+ * out retries while the API keeps failing.
+ */
+export async function captureMissingFollowerSnapshot(account: SyncAccount): Promise<boolean> {
+  if (account.expiresAt < new Date()) return false;
+
+  const existing = await db.followerSnapshot.findUnique({
+    where: { accountId_date: { accountId: account.id, date: todaySnapshotDate() } },
+    select: { accountId: true },
+  });
+  if (existing) return false;
+
+  let accessToken: string;
+  try {
+    accessToken = decryptToken(account.accessToken);
+  } catch {
+    return false;
+  }
+
+  try {
+    await captureFollowerSnapshot(account.id, accessToken);
+  } catch (err) {
+    console.warn(
+      `[sync] follower snapshot failed for ${account.id}:`,
+      err instanceof Error ? err.message : err,
+    );
+  }
+  return true;
 }
 
 interface ThreadRepliesSyncResult {

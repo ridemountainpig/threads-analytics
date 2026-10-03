@@ -59,7 +59,7 @@ export const dictionaries = {
       switchAccount: "Switch account",
     },
     updateBanner: {
-      newImageAvailable: "A new version of Threads Analytics is available.",
+      newVersionAvailable: "A new version of Threads Analytics is available.",
       howToUpdate: "See how to update",
       dismiss: "Dismiss",
     },
@@ -97,6 +97,7 @@ export const dictionaries = {
       staleHintManual: "Sync now, or turn on auto sync in Settings so this happens automatically.",
       staleHintAuto:
         "Auto sync doesn't seem to be running. Check your deployment or sync manually.",
+      staleHintAutoDesktop: "Auto sync only runs while the app is open. Sync now to catch up.",
       goToSettings: "Open Settings",
       repliesPermissionMissing:
         "Thread parts were skipped: this token lacks the threads_read_replies permission. Re-generate it with reply permissions to track them.",
@@ -483,6 +484,8 @@ export const dictionaries = {
       autoSync: "Auto Sync",
       autoSyncSub:
         "Works automatically on Docker and VPS. On Vercel, the built-in scheduler does not run — configure a Vercel Cron job to call /api/cron/sync at your chosen interval.",
+      autoSyncSubDesktop:
+        "Runs in the background at your chosen interval while the app is open. Even when it's off, the follower count is recorded once a day while the app is open, since past days can't be fetched later.",
       lastSynced: "Last synced",
       switch: "Switch",
       addAccount: "Add Threads account",
@@ -520,10 +523,14 @@ export const dictionaries = {
     versionInfo: {
       title: "About",
       subtitle: "Version and update status of this deployment.",
+      subtitleDesktop: "Version and update status of this app.",
       currentVersion: "Current version",
       sourceBuild: "Source build",
+      sourceBuildDesktop: "Development build",
       sourceBuildHelp:
         "Version info and update checks are only available on published Docker images.",
+      sourceBuildHelpDesktop:
+        "Version info and update checks are only available in releases downloaded from GitHub Releases.",
       checking: "Checking for updates...",
       upToDate: "You're on the latest version.",
       updateAvailable: "A new version is available.",
@@ -606,7 +613,7 @@ export const dictionaries = {
       switchAccount: "切換帳號",
     },
     updateBanner: {
-      newImageAvailable: "Threads Analytics 有新版本可以更新。",
+      newVersionAvailable: "Threads Analytics 有新版本可以更新。",
       howToUpdate: "查看更新方式",
       dismiss: "關閉",
     },
@@ -643,6 +650,7 @@ export const dictionaries = {
       staleNotice: "資料已 {days} 天未同步。",
       staleHintManual: "建議立即同步；也可以到設定開啟自動同步，之後就不用手動更新。",
       staleHintAuto: "自動同步似乎沒有正常執行，請檢查部署環境或手動同步一次。",
+      staleHintAutoDesktop: "自動同步只在 App 開啟時執行，現在手動同步一次即可補上資料。",
       goToSettings: "前往設定",
       repliesPermissionMissing:
         "已略過串文：此 access token 缺少 threads_read_replies 權限，請重新產生含回覆權限的 token。",
@@ -1013,6 +1021,8 @@ export const dictionaries = {
       autoSync: "自動同步",
       autoSyncSub:
         "Docker 與 VPS 部署會自動在背景執行。Vercel 不支援內建排程，請設定 Vercel Cron 定期呼叫 /api/cron/sync。",
+      autoSyncSubDesktop:
+        "App 開啟期間會依你選擇的間隔自動在背景同步。即使關閉自動同步，App 開啟時每天仍會記錄一次追蹤人數，因為過去的追蹤人數之後無法補抓。",
       lastSynced: "上次同步",
       switch: "切換",
       addAccount: "新增 Threads 帳號",
@@ -1050,9 +1060,12 @@ export const dictionaries = {
     versionInfo: {
       title: "關於",
       subtitle: "此部署的版本與更新狀態。",
+      subtitleDesktop: "此 App 的版本與更新狀態。",
       currentVersion: "目前版本",
       sourceBuild: "原始碼建置",
+      sourceBuildDesktop: "開發版建置",
       sourceBuildHelp: "版本資訊與更新檢查僅在發佈的 Docker 映像上提供。",
+      sourceBuildHelpDesktop: "版本資訊與更新檢查僅在從 GitHub Releases 下載的發行版本中提供。",
       checking: "檢查更新中...",
       upToDate: "目前已是最新版本。",
       updateAvailable: "有新版本可以更新。",
@@ -1136,7 +1149,7 @@ export const dictionaries = {
       switchAccount: "アカウントを切り替え",
     },
     updateBanner: {
-      newImageAvailable: "Threads Analytics の新しいバージョンが利用可能です。",
+      newVersionAvailable: "Threads Analytics の新しいバージョンが利用可能です。",
       howToUpdate: "更新方法を見る",
       dismiss: "閉じる",
     },
@@ -1174,6 +1187,8 @@ export const dictionaries = {
       staleHintManual: "今すぐ同期するか、設定で自動同期を有効にすると手動更新が不要になります。",
       staleHintAuto:
         "自動同期が動作していないようです。デプロイ環境を確認するか手動で同期してください。",
+      staleHintAutoDesktop:
+        "自動同期はアプリを開いている間のみ実行されます。今すぐ同期して最新の状態にしてください。",
       goToSettings: "設定を開く",
       repliesPermissionMissing:
         "スレッドの続きはスキップされました。このトークンには threads_read_replies 権限がないため、返信権限を含めて再生成してください。",
@@ -1558,6 +1573,8 @@ export const dictionaries = {
       autoSync: "自動同期",
       autoSyncSub:
         "Docker と VPS では自動的に動作します。Vercel では内蔵スケジューラが動作しないため、Vercel Cron で /api/cron/sync を任意の間隔で呼び出してください。",
+      autoSyncSubDesktop:
+        "アプリを開いている間、選択した間隔で自動的にバックグラウンド同期します。オフの場合も、過去のフォロワー数は後から取得できないため、アプリを開いている間は 1 日 1 回フォロワー数を記録します。",
       lastSynced: "最終同期",
       switch: "切り替え",
       addAccount: "Threads アカウントを追加",
@@ -1595,10 +1612,14 @@ export const dictionaries = {
     versionInfo: {
       title: "このアプリについて",
       subtitle: "このデプロイのバージョンと更新状況。",
+      subtitleDesktop: "このアプリのバージョンと更新状況。",
       currentVersion: "現在のバージョン",
       sourceBuild: "ソースビルド",
+      sourceBuildDesktop: "開発ビルド",
       sourceBuildHelp:
         "バージョン情報と更新チェックは、公開された Docker イメージでのみ利用できます。",
+      sourceBuildHelpDesktop:
+        "バージョン情報と更新チェックは、GitHub Releases からダウンロードしたリリース版でのみ利用できます。",
       checking: "更新を確認中...",
       upToDate: "最新バージョンです。",
       updateAvailable: "新しいバージョンが利用可能です。",

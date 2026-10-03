@@ -3,9 +3,9 @@
 import { ArrowUpRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import type { Locale } from "@/lib/i18n";
-import type { ImageVersionLink } from "@/lib/image-update";
-import { UPDATE_GUIDE_URLS } from "@/lib/update-guide";
-import { useImageUpdateStatus } from "@/components/dashboard/use-image-update-status";
+import type { VersionLink } from "@/lib/update-status";
+import { updateGuideUrl } from "@/lib/update-guide";
+import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
 type UpdateState = "checking" | "upToDate" | "updateAvailable" | "unavailable";
 
@@ -14,7 +14,7 @@ export default function VersionInfo({
   locale,
   labels,
 }: {
-  version: ImageVersionLink | null;
+  version: VersionLink | null;
   locale: Locale;
   labels: {
     currentVersion: string;
@@ -27,15 +27,15 @@ export default function VersionInfo({
     howToUpdate: string;
   };
 }) {
-  const { status, failed } = useImageUpdateStatus(Boolean(version));
-  const versionLink = status?.versionLink ?? version;
+  const { status, failed } = useUpdateStatus(Boolean(version));
+  const versionLink = status?.current ?? version;
 
   let updateState: UpdateState = "checking";
   if (failed) updateState = "unavailable";
   else if (status) {
     if (status.updateAvailable) updateState = "updateAvailable";
-    // `checked` is false when the server-side GHCR check failed or was
-    // partial, so "you're up to date" is only claimed when it is true.
+    // `checked` is false when the server-side check failed or was partial,
+    // so "you're up to date" is only claimed when it is true.
     else if (status.supported && status.checked) updateState = "upToDate";
     else updateState = "unavailable";
   }
@@ -50,7 +50,7 @@ export default function VersionInfo({
             render={<a href={versionLink.url} target="_blank" rel="noreferrer" />}
             className="bg-muted/70 text-foreground/70 hover:bg-muted hover:text-foreground h-auto gap-1 rounded-full px-2.5 py-1 font-mono transition-colors duration-150 motion-reduce:transition-none"
           >
-            {versionLink.tag}
+            {versionLink.label}
             <ArrowUpRight className="opacity-60" />
           </Badge>
         ) : (
@@ -75,8 +75,20 @@ export default function VersionInfo({
               <RefreshCw className="size-4 shrink-0 text-amber-600 dark:text-amber-500" />
               <span className="min-w-0">
                 {labels.updateAvailable}{" "}
+                {status?.latest && (
+                  <>
+                    <a
+                      href={status.latest.url}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="text-foreground/80 hover:text-foreground font-mono underline underline-offset-2"
+                    >
+                      {status.latest.label}
+                    </a>{" "}
+                  </>
+                )}
                 <a
-                  href={UPDATE_GUIDE_URLS[locale]}
+                  href={updateGuideUrl(locale)}
                   target="_blank"
                   rel="noreferrer"
                   className="text-tint font-medium underline underline-offset-2 hover:opacity-80"

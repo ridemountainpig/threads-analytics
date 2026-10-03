@@ -1,6 +1,6 @@
 import "server-only";
 
-import { MCP_SCOPE, getClient } from "@/lib/oauth";
+import { MCP_SCOPE, getClient, isAllowedRedirectUri } from "@/lib/oauth";
 
 export interface AuthorizeParams {
   response_type?: string;
@@ -33,7 +33,11 @@ export async function validateAuthorizeRequest(
   if (!clientId || !redirectUri) return { status: "invalid" };
 
   const client = await getClient(clientId);
-  if (!client || !client.redirectUris.includes(redirectUri)) return { status: "invalid" };
+  // Re-check the policy, not just the registration: clients registered before
+  // it tightened (or in a database copied from another target) stay blocked.
+  if (!client || !client.redirectUris.includes(redirectUri) || !isAllowedRedirectUri(redirectUri)) {
+    return { status: "invalid" };
+  }
 
   const errorRedirect = (error: string): AuthorizeValidation => {
     const url = new URL(redirectUri);
