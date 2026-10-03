@@ -16,5 +16,12 @@ coverage
 desktop
 *.tsbuildinfo
 lib/generated
-README*.md
+# Root-level docs and agent files; nested ones such as the token guide's
+# public/token-generate-step/README*.md are read at runtime and stay.
+*.md
+docs
+.agents
+.claude
+zeabur.yaml
+skills-lock.json
 website

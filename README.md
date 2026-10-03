@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://threads-analytics.app/en"><img src="public/dashboard.png" alt="Threads Analytics dashboard" /></a>
+  <a href="https://threads-analytics.app/en"><img src="docs/images/dashboard.png" alt="Threads Analytics dashboard" /></a>
 </p>
 
 ---
@@ -55,12 +55,12 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="public/demo/analytics.png" alt="Analytics — Performance charts" /></td>
-    <td width="50%"><img src="public/demo/audience.png" alt="Analytics — Audience growth and demographics" /></td>
+    <td width="50%"><img src="docs/images/demo/analytics.png" alt="Analytics — Performance charts" /></td>
+    <td width="50%"><img src="docs/images/demo/audience.png" alt="Analytics — Audience growth and demographics" /></td>
   </tr>
   <tr>
-    <td width="50%"><img src="public/demo/posts.png" alt="Posts list with per-post analytics panel" /></td>
-    <td width="50%"><img src="public/demo/content.png" alt="Analytics — Content patterns and posting activity" /></td>
+    <td width="50%"><img src="docs/images/demo/posts.png" alt="Posts list with per-post analytics panel" /></td>
+    <td width="50%"><img src="docs/images/demo/content.png" alt="Analytics — Content patterns and posting activity" /></td>
   </tr>
 </table>
 
@@ -240,7 +240,7 @@ Your database (posts, insights, accounts) is preserved across updates.
 
 ## Development
 
-Requirements: Node.js 20.9+, pnpm, and a PostgreSQL database.
+Requirements: Node.js 22.12+ or 24+, pnpm, and a PostgreSQL database.
 
 ### 1. Clone and install
 

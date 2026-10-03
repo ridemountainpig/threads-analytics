@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://threads-analytics.app/zh-TW"><img src="public/dashboard-zh.png" alt="Threads Analytics 儀表板" /></a>
+  <a href="https://threads-analytics.app/zh-TW"><img src="docs/images/dashboard-zh.png" alt="Threads Analytics 儀表板" /></a>
 </p>
 
 ---
@@ -55,12 +55,12 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="public/demo/analytics.png" alt="分析 — 成效圖表" /></td>
-    <td width="50%"><img src="public/demo/audience.png" alt="分析 — 受眾成長與輪廓" /></td>
+    <td width="50%"><img src="docs/images/demo/analytics.png" alt="分析 — 成效圖表" /></td>
+    <td width="50%"><img src="docs/images/demo/audience.png" alt="分析 — 受眾成長與輪廓" /></td>
   </tr>
   <tr>
-    <td width="50%"><img src="public/demo/posts.png" alt="貼文列表與單篇分析面板" /></td>
-    <td width="50%"><img src="public/demo/content.png" alt="分析 — 內容模式與發文活動" /></td>
+    <td width="50%"><img src="docs/images/demo/posts.png" alt="貼文列表與單篇分析面板" /></td>
+    <td width="50%"><img src="docs/images/demo/content.png" alt="分析 — 內容模式與發文活動" /></td>
   </tr>
 </table>
 
@@ -240,7 +240,7 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
 
 ## 開發設定
 
-系統需求：Node.js 20.9+、pnpm、PostgreSQL 資料庫。
+系統需求：Node.js 22.12+ 或 24+、pnpm、PostgreSQL 資料庫。
 
 ### 1. 複製專案並安裝套件
 

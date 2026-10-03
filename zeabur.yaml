@@ -5,7 +5,7 @@ metadata:
 spec:
   description: A self-hosted Threads analytics dashboard. Connect your access token and explore post performance with detailed charts and metrics.
   icon: https://raw.githubusercontent.com/ridemountainpig/threads-analytics/refs/heads/main/public/threads-analytics-icon.png
-  coverImage: https://raw.githubusercontent.com/ridemountainpig/threads-analytics/refs/heads/main/public/dashboard.png
+  coverImage: https://raw.githubusercontent.com/ridemountainpig/threads-analytics/refs/heads/main/docs/images/dashboard.png
   tags:
     - Analytics
     - Social Media

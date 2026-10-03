@@ -25,7 +25,7 @@ Threads Analytics 桌面版將現有的網頁儀表板封裝成 macOS app。你�
 環境需求：
 
 - 配備 Apple Silicon 的 Mac
-- Node.js 24.21.0（固定於 `.nvmrc`；桌面版建置會內嵌這個版本的 runtime，與網頁版的 Node.js 20.9+ 不同）
+- Node.js 24.21.0（固定於 `.nvmrc`；桌面版建置會內嵌這個版本的 runtime，網頁版則支援 Node.js 22.12+ 或 24+）
 - pnpm
 - [Zig](https://ziglang.org/download/) 0.16.0 或更新版本，且可在 `PATH` 中找到
 - Xcode Command Line Tools（`xcode-select --install`），封裝時需要 `codesign`

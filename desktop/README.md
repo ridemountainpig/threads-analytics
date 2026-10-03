@@ -25,7 +25,7 @@ The desktop app supports macOS 11 or later on Macs with Apple silicon (M1 or lat
 Requirements:
 
 - A Mac with Apple silicon
-- Node.js 24.21.0 (pinned in `.nvmrc`; the desktop build embeds this exact runtime, unlike the web version's Node.js 20.9+)
+- Node.js 24.21.0 (pinned in `.nvmrc`; the desktop build embeds this exact runtime, while the web version runs on Node.js 22.12+ or 24+)
 - pnpm
 - [Zig](https://ziglang.org/download/) 0.16.0 or later, available on `PATH`
 - Xcode Command Line Tools (`xcode-select --install`), for `codesign` during packaging

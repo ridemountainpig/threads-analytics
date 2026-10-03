@@ -25,7 +25,7 @@ Threads Analytics デスクトップ版は、既存の Web ダッシュボード
 必要な環境：
 
 - Apple Silicon 搭載 Mac
-- Node.js 24.21.0（`.nvmrc` で固定。デスクトップ版のビルドはこのバージョンのランタイムを同梱するため、Web 版の Node.js 20.9+ とは異なります）
+- Node.js 24.21.0（`.nvmrc` で固定。デスクトップ版のビルドはこのバージョンのランタイムを同梱するため、Web 版は Node.js 22.12+ または 24+ で動作します）
 - pnpm
 - [Zig](https://ziglang.org/download/) 0.16.0 以降（`PATH` から実行できること）
 - Xcode Command Line Tools（`xcode-select --install`）。パッケージ化時の `codesign` に必要です

@@ -42,6 +42,25 @@ jobs:
             type=sha,format=short
             type=raw,value=latest
 
+      # Boot the amd64 image against PostgreSQL before anything is pushed, so a
+      # broken image never becomes `latest`. The multi-platform build below
+      # reuses these layers from the builder's cache.
+      - name: Build image for smoke test
+        uses: docker/build-push-action@v7
+        with:
+          context: .
+          platforms: linux/amd64
+          load: true
+          provenance: false
+          build-args: |
+            GIT_COMMIT_SHA=${{ github.sha }}
+            IMAGE_REPOSITORY=${{ github.repository }}
+          tags: threads-analytics:smoke
+          cache-from: type=gha
+
+      - name: Smoke-test image
+        run: bash .github/scripts/docker-smoke-test.sh threads-analytics:smoke
+
       - name: Build and push Docker image
         id: build
         uses: docker/build-push-action@v7
