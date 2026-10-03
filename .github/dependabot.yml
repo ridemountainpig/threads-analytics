@@ -13,6 +13,22 @@ updates:
     commit-message:
       prefix: "chore(deps)"
 
+  # The marketing website is an independent pnpm project with its own
+  # lockfile, so it needs its own entry; a separate entry also keeps a
+  # website bump from blocking the dashboard's.
+  - package-ecosystem: "npm"
+    directory: "/website"
+    schedule:
+      interval: "weekly"
+    groups:
+      minor-and-patch:
+        update-types:
+          - "minor"
+          - "patch"
+    open-pull-requests-limit: 5
+    commit-message:
+      prefix: "chore(website)"
+
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:

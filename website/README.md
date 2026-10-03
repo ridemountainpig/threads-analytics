@@ -4,6 +4,9 @@ The independent marketing website for [Threads Analytics](https://github.com/rid
 
 ## Development
 
+The website is a separate pnpm project from the dashboard at the repository root, with its own
+lockfile. Run its commands from this `website/` directory:
+
 ```bash
 pnpm install
 pnpm dev
