@@ -110,8 +110,11 @@ jobs:
       - name: Validate packaging runtime
         run: pnpm desktop:package:check
 
+      # The desktop target type-checks the shared app code, which imports the
+      # web client from lib/generated/prisma, so both clients are generated.
       - name: Type-check and test the desktop target
         run: |
+          pnpm prisma:generate
           pnpm desktop:prisma:generate
           pnpm desktop:prisma:validate
           pnpm desktop:typecheck
