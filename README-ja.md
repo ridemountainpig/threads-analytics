@@ -18,7 +18,7 @@
 </p>
 
 <p align="center">
-  <a href="https://threads-analytics.app/ja"><img src="public/dashboard-ja.png" alt="Threads Analytics ダッシュボード" /></a>
+  <a href="https://threads-analytics.app/ja"><img src="docs/images/dashboard-ja.png" alt="Threads Analytics ダッシュボード" /></a>
 </p>
 
 ---
@@ -55,12 +55,12 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="public/demo/analytics.png" alt="アナリティクス — パフォーマンスチャート" /></td>
-    <td width="50%"><img src="public/demo/audience.png" alt="アナリティクス — オーディエンスの成長と属性" /></td>
+    <td width="50%"><img src="docs/images/demo/analytics.png" alt="アナリティクス — パフォーマンスチャート" /></td>
+    <td width="50%"><img src="docs/images/demo/audience.png" alt="アナリティクス — オーディエンスの成長と属性" /></td>
   </tr>
   <tr>
-    <td width="50%"><img src="public/demo/posts.png" alt="投稿リストと投稿ごとのアナリティクスパネル" /></td>
-    <td width="50%"><img src="public/demo/content.png" alt="アナリティクス — コンテンツ傾向と投稿アクティビティ" /></td>
+    <td width="50%"><img src="docs/images/demo/posts.png" alt="投稿リストと投稿ごとのアナリティクスパネル" /></td>
+    <td width="50%"><img src="docs/images/demo/content.png" alt="アナリティクス — コンテンツ傾向と投稿アクティビティ" /></td>
   </tr>
 </table>
 
