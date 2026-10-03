@@ -18,7 +18,62 @@ permissions:
   contents: read
 
 jobs:
+  # Pull requests only run the jobs their changed files can affect. Skipping
+  # through a job-level `if` keeps required checks satisfied (a skipped job
+  # counts as passed), whereas a workflow-level `paths` filter would leave them
+  # pending. Pushes to main always run everything.
+  changes:
+    runs-on: ubuntu-latest
+    outputs:
+      app: ${{ steps.classify.outputs.app }}
+      website: ${{ steps.classify.outputs.website }}
+    steps:
+      # A pull_request checkout is the test merge commit, whose first parent is
+      # the base branch, so a depth of 2 is enough to diff the whole PR.
+      - name: Checkout repository
+        if: github.event_name == 'pull_request'
+        uses: actions/checkout@v7
+        with:
+          fetch-depth: 2
+
+      - name: Classify changed files
+        id: classify
+        env:
+          EVENT_NAME: ${{ github.event_name }}
+        run: |
+          set -euo pipefail
+          if [[ "$EVENT_NAME" != "pull_request" ]]; then
+            echo "app=true" >> "$GITHUB_OUTPUT"
+            echo "website=true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          # --no-renames lists a moved file under both paths, so moving a file
+          # out of the dashboard still counts as a dashboard change.
+          changed="$(git diff --no-renames --name-only HEAD^1 HEAD)"
+          app=false
+          website=false
+          while IFS= read -r file; do
+            [[ -z "$file" ]] && continue
+            if [[ "$file" == website/* ]]; then
+              website=true
+            elif [[ "$file" == .github/workflows/ci.yml || "$file" == .nvmrc ]]; then
+              app=true
+              website=true
+            elif [[ "$file" =~ ^(docs/|desktop/docs/|desktop/README[^/]*\.md$|[^/]+\.md$|LICENSE$|zeabur\.yaml$|\.github/dependabot\.yml$) ]]; then
+              : # Documentation and hosting templates: nothing to build or test.
+            else
+              app=true
+            fi
+          done <<< "$changed"
+
+          echo "app=$app" >> "$GITHUB_OUTPUT"
+          echo "website=$website" >> "$GITHUB_OUTPUT"
+          echo "Dashboard and desktop jobs: $app; website job: $website"
+
   application:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -58,6 +113,8 @@ jobs:
         run: pnpm desktop:build:web
 
   native-shell:
+    needs: changes
+    if: needs.changes.outputs.app == 'true'
     runs-on: macos-14
     permissions:
       contents: read
@@ -159,3 +216,42 @@ jobs:
           else
             gh api --method POST "repos/$GITHUB_REPOSITORY/issues/$PR_NUMBER/comments" -f body="$body" > /dev/null
           fi
+
+  # The marketing website is an independent pnpm project with its own lockfile
+  # (see website/pnpm-workspace.yaml), so it installs and builds on its own.
+  website:
+    needs: changes
+    if: needs.changes.outputs.website == 'true'
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: website
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v7
+
+      - name: Install pnpm
+        uses: pnpm/action-setup@v6
+        with:
+          package_json_file: website/package.json
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: website/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Lint
+        run: pnpm lint
+
+      # Production builds refuse to run without the canonical origin
+      # (website/lib/site.ts), so CI builds against the real one.
+      - name: Build
+        env:
+          SITE_URL: https://threads-analytics.app
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: pnpm build
