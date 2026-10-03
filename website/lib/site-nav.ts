@@ -13,6 +13,7 @@ export type SiteNavIcon =
   | "railway"
   | "zeabur"
   | "vercel"
+  | "desktop"
   | "token"
   | GuideSlug;
 
@@ -70,6 +71,7 @@ export function getSiteNav(locale: Locale): SiteNavGroup[] {
         entry(nav.railwayAgent, `${home}/deploy/railway-agent`, "railway"),
         entry(nav.zeaburAgent, `${home}/deploy/zeabur-agent`, "zeabur"),
         entry(nav.vercelAgent, `${home}/deploy/vercel-agent`, "vercel"),
+        entry(nav.desktop, `${home}/desktop`, "desktop"),
       ],
     },
     {

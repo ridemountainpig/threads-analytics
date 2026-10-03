@@ -10,6 +10,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     { path: "/deploy/railway-agent" },
     { path: "/deploy/zeabur-agent" },
     { path: "/deploy/vercel-agent" },
+    { path: "/desktop" },
     { path: "/token-guide" },
     { path: "/mcp" },
     { path: "/giveaway" },
