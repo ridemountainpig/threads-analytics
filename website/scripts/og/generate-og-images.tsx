@@ -457,6 +457,25 @@ const variants: OgVariant[] = [
     },
   },
   {
+    prefix: "desktop",
+    render: (locale, brandIconSrc) => {
+      const copy = getDictionary(locale).desktopGuide;
+      return renderOpenGraphImage({
+        brandIconSrc,
+        brandLabel: brandLabels[locale],
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+            MAC APP
+            {arrowGlyph}
+          </span>
+        ),
+      });
+    },
+  },
+  {
     prefix: "vercel-agent",
     render: (locale, brandIconSrc) => {
       const copy = getDictionary(locale).vercelAgentDeploy;

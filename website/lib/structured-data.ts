@@ -118,6 +118,58 @@ export function getDeployPageStructuredData({
 }
 
 /**
+ * The desktop page describes a downloadable build, so on top of the
+ * breadcrumb it carries its own SoftwareApplication entry with the platform
+ * requirements from desktop/docs/install-macos.md.
+ */
+export function getDesktopPageStructuredData({
+  locale,
+  title,
+  description,
+}: {
+  locale: Locale;
+  title: string;
+  description: string;
+}) {
+  const path = "/desktop";
+  const pageUrl = `${siteConfig.url}/${locale}${path}`;
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      getBreadcrumbStructuredData({ locale, path, title }),
+      {
+        "@type": "SoftwareApplication",
+        "@id": `${pageUrl}#software-application`,
+        url: pageUrl,
+        name: `${siteConfig.name} for Mac`,
+        description,
+        image: `${siteConfig.url}/media/dashboard.png`,
+        applicationCategory: "BusinessApplication",
+        applicationSubCategory: "Social media analytics",
+        operatingSystem: "macOS 11 or later",
+        processorRequirements: "Apple silicon (arm64)",
+        downloadUrl: siteConfig.desktopReleases,
+        isAccessibleForFree: true,
+        license: "https://www.gnu.org/licenses/agpl-3.0.html",
+        inLanguage: locale,
+        offers: {
+          "@type": "Offer",
+          price: "0",
+          priceCurrency: "USD",
+        },
+        author: {
+          "@type": "Person",
+          name: "Yen Cheng",
+          url: siteConfig.creator,
+        },
+        sameAs: siteConfig.github,
+      },
+    ],
+  };
+}
+
+/**
  * HowTo markup for the token guide. Google retired HowTo rich results, but
  * the markup still helps search and AI crawlers understand the page as a
  * step-by-step procedure. Step anchors mirror the page's `#step-N` ids.

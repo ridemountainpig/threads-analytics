@@ -11143,6 +11143,505 @@ button.mcp-mock-btn:active {
   }
 }
 
+/* ---------- Desktop app (/desktop + homepage deploy link) ---------- */
+
+/* Homepage: the no-server alternative, one quiet line under the deploy cards. */
+.deploy-desktop-link {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 10px;
+  align-items: center;
+  justify-content: center;
+  margin: 34px 0 0;
+  color: var(--ink-soft);
+  font-size: 14.5px;
+}
+
+.deploy-desktop-link a {
+  display: inline-flex;
+  gap: 6px;
+  align-items: center;
+  color: var(--accent-strong);
+  font-weight: 600;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition:
+    gap 180ms var(--ease-out),
+    text-decoration-color 180ms ease;
+}
+
+.deploy-desktop-link a:hover {
+  gap: 9px;
+  text-decoration-color: currentColor;
+}
+
+.deploy-desktop-link svg {
+  width: 15px;
+  height: 15px;
+}
+
+/* Hero download card: app identity, requirements, then the asset to pick. */
+.desktop-download-card {
+  gap: 16px;
+}
+
+.desktop-download-head {
+  display: flex;
+  gap: 13px;
+  align-items: center;
+  padding-bottom: 16px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.desktop-download-icon {
+  flex: 0 0 auto;
+  border-radius: 11px;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.28);
+}
+
+.desktop-download-name {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.desktop-download-name strong {
+  font-size: 16px;
+  font-weight: 620;
+  letter-spacing: -0.015em;
+}
+
+.desktop-download-name span {
+  color: rgba(255, 255, 255, 0.55);
+  font-size: 12.5px;
+}
+
+.desktop-download-file {
+  overflow-wrap: anywhere;
+  color: rgba(255, 255, 255, 0.9);
+  font-family: var(--mono);
+  font-size: 12.5px;
+  letter-spacing: 0.01em;
+}
+
+/* The shared .agent-prompt-hint is white for dark hero cards. */
+.desktop-hero-hint {
+  color: var(--ink-soft);
+}
+
+/* macOS window around the dashboard screenshot. */
+.desktop-window {
+  margin: 0;
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: 14px;
+  background: var(--paper-strong);
+  box-shadow: 0 30px 80px rgba(45, 29, 57, 0.14);
+}
+
+.desktop-window-bar {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  padding: 11px 16px;
+  border-bottom: 1px solid var(--rule);
+  background: linear-gradient(180deg, #f7f4fb 0%, #efebf5 100%);
+}
+
+.desktop-window-lights {
+  display: flex;
+  gap: 8px;
+  justify-self: start;
+}
+
+.desktop-window-lights span {
+  width: 12px;
+  height: 12px;
+  border: 0.5px solid rgba(0, 0, 0, 0.12);
+  border-radius: 50%;
+  background: #ff5f57;
+}
+
+.desktop-window-lights span:nth-child(2) {
+  background: #febc2e;
+}
+
+.desktop-window-lights span:nth-child(3) {
+  background: #28c840;
+}
+
+.desktop-window-title {
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.desktop-window-status {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  justify-self: end;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+}
+
+.desktop-window-status i {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: #28c840;
+  box-shadow: 0 0 0 3px rgba(40, 200, 64, 0.16);
+}
+
+/* The screenshot comes from the web build; cropping above its sidebar footer
+   drops the sign-out row the desktop app doesn't have. */
+.desktop-window-shot {
+  overflow: hidden;
+  aspect-ratio: 3000 / 1400;
+}
+
+.desktop-window-shot img {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.desktop-perks-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 14px;
+  margin-top: 26px;
+}
+
+/* Mac app vs. self-hosted web, side by side. */
+.desktop-compare {
+  overflow: hidden;
+  border: 1px solid var(--rule-strong);
+  border-radius: 16px;
+  background: var(--paper-strong);
+  box-shadow: 0 18px 44px rgba(45, 29, 57, 0.07);
+}
+
+.desktop-compare table {
+  width: 100%;
+  border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.desktop-compare th,
+.desktop-compare td {
+  padding: 16px 22px;
+  border-bottom: 1px solid var(--rule);
+  text-align: left;
+  vertical-align: top;
+  font-size: 14px;
+  line-height: 1.55;
+  text-wrap: pretty;
+}
+
+.desktop-compare tbody tr:last-child th,
+.desktop-compare tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.desktop-compare thead th {
+  padding-top: 18px;
+  padding-bottom: 18px;
+  font-size: 15px;
+  font-weight: 650;
+  letter-spacing: -0.014em;
+}
+
+.desktop-compare thead th:first-child {
+  width: 22%;
+}
+
+.desktop-compare thead svg {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  margin-right: 8px;
+  vertical-align: -3px;
+  color: var(--ink-soft);
+}
+
+.desktop-compare tbody th {
+  color: var(--ink-soft);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+:lang(zh) .desktop-compare tbody th,
+:lang(ja) .desktop-compare tbody th {
+  font-size: 13px;
+  letter-spacing: 0.02em;
+}
+
+/* The Mac column is this page's subject, so it carries the accent tint. */
+.desktop-compare .desktop-compare-mac {
+  background: color-mix(in srgb, var(--accent-soft) 34%, transparent);
+}
+
+.desktop-compare thead .desktop-compare-mac svg {
+  color: var(--accent-strong);
+}
+
+.desktop-compare + .giveaway-token-note {
+  margin-top: 18px;
+}
+
+/* Install steps: four across like the giveaway page; the setup strip keeps
+   the default three. Inline UI labels are bold, not block headings. */
+.desktop-steps-strip {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 24px;
+}
+
+.desktop-steps-strip p strong,
+.desktop-setup-strip p strong {
+  display: inline;
+  font-size: inherit;
+  font-weight: 620;
+  letter-spacing: inherit;
+  color: var(--ink);
+}
+
+.desktop-setup {
+  margin: 72px 0 30px;
+  padding-top: 40px;
+  border-top: 1px solid var(--rule);
+}
+
+.desktop-setup h3 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 620;
+  letter-spacing: -0.03em;
+}
+
+.desktop-setup p {
+  margin: 10px 0 0;
+  color: var(--ink-soft);
+  font-size: 15px;
+  line-height: 1.6;
+}
+
+.desktop-setup-strip + .giveaway-token-note {
+  margin-top: 36px;
+}
+
+/* First launch: one card per macOS generation. */
+.desktop-path-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 14px;
+}
+
+.desktop-path-card {
+  display: flex;
+  flex-direction: column;
+  padding: 26px;
+  border: 1px solid var(--rule-strong);
+  border-radius: 14px;
+  background: var(--paper-strong);
+  transition:
+    transform 220ms var(--ease-out),
+    border-color 220ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .desktop-path-card:hover {
+    border-color: rgba(124, 61, 219, 0.45);
+    transform: translateY(-3px);
+  }
+}
+
+.desktop-path-label {
+  width: fit-content;
+  padding: 4px 10px;
+  border-radius: 999px;
+  background: var(--accent-soft);
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.09em;
+}
+
+.desktop-path-card h3 {
+  margin: 16px 0 0;
+  font-size: 19px;
+  font-weight: 620;
+  letter-spacing: -0.024em;
+}
+
+.desktop-path-card ol {
+  display: grid;
+  gap: 10px;
+  margin: 16px 0 0;
+  padding: 0;
+  counter-reset: desktop-path;
+  list-style: none;
+}
+
+.desktop-path-card li {
+  position: relative;
+  padding-left: 32px;
+  color: var(--ink-soft);
+  font-size: 14px;
+  line-height: 1.6;
+  text-wrap: pretty;
+  counter-increment: desktop-path;
+}
+
+.desktop-path-card li::before {
+  content: counter(desktop-path);
+  position: absolute;
+  top: 1px;
+  left: 0;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 21px;
+  height: 21px;
+  border-radius: 999px;
+  background: linear-gradient(135deg, #ffb18a 0%, #ec7dbc 48%, #9e5bef 100%);
+  color: #221631;
+  font-family: var(--mono);
+  font-size: 11px;
+  font-weight: 700;
+}
+
+.desktop-path-card li strong {
+  color: var(--ink);
+  font-weight: 620;
+}
+
+.desktop-path-grid + .giveaway-token-note {
+  margin-top: 18px;
+}
+
+/* The panel header is a folder path, not a server name; let it wrap, but
+   keep the badge beside it on one line. */
+.desktop-care-path {
+  min-width: 0;
+  overflow-wrap: anywhere;
+}
+
+.desktop-care-path + .mcp-tools-badge {
+  flex: 0 0 auto;
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .desktop-perks-grid,
+  .desktop-steps-strip {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .desktop-path-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 780px) {
+  .desktop-perks-grid,
+  .desktop-steps-strip {
+    grid-template-columns: 1fr;
+  }
+
+  .desktop-setup {
+    margin-top: 56px;
+    padding-top: 32px;
+  }
+
+  /* The callout copy runs long here, so the link drops under it instead of
+     squeezing the paragraph into a narrow column (32px mark + 14px gap). */
+  .desktop-note p {
+    flex-basis: calc(100% - 46px);
+  }
+
+  .desktop-note .giveaway-token-link {
+    margin-left: 46px;
+  }
+
+  .desktop-window-status {
+    display: none;
+  }
+
+  .desktop-window-bar {
+    grid-template-columns: auto 1fr;
+    gap: 14px;
+  }
+
+  .desktop-window-title {
+    justify-self: start;
+  }
+
+  /* Stack each row: the aspect on top, then one labelled line per version. */
+  .desktop-compare thead {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+  }
+
+  .desktop-compare table,
+  .desktop-compare tbody,
+  .desktop-compare tr,
+  .desktop-compare th,
+  .desktop-compare td {
+    display: block;
+  }
+
+  .desktop-compare tbody tr {
+    padding: 16px 18px;
+    border-bottom: 1px solid var(--rule);
+  }
+
+  .desktop-compare tbody tr:last-child {
+    border-bottom: none;
+  }
+
+  .desktop-compare tbody th,
+  .desktop-compare tbody td {
+    padding: 0;
+    border-bottom: none;
+  }
+
+  .desktop-compare tbody td {
+    display: grid;
+    grid-template-columns: 112px minmax(0, 1fr);
+    gap: 12px;
+    margin-top: 8px;
+  }
+
+  .desktop-compare tbody td::before {
+    content: attr(data-label);
+    color: var(--ink-soft);
+    font-size: 12.5px;
+    font-weight: 600;
+  }
+
+  .desktop-compare .desktop-compare-mac {
+    background: none;
+  }
+
+  .desktop-compare tbody td.desktop-compare-mac::before {
+    color: var(--accent-strong);
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   html {
     scroll-behavior: auto;

@@ -348,6 +348,13 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </code>
               </a>
             </div>
+            <p className="deploy-desktop-link" data-reveal="fade" data-reveal-delay="1">
+              {copy.deploy.desktop.text}
+              <Link href={`/${locale}/desktop`}>
+                {copy.deploy.desktop.action}
+                <ArrowRight aria-hidden="true" strokeWidth={2} />
+              </Link>
+            </p>
           </div>
         </section>
 
