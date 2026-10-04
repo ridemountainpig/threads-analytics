@@ -57,9 +57,18 @@ import {
   type PostWithInsights,
 } from "./analytics";
 import { buildMonthlyReview, MONTH_PATTERN, REVIEW_METRICS } from "./monthly-review";
+import {
+  compareGrowth,
+  GROWTH_METRICS,
+  MILESTONE_KEYS,
+  milestoneReadings,
+  toGrowthPoints,
+  type MetricReading,
+} from "./post-growth";
 
 const DEFAULT_RANGE_MS = 90 * 24 * 60 * 60 * 1000;
 const TEXT_PREVIEW_LENGTH = 300;
+const GROWTH_TEXT_PREVIEW_LENGTH = 120;
 
 const ANALYTICS_SECTIONS = [
   "total_engagement",
@@ -272,6 +281,43 @@ function diffPeriodStats(primary: PeriodStats, comparison: PeriodStats) {
   return change;
 }
 
+const SNAPSHOT_SELECT = {
+  capturedAt: true,
+  views: true,
+  likes: true,
+  replies: true,
+  reposts: true,
+  quotes: true,
+  shares: true,
+} as const;
+
+const NO_GROWTH_READINGS =
+  "No growth readings yet. Each sync records a post's metrics during its first 30 days, starting from the version that added growth tracking, so older posts have none.";
+
+const toHours = (ms: number) => Math.round((ms / 3_600_000) * 100) / 100;
+
+function previewText(text: string, length: number) {
+  return text.length > length ? `${text.slice(0, length)}…` : text;
+}
+
+function describePostGrowth(
+  postedAt: Date,
+  snapshots: (MetricReading & { capturedAt: Date })[],
+  includeSeries: boolean,
+) {
+  if (snapshots.length === 0) return { readings: 0, note: NO_GROWTH_READINGS };
+  const points = toGrowthPoints(postedAt, snapshots);
+  return {
+    readings: points.length,
+    firstReadingAgeHours: toHours(points[0].ageMs),
+    lastReadingAgeHours: toHours(points[points.length - 1].ageMs),
+    milestones: milestoneReadings(points),
+    ...(includeSeries && {
+      series: points.map(({ ageMs, ...metrics }) => ({ ageHours: toHours(ageMs), ...metrics })),
+    }),
+  };
+}
+
 function jsonResult(payload: unknown) {
   return { content: [{ type: "text" as const, text: JSON.stringify(payload) }] };
 }
@@ -444,10 +490,7 @@ export function registerMcpServer(server: McpServer) {
           timestamp: p.timestamp.toISOString(),
           mediaType: p.mediaType,
           permalink: p.permalink,
-          text:
-            p.text.length > TEXT_PREVIEW_LENGTH
-              ? `${p.text.slice(0, TEXT_PREVIEW_LENGTH)}…`
-              : p.text,
+          text: previewText(p.text, TEXT_PREVIEW_LENGTH),
           textLength: p.text.length,
           views: p.views,
           likes: p.likes,
@@ -466,17 +509,25 @@ export function registerMcpServer(server: McpServer) {
     {
       title: "Get post",
       annotations: READ_ONLY,
-      description: "Full detail of a single post by id, including its complete text.",
+      description:
+        "Full detail of a single post by id: its complete text, current metrics, and how it grew after publishing — its metrics at 1h, 3h, 6h, 12h, 24h, 48h and 7d, read from the snapshots each sync records during a post's first 30 days (null where the readings don't cover that age). To compare it with other posts at the same age, use compare_post_growth.",
       inputSchema: z.object({
         account: accountArg,
         id: z.string().describe("Post id from list_posts"),
+        include_growth_series: z
+          .boolean()
+          .optional()
+          .describe("Also return every raw growth reading, not just the milestones"),
       }),
     },
-    async ({ account: accountRef, id }) => {
+    async ({ account: accountRef, id, include_growth_series }) => {
       const resolved = await resolveAccount(accountRef);
       if ("error" in resolved) return errorResult(resolved.error);
       const { account } = resolved;
-      const post = await db.post.findFirst({ where: { id, accountId: account.id } });
+      const post = await db.post.findFirst({
+        where: { id, accountId: account.id },
+        include: { metricSnapshots: { orderBy: { capturedAt: "asc" }, select: SNAPSHOT_SELECT } },
+      });
       if (!post) return errorResult(`Post ${id} not found.`);
       return jsonResult({
         id: post.id,
@@ -492,6 +543,140 @@ export function registerMcpServer(server: McpServer) {
         shares: post.shares,
         engagementRatePct: engagementRate(post),
         syncedAt: post.syncedAt.toISOString(),
+        growth: describePostGrowth(
+          post.timestamp,
+          post.metricSnapshots,
+          include_growth_series ?? false,
+        ),
+      });
+    },
+  );
+
+  server.registerTool(
+    "compare_post_growth",
+    {
+      title: "Compare post growth",
+      annotations: READ_ONLY,
+      description:
+        "Compare posts at the same age since publishing — e.g. views 24 hours in — so a post from yesterday and one from last month are judged on equal terms. Uses the metric readings each sync records during a post's first 30 days, interpolated between readings; they exist only from the version that added growth tracking onward, so check coverage before drawing conclusions. Returns 'ranked': posts with a value at the milestone, highest first, each with its value at every milestone (1h to 7d) and its multiple of the median; and 'inProgress': posts too young for the milestone, compared with the other posts at the age of their latest reading — the early read on whether a new post is running ahead of or behind the usual pace. Defaults: posts published in the last 90 days, views at 24h.",
+      inputSchema: z.object({
+        account: accountArg,
+        since: dateArg("Start of the publish date range (inclusive)"),
+        until: dateArg("End of the publish date range (inclusive)"),
+        milestone: z
+          .enum(MILESTONE_KEYS)
+          .optional()
+          .describe("Age after publishing to compare at (default 24h)"),
+        metric: z
+          .enum(GROWTH_METRICS)
+          .optional()
+          .describe(
+            "Metric to compare (default views); engagement is likes + replies + reposts + quotes",
+          ),
+        limit: z
+          .number()
+          .int()
+          .min(1)
+          .max(100)
+          .optional()
+          .describe("Max rows in each of ranked and inProgress (default 20)"),
+        timezone: z
+          .string()
+          .optional()
+          .describe(
+            "IANA timezone that YYYY-MM-DD dates are read in (default: the server's configured analytics timezone)",
+          ),
+      }),
+    },
+    async ({ account: accountRef, since, until, milestone, metric, limit, timezone }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
+
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
+      let range;
+      try {
+        range = parseRange(since, until, tz);
+      } catch (err) {
+        return errorResult((err as Error).message);
+      }
+
+      const where = {
+        accountId: account.id,
+        timestamp: { gte: range.since, lte: range.until },
+        mediaType: { not: "REPOST_FACADE" },
+      };
+      const [postsInRange, posts] = await Promise.all([
+        db.post.count({ where }),
+        db.post.findMany({
+          where: { ...where, metricSnapshots: { some: {} } },
+          select: {
+            id: true,
+            timestamp: true,
+            mediaType: true,
+            permalink: true,
+            text: true,
+            metricSnapshots: { orderBy: { capturedAt: "asc" }, select: SNAPSHOT_SELECT },
+          },
+        }),
+      ]);
+
+      const chosenMilestone = milestone ?? "24h";
+      const chosenMetric = metric ?? "views";
+      const comparison = compareGrowth(
+        posts.map((p) => ({
+          id: p.id,
+          postedAt: p.timestamp,
+          points: toGrowthPoints(p.timestamp, p.metricSnapshots),
+        })),
+        { milestone: chosenMilestone, metric: chosenMetric, now: new Date() },
+      );
+
+      const byId = new Map(posts.map((p) => [p.id, p]));
+      const describe = (id: string) => {
+        const p = byId.get(id)!;
+        return {
+          id: p.id,
+          timestamp: p.timestamp.toISOString(),
+          mediaType: p.mediaType,
+          permalink: p.permalink,
+          text: previewText(p.text, GROWTH_TEXT_PREVIEW_LENGTH),
+        };
+      };
+      const take = limit ?? 20;
+
+      return jsonResult({
+        milestone: chosenMilestone,
+        metric: chosenMetric,
+        timezone: tz,
+        range: { since: range.since.toISOString(), until: range.until.toISOString() },
+        coverage: {
+          postsInRange,
+          withReadings: posts.length,
+          ranked: comparison.ranked.length,
+          inProgress: comparison.inProgress.length,
+          // Old enough for the milestone, but their readings don't cover it —
+          // usually because tracking began after they were published.
+          uncovered: comparison.uncovered,
+        },
+        ...(postsInRange > 0 && posts.length === 0 && { note: NO_GROWTH_READINGS }),
+        medians: comparison.medians,
+        ranked: comparison.ranked.slice(0, take).map((r) => ({
+          ...describe(r.id),
+          value: r.value,
+          vsMedian: r.vsMedian,
+          milestones: r.milestones,
+        })),
+        inProgress: comparison.inProgress.slice(0, take).map((r) => ({
+          ...describe(r.id),
+          readingAgeHours: toHours(r.readingAgeMs),
+          value: r.value,
+          medianAtSameAge: r.medianAtSameAge,
+          comparedWith: r.comparedWith,
+          vsMedian: r.vsMedian,
+        })),
       });
     },
   );
@@ -935,8 +1120,9 @@ export function registerMcpServer(server: McpServer) {
       promptText(
         accountLine(account) +
           `Break down my viral Threads posts from: ${period ?? "the last 90 days"}.\n\n` +
-          `Use get_analytics (sections: viral_posts, post_quality_scatter), then fetch each outlier's full text with get_post.\n\n` +
-          `For each viral post: what it was about, the hook, format, length, and timing. ` +
+          `Use get_analytics (sections: viral_posts, post_quality_scatter), then fetch each outlier's full text with get_post, ` +
+          `and use compare_post_growth to see how fast each one took off against my usual pace, where growth readings exist.\n\n` +
+          `For each viral post: what it was about, the hook, format, length, timing, and how quickly it picked up. ` +
           `Then extract the repeatable patterns and suggest 3 new post ideas that apply them.`,
       ),
   );
