@@ -43,9 +43,9 @@
 
 ## Features
 
-- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts
+- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts, and how your newest posts are pacing against your typical post
 - **Analytics** — 31 charts across **Performance**, **Content**, and **Audience** tabs
-- **Posts** — searchable, filterable list with per-post analytics panel
+- **Posts** — searchable, filterable list with per-post analytics panel, including each post's growth curve over its first week
 - **MCP server** — let Claude and other AI agents query your analytics through an OAuth-protected endpoint
 - Multi-account support with account switching
 - Auto-sync on configurable intervals

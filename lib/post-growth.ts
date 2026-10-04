@@ -106,6 +106,10 @@ export function milestoneReadings(
   return readings;
 }
 
+/** Fewest posts a typical (median) value is drawn from before the dashboard
+ *  shows it; below that, one unusual post would move it too far. */
+export const MIN_TYPICAL_PEERS = 5;
+
 function median(values: number[]): number | null {
   if (values.length === 0) return null;
   const sorted = [...values].sort((a, b) => a - b);
@@ -113,8 +117,21 @@ function median(values: number[]): number | null {
   return sorted.length % 2 === 1 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
 }
 
+/** Median of `metric` at `ageMs` across the posts whose readings cover that age. */
+export function medianAtAge(
+  posts: readonly { points: readonly GrowthPoint[] }[],
+  ageMs: number,
+  metric: GrowthMetric,
+): { median: number | null; count: number } {
+  const values = posts.flatMap((post) => {
+    const reading = readingAtAge(post.points, ageMs);
+    return reading ? [metricValue(reading, metric)] : [];
+  });
+  return { median: median(values), count: values.length };
+}
+
 /** `value` as a multiple of `baseline`, or null when there is no usable baseline. */
-function ratio(value: number, baseline: number | null): number | null {
+export function ratio(value: number, baseline: number | null): number | null {
   if (baseline === null || baseline <= 0) return null;
   return Math.round((value / baseline) * 100) / 100;
 }
@@ -202,19 +219,15 @@ export function compareGrowth(
       continue;
     }
 
-    const peers = rows.flatMap((other) => {
-      if (other === row) return [];
-      const reading = readingAtAge(other.post.points, latest.ageMs);
-      return reading ? [metricValue(reading, metric)] : [];
-    });
+    const peers = rows.filter((other) => other !== row).map((other) => other.post);
+    const { median: medianAtSameAge, count } = medianAtAge(peers, latest.ageMs, metric);
     const current = metricValue(latest, metric);
-    const medianAtSameAge = median(peers);
     inProgress.push({
       id: row.post.id,
       readingAgeMs: latest.ageMs,
       value: current,
       medianAtSameAge,
-      comparedWith: peers.length,
+      comparedWith: count,
       vsMedian: ratio(current, medianAtSameAge),
     });
   }
@@ -222,4 +235,20 @@ export function compareGrowth(
   ranked.sort((a, b) => b.value - a.value);
   inProgress.sort((a, b) => a.readingAgeMs - b.readingAgeMs);
   return { medians, ranked, inProgress, uncovered };
+}
+
+export interface AgeLabels {
+  /** Templates with an {n} placeholder, e.g. "{n} min", "{n} hours", "{n} days". */
+  minutes: string;
+  hours: string;
+  days: string;
+}
+
+/** A post's age for display: minutes under an hour, hours under two days, then days. */
+export function formatAge(hours: number, labels: AgeLabels, locale: string): string {
+  const number = (value: number, digits: number) =>
+    value.toLocaleString(locale, { maximumFractionDigits: digits });
+  if (hours < 1) return labels.minutes.replace("{n}", number(Math.round(hours * 60), 0));
+  if (hours < 48) return labels.hours.replace("{n}", number(hours, hours < 10 ? 1 : 0));
+  return labels.days.replace("{n}", number(hours / 24, 1));
 }

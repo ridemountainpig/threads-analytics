@@ -2,6 +2,7 @@ import assert from "node:assert/strict";
 import test from "node:test";
 import {
   compareGrowth,
+  medianAtAge,
   metricValue,
   milestoneReadings,
   readingAtAge,
@@ -177,4 +178,25 @@ test("counts old posts whose readings don't reach the milestone as uncovered", (
   );
   assert.equal(result.inProgress.length, 0);
   assert.equal(result.uncovered, 1);
+});
+
+test("takes the median at an age over the posts whose readings cover it", () => {
+  const posts = [
+    post("a", 5 * DAY, [
+      [2 * HOUR, 100],
+      [4 * HOUR, 300],
+    ]),
+    post("b", 5 * DAY, [
+      [2 * HOUR, 400],
+      [4 * HOUR, 800],
+    ]),
+    post("c", 5 * DAY, [
+      [2 * HOUR, 1000],
+      [4 * HOUR, 1200],
+    ]),
+    // Never read past 2h, so it has nothing to say about 3h.
+    post("young", HOUR, [[HOUR, 50]]),
+  ];
+  assert.deepEqual(medianAtAge(posts, 3 * HOUR, "views"), { median: 600, count: 3 });
+  assert.deepEqual(medianAtAge(posts, 9 * DAY, "views"), { median: null, count: 0 });
 });
