@@ -32,7 +32,7 @@ async function handleCronSync(request: Request) {
 
   const url = new URL(request.url);
   const force = url.searchParams.get("force") === "true" || url.searchParams.get("force") === "1";
-  const result = await runScheduledSync({ force });
+  const result = await runScheduledSync({ force, cron: true });
 
   if (result.status === "synced") {
     revalidatePath("/dashboard");

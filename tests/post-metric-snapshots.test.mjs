@@ -46,15 +46,15 @@ test("spaces readings by the post's age", () => {
   assert.equal(dueAfter(10 * DAY, DAY), true);
 });
 
-test("accepts a reading that comes slightly early", () => {
-  // 10% of the spacing...
+test("accepts a reading up to 10% early", () => {
   assert.equal(dueAfter(3 * HOUR, 14 * MINUTE), true);
   assert.equal(dueAfter(3 * HOUR, 13 * MINUTE), false);
-  // ...but never more than five minutes.
-  assert.equal(dueAfter(24 * HOUR, 56 * MINUTE), true);
-  assert.equal(dueAfter(24 * HOUR, 54 * MINUTE), false);
-  assert.equal(dueAfter(10 * DAY, DAY - 4 * MINUTE), true);
-  assert.equal(dueAfter(10 * DAY, DAY - 6 * MINUTE), false);
+  assert.equal(dueAfter(24 * HOUR, 54 * MINUTE), true);
+  assert.equal(dueAfter(24 * HOUR, 53 * MINUTE), false);
+  // A Vercel Hobby daily cron can fire anywhere within its hour, so two days'
+  // readings can be as little as 23 hours apart.
+  assert.equal(dueAfter(10 * DAY, 23 * HOUR), true);
+  assert.equal(dueAfter(10 * DAY, 21 * HOUR), false);
 });
 
 test("spacing tiers are ordered and end at the window", () => {

@@ -25,11 +25,11 @@ export const SNAPSHOT_SPACING: readonly { untilAgeMs: number; minGapMs: number }
   { untilAgeMs: SNAPSHOT_WINDOW_MS, minGapMs: DAY_MS },
 ];
 
-// A reading that comes slightly early still counts, so a sync running on the
-// same interval as the spacing (hourly, daily) can't skip a turn just because
-// the post was reached a few seconds sooner than last time.
+// A reading up to 10% early still counts, so a sync running on the same
+// interval as the spacing (hourly, daily) can't skip a turn because it reached
+// the post a little sooner than last time — or, on Vercel Hobby, because the
+// daily cron fired earlier in its hour than the day before.
 const EARLY_TOLERANCE_RATIO = 0.1;
-const MAX_EARLY_TOLERANCE_MS = 5 * MINUTE_MS;
 
 /**
  * Whether a post published at `postedAt`, last recorded at `lastCapturedAt`
@@ -47,6 +47,5 @@ export function isPostSnapshotDue(
   if (!tier) return false;
   if (!lastCapturedAt) return true;
 
-  const tolerance = Math.min(tier.minGapMs * EARLY_TOLERANCE_RATIO, MAX_EARLY_TOLERANCE_MS);
-  return now.getTime() - lastCapturedAt.getTime() >= tier.minGapMs - tolerance;
+  return now.getTime() - lastCapturedAt.getTime() >= tier.minGapMs * (1 - EARLY_TOLERANCE_RATIO);
 }
