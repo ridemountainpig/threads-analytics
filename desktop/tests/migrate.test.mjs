@@ -40,6 +40,7 @@ test("desktop migrations create the SQLite schema and are idempotent", async () 
       "202608040001_init",
       "202609110001_token_renewal_followers_mcp_oauth",
       "202609250001_thread_replies",
+      "202610040001_post_metric_snapshots",
     ]);
 
     const second = await migrateDatabase(options);
@@ -56,6 +57,7 @@ test("desktop migrations create the SQLite schema and are idempotent", async () 
     assert.ok(tables.includes("Post"));
     assert.ok(tables.includes("SyncState"));
     assert.ok(tables.includes("ThreadReply"));
+    assert.ok(tables.includes("PostMetricSnapshot"));
     assert.ok(tables.includes("AppSettings"));
     assert.ok(tables.includes("FollowerSnapshot"));
     assert.ok(tables.includes("OAuthClient"));

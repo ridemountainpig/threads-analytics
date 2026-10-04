@@ -1,0 +1,52 @@
+// Decides when a sync records a post's metrics as a PostMetricSnapshot. Kept
+// dependency-free so the test suite can exercise it directly with Node's type
+// stripping, outside of Next.
+//
+// Recording every sync would let a short custom interval (down to a minute)
+// write thousands of rows per post, so readings are spaced by the post's age:
+// dense while it is young — the first hours decide how far a post travels —
+// and sparse once its growth flattens. Whatever the sync interval, a post ends
+// up with fewer than 120 rows (about 90 with hourly syncs).
+
+const MINUTE_MS = 60_000;
+const HOUR_MS = 60 * MINUTE_MS;
+const DAY_MS = 24 * HOUR_MS;
+
+/** Posts are recorded until this age. Matches INSIGHTS_REFRESH_DAYS in
+ *  sync-service, after which a post's insights stop being re-fetched. */
+export const SNAPSHOT_WINDOW_MS = 30 * DAY_MS;
+
+/** Minimum spacing between two readings of one post, by the post's age at
+ *  the time of the reading. Ordered by age; the last tier ends the window. */
+export const SNAPSHOT_SPACING: readonly { untilAgeMs: number; minGapMs: number }[] = [
+  { untilAgeMs: 6 * HOUR_MS, minGapMs: 15 * MINUTE_MS },
+  { untilAgeMs: 2 * DAY_MS, minGapMs: HOUR_MS },
+  { untilAgeMs: 7 * DAY_MS, minGapMs: 6 * HOUR_MS },
+  { untilAgeMs: SNAPSHOT_WINDOW_MS, minGapMs: DAY_MS },
+];
+
+// A reading that comes slightly early still counts, so a sync running on the
+// same interval as the spacing (hourly, daily) can't skip a turn just because
+// the post was reached a few seconds sooner than last time.
+const EARLY_TOLERANCE_RATIO = 0.1;
+const MAX_EARLY_TOLERANCE_MS = 5 * MINUTE_MS;
+
+/**
+ * Whether a post published at `postedAt`, last recorded at `lastCapturedAt`
+ * (null when never), should be recorded by a reading taken at `now`.
+ */
+export function isPostSnapshotDue(
+  postedAt: Date,
+  lastCapturedAt: Date | null | undefined,
+  now: Date,
+): boolean {
+  // A post timestamp slightly ahead of the server clock is a fresh post, not
+  // one outside the window.
+  const ageMs = Math.max(0, now.getTime() - postedAt.getTime());
+  const tier = SNAPSHOT_SPACING.find((t) => ageMs < t.untilAgeMs);
+  if (!tier) return false;
+  if (!lastCapturedAt) return true;
+
+  const tolerance = Math.min(tier.minGapMs * EARLY_TOLERANCE_RATIO, MAX_EARLY_TOLERANCE_MS);
+  return now.getTime() - lastCapturedAt.getTime() >= tier.minGapMs - tolerance;
+}
