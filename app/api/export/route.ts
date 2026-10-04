@@ -1,3 +1,5 @@
+import { writeFile } from "fs/promises";
+import path from "path";
 import { NextRequest, NextResponse } from "next/server";
 import { db } from "@/lib/db";
 import { textContainsInsensitive } from "@/lib/database/text-search";
@@ -6,6 +8,8 @@ import { requireApiSession, unauthorizedResponse } from "@/lib/api-auth";
 import { getTimeRange } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getServerTimezone } from "@/lib/server-timezone";
+import { isDesktopApp } from "@/lib/runtime-target";
+import { csvExportFilename } from "@/lib/csv-export";
 
 const SORT_KEYS = ["date", "views", "likes", "replies", "shares", "engRate"] as const;
 type SortKey = (typeof SORT_KEYS)[number];
@@ -34,13 +38,10 @@ function csvCell(value: string | number): string {
   return /[",\n\r]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
 }
 
-export async function GET(request: NextRequest) {
-  if (!(await requireApiSession())) return unauthorizedResponse();
-
+async function buildCsv(sp: URLSearchParams): Promise<string | null> {
   const account = await db.threadsAccount.findFirst({ where: { isActive: true } });
-  if (!account) return NextResponse.json({ error: "No active account" }, { status: 404 });
+  if (!account) return null;
 
-  const sp = request.nextUrl.searchParams;
   const sortParam = sp.get("sort") ?? "";
   const sort: SortKey = (SORT_KEYS as readonly string[]).includes(sortParam)
     ? (sortParam as SortKey)
@@ -129,14 +130,49 @@ export async function GET(request: NextRequest) {
   );
 
   // Prepend a BOM so spreadsheets read the UTF-8 text (e.g. CJK) correctly.
-  const csv = `﻿${CSV_COLUMNS.join(",")}\n${rows.join("\n")}\n`;
-  const filename = `threads-posts-${new Date().toISOString().slice(0, 10)}.csv`;
+  return `﻿${CSV_COLUMNS.join(",")}\n${rows.join("\n")}\n`;
+}
+
+export async function GET(request: NextRequest) {
+  if (!(await requireApiSession())) return unauthorizedResponse();
+
+  const csv = await buildCsv(request.nextUrl.searchParams);
+  if (csv === null) return NextResponse.json({ error: "No active account" }, { status: 404 });
 
   return new NextResponse(csv, {
     headers: {
       "Content-Type": "text/csv; charset=utf-8",
-      "Content-Disposition": `attachment; filename="${filename}"`,
+      "Content-Disposition": `attachment; filename="${csvExportFilename()}"`,
       "Cache-Control": "no-store",
     },
   });
+}
+
+// The custom header forces a CORS preflight, so browser pages cannot trigger this write.
+export async function POST(request: NextRequest) {
+  if (!isDesktopApp) return NextResponse.json({ error: "Not found" }, { status: 404 });
+  if (request.headers.get("x-desktop-export") !== "1") {
+    return NextResponse.json({ error: "Forbidden" }, { status: 403 });
+  }
+
+  const body: unknown = await request.json().catch(() => null);
+  const requested =
+    body && typeof body === "object" && "path" in body && typeof body.path === "string"
+      ? body.path
+      : "";
+  if (!path.isAbsolute(requested)) {
+    return NextResponse.json({ error: "Invalid path" }, { status: 400 });
+  }
+  const target = path.extname(requested).toLowerCase() === ".csv" ? requested : `${requested}.csv`;
+
+  const csv = await buildCsv(request.nextUrl.searchParams);
+  if (csv === null) return NextResponse.json({ error: "No active account" }, { status: 404 });
+
+  try {
+    await writeFile(target, csv, "utf8");
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
+  return NextResponse.json({ path: target });
 }

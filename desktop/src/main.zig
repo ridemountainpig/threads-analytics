@@ -72,7 +72,17 @@ const App = struct {
     }
 };
 
-const allowed_origins = [_][]const u8{ "zero://app", "http://127.0.0.1:43127" };
+const server_origin = "http://127.0.0.1:43127";
+const allowed_origins = [_][]const u8{ "zero://app", server_origin };
+// WKWebView cannot download files, so CSV export saves via the native panel.
+const dialog_permissions = [_][]const u8{"dialog"};
+const bridge_commands = [_]native_sdk.BridgeCommandPolicy{
+    .{
+        .name = "native-sdk.dialog.saveFile",
+        .permissions = &dialog_permissions,
+        .origins = &.{server_origin},
+    },
+};
 // Every https link the dashboard renders with target="_blank": post
 // permalinks from the Threads API, this project's GitHub pages (release
 // notes, update guides), the MCP guide on the website, and the Meta
@@ -94,6 +104,11 @@ pub fn main(init: std.process.Init) !void {
         .window_title = "Threads Analytics",
         .bundle_id = "dev.ridemountainpig.threads-analytics",
         .icon_path = "assets/icon.png",
+        .builtin_bridge = .{
+            .enabled = true,
+            .permissions = &dialog_permissions,
+            .commands = &bridge_commands,
+        },
         .security = .{
             .navigation = .{
                 .allowed_origins = &allowed_origins,
