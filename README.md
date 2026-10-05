@@ -43,9 +43,9 @@
 
 ## Features
 
-- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts
+- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts, and how your newest posts are pacing against your typical post
 - **Analytics** — 31 charts across **Performance**, **Content**, and **Audience** tabs
-- **Posts** — searchable, filterable list with per-post analytics panel
+- **Posts** — searchable, filterable list with per-post analytics panel, including each post's growth curve over its first week
 - **MCP server** — let Claude and other AI agents query your analytics through an OAuth-protected endpoint
 - Multi-account support with account switching
 - Auto-sync on configurable intervals
@@ -139,7 +139,8 @@ Connected clients appear in **Settings → Connected agents**, where each one ca
 | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `get_account_overview` | Every connected account's username, sync status, post count, data date range, and follower growth summary — the recommended first call                                                                                                                                                                |
 | `list_posts`           | Posts with metrics; supports date range, sorting (date / views / likes / engagement rate), media-type filter, full-text search, and pagination                                                                                                                                                        |
-| `get_post`             | Full detail of a single post, including its complete text                                                                                                                                                                                                                                             |
+| `get_post`             | Full detail of a single post, including its complete text and its metrics 1h, 3h, 6h, 12h, 24h, 48h, and 7d after publishing                                                                                                                                                                          |
+| `compare_post_growth`  | Posts compared at the same age since publishing (e.g. views 24 hours in) and ranked against your median, plus whether posts too young for that milestone are ahead of or behind your others at the same age                                                                                           |
 | `get_analytics`        | 31 aggregated analytics sections over a date range (best time to post, keyword analysis, views distribution, posting streaks, …) — pick only the sections you need                                                                                                                                    |
 | `get_follower_history` | Daily follower-count snapshots with growth summary, and optionally the latest audience demographics                                                                                                                                                                                                   |
 | `compare_periods`      | Core metrics for two periods with absolute and percentage changes, including account-level views; the comparison period defaults to the same-length window immediately before                                                                                                                         |
@@ -147,7 +148,9 @@ Connected clients appear in **Settings → Connected agents**, where each one ca
 
 With several accounts connected, every tool except `get_account_overview` takes an `account` argument (username or id). If it is omitted, the tool returns the list of accounts so the agent asks you which one you mean instead of guessing.
 
-Dates given as `YYYY-MM-DD` cover that whole day in the analytics timezone (Asia/Taipei by default; the desktop app uses the Mac's timezone); `list_posts`, `get_analytics`, `compare_periods`, and `get_monthly_review` also take a `timezone` argument to read them in another zone.
+Dates given as `YYYY-MM-DD` cover that whole day in the analytics timezone (Asia/Taipei by default; the desktop app uses the Mac's timezone); `list_posts`, `compare_post_growth`, `get_analytics`, `compare_periods`, and `get_monthly_review` also take a `timezone` argument to read them in another zone.
+
+Post growth (the `get_post` milestones and `compare_post_growth`) comes from the metrics each sync records during a post's first 30 days — every 15 minutes at most in the first hours, daily by the end. Recording starts with the version that added it, so posts published earlier have no growth data, and the more often you sync, the finer each post's early curve.
 
 ### Prompts
 

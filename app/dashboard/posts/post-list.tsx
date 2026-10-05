@@ -20,6 +20,7 @@ import {
   type RetentionBenchmark,
   type ThreadPartKind,
 } from "@/lib/thread-part-kind";
+import { PostGrowthSection, type PostGrowthLabels } from "./post-growth";
 
 // Capsule filter chip shared by the sort row and media-type row: filled when
 // selected, instant pressed-state feedback, consistent with chart filters.
@@ -100,6 +101,7 @@ interface Post {
   reposts: number;
   quotes: number;
   shares: number;
+  syncedAt: Date;
   /** The author's own continuations under this post, oldest first. */
   threadParts: ThreadPart[];
   typeMedianViews: number;
@@ -156,6 +158,7 @@ interface PostListProps {
     threadsCount?: string;
     threadsCountOne?: string;
     engagementBreakdown: string;
+    growth: PostGrowthLabels;
     selectPost: string;
     reposts: string;
     quotes: string;
@@ -479,6 +482,14 @@ function PostDetail({
           </p>
         </div>
       </div>
+
+      {/* Growth: how the post's views built up, against the typical post */}
+      <PostGrowthSection
+        postId={post.id}
+        version={String(new Date(post.syncedAt).getTime())}
+        labels={labels.growth}
+        locale={locale}
+      />
 
       {/* Thread parts: each continuation's reach as a share of the root's */}
       {post.threadParts.length > 0 && (

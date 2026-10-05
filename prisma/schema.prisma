@@ -30,26 +30,45 @@ model ThreadsAccount {
 }
 
 model Post {
-  id            String         @id
-  accountId     String
-  account       ThreadsAccount @relation(fields: [accountId], references: [id], onDelete: Cascade)
-  text          String
-  timestamp     DateTime       @db.Timestamptz(3)
-  mediaType     String
-  permalink     String
-  views         Int            @default(0)
-  likes         Int            @default(0)
-  replies       Int            @default(0)
-  reposts       Int            @default(0)
-  quotes        Int            @default(0)
-  shares        Int            @default(0)
-  syncedAt      DateTime       @default(now()) @db.Timestamptz(3)
-  threadReplies ThreadReply[]
+  id              String               @id
+  accountId       String
+  account         ThreadsAccount       @relation(fields: [accountId], references: [id], onDelete: Cascade)
+  text            String
+  timestamp       DateTime             @db.Timestamptz(3)
+  mediaType       String
+  permalink       String
+  views           Int                  @default(0)
+  likes           Int                  @default(0)
+  replies         Int                  @default(0)
+  reposts         Int                  @default(0)
+  quotes          Int                  @default(0)
+  shares          Int                  @default(0)
+  syncedAt        DateTime             @default(now()) @db.Timestamptz(3)
+  threadReplies   ThreadReply[]
+  metricSnapshots PostMetricSnapshot[]
 
   @@index([accountId, timestamp])
   @@index([accountId, views])
   @@index([accountId, likes])
   @@index([accountId, mediaType])
+}
+
+// A post's lifetime metrics as read by one sync, so its growth can be followed
+// over time — Post itself only keeps the latest reading. The API can't report a
+// post's metrics as of a past moment, so a reading skipped here is lost for
+// good. How often a post is recorded is set by lib/post-metric-snapshots.ts.
+model PostMetricSnapshot {
+  postId     String
+  post       Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  capturedAt DateTime @db.Timestamptz(3)
+  views      Int
+  likes      Int
+  replies    Int
+  reposts    Int
+  quotes     Int
+  shares     Int
+
+  @@id([postId, capturedAt])
 }
 
 // The author's own continuations of a root post (the "2/", "3/" parts of a

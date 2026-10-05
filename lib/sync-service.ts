@@ -18,6 +18,7 @@ import { ensureFreshToken } from "@/lib/token-refresh";
 import { DEFAULT_TZ, getDateString } from "@/lib/analytics";
 import { dateKeyToUtcDate } from "@/lib/followers";
 import { classifyThreadReplies, type ChainNode } from "@/lib/thread-replies";
+import { isPostSnapshotDue, SNAPSHOT_WINDOW_MS } from "@/lib/post-metric-snapshots";
 
 const INSIGHTS_REFRESH_DAYS = 30;
 
@@ -132,6 +133,34 @@ async function captureFollowerSnapshot(accountId: string, accessToken: string): 
       `[sync] follower snapshot failed for ${accountId}:`,
       err instanceof Error ? err.message : err,
     );
+  }
+}
+
+/**
+ * When each post still inside the snapshot window was last recorded. Null when
+ * the lookup fails, which skips recording for this sync: a missed reading is
+ * better than readings bunched up because the previous ones looked absent.
+ */
+async function loadLastPostSnapshotTimes(accountId: string): Promise<Map<string, Date> | null> {
+  try {
+    const rows = await db.postMetricSnapshot.groupBy({
+      by: ["postId"],
+      where: {
+        post: { accountId, timestamp: { gte: new Date(Date.now() - SNAPSHOT_WINDOW_MS) } },
+      },
+      _max: { capturedAt: true },
+    });
+    const times = new Map<string, Date>();
+    for (const row of rows) {
+      if (row._max.capturedAt) times.set(row.postId, row._max.capturedAt);
+    }
+    return times;
+  } catch (err) {
+    console.warn(
+      `[sync] post snapshot lookup failed for ${accountId}:`,
+      err instanceof Error ? err.message : err,
+    );
+    return null;
   }
 }
 
@@ -387,6 +416,8 @@ export async function syncAccount(account: SyncAccount): Promise<SyncResult> {
       ).map((p) => p.id),
     );
 
+    const lastSnapshotAt = await loadLastPostSnapshotTimes(userId);
+
     const BATCH_SIZE = 5;
     let synced = 0;
     let insightsFailed = 0;
@@ -435,6 +466,30 @@ export async function syncAccount(account: SyncAccount): Promise<SyncResult> {
         ),
       );
       synced += withInsights.length;
+
+      // Only fresh readings are recorded; a failed insights fetch leaves a gap
+      // rather than repeating the previous values. The map is updated as rows
+      // are queued, so a post the API listed twice can't be recorded twice.
+      if (lastSnapshotAt) {
+        const snapshots = withInsights.flatMap(({ post, insights }) => {
+          if (!insights) return [];
+          if (!isPostSnapshotDue(new Date(post.timestamp), lastSnapshotAt.get(post.id), syncedAt)) {
+            return [];
+          }
+          lastSnapshotAt.set(post.id, syncedAt);
+          return [{ postId: post.id, capturedAt: syncedAt, ...insights }];
+        });
+        if (snapshots.length > 0) {
+          try {
+            await db.postMetricSnapshot.createMany({ data: snapshots });
+          } catch (err) {
+            console.warn(
+              `[sync] post snapshots failed for ${userId}:`,
+              err instanceof Error ? err.message : err,
+            );
+          }
+        }
+      }
     }
 
     let threadReplies: ThreadRepliesSyncResult | null = null;

@@ -8,13 +8,14 @@ Every chart and metric in the Threads Analytics dashboard, and the rules behind 
 
 ## Overview
 
-| Section         | What it shows                                                                                                                                                                                                                                                         |
-| --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| **Summary**     | A few plain sentences generated from the period's numbers: how views and engagement rate moved, posting volume and typical reach, follower growth, where most followers are, the best hour, and the top post. Rule-based, so it never disagrees with the cards below. |
-| **Stat Cards**  | Total views, likes, replies, reposts, quotes, shares, and engagement rate for the selected period. Each card shows a `+/−%` delta vs the previous period of the same length, plus a sparkline of the metric across the range (daily series are smoothed over 7 days). |
-| **Best Hours**  | Top 2–3 posting hours ranked by median views, with a confidence indicator based on sample size.                                                                                                                                                                       |
-| **Views Trend** | Views by day, week, or month, with your personal median as a baseline.                                                                                                                                                                                                |
-| **Top Posts**   | Posts that exceeded the median view count, ranked by their multiplier (e.g. `3.2× median`).                                                                                                                                                                           |
+| Section         | What it shows                                                                                                                                                                                                                                                                              |
+| --------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| **Summary**     | A few plain sentences generated from the period's numbers: how views and engagement rate moved, posting volume and typical reach, follower growth, where most followers are, the best hour, and the top post. Rule-based, so it never disagrees with the cards below.                      |
+| **Stat Cards**  | Total views, likes, replies, reposts, quotes, shares, and engagement rate for the selected period. Each card shows a `+/−%` delta vs the previous period of the same length, plus a sparkline of the metric across the range (daily series are smoothed over 7 days).                      |
+| **New Posts**   | Appears after you post: each post from the last 48 hours, its views at its latest reading against your typical post at the same age (as a multiple), with a small curve of both. The card stays hidden until the typical post can be drawn from at least 5 earlier posts read at that age. |
+| **Best Hours**  | Top 2–3 posting hours ranked by median views, with a confidence indicator based on sample size.                                                                                                                                                                                            |
+| **Views Trend** | Views by day, week, or month, with your personal median as a baseline.                                                                                                                                                                                                                     |
+| **Top Posts**   | Posts that exceeded the median view count, ranked by their multiplier (e.g. `3.2× median`).                                                                                                                                                                                                |
 
 ## Analytics — Performance tab
 
@@ -77,6 +78,14 @@ The posts list supports:
 - **Filter** by media type (shows only types present in the current period)
 
 Clicking any post opens a detail panel with views, engagement rate, vs-median multiplier, view percentile, and a per-action engagement breakdown.
+
+### Growth
+
+The detail panel's **Growth** section charts how the post's views built up over its first 7 days against your typical post (dashed), and lists its views 1h, 3h, 6h, 12h, 24h, 48h and 7d after publishing, each with the multiple of the typical post at that age. This compares a post from yesterday and one from last month on equal terms, where the vs-median figures above favor older posts.
+
+- Readings are recorded by each sync during a post's first 30 days: at most every 15 minutes in the first six hours, hourly to two days, every six hours to a week, then daily. Recording starts with the version that added it, so earlier posts show no growth.
+- Values between two readings are interpolated; an age whose readings are too far apart to estimate shows `—`. Hourly syncs cover every milestone.
+- The **typical post** is the median of your 60 most recent posts with growth data, whatever period is selected, so the Growth section and the overview's New Posts card always agree. It is shown once at least 5 of those posts were read at an age.
 
 ### Threads (multi-part posts)
 

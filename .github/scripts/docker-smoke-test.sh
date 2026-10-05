@@ -24,6 +24,16 @@ cleanup() {
 }
 trap cleanup EXIT
 
+# Read the logs in full before matching them: with pipefail, `docker logs |
+# grep -q` fails whenever grep exits on its match before docker has written
+# the lines after it (SIGPIPE), so a server that did start could read as not
+# ready.
+server_ready() {
+  local logs
+  logs="$(docker logs "$app" 2>&1)" || return 1
+  grep -q "Ready in" <<< "$logs"
+}
+
 fail() {
   echo "::error::$1"
   echo "----- app logs -----"
@@ -71,11 +81,11 @@ docker run -d --name "$app" --network "$network" \
   "$image" > /dev/null
 
 for _ in $(seq 1 120); do
-  docker logs "$app" 2>&1 | grep -q "Ready in" && break
+  server_ready && break
   [[ "$(docker inspect -f '{{.State.Running}}' "$app")" == "true" ]] || fail "the container exited during startup"
   sleep 1
 done
-docker logs "$app" 2>&1 | grep -q "Ready in" || fail "the server did not report ready within 120s"
+server_ready || fail "the server did not report ready within 120s"
 
 applied="$(docker exec "$database" psql -U postgres -d threads_analytics -tAc \
   'select count(*) from _prisma_migrations where finished_at is not null and rolled_back_at is null')"

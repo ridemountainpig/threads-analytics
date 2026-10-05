@@ -907,7 +907,7 @@ const mcpGuideEn: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / WHAT IT CAN DO",
-    title: "Seven read-only tools. Seven report prompts.",
+    title: "Eight read-only tools. Seven report prompts.",
     description:
       "The server turns your synced data into structured tools. You ask in plain language; your agent picks the right tool and reads only what it needs.",
     panelBadge: "READ-ONLY",
@@ -931,10 +931,10 @@ const mcpGuideEn: McpGuideCopy = {
         body: "Best time to post, keyword analysis, posting streaks, views distribution, and more — computed over any date range you ask for.",
       },
       {
-        tag: "get_follower_history",
+        tag: "get_follower_history · compare_post_growth",
         index: "04",
-        title: "Follow the audience curve",
-        body: "Daily follower snapshots with a growth summary, plus the latest country, city, age, and gender demographics.",
+        title: "Follow every growth curve",
+        body: "Daily follower snapshots with a growth summary and the latest demographics — and how each post grew hour by hour, compared with your other posts at the same age.",
       },
       {
         tag: "compare_periods · get_monthly_review",
@@ -1136,7 +1136,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / 它能做什麼",
-    title: "七⁠個唯⁠讀⁠工⁠具⁠，七⁠個報⁠告 P⁠r⁠o⁠m⁠p⁠t⁠。",
+    title: "八⁠個唯⁠讀⁠工⁠具⁠，七⁠個報⁠告 P⁠r⁠o⁠m⁠p⁠t⁠。",
     description:
       "MCP Server 把你同步好的數據整理成結構化工具。你用自然語言發問，Agent 自己挑選工具、只讀取需要的部分。",
     panelBadge: "唯讀",
@@ -1160,10 +1160,10 @@ const mcpGuideZh: McpGuideCopy = {
         body: "最佳發文時間、關鍵字分析、發文連續紀錄、瀏覽分佈等 — 依你指定的日期範圍即時計算。",
       },
       {
-        tag: "get_follower_history",
+        tag: "get_follower_history · compare_post_growth",
         index: "04",
-        title: "追蹤粉絲成長曲線",
-        body: "每日粉絲快照與成長摘要，還能加上最新的國家、城市、年齡與性別輪廓。",
+        title: "追蹤每一條成長曲線",
+        body: "每日粉絲快照、成長摘要與最新受眾輪廓，還有每篇貼文發布後逐小時的成長，並和其他貼文在同一時間點比較。",
       },
       {
         tag: "compare_periods · get_monthly_review",
@@ -1362,7 +1362,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / できること",
-    title: "読⁠み⁠取⁠り⁠専⁠用ツ⁠ー⁠ル 7 つ⁠、レ⁠ポ⁠ー⁠トプ⁠ロ⁠ン⁠プ⁠ト 7 つ⁠。",
+    title: "読⁠み⁠取⁠り⁠専⁠用ツ⁠ー⁠ル 8 つ⁠、レ⁠ポ⁠ー⁠トプ⁠ロ⁠ン⁠プ⁠ト 7 つ⁠。",
     description:
       "MCP サーバーは同期済みデータを構造化ツールとして公開します。自然な言葉で質問するだけで、エージェントが必要なツールを選び、必要な分だけ読み取ります。",
     panelBadge: "読み取り専用",
@@ -1386,10 +1386,10 @@ const mcpGuideJa: McpGuideCopy = {
         body: "最適な投稿時間、キーワード分析、投稿ストリーク、閲覧数分布など — 指定した期間でその場で計算します。",
       },
       {
-        tag: "get_follower_history",
+        tag: "get_follower_history · compare_post_growth",
         index: "04",
-        title: "フォロワーの推移を追う",
-        body: "日次フォロワースナップショットと成長サマリー、さらに最新の国・都市・年齢・性別の内訳も取得できます。",
+        title: "あらゆる伸びを追う",
+        body: "日次フォロワースナップショットと成長サマリー、最新のオーディエンス内訳に加え、各投稿が投稿後どう伸びたかを 1 時間単位で、同じ経過時間の他の投稿と比べて確認できます。",
       },
       {
         tag: "compare_periods · get_monthly_review",

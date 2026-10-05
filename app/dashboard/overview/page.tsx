@@ -6,6 +6,7 @@ import type { UserInsights } from "@/lib/threads-api";
 import { getTimeRange, toUnix } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
+import { getNewPostPace } from "@/lib/post-growth-data";
 import {
   computeBestTimeToPost,
   computeTopHours,
@@ -27,6 +28,7 @@ import { buildSummary } from "@/lib/summary";
 import { bucketSeries, medianSeries, ratioSeries, smoothSeries } from "@/lib/sparkline";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SummaryCard } from "@/components/dashboard/summary-card";
+import { NewPostPaceCard } from "@/components/dashboard/new-post-pace-card";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
 import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
@@ -163,6 +165,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     syncInterval,
     followerSnapshots,
     latestDemographics,
+    newPostPace,
   ] = await Promise.all([
     userInsightsPromise,
     prevUserInsightsPromise,
@@ -206,6 +209,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       select: { demographics: true },
       orderBy: { date: "desc" },
     }),
+    getNewPostPace(account.id),
   ]);
 
   const posts: PostWithInsights[] = dbPosts.map((p) => ({
@@ -493,6 +497,23 @@ export default async function OverviewPage({ searchParams }: PageProps) {
           deltaLabel={t.overview.vsPrev}
         />
       </div>
+
+      {/* New posts against the typical post at the same age; only shown once
+          there is a new post and enough history to compare it with */}
+      {newPostPace.posts.length > 0 && (
+        <NewPostPaceCard
+          posts={newPostPace.posts}
+          typicalSample={newPostPace.typicalSample}
+          locale={dateLocale}
+          labels={{
+            ...t.overview.newPosts,
+            noText: t.postsPage.noText,
+            thisPost: t.postsPage.growth.thisPost,
+            typicalPost: t.postsPage.growth.typical,
+          }}
+          ageLabels={t.postsPage.growth}
+        />
+      )}
 
       {/* Daily Views */}
       <Card>

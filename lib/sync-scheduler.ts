@@ -5,6 +5,7 @@ import type { Prisma } from "@/lib/generated/prisma";
 import { isDesktopApp } from "@/lib/runtime-target";
 import { captureMissingFollowerSnapshot, syncAccount } from "@/lib/sync-service";
 import { withSyncLock } from "@/lib/sync-lock";
+import { syncDueAt } from "@/lib/sync-due";
 
 const DEFAULT_POLL_MS = 60_000;
 const INITIAL_DELAY_MS = 10_000;
@@ -130,8 +131,13 @@ async function captureMissingFollowerSnapshots() {
   });
 }
 
+/**
+ * Syncs every account whose interval has elapsed. `cron` marks a call from an
+ * external cron job (/api/cron/sync), which may arrive slightly early — see
+ * lib/sync-due.ts.
+ */
 export async function runScheduledSync(
-  options: { force?: boolean } = {},
+  options: { force?: boolean; cron?: boolean } = {},
 ): Promise<ScheduledSyncResult> {
   if (globalForScheduler.threadsAnalyticsSyncInFlight) return { status: "in_progress" };
 
@@ -149,8 +155,10 @@ export async function runScheduledSync(
 
 async function runScheduledSyncWithLock({
   force = false,
+  cron = false,
 }: {
   force?: boolean;
+  cron?: boolean;
 }): Promise<ScheduledSyncResult> {
   const setting = await db.appSettings.findUnique({ where: { key: "syncInterval" } });
   const interval = setting?.value ?? "0";
@@ -170,7 +178,7 @@ async function runScheduledSyncWithLock({
 
   const results: ScheduledAccountResult[] = [];
   for (const account of accounts) {
-    results.push(await syncAccountIfDue(account, { force, intervalMinutes }));
+    results.push(await syncAccountIfDue(account, { force, cron, intervalMinutes }));
   }
 
   const status =
@@ -180,14 +188,14 @@ async function runScheduledSyncWithLock({
 
 async function syncAccountIfDue(
   account: Prisma.ThreadsAccountGetPayload<{ include: { syncState: true } }>,
-  { force, intervalMinutes }: { force: boolean; intervalMinutes: number },
+  { force, cron, intervalMinutes }: { force: boolean; cron: boolean; intervalMinutes: number },
 ): Promise<ScheduledAccountResult> {
   const { username } = account;
   if (account.expiresAt < new Date()) return { username, status: "token_expired" };
 
   const lastSyncedAt = account.syncState?.lastSyncedAt;
   if (!force && lastSyncedAt) {
-    const nextSyncAt = new Date(lastSyncedAt.getTime() + intervalMinutes * 60_000);
+    const nextSyncAt = syncDueAt(lastSyncedAt, intervalMinutes, { cron });
 
     if (Date.now() < nextSyncAt.getTime()) {
       return {
