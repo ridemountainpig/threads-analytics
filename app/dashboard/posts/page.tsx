@@ -7,9 +7,9 @@ import { getTimeRange } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
 import Link from "next/link";
-import { Download } from "lucide-react";
 import TimeRangePicker from "@/components/dashboard/time-range-picker";
 import SyncButton from "@/components/dashboard/sync-button";
+import ExportCsvButton from "@/components/dashboard/export-csv-button";
 import PostList from "./post-list";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
@@ -288,13 +288,14 @@ export default async function PostsPage({ searchParams }: PageProps) {
           />
           <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
             {totalPosts > 0 && (
-              <a
+              <ExportCsvButton
                 href={exportHref}
-                className="bg-muted/70 text-foreground hover:bg-muted flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
-              >
-                <Download className="size-3.5" />
-                {t.postsPage.exportCsv}
-              </a>
+                labels={{
+                  exportCsv: t.postsPage.exportCsv,
+                  exportSaved: t.postsPage.exportSaved,
+                  exportFailed: t.postsPage.exportFailed,
+                }}
+              />
             )}
             <SyncButton
               lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}

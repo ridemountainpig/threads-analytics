@@ -6,8 +6,17 @@
   "version": "0.1.0",
   "icons": ["assets/icon.png"],
   "platforms": ["macos"],
-  "permissions": [],
-  "capabilities": ["webview"],
+  "permissions": ["dialog"],
+  "capabilities": ["webview", "dialog"],
+  "bridge": {
+    "commands": [
+      {
+        "name": "native-sdk.dialog.saveFile",
+        "permissions": ["dialog"],
+        "origins": ["http://127.0.0.1:43127"]
+      }
+    ]
+  },
   "frontend": {
     "dist": "dist",
     "entry": "index.html",
