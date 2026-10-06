@@ -1,6 +1,6 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { ArrowRight, ArrowUpRight, BookOpen } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { RiOpenaiFill } from "react-icons/ri";
 import { SiClaude, SiClaudecode, SiCursor } from "react-icons/si";
@@ -327,16 +327,11 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                   </span>
                 </span>
               </Link>
-              <a
-                href={siteConfig.package}
-                target="_blank"
-                rel="noreferrer"
-                className="deploy-card deploy-card-code"
-              >
+              <Link href={`/${locale}/deploy/self-host`} className="deploy-card deploy-card-code">
                 <span className="deploy-card-topline">
                   <span className="deploy-eyebrow">{copy.deploy.docker.eyebrow}</span>
                   <span className="deploy-package-link">
-                    <FaGithub aria-hidden="true" />
+                    <BookOpen aria-hidden="true" strokeWidth={2} />
                     {copy.deploy.docker.action}
                     <ArrowUpRight aria-hidden="true" strokeWidth={2} />
                   </span>
@@ -346,7 +341,7 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 <code>
                   <span>$</span> {copy.deploy.docker.command}
                 </code>
-              </a>
+              </Link>
             </div>
             <p className="deploy-desktop-link" data-reveal="fade" data-reveal-delay="1">
               {copy.deploy.desktop.text}

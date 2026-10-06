@@ -1,0 +1,132 @@
+Threads Analytics 是一個搭配 PostgreSQL 資料庫的 Next.js 應用程式。在自己管理的伺服器上，用預先建置好的 Docker 映像檔最快；也可以從原始碼建置，或部署到 Vercel、改由 Cron Job 負責同步。這篇整理每種方式需要準備什麼、怎麼讓貼文持續自動同步，以及之後如何更新。
+
+不想自己動手設定的話，Railway、Zeabur 和 Vercel 都有[一鍵範本與 Agent 部署 Prompt](/#deploy)，可以幫你全部處理好。
+
+## 事⁠前⁠準⁠備
+
+- **PostgreSQL 資料庫。**代管服務或架在自己伺服器上的都可以，應用程式只需要它的連線字串。
+- **執行應用程式的地方。**能跑 Docker 映像檔（amd64 或 arm64）的伺服器、Vercel，或任何裝了 Node.js 22.12+ 或 24+ 的機器。
+- **Threads Access Token。**部署完成後再到儀表板貼上，產生方式請看 [Token 生成教學](/token-guide)。
+
+## 環⁠境⁠變⁠數
+
+不論用哪種方式執行都要設定這些變數：Docker 寫在 env 檔、Vercel 設在專案設定，從原始碼執行則寫在 `.env.local`。
+
+<Table variant="text">
+
+| 變數                     | 必填 | 用途                                                                                   |
+| ------------------------ | ---- | -------------------------------------------------------------------------------------- |
+| `APP_PASSWORD`           | 是   | 登入儀表板用的密碼。                                                                   |
+| `DATABASE_URL`           | 是   | PostgreSQL 連線字串。                                                                  |
+| `TOKEN_ENCRYPTION_KEY`   | 是   | 加密存在資料庫裡的 Threads Access Token，可用 `openssl rand -hex 32` 產生。            |
+| `SYNC_SCHEDULER_ENABLED` | 否   | 設為 `true` 會啟動內建的同步排程。Docker、VPS、Railway、Zeabur 請設定；Vercel 不要設。 |
+| `CRON_SECRET`            | 否   | 保護 `/api/cron/sync`，也就是 Cron Job 呼叫來觸發同步的端點。Vercel 必填。             |
+
+</Table>
+
+Docker 或 VPS 用的完整 env 檔大概長這樣：
+
+```dotenv
+APP_PASSWORD=choose-a-long-password
+DATABASE_URL=postgresql://user:password@db.example.com:5432/threads_analytics
+TOKEN_ENCRYPTION_KEY=paste-the-output-of-openssl-rand-hex-32
+SYNC_SCHEDULER_ENABLED=true
+```
+
+<Callout>`TOKEN_ENCRYPTION_KEY` 設定後就不要再改。存起來的 Token 只能用當初加密的那把金鑰解開，換了金鑰，每個帳號的 Token 都得重新貼一次。已同步的貼文與歷史紀錄則不受影響。</Callout>
+
+## Docker
+
+映像檔發佈在 [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics)，支援 amd64 和 arm64。把變數寫進 `.env.local` 後執行：
+
+```bash
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local \
+  ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+容器每次啟動都會先套用尚未執行的資料庫 migration，再在 3000 port 提供儀表板。需要 HTTPS 的話，在前面加一層反向代理即可。
+
+<Callout>在容器裡，`localhost` 指的是容器自己。如果 PostgreSQL 跑在同一台機器上，`DATABASE_URL` 要改成容器連得到的位址，例如同一個 Docker 網路裡的資料庫容器。</Callout>
+
+想自己建置映像檔的話，在 clone 下來的 repository 裡執行：
+
+```bash
+docker build -t threads-analytics .
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local threads-analytics
+```
+
+## 從原⁠始⁠碼執⁠行
+
+需要 Node.js 22.12+ 或 24+，以及 pnpm。
+
+```bash
+git clone https://github.com/ridemountainpig/threads-analytics.git
+cd threads-analytics
+pnpm install
+pnpm prisma:generate
+cp .env.example .env.local  # 接著填入環境變數
+pnpm build
+pnpm start
+```
+
+`pnpm start` 會先套用尚未執行的 migration，再在 3000 port 啟動伺服器。可以用 systemd 或 pm2 這類程序管理工具讓它常駐。
+
+## Vercel
+
+Vercel 無法讓程序在請求之間持續執行，所以內建的同步排程不會在上面運作，同步要改由 Vercel Cron Job 定期呼叫 `/api/cron/sync`。
+
+[Vercel Agent 部署教學](/deploy/vercel-agent)會透過 Vercel MCP 部署預先建置的映像檔，並幫你設定好 Neon 資料庫、環境變數和這個 Cron Job。想自己加 Cron Job 的話，在專案根目錄放一個 `vercel.json`：
+
+```json
+{
+  "crons": [{ "path": "/api/cron/sync", "schedule": "0 0 * * *" }]
+}
+```
+
+接著在專案的環境變數加上 `CRON_SECRET`。Vercel 每次執行 Cron 都會帶上 `Authorization: Bearer <CRON_SECRET>`，沒有帶的請求會被端點拒絕。
+
+Hobby 方案的 Cron Job 一天最多只能跑一次，所以請維持每天一次的排程；付費方案則可以配合你在設定頁選的同步間隔，跑得更頻繁。
+
+## 讓貼⁠文持⁠續同⁠步
+
+選好同步間隔之前，自動同步都是關閉的。部署完成後，到儀表板的**設定 → 自動同步**選擇頻率：每小時、每 6 小時、每天，或自訂分鐘數。每次同步都會處理所有已連接的帳號，不只是目前檢視的那一個。
+
+由誰來觸發同步，取決於應用程式跑在哪裡：
+
+- **Docker、VPS、Railway 或 Zeabur：**設定 `SYNC_SCHEDULER_ENABLED=true`。排程會隨伺服器啟動，定期檢查哪些帳號該同步了。
+- **Vercel：**使用上面的 Cron Job。
+- **其他環境：**任何排程工具都可以帶著 `CRON_SECRET` 呼叫這個端點。
+
+```bash
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://analytics.example.com/api/cron/sync
+```
+
+呼叫得比同步間隔更頻繁也沒關係，還沒到時間的帳號會直接略過。
+
+## 更⁠新版⁠本
+
+新版本會以新的 Docker 映像檔發佈，資料庫 migration 也會在啟動時自動執行，所以更新只需要取得新的映像檔或程式碼。貼文、洞察資料和帳號都會留在資料庫裡。
+
+Docker 的話，拉取新的映像檔，再用相同參數重建容器：
+
+```bash
+docker pull ghcr.io/ridemountainpig/threads-analytics:latest
+docker rm -f threads-analytics
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local \
+  ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+- **從原始碼執行：**`git pull` 後依序執行 `pnpm install`、`pnpm prisma:generate`、`pnpm build`，再重新啟動 `pnpm start`。
+- **Railway 或 Zeabur：**在平台的控制台重新部署服務。Zeabur 是打開 `threads-analytics` 服務並點擊 **Redeploy**。
+- **Vercel：**重新部署專案。
+
+## 部⁠署完⁠成⁠後
+
+1. 打開應用程式，用 `APP_PASSWORD` 登入。
+2. 到**設定 → 新增 Threads 帳號**貼上 Access Token。第一次同步會立刻開始，可能需要幾分鐘。
+3. 在**設定 → 自動同步**選擇同步間隔。
+
+想讓 Claude 或其他 AI Agent 查詢你的數據，可以連接內建的 [MCP 伺服器](/mcp)，網址是 `/api/mcp`。

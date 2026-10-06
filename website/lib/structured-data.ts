@@ -8,6 +8,7 @@ import {
 } from "@/lib/guides";
 import type { Dictionary, Locale, TokenGuideCopy } from "@/lib/i18n";
 import { locales } from "@/lib/locales";
+import { selfHost, selfHostMeta } from "@/lib/self-host";
 import { siteConfig } from "@/lib/site";
 
 // Home titles may end with "… | Threads Analytics"; schema names should
@@ -294,6 +295,41 @@ export function getGuideHubStructuredData(locale: Locale) {
             url: `${localizedUrl}/guides/${slug}`,
             name: getGuide(slug, locale).metadata.title,
           })),
+        },
+      },
+    ],
+  };
+}
+
+/** Breadcrumb + TechArticle for the self-host guide. */
+export function getSelfHostStructuredData(locale: Locale) {
+  const path = "/deploy/self-host";
+  const pageUrl = `${siteConfig.url}/${locale}${path}`;
+  const copy = selfHost[locale];
+
+  return {
+    "@context": "https://schema.org",
+    "@graph": [
+      getBreadcrumbStructuredData({ locale, path, title: copy.metadata.title }),
+      {
+        "@type": "TechArticle",
+        "@id": `${pageUrl}#article`,
+        headline: stripBrandSuffix(copy.metadata.title),
+        description: copy.metadata.description,
+        inLanguage: locale,
+        datePublished: selfHostMeta.published,
+        dateModified: selfHostMeta.modified,
+        image: `${siteConfig.url}/og/self-host-${locale}.png`,
+        mainEntityOfPage: pageUrl,
+        author: {
+          "@type": "Person",
+          name: guideAuthor.name,
+          url: guideAuthor.url,
+        },
+        publisher: {
+          "@type": "Organization",
+          name: siteConfig.name,
+          url: siteConfig.url,
         },
       },
     ],

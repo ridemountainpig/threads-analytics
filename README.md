@@ -70,7 +70,7 @@
 
 Macs with Apple silicon (M1 or later) can download the desktop app directly from [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases), with no need to install Node.js, pnpm, or PostgreSQL. An Intel Mac build is not currently available.
 
-See the [macOS installation guide](./desktop/docs/install-macos.md) for download, first launch, update, and uninstall instructions.
+See the [Mac app guide](https://threads-analytics.app/en/desktop) for download, first launch, update, and uninstall instructions.
 
 To build the desktop app from source, see the [desktop README](./desktop/README.md).
 
@@ -103,7 +103,7 @@ Once the app is up, sign in with your `APP_PASSWORD` and connect a Threads accou
 2. Generate an **Access Token**
 3. In the dashboard: **Settings → Add Threads Account → paste token**
 
-For a screenshot-based walkthrough, see [How to Generate a Threads Access Token](./public/token-generate-step/README.md).
+For a screenshot-based walkthrough, see [How to Generate a Threads Access Token](https://threads-analytics.app/en/token-guide).
 
 Tokens are valid for 60 days, and the app renews them for you:
 
@@ -170,6 +170,8 @@ The server also registers ready-made prompts. Most take an optional `period` arg
 
 ## Deployment
 
+The [self-host guide](https://threads-analytics.app/en/deploy/self-host) on the website walks through all of this step by step: Docker, running from source, Vercel cron, environment variables, auto-sync, and updates.
+
 ### Docker
 
 A prebuilt multi-arch (amd64/arm64) image is published to GitHub Container Registry. Set the [environment variables](#2-set-up-environment-variables), then run:
@@ -189,7 +191,7 @@ The Docker image runs `prisma migrate deploy` automatically on startup.
 
 ### Vercel
 
-Import the repository into Vercel and set the [environment variables](#2-set-up-environment-variables). Migrations run at build time through the `vercel-build` script (`prisma migrate deploy && next build`), which Vercel prefers over `build` when present.
+Import the repository into Vercel and set the [environment variables](#2-set-up-environment-variables). The `vercel-build` script (`prisma generate && prisma migrate deploy && next build`) generates the Prisma client and runs migrations at build time; Vercel prefers it over `build` when present.
 
 Vercel does not support long-running processes, so the built-in sync scheduler cannot run there. Use [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) to call `/api/cron/sync` on a schedule instead:
 
@@ -234,7 +236,7 @@ New versions ship as updated Docker images. Database migrations run automaticall
 
 - **Zeabur** — open the `threads-analytics` service and click **Redeploy** to pull the latest image.
 - **Railway** — trigger a redeploy of the service from the Railway dashboard.
-- **From source** — `git pull`, then `pnpm install && pnpm build` and restart with `pnpm start` (runs migrations automatically).
+- **From source** — `git pull`, then `pnpm install && pnpm prisma:generate && pnpm build` and restart with `pnpm start` (runs migrations automatically).
 - **Vercel** — push the new version; migrations run at build time as described above.
 
 Your database (posts, insights, accounts) is preserved across updates.
@@ -304,7 +306,7 @@ npx prisma migrate dev --name <name>  # Create a new migration
 
 ## Analytics Reference
 
-The dashboard ships 31 charts across the Overview, Analytics (Performance / Content / Audience), and Posts pages. What every chart shows — and the sampling rules behind the audience metrics — is documented in the **[Analytics Reference](./docs/analytics.md)**.
+The dashboard ships 31 charts across the Overview, Analytics (Performance / Content / Audience), and Posts pages. Browse them with demo data on the [website](https://threads-analytics.app/en/analytics); what every chart shows — and the sampling rules behind the audience metrics — is documented in the **[Analytics Reference](./docs/analytics.md)**.
 
 ---
 

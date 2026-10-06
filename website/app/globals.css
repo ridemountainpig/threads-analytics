@@ -8364,6 +8364,48 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   font-size: 13.5px;
 }
 
+/* Section list between the header and the body (the self-host guide). */
+.article-toc {
+  width: min(calc(100% - 48px), 720px);
+  margin: 36px auto 0;
+  padding: 20px 24px;
+  border: 1px solid var(--rule);
+  border-radius: 14px;
+  background: var(--paper-strong);
+}
+
+.article-toc p {
+  margin: 0;
+  color: var(--ink-soft);
+  font-family: var(--mono);
+  font-size: 12px;
+  font-weight: 650;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+}
+
+.article-toc ol {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px 28px;
+  margin: 12px 0 0;
+  padding: 0;
+  font-size: 15.5px;
+  line-height: 1.6;
+}
+
+.article-toc a {
+  color: var(--ink);
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+  transition: text-decoration-color 160ms ease;
+}
+
+.article-toc a:hover {
+  text-decoration-color: currentColor;
+}
+
 .article-body {
   margin-top: 44px;
   color: color-mix(in srgb, var(--ink) 88%, var(--paper));
@@ -8427,15 +8469,52 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
   margin-top: 0.6em;
 }
 
-.article-body > ul {
+.article-body > ul,
+.article-body > ol {
   display: grid;
   gap: 0.5em;
   margin: 1em 0 0;
   padding-left: 1.3em;
 }
 
-.article-body > ul li::marker {
+/* Tailwind's preflight sets list-style: none; bring the markers back. */
+.article-body > ul {
+  list-style: disc;
+}
+
+.article-body > ol {
+  list-style: decimal;
+}
+
+.article-body > ul li::marker,
+.article-body > ol li::marker {
   color: var(--accent);
+}
+
+.article-body pre {
+  overflow-x: auto;
+  margin: 1.2em 0 0;
+  padding: 16px 20px;
+  border-radius: 14px;
+  background: var(--night-panel);
+  color: #ece6f5;
+  font-family: var(--mono);
+  font-size: 14px;
+  line-height: 1.7;
+}
+
+.article-body pre code {
+  font: inherit;
+}
+
+.article-body :not(pre) > code {
+  padding: 0.12em 0.4em;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--accent-soft) 45%, var(--paper-strong));
+  color: var(--ink);
+  font-family: var(--mono);
+  font-size: 0.86em;
+  overflow-wrap: anywhere;
 }
 
 .article-callout {
@@ -8495,6 +8574,24 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
 .article-table tbody tr:last-child > * {
   border-bottom: 0;
+}
+
+/* Tables of prose (e.g. environment variables) rather than figures. */
+.article-table-text table {
+  font-size: 15px;
+  font-variant-numeric: normal;
+  line-height: 1.6;
+}
+
+.article-table-text th,
+.article-table-text td {
+  text-align: left;
+  vertical-align: top;
+}
+
+.article-table-text td:last-child {
+  min-width: 16em;
+  white-space: normal;
 }
 
 .article-figure img {
@@ -8637,8 +8734,17 @@ a.deploy-card-vercel:hover .deploy-tab-action-chip {
 
 @media (max-width: 780px) {
   .article-header,
+  .article-toc,
   .article-body {
     width: calc(100% - 30px);
+  }
+
+  .article-toc ol {
+    grid-template-columns: 1fr;
+  }
+
+  .article-body pre {
+    font-size: 13px;
   }
 
   .article-body {
