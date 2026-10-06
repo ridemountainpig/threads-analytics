@@ -1,0 +1,132 @@
+Threads Analytics is a Next.js app with a PostgreSQL database. On a server you manage, the prebuilt Docker image is the quickest way to run it. You can also build it from source, or run it on Vercel with a cron job doing the syncing. This guide covers what each route needs, how to keep your posts syncing, and how to update.
+
+If you’d rather not set this up by hand, the [one-click templates and agent prompts](/#deploy) for Railway, Zeabur and Vercel do it all for you.
+
+## What you need
+
+- **A PostgreSQL database.** A managed service or one on your own server; the app only needs its connection string.
+- **Somewhere to run the app.** A server that runs Docker images (amd64 or arm64), Vercel, or any machine with Node.js 22.12+ or 24+.
+- **A Threads access token.** You add it in the dashboard after deploying. The [token guide](/token-guide) walks through getting one.
+
+## Environment variables
+
+Set these wherever the app runs: an env file for Docker, the project settings on Vercel, or `.env.local` when running from source.
+
+<Table variant="text">
+
+| Variable                 | Required | What it’s for                                                                                                    |
+| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------- |
+| `APP_PASSWORD`           | Yes      | The password you sign in to the dashboard with.                                                                  |
+| `DATABASE_URL`           | Yes      | The PostgreSQL connection string.                                                                                |
+| `TOKEN_ENCRYPTION_KEY`   | Yes      | Encrypts the Threads access tokens stored in the database. Generate one with `openssl rand -hex 32`.             |
+| `SYNC_SCHEDULER_ENABLED` | No       | `true` starts the built-in sync scheduler. Set it on Docker, a VPS, Railway or Zeabur; leave it unset on Vercel. |
+| `CRON_SECRET`            | No       | Protects `/api/cron/sync`, the endpoint a cron job calls to sync. Required on Vercel.                            |
+
+</Table>
+
+A complete env file for Docker or a VPS looks like this:
+
+```dotenv
+APP_PASSWORD=choose-a-long-password
+DATABASE_URL=postgresql://user:password@db.example.com:5432/threads_analytics
+TOKEN_ENCRYPTION_KEY=paste-the-output-of-openssl-rand-hex-32
+SYNC_SCHEDULER_ENABLED=true
+```
+
+<Callout>Keep `TOKEN_ENCRYPTION_KEY` the same for as long as the deployment lives. Stored tokens can only be decrypted with the key that encrypted them, so changing it means pasting every account’s token again. Your synced posts and history are not affected.</Callout>
+
+## Docker
+
+The image is published to [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics) for amd64 and arm64. With the variables in `.env.local`, start it with:
+
+```bash
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local \
+  ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+Each time the container starts, it applies any pending database migrations, then serves the dashboard on port 3000. Put a reverse proxy in front of it for HTTPS.
+
+<Callout>Inside the container, `localhost` means the container itself. If PostgreSQL runs on the same machine, point `DATABASE_URL` at an address the container can reach, such as a database container on the same Docker network.</Callout>
+
+To build the image yourself instead, run this from a clone of the repository:
+
+```bash
+docker build -t threads-analytics .
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local threads-analytics
+```
+
+## Run from source
+
+You need Node.js 22.12+ or 24+ and pnpm.
+
+```bash
+git clone https://github.com/ridemountainpig/threads-analytics.git
+cd threads-analytics
+pnpm install
+pnpm prisma:generate
+cp .env.example .env.local  # then fill in the variables
+pnpm build
+pnpm start
+```
+
+`pnpm start` applies pending migrations, then starts the server on port 3000. Keep it running with a process manager such as systemd or pm2.
+
+## Vercel
+
+Vercel can’t keep a process running between requests, so the built-in scheduler never runs there. Syncing goes through a Vercel Cron Job that calls `/api/cron/sync` instead.
+
+The [Vercel Agent guide](/deploy/vercel-agent) deploys the prebuilt image through Vercel MCP and sets up the Neon database, the variables and this cron job for you. To add the cron job yourself, put a `vercel.json` in the project root:
+
+```json
+{
+  "crons": [{ "path": "/api/cron/sync", "schedule": "0 0 * * *" }]
+}
+```
+
+Then add `CRON_SECRET` to the project’s environment variables. Vercel sends it as `Authorization: Bearer <CRON_SECRET>` with every cron request, and the endpoint rejects requests without it.
+
+The Hobby plan runs cron jobs at most once a day, so keep the daily schedule there. On a paid plan you can run it as often as the sync interval you choose in Settings.
+
+## Keep posts syncing
+
+Automatic syncing stays off until you choose an interval. After deploying, open **Settings → Auto Sync** in the dashboard and pick how often to sync: every hour, every 6 hours, daily, or a custom number of minutes. Each run syncs every connected account, not just the one you’re viewing.
+
+What triggers the sync depends on where the app runs:
+
+- **Docker, a VPS, Railway or Zeabur:** set `SYNC_SCHEDULER_ENABLED=true`. The scheduler starts with the server and regularly checks which accounts are due.
+- **Vercel:** the cron job above.
+- **Anywhere else:** any scheduler can call the endpoint with your `CRON_SECRET`.
+
+```bash
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://analytics.example.com/api/cron/sync
+```
+
+Calling it more often than your interval is harmless: accounts that aren’t due yet are skipped.
+
+## Updating
+
+New versions ship as a new Docker image, and migrations run automatically when the app starts, so updating only means getting the new image or code. Your posts, insights and accounts stay in the database.
+
+On Docker, pull the new image and recreate the container with the same flags:
+
+```bash
+docker pull ghcr.io/ridemountainpig/threads-analytics:latest
+docker rm -f threads-analytics
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local \
+  ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+- **From source:** run `git pull`, then `pnpm install`, `pnpm prisma:generate` and `pnpm build`, and restart `pnpm start`.
+- **Railway or Zeabur:** redeploy the service from the platform’s dashboard. On Zeabur, open the `threads-analytics` service and click **Redeploy**.
+- **Vercel:** redeploy the project.
+
+## After deploying
+
+1. Open the app and sign in with your `APP_PASSWORD`.
+2. Go to **Settings → Add Threads account** and paste your access token. The first sync starts right away and can take a few minutes.
+3. Choose a sync interval under **Settings → Auto Sync**.
+
+To ask Claude or another AI agent about your data, connect it to the built-in [MCP server](/mcp) at `/api/mcp`.

@@ -1,5 +1,6 @@
 import { getGuide, guideSlugs, type GuideSlug } from "@/lib/guides";
 import { getDictionary, type Locale } from "@/lib/i18n";
+import { selfHost } from "@/lib/self-host";
 
 // One map for the header dropdowns, the mobile menu and the footer columns,
 // so a page added to one surface shows up on all three.
@@ -13,6 +14,7 @@ export type SiteNavIcon =
   | "railway"
   | "zeabur"
   | "vercel"
+  | "self-host"
   | "desktop"
   | "token"
   | GuideSlug;
@@ -71,6 +73,12 @@ export function getSiteNav(locale: Locale): SiteNavGroup[] {
         entry(nav.railwayAgent, `${home}/deploy/railway-agent`, "railway"),
         entry(nav.zeaburAgent, `${home}/deploy/zeabur-agent`, "zeabur"),
         entry(nav.vercelAgent, `${home}/deploy/vercel-agent`, "vercel"),
+        entry(
+          { label: selfHost[locale].menuTitle, description: selfHost[locale].menuDescription },
+          `${home}/deploy/self-host`,
+          "self-host",
+          selfHost[locale].navTitle,
+        ),
         entry(nav.desktop, `${home}/desktop`, "desktop"),
       ],
     },

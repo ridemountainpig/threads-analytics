@@ -18,6 +18,7 @@ import { Railway, Vercel, Zeabur } from "../../components/deployment-logos";
 import { brandCurvePath } from "../../lib/brand-curve";
 import { getGuide, guideHub, guideSlugs } from "../../lib/guides";
 import { getDictionary, locales, type Locale } from "../../lib/i18n";
+import { selfHost } from "../../lib/self-host";
 
 const size = { width: 1200, height: 630 };
 
@@ -489,6 +490,25 @@ const variants: OgVariant[] = [
           <span style={{ display: "flex", alignItems: "center", gap: 12, color: "#191121" }}>
             <Vercel width={26} height={23} />
             Vercel
+          </span>
+        ),
+      });
+    },
+  },
+  {
+    prefix: "self-host",
+    render: (locale, brandIconSrc) => {
+      const copy = selfHost[locale];
+      return renderOpenGraphImage({
+        brandIconSrc,
+        brandLabel: brandLabels[locale],
+        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        description: copy.metadata.description,
+        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerRight: (
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+            DOCKER
+            {arrowGlyph}
           </span>
         ),
       });

@@ -10,7 +10,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "vercel-build": "prisma migrate deploy && next build",
+    "vercel-build": "prisma generate && prisma migrate deploy && next build",
     "start": "prisma migrate deploy && next start",
     "prisma:generate": "prisma generate --schema prisma/schema.prisma",
     "prisma:validate": "prisma validate --config prisma.config.ts",

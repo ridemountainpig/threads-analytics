@@ -1,0 +1,132 @@
+Threads Analytics は PostgreSQL データベースを使う Next.js アプリです。自分で管理するサーバーなら、ビルド済みの Docker イメージを使うのがいちばん手軽です。ソースからビルドすることも、Vercel にデプロイして Cron ジョブで同期することもできます。このページでは、それぞれに必要なもの、投稿を自動で同期し続ける方法、更新の手順をまとめます。
+
+手作業で設定したくない場合は、Railway・Zeabur・Vercel 向けの[ワンクリックテンプレートとエージェント用プロンプト](/#deploy)がすべて代わりに行います。
+
+## 必⁠要⁠なも⁠の
+
+- **PostgreSQL データベース。**マネージドサービスでも自分のサーバー上のものでもかまいません。アプリが使うのは接続文字列だけです。
+- **アプリを動かす場所。**Docker イメージ（amd64 または arm64）を実行できるサーバー、Vercel、または Node.js 22.12 以上か 24 以上が入ったマシン。
+- **Threads アクセストークン。**デプロイ後にダッシュボードで貼り付けます。取得方法は[トークンガイド](/token-guide)で解説しています。
+
+## 環⁠境⁠変⁠数
+
+どの方法で動かす場合も、次の変数を設定します。Docker なら env ファイル、Vercel ならプロジェクト設定、ソースから動かすなら `.env.local` に書きます。
+
+<Table variant="text">
+
+| 変数                     | 必須   | 用途                                                                                                                  |
+| ------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------- |
+| `APP_PASSWORD`           | はい   | ダッシュボードにログインするためのパスワード。                                                                        |
+| `DATABASE_URL`           | はい   | PostgreSQL の接続文字列。                                                                                             |
+| `TOKEN_ENCRYPTION_KEY`   | はい   | データベースに保存する Threads アクセストークンを暗号化します。`openssl rand -hex 32` で生成できます。                |
+| `SYNC_SCHEDULER_ENABLED` | いいえ | `true` にすると内蔵の同期スケジューラが起動します。Docker・VPS・Railway・Zeabur では設定し、Vercel では設定しません。 |
+| `CRON_SECRET`            | いいえ | Cron ジョブが同期のために呼び出す `/api/cron/sync` を保護します。Vercel では必須です。                                |
+
+</Table>
+
+Docker や VPS 向けの env ファイルは、たとえば次のようになります。
+
+```dotenv
+APP_PASSWORD=choose-a-long-password
+DATABASE_URL=postgresql://user:password@db.example.com:5432/threads_analytics
+TOKEN_ENCRYPTION_KEY=paste-the-output-of-openssl-rand-hex-32
+SYNC_SCHEDULER_ENABLED=true
+```
+
+<Callout>`TOKEN_ENCRYPTION_KEY` は一度決めたら変えないでください。保存されたトークンは暗号化したときの鍵でしか復号できないため、鍵を変えると全アカウントのトークンを貼り直すことになります。同期済みの投稿や履歴には影響しません。</Callout>
+
+## Docker
+
+イメージは [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics) で amd64 と arm64 向けに公開されています。変数を `.env.local` に書いてから起動します。
+
+```bash
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local \
+  ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+コンテナは起動のたびに未適用のデータベースマイグレーションを実行してから、ポート 3000 でダッシュボードを提供します。HTTPS で公開するには、前段にリバースプロキシを置いてください。
+
+<Callout>コンテナの中では、`localhost` はコンテナ自身を指します。PostgreSQL が同じマシンで動いている場合は、同じ Docker ネットワーク上のデータベースコンテナなど、コンテナから届くアドレスを `DATABASE_URL` に指定してください。</Callout>
+
+イメージを自分でビルドする場合は、リポジトリをクローンしたディレクトリで次を実行します。
+
+```bash
+docker build -t threads-analytics .
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local threads-analytics
+```
+
+## ソ⁠ー⁠ス⁠か⁠ら実⁠行
+
+Node.js 22.12 以上か 24 以上と、pnpm が必要です。
+
+```bash
+git clone https://github.com/ridemountainpig/threads-analytics.git
+cd threads-analytics
+pnpm install
+pnpm prisma:generate
+cp .env.example .env.local  # 続けて環境変数を設定
+pnpm build
+pnpm start
+```
+
+`pnpm start` は未適用のマイグレーションを実行してから、ポート 3000 でサーバーを起動します。常駐させるには systemd や pm2 などのプロセスマネージャーを使います。
+
+## Vercel
+
+Vercel ではリクエストの合間にプロセスを動かし続けられないため、内蔵の同期スケジューラは動きません。代わりに Vercel Cron Jobs から `/api/cron/sync` を定期的に呼び出して同期します。
+
+[Vercel エージェントデプロイガイド](/deploy/vercel-agent)では、Vercel MCP を通じてビルド済みイメージをデプロイし、Neon データベース、環境変数、この Cron ジョブまでまとめて設定します。Cron ジョブを自分で追加する場合は、プロジェクトのルートに `vercel.json` を置きます。
+
+```json
+{
+  "crons": [{ "path": "/api/cron/sync", "schedule": "0 0 * * *" }]
+}
+```
+
+続いて、プロジェクトの環境変数に `CRON_SECRET` を追加します。Vercel は Cron の実行ごとに `Authorization: Bearer <CRON_SECRET>` を付けて呼び出し、これがないリクエストはエンドポイントが拒否します。
+
+Hobby プランでは Cron ジョブは 1 日 1 回までしか実行できないため、毎日 1 回のスケジュールのままにしてください。有料プランなら、設定画面で選んだ同期間隔に合わせてもっと頻繁に実行できます。
+
+## 投⁠稿⁠を同⁠期⁠し⁠続⁠け⁠る
+
+同期間隔を選ぶまで、自動同期はオフのままです。デプロイ後、ダッシュボードの**設定 → 自動同期**で頻度を選びます。1 時間ごと、6 時間ごと、毎日、または任意の分数を指定できます。同期のたびに、表示中のアカウントだけでなく接続済みのすべてのアカウントが対象になります。
+
+同期を動かす仕組みは、アプリを動かす場所によって変わります。
+
+- **Docker・VPS・Railway・Zeabur：**`SYNC_SCHEDULER_ENABLED=true` を設定します。スケジューラはサーバーとともに起動し、同期の時期が来たアカウントを定期的に確認します。
+- **Vercel：**上記の Cron ジョブを使います。
+- **そのほかの環境：**どのスケジューラからでも、`CRON_SECRET` を付けてエンドポイントを呼び出せます。
+
+```bash
+curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://analytics.example.com/api/cron/sync
+```
+
+同期間隔より頻繁に呼び出しても問題ありません。まだ時期が来ていないアカウントはスキップされます。
+
+## 更⁠新
+
+新しいバージョンは新しい Docker イメージとして公開され、データベースマイグレーションも起動時に自動で実行されます。そのため、更新に必要なのは新しいイメージかコードを取得することだけです。投稿・インサイト・アカウントはデータベースにそのまま残ります。
+
+Docker では、新しいイメージを取得し、同じオプションでコンテナを作り直します。
+
+```bash
+docker pull ghcr.io/ridemountainpig/threads-analytics:latest
+docker rm -f threads-analytics
+docker run -d --name threads-analytics --restart unless-stopped \
+  -p 3000:3000 --env-file .env.local \
+  ghcr.io/ridemountainpig/threads-analytics:latest
+```
+
+- **ソースから実行：**`git pull` のあと `pnpm install`、`pnpm prisma:generate`、`pnpm build` を実行し、`pnpm start` で再起動します。
+- **Railway・Zeabur：**各サービスのダッシュボードから再デプロイします。Zeabur では `threads-analytics` サービスを開いて **Redeploy** をクリックします。
+- **Vercel：**プロジェクトを再デプロイします。
+
+## デ⁠プ⁠ロ⁠イし⁠た⁠ら
+
+1. アプリを開き、`APP_PASSWORD` でログインします。
+2. **設定 → Threads アカウントを追加**でアクセストークンを貼り付けます。最初の同期はすぐに始まり、数分かかることがあります。
+3. **設定 → 自動同期**で同期間隔を選びます。
+
+Claude などの AI エージェントからデータを調べたい場合は、内蔵の [MCP サーバー](/mcp)（`/api/mcp`）に接続してください。

@@ -70,7 +70,7 @@
 
 Apple Silicon 搭載 Mac（M1 以降）では、[GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) からデスクトップ版を直接ダウンロードできます。Node.js、pnpm、PostgreSQL を別途インストールする必要はありません。現在、Intel Mac 版は提供していません。
 
-ダウンロード、初回起動、アップデート、アンインストールの手順は、[macOS インストールガイド](./desktop/docs/install-macos-ja.md)を参照してください。
+ダウンロード、初回起動、アップデート、アンインストールの手順は、[Mac アプリのガイド](https://threads-analytics.app/ja/desktop)を参照してください。
 
 デスクトップ版をソースからビルドする場合は、[デスクトップ版 README](./desktop/README-ja.md)を参照してください。
 
@@ -103,7 +103,7 @@ docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-an
 2. **アクセストークン**を生成
 3. ダッシュボードで **設定 → Threads アカウントを追加 → トークンを貼り付け**
 
-スクリーンショット付きの詳しい手順は [Threads アクセストークンの生成方法](./public/token-generate-step/README-ja.md) を参照してください。
+スクリーンショット付きの詳しい手順は [Threads アクセストークンの生成方法](https://threads-analytics.app/ja/token-guide) を参照してください。
 
 トークンの有効期限は 60 日間で、アプリが自動的に更新します：
 
@@ -170,6 +170,8 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 ## デプロイ
 
+このセクションの内容は、ウェブサイトの[セルフホストガイド](https://threads-analytics.app/ja/deploy/self-host)でステップごとに解説しています：Docker、ソースからの実行、Vercel Cron、環境変数、自動同期、更新。
+
 ### Docker
 
 GitHub Container Registry にビルド済みのマルチアーキテクチャ（amd64/arm64）イメージが公開されています。[環境変数](#2-環境変数の設定)を設定後、次を実行：
@@ -189,7 +191,7 @@ Docker イメージは起動時に `prisma migrate deploy` を自動実行しま
 
 ### Vercel
 
-リポジトリを Vercel にインポートし、[環境変数](#2-環境変数の設定)を設定します。マイグレーションは `vercel-build` スクリプト（`prisma migrate deploy && next build`）としてビルド時に実行されます。Vercel はこのスクリプトがあれば `build` より優先します。
+リポジトリを Vercel にインポートし、[環境変数](#2-環境変数の設定)を設定します。`vercel-build` スクリプト（`prisma generate && prisma migrate deploy && next build`）が、ビルド時に Prisma Client の生成とマイグレーションを実行します。Vercel はこのスクリプトがあれば `build` より優先します。
 
 Vercel は長時間実行プロセスをサポートしていないため、内蔵の同期スケジューラは動作しません。代わりに [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) を使って `/api/cron/sync` をスケジュール実行してください：
 
@@ -234,7 +236,7 @@ Vercel は長時間実行プロセスをサポートしていないため、内�
 
 - **Zeabur** — `threads-analytics` サービスを開いて **Redeploy** をクリックすると最新イメージが取得されます。
 - **Railway** — Railway ダッシュボードからサービスの再デプロイをトリガーします。
-- **ソースからデプロイ** — `git pull` 後に `pnpm install && pnpm build` を実行し、`pnpm start` で再起動します（マイグレーションは自動実行）。
+- **ソースからデプロイ** — `git pull` 後に `pnpm install && pnpm prisma:generate && pnpm build` を実行し、`pnpm start` で再起動します（マイグレーションは自動実行）。
 - **Vercel** — 新しいバージョンを push するだけです。マイグレーションは上記のとおりビルド時に実行されます。
 
 更新してもデータベース（投稿、インサイト、アカウント）はそのまま保持されます。
@@ -304,7 +306,7 @@ npx prisma migrate dev --name <name>  # 新しいマイグレーションを作�
 
 ## アナリティクスリファレンス
 
-ダッシュボードは概要、アナリティクス（パフォーマンス／コンテンツ／オーディエンス）、投稿の各ページで 31 種類のチャートを提供します。各チャートの表示内容とオーディエンス指標のサンプリングルールは、**[アナリティクスリファレンス](./docs/analytics-ja.md)**に完全にまとめられています。
+ダッシュボードは概要、アナリティクス（パフォーマンス／コンテンツ／オーディエンス）、投稿の各ページで 31 種類のチャートを提供します。[ウェブサイト](https://threads-analytics.app/ja/analytics)ではデモデータで閲覧できます。各チャートの表示内容とオーディエンス指標のサンプリングルールは、**[アナリティクスリファレンス](./docs/analytics-ja.md)**に完全にまとめられています。
 
 ---
 

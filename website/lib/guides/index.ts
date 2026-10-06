@@ -5,8 +5,10 @@ import { threadsInsights } from "./threads-insights";
 
 // Long-form guides that answer the question-shaped searches the product
 // pages cannot rank for ("how do I read Threads Insights", "best time to
-// post"). One file per guide; this module is the registry the page, sitemap,
-// footer and OG generator all read from.
+// post"). One file per guide holds its metadata, FAQ and CTA copy; this module
+// is the registry the page, sitemap, footer and OG generator all read from.
+// The article bodies are MDX, one file per locale, in content/guides/<slug>/
+// (loaded by lib/content.ts).
 
 export const guideSlugs = ["threads-insights", "best-time-to-post", "reach-drop"] as const;
 
@@ -16,21 +18,8 @@ export function isGuideSlug(value: string): value is GuideSlug {
   return (guideSlugs as readonly string[]).includes(value);
 }
 
-/**
- * One piece of article body. Text fields accept two inline marks:
- * `**bold**` and `[label](href)`, where an href starting with "/" is
- * resolved against the current locale.
- */
-export type GuideBlock =
-  | { type: "p"; text: string }
-  | { type: "h2"; text: string }
-  | { type: "h3"; text: string }
-  | { type: "ul"; items: string[] }
-  | { type: "callout"; text: string }
-  | { type: "table"; head: string[]; rows: string[][]; caption: string }
-  | { type: "figure"; image: GuideImage; alt: string; caption: string };
-
-/** Dashboard screenshots in public/guides/, rendered with demo data. */
+/** Dashboard screenshots in public/guides/, rendered with demo data. Placed
+ * in an MDX body with <Figure image="…" alt="…" caption="…" />. */
 export type GuideImage = "performance" | "audience";
 
 export const guideImages: Record<GuideImage, { src: string; width: number; height: number }> = {
@@ -61,7 +50,6 @@ export type GuideCopy = {
     description: string;
     readingTime: string;
   };
-  body: GuideBlock[];
   faq: {
     title: string;
     items: GuideFaqItem[];

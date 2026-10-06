@@ -54,7 +54,6 @@ export const siteConfig = {
   name: "Threads Analytics",
   url: resolveSiteUrl(),
   github: "https://github.com/ridemountainpig/threads-analytics",
-  package: "https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics",
   // The release list, not /releases/latest: desktop betas ship as
   // pre-releases, which GitHub never marks as "Latest".
   desktopReleases: "https://github.com/ridemountainpig/threads-analytics/releases",

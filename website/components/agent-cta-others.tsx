@@ -10,9 +10,9 @@ const PLATFORMS = [
 
 export type AgentPlatformSlug = (typeof PLATFORMS)[number]["slug"];
 
-// Cross-links to the sibling agent deploy pages, shown under the closing CTA
-// so the page isn't a dead end for visitors on the wrong platform. The current
-// page's platform is left out.
+// Cross-links to the agent deploy pages, shown under the closing CTA so the
+// page isn't a dead end for visitors on the wrong platform. The current page's
+// platform, if any, is left out.
 export function AgentCtaOthers({
   locale,
   label,
@@ -20,7 +20,7 @@ export function AgentCtaOthers({
 }: {
   locale: Locale;
   label: string;
-  current: AgentPlatformSlug;
+  current?: AgentPlatformSlug;
 }) {
   return (
     <div className="agent-cta-others">

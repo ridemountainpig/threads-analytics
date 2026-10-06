@@ -9,6 +9,7 @@ import { JsonLd } from "@/components/json-ld";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
+import { loadGuideBody } from "@/lib/content";
 import { getGuide, guideHub, guideSlugs, guideUi } from "@/lib/guides";
 import { getDictionary, isLocale, locales, type Locale } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
@@ -45,6 +46,7 @@ export default async function GuidesPage({ params }: { params: Params }) {
   const copy = guideHub[locale];
   const ui = guideUi[locale];
 
+  const bodies = await Promise.all(guideSlugs.map((slug) => loadGuideBody(slug, locale)));
   const entries = guideSlugs.map((slug, index) => {
     const guide = getGuide(slug, locale);
     return {
@@ -58,7 +60,10 @@ export default async function GuidesPage({ params }: { params: Params }) {
       // number in it is the one source of truth for the total.
       minutes: Number(guide.hero.readingTime.match(/\d+/)?.[0] ?? 0),
       // The first few section headings are enough to show what it covers.
-      outline: guide.body.flatMap((block) => (block.type === "h2" ? [block.text] : [])).slice(0, 4),
+      outline: bodies[index].headings
+        .filter((heading) => heading.depth === 2)
+        .map((heading) => heading.text)
+        .slice(0, 4),
     };
   });
   const totalMinutes = entries.reduce((sum, entry) => sum + entry.minutes, 0);

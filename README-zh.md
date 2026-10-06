@@ -70,7 +70,7 @@
 
 配備 Apple Silicon（M1 或更新晶片）的 Mac 可以直接從 [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) 下載桌面版，不需要自行安裝 Node.js、pnpm 或 PostgreSQL。目前尚未提供 Intel Mac 版本。
 
-下載、首次開啟、更新與解除安裝步驟請參閱 [macOS 安裝指南](./desktop/docs/install-macos-zh.md)。
+下載、首次開啟、更新與解除安裝步驟請參閱 [Mac 版 App 說明](https://threads-analytics.app/zh-TW/desktop)。
 
 如需從原始碼建置桌面版，請參閱[桌面版 README](./desktop/README-zh.md)。
 
@@ -103,7 +103,7 @@ docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-an
 2. 產生**Access Token**
 3. 在儀表板中：**設定 → 新增 Threads 帳號 → 貼上 Token**
 
-詳細圖文步驟請參考：[如何生成 Threads Access Token](./public/token-generate-step/README-zh.md)。
+詳細圖文步驟請參考：[如何生成 Threads Access Token](https://threads-analytics.app/zh-TW/token-guide)。
 
 Token 有效期限為 60 天，應用程式會自動幫你續期：
 
@@ -170,6 +170,8 @@ Server 也註冊了現成的 prompts，多數接受選填的 `period` 參數（�
 
 ## 部署
 
+網站上的[自架部署教學](https://threads-analytics.app/zh-TW/deploy/self-host)會一步步說明這一節的所有內容：Docker、從原始碼執行、Vercel Cron、環境變數、自動同步與更新。
+
 ### Docker
 
 GitHub Container Registry 上有發佈好的 multi-arch（amd64/arm64）映像檔。設定好[環境變數](#2-設定環境變數)後執行：
@@ -189,7 +191,7 @@ Docker 映像檔在啟動時會自動執行 `prisma migrate deploy`。
 
 ### Vercel
 
-將 repository 匯入 Vercel 並設定好[環境變數](#2-設定環境變數)。Migration 會透過 `vercel-build` script（`prisma migrate deploy && next build`）在建置階段執行，Vercel 偵測到這個 script 會優先使用它。
+將 repository 匯入 Vercel 並設定好[環境變數](#2-設定環境變數)。`vercel-build` script（`prisma generate && prisma migrate deploy && next build`）會在建置階段產生 Prisma Client 並執行 migration，Vercel 偵測到這個 script 會優先使用它。
 
 Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，請改用 [Vercel Cron Jobs](https://vercel.com/docs/cron-jobs) 定期呼叫 `/api/cron/sync`：
 
@@ -234,7 +236,7 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
 
 - **Zeabur** — 開啟 `threads-analytics` 服務並點擊 **Redeploy**，即會拉取最新映像檔。
 - **Railway** — 在 Railway Dashboard 對服務觸發重新部署。
-- **從原始碼部署** — `git pull` 後執行 `pnpm install && pnpm build`，再以 `pnpm start` 重新啟動（會自動執行 migration）。
+- **從原始碼部署** — `git pull` 後執行 `pnpm install && pnpm prisma:generate && pnpm build`，再以 `pnpm start` 重新啟動（會自動執行 migration）。
 - **Vercel** — 推送新版本即可，migration 會如上所述在建置階段執行。
 
 更新過程中資料庫（貼文、洞察資料、帳號）都會完整保留。
@@ -304,7 +306,7 @@ npx prisma migrate dev --name <名稱>  # 建立新的 migration
 
 ## 分析功能說明
 
-儀表板在總覽、分析（成效／內容／受眾）與貼文頁面共提供 31 張圖表。每張圖表的內容說明，以及受眾指標背後的取樣規則，完整記錄在**[分析功能說明](./docs/analytics-zh.md)**。
+儀表板在總覽、分析（成效／內容／受眾）與貼文頁面共提供 31 張圖表。可以到[網站](https://threads-analytics.app/zh-TW/analytics)用示範資料瀏覽；每張圖表的內容說明，以及受眾指標背後的取樣規則，完整記錄在**[分析功能說明](./docs/analytics-zh.md)**。
 
 ---
 

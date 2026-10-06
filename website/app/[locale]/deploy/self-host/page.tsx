@@ -1,89 +1,71 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import Link from "next/link";
-import { ArrowRight, ArrowUpRight, ChevronDown } from "lucide-react";
-import { FaGithub } from "react-icons/fa6";
+import { ArrowRight, ArrowUpRight } from "lucide-react";
+import { AgentCtaOthers } from "@/components/agent-cta-others";
 import { ClosingCurves } from "@/components/closing-curves";
-import { GuideLinks } from "@/components/guide-links";
-import { GuideSources } from "@/components/guide-sources";
 import { JsonLd } from "@/components/json-ld";
 import { mdxArticleComponents } from "@/components/mdx-article";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
-import { loadGuideBody } from "@/lib/content";
-import {
-  getGuide,
-  guideAuthor,
-  guideMeta,
-  guideSlugs,
-  guideUi,
-  isGuideSlug,
-  type GuideSlug,
-} from "@/lib/guides";
+import { loadSelfHostBody } from "@/lib/content";
+import { guideAuthor } from "@/lib/guides";
 import { getDictionary, isLocale, locales, type Locale } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
-import { getGuideStructuredData } from "@/lib/structured-data";
+import { selfHost, selfHostMeta } from "@/lib/self-host";
+import { siteConfig } from "@/lib/site";
+import { getSelfHostStructuredData } from "@/lib/structured-data";
+
+const path = "/deploy/self-host";
 
 export const dynamicParams = false;
 
 export function generateStaticParams() {
-  return locales.flatMap((locale) => guideSlugs.map((slug) => ({ locale, slug })));
+  return locales.map((locale) => ({ locale }));
 }
 
-type Params = Promise<{ locale: string; slug: string }>;
+type Params = Promise<{ locale: string }>;
 
 export async function generateMetadata({ params }: { params: Params }): Promise<Metadata> {
-  const { locale, slug } = await params;
-  if (!isLocale(locale) || !isGuideSlug(slug)) notFound();
-  const copy = getGuide(slug, locale);
-  const meta = guideMeta[slug];
+  const { locale } = await params;
+  if (!isLocale(locale)) notFound();
+  const copy = selfHost[locale];
 
   return localizedPageMetadata({
     locale,
-    path: `/guides/${slug}`,
+    path,
     title: copy.metadata.title,
     description: copy.metadata.description,
-    ogImageSet: `guide-${slug}`,
+    ogImageSet: "self-host",
     article: {
-      publishedTime: meta.published,
-      modifiedTime: meta.modified,
+      publishedTime: selfHostMeta.published,
+      modifiedTime: selfHostMeta.modified,
       authors: [guideAuthor.url],
     },
   });
 }
 
-export default async function GuidePage({ params }: { params: Params }) {
-  const { locale: rawLocale, slug: rawSlug } = await params;
-  if (!isLocale(rawLocale) || !isGuideSlug(rawSlug)) notFound();
+export default async function SelfHostPage({ params }: { params: Params }) {
+  const { locale: rawLocale } = await params;
+  if (!isLocale(rawLocale)) notFound();
   const locale: Locale = rawLocale;
-  const slug: GuideSlug = rawSlug;
   const dictionary = getDictionary(locale);
-  const copy = getGuide(slug, locale);
-  const ui = guideUi[locale];
-  const meta = guideMeta[slug];
-  const { default: Body } = await loadGuideBody(slug, locale);
-  // Kickers read "Section / Topic"; the section links back to the hub.
+  const copy = selfHost[locale];
+  const { default: Body, headings } = await loadSelfHostBody(locale);
+  // Kickers read "Section / Topic"; the section links to the deploy options.
   const [kickerSection, ...kickerTopic] = copy.hero.kicker.split(" / ");
 
   return (
     <>
-      <JsonLd
-        data={getGuideStructuredData({
-          locale,
-          slug,
-          copy,
-          datePublished: meta.published,
-          dateModified: meta.modified,
-        })}
-      />
+      <JsonLd data={getSelfHostStructuredData(locale)} />
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>
         <article className="article">
           <header className="article-header">
             <p className="article-category">
-              <Link href={`/${locale}/guides`}>{kickerSection}</Link>
+              <Link href={`/${locale}#deploy`}>{kickerSection}</Link>
               {kickerTopic.length > 0 && <> / {kickerTopic.join(" / ")}</>}
             </p>
             <h1>
@@ -99,59 +81,55 @@ export default async function GuidePage({ params }: { params: Params }) {
                   {guideAuthor.name}
                 </a>
                 <p>
-                  <time dateTime={meta.modified}>
-                    {ui.updatedLabel} {meta.modified}
+                  <time dateTime={selfHostMeta.modified}>
+                    {copy.updatedLabel} {selfHostMeta.modified}
                   </time>
-                  <span aria-hidden="true"> · </span>
-                  {copy.hero.readingTime}
                 </p>
               </div>
             </div>
           </header>
 
+          <nav className="article-toc" aria-labelledby="article-toc-title">
+            <p id="article-toc-title">{copy.tocTitle}</p>
+            <ol>
+              {headings
+                .filter((heading) => heading.depth === 2)
+                .map((heading) => (
+                  <li key={heading.id}>
+                    <a href={`#${heading.id}`}>{heading.text}</a>
+                  </li>
+                ))}
+            </ol>
+          </nav>
+
           <div className="article-body">
             <Body components={mdxArticleComponents(locale)} />
-
-            <section className="article-faq" aria-labelledby="article-faq-title">
-              <h2 id="article-faq-title">{copy.faq.title}</h2>
-              {copy.faq.items.map((item) => (
-                <details key={item.question}>
-                  <summary>
-                    {item.question}
-                    <ChevronDown aria-hidden="true" strokeWidth={2} />
-                  </summary>
-                  <p>{item.answer}</p>
-                </details>
-              ))}
-            </section>
-
-            <GuideSources locale={locale} includeAnnouncement={meta.citesMetaAnnouncement} />
           </div>
         </article>
 
-        <GuideLinks locale={locale} exclude={slug} />
-
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
-            <div className="agent-cta guide-finish">
+            <div className="agent-cta">
               <ClosingCurves />
               <div className="agent-cta-inner">
                 <h2>{copy.cta.title}</h2>
                 <p>{copy.cta.description}</p>
                 <div className="hero-actions">
-                  <Link href={`/${locale}${copy.cta.primaryHref}`} className="button button-light">
+                  <Link href={`/${locale}/token-guide`} className="button button-light">
                     {copy.cta.primary}
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>
-                  <Link href={`/${locale}/analytics`} className="button button-ghost">
+                  <a
+                    href={siteConfig.github}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="button button-ghost"
+                  >
                     {copy.cta.secondary}
                     <ArrowUpRight aria-hidden="true" strokeWidth={2} />
-                  </Link>
+                  </a>
                 </div>
-                <p className="guide-finish-expiry">
-                  <FaGithub aria-hidden="true" />
-                  {copy.cta.note}
-                </p>
+                <AgentCtaOthers locale={locale} label={copy.cta.others} />
               </div>
             </div>
           </div>

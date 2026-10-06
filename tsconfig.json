@@ -36,7 +36,7 @@
     "website",
     "desktop/dist",
     "desktop/zig-out",
-    "desktop/runtime/generated",
+    "desktop/runtime",
     "lib/database/target.desktop.ts",
     "lib/database/sync-lock-target.desktop.ts",
     "lib/database/post-benchmarks-target.desktop.ts"

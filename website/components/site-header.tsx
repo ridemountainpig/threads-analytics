@@ -10,6 +10,7 @@ import {
   MousePointerClick,
   Plug,
   Rocket,
+  Server,
   Ticket,
   TrendingDown,
 } from "lucide-react";
@@ -31,6 +32,7 @@ const navIcons: Record<SiteNavIcon, ReactNode> = {
   railway: <Railway />,
   zeabur: <Zeabur />,
   vercel: <Vercel />,
+  "self-host": <Server strokeWidth={2} />,
   desktop: <Laptop strokeWidth={2} />,
   token: <KeyRound strokeWidth={2} />,
   "threads-insights": <Eye strokeWidth={2} />,

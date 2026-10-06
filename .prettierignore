@@ -2,3 +2,4 @@
 node_modules
 lib/generated
 pnpm-lock.yaml
+website/content
