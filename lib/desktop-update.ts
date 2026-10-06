@@ -1,9 +1,9 @@
 import "server-only";
 
 import {
-  isNewerReleaseVersion,
-  parseReleaseVersion,
-  pickLatestDesktopRelease,
+  releaseDownloadUrl,
+  resolveDesktopUpdate,
+  type DesktopReleaseCandidate,
 } from "@/lib/release-version";
 import type { UpdateStatusPayload, VersionLink } from "@/lib/update-status";
 
@@ -30,6 +30,7 @@ const UNSUPPORTED_STATUS: UpdateStatusPayload = {
   updateAvailable: false,
   current: null,
   latest: null,
+  download: null,
   updateId: null,
 };
 
@@ -42,13 +43,6 @@ export function isDesktopUpdateCheckConfigured() {
 export function getDesktopVersionLink(): VersionLink | null {
   if (!currentVersion) return null;
   return { label: currentVersion, url: `${RELEASES_PAGE_URL}/tag/v${currentVersion}` };
-}
-
-interface GitHubRelease {
-  tag_name: string;
-  html_url: string;
-  draft: boolean;
-  assets: { name: string }[];
 }
 
 export async function getDesktopUpdateStatus(
@@ -66,28 +60,19 @@ export async function getDesktopUpdateStatus(
       signal: AbortSignal.timeout(5000),
     });
     if (!response.ok) throw new Error(`GitHub releases request failed: ${response.status}`);
-    const releases = (await response.json()) as GitHubRelease[];
+    const releases = (await response.json()) as DesktopReleaseCandidate[];
     if (!Array.isArray(releases)) throw new Error("GitHub releases response is not a list");
 
-    // Stable builds only look at stable releases; a pre-release build (e.g.
-    // 0.1.0-beta.1) is offered newer pre-releases as well as stable ones.
-    const latest = pickLatestDesktopRelease(releases, {
-      includePrereleases: (parseReleaseVersion(currentVersion)?.prerelease.length ?? 0) > 0,
-    });
-    // No desktop release at all means we cannot tell; report unchecked rather
-    // than claiming the running build is current.
-    const checked = latest !== null;
-    const updateAvailable =
-      latest !== null && isNewerReleaseVersion(latest.version, currentVersion);
+    const { checked, update } = resolveDesktopUpdate(releases, currentVersion);
 
     const status: UpdateStatusPayload = {
       supported: true,
       checked,
-      updateAvailable,
+      updateAvailable: update !== null,
       current,
-      latest:
-        updateAvailable && latest ? { label: latest.version, url: latest.release.html_url } : null,
-      updateId: updateAvailable && latest ? latest.release.tag_name : null,
+      latest: update ? { label: update.version, url: update.release.html_url } : null,
+      download: update ? releaseDownloadUrl(update.asset, RELEASES_REPOSITORY) : null,
+      updateId: update ? update.release.tag_name : null,
     };
     cached = { expiresAt: Date.now() + UPDATE_STATUS_CACHE_MS, status };
     return status;
@@ -98,6 +83,7 @@ export async function getDesktopUpdateStatus(
       updateAvailable: false,
       current,
       latest: null,
+      download: null,
       updateId: null,
     };
     cached = { expiresAt: Date.now() + UPDATE_STATUS_FAILURE_CACHE_MS, status };
