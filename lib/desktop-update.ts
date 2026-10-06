@@ -1,10 +1,8 @@
 import "server-only";
 
 import {
-  isNewerReleaseVersion,
-  parseReleaseVersion,
-  pickLatestDesktopRelease,
   releaseDownloadUrl,
+  resolveDesktopUpdate,
   type DesktopReleaseCandidate,
 } from "@/lib/release-version";
 import type { UpdateStatusPayload, VersionLink } from "@/lib/update-status";
@@ -65,26 +63,16 @@ export async function getDesktopUpdateStatus(
     const releases = (await response.json()) as DesktopReleaseCandidate[];
     if (!Array.isArray(releases)) throw new Error("GitHub releases response is not a list");
 
-    // Formal builds are only offered formal releases; a beta build (e.g.
-    // 0.1.0-beta.1) is also offered newer betas until the formal release
-    // brings it back to the formal line. With nothing newer to offer, the
-    // running build is up to date.
-    const latest = pickLatestDesktopRelease(releases, {
-      includePrereleases: (parseReleaseVersion(currentVersion)?.prerelease.length ?? 0) > 0,
-    });
-    const updateAvailable =
-      latest !== null && isNewerReleaseVersion(latest.version, currentVersion);
+    const { checked, update } = resolveDesktopUpdate(releases, currentVersion);
 
     const status: UpdateStatusPayload = {
       supported: true,
-      checked: true,
-      updateAvailable,
+      checked,
+      updateAvailable: update !== null,
       current,
-      latest:
-        updateAvailable && latest ? { label: latest.version, url: latest.release.html_url } : null,
-      download:
-        updateAvailable && latest ? releaseDownloadUrl(latest.asset, RELEASES_REPOSITORY) : null,
-      updateId: updateAvailable && latest ? latest.release.tag_name : null,
+      latest: update ? { label: update.version, url: update.release.html_url } : null,
+      download: update ? releaseDownloadUrl(update.asset, RELEASES_REPOSITORY) : null,
+      updateId: update ? update.release.tag_name : null,
     };
     cached = { expiresAt: Date.now() + UPDATE_STATUS_CACHE_MS, status };
     return status;

@@ -1,12 +1,11 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { Download, RefreshCw, X } from "lucide-react";
-import { buttonVariants } from "@/components/ui/button";
+import { RefreshCw, X } from "lucide-react";
 import { Collapse } from "@/components/ui/collapse";
 import type { Locale } from "@/lib/i18n";
 import { updateGuideUrl } from "@/lib/update-guide";
-import { cn } from "@/lib/utils";
+import { UpdateDownloadLink } from "@/components/dashboard/update-download-link";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
 const DISMISSED_UPDATE_KEY = "threads_analytics_dismissed_update";
@@ -62,20 +61,12 @@ export default function UpdateBanner({
           </a>
         </p>
         {download && latestVersion && (
-          <a
+          <UpdateDownloadLink
             href={download}
-            target="_blank"
-            rel="noreferrer"
-            className={cn(
-              buttonVariants({
-                size: "xs",
-                className: "rounded-full px-2.5 has-data-[icon=inline-start]:pl-2",
-              }),
-            )}
-          >
-            <Download data-icon="inline-start" />
-            {labels.download.replace("{version}", latestVersion)}
-          </a>
+            version={latestVersion}
+            label={labels.download}
+            size="xs"
+          />
         )}
         <button
           type="button"

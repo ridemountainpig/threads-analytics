@@ -1,12 +1,11 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle2, Download, RefreshCw } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
-import { buttonVariants } from "@/components/ui/button";
 import type { Locale } from "@/lib/i18n";
 import type { VersionLink } from "@/lib/update-status";
 import { updateGuideUrl } from "@/lib/update-guide";
-import { cn } from "@/lib/utils";
+import { UpdateDownloadLink } from "@/components/dashboard/update-download-link";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
 type UpdateState = "checking" | "upToDate" | "updateAvailable" | "unavailable";
@@ -102,20 +101,12 @@ export default function VersionInfo({
                 </span>
               </p>
               {status?.download && status.latest && (
-                <a
+                <UpdateDownloadLink
                   href={status.download}
-                  target="_blank"
-                  rel="noreferrer"
-                  className={cn(
-                    buttonVariants({
-                      size: "sm",
-                      className: "rounded-full px-3 has-data-[icon=inline-start]:pl-2.5",
-                    }),
-                  )}
-                >
-                  <Download data-icon="inline-start" />
-                  {labels.download.replace("{version}", status.latest.label)}
-                </a>
+                  version={status.latest.label}
+                  label={labels.download}
+                  size="sm"
+                />
               )}
             </div>
           )}

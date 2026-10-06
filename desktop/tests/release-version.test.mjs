@@ -6,6 +6,7 @@ import {
   parseReleaseVersion,
   pickLatestDesktopRelease,
   releaseDownloadUrl,
+  resolveDesktopUpdate,
 } from "../../lib/release-version.ts";
 
 test("parses release versions with and without a tag prefix", () => {
@@ -91,26 +92,29 @@ function release(tag, { draft = false, prerelease = false, desktop = true } = {}
 }
 
 test("pickLatestDesktopRelease skips drafts, web-only releases, and unparsable tags", () => {
-  const picked = pickLatestDesktopRelease([
-    release("v0.2.0", { draft: true }),
-    release("v0.1.5", { desktop: false }),
-    {
-      tag_name: "nightly",
-      html_url: "",
-      draft: false,
-      prerelease: false,
-      assets: [asset("nightly", "x-macos-arm64.zip")],
-    },
-    release("v0.1.0-beta.2"),
-    release("v0.1.0-beta.1"),
-  ]);
+  const picked = pickLatestDesktopRelease(
+    [
+      release("v0.2.0", { draft: true }),
+      release("v0.1.5", { desktop: false }),
+      {
+        tag_name: "nightly",
+        html_url: "",
+        draft: false,
+        prerelease: false,
+        assets: [asset("nightly", "x-macos-arm64.zip")],
+      },
+      release("v0.1.0-beta.2"),
+      release("v0.1.0-beta.1"),
+    ],
+    { includePrereleases: true },
+  );
   assert.equal(picked?.version, "0.1.0-beta.2");
   assert.equal(picked?.release.tag_name, "v0.1.0-beta.2");
 });
 
 test("pickLatestDesktopRelease returns the ZIP, not its checksum", () => {
-  const picked = pickLatestDesktopRelease([release("v0.1.0-beta.2")]);
-  assert.equal(picked?.asset.name, "App-0.1.0-beta.2-macos-arm64.zip");
+  const picked = pickLatestDesktopRelease([release("v0.1.0")]);
+  assert.equal(picked?.asset.name, "App-0.1.0-macos-arm64.zip");
   assert.equal(
     pickLatestDesktopRelease([
       {
@@ -126,12 +130,12 @@ test("pickLatestDesktopRelease returns the ZIP, not its checksum", () => {
 });
 
 test("pickLatestDesktopRelease chooses by version, not by listing order", () => {
-  const picked = pickLatestDesktopRelease([
-    release("v0.1.1"),
-    release("v0.2.0-beta.1"),
-    release("v0.1.2"),
-  ]);
-  assert.equal(picked?.version, "0.2.0-beta.1");
+  const releases = [release("v0.1.1"), release("v0.2.0-beta.1"), release("v0.1.2")];
+  assert.equal(pickLatestDesktopRelease(releases)?.version, "0.1.2");
+  assert.equal(
+    pickLatestDesktopRelease(releases, { includePrereleases: true })?.version,
+    "0.2.0-beta.1",
+  );
   assert.equal(pickLatestDesktopRelease([]), null);
   assert.equal(pickLatestDesktopRelease([release("v0.1.0", { desktop: false })]), null);
 });
@@ -142,6 +146,7 @@ test("pickLatestDesktopRelease offers betas only when asked for pre-releases", (
     release("v0.1.1"),
     release("v0.1.0"),
   ];
+  assert.equal(pickLatestDesktopRelease(releases)?.version, "0.1.1");
   assert.equal(pickLatestDesktopRelease(releases, { includePrereleases: false })?.version, "0.1.1");
   assert.equal(
     pickLatestDesktopRelease(releases, { includePrereleases: true })?.version,
@@ -187,6 +192,64 @@ test("releaseDownloadUrl only accepts the repository's own release downloads", (
     ),
     null,
   );
+  assert.equal(url(download.replace("https://", "https://user:secret@")), null);
   assert.equal(url("https://github.com/ridemountainpig/threads-analytics/archive/main.zip"), null);
   assert.equal(url("not a url"), null);
+});
+
+test("resolveDesktopUpdate offers a formal build only newer formal releases", () => {
+  const releases = [
+    release("v0.3.0-beta.1", { prerelease: true }),
+    // Published with the pre-release box still checked, so not released yet.
+    release("v0.2.1", { prerelease: true }),
+    release("v0.2.0"),
+    release("v0.1.0"),
+  ];
+  const { checked, update } = resolveDesktopUpdate(releases, "0.1.0");
+  assert.equal(checked, true);
+  assert.equal(update?.version, "0.2.0");
+  assert.deepEqual(resolveDesktopUpdate(releases, "0.2.0"), { checked: true, update: null });
+});
+
+test("resolveDesktopUpdate offers a beta build newer betas", () => {
+  const releases = [
+    release("v0.1.0-beta.2", { prerelease: true }),
+    release("v0.1.0-beta.1", { prerelease: true }),
+  ];
+  assert.equal(resolveDesktopUpdate(releases, "0.1.0-beta.1").update?.version, "0.1.0-beta.2");
+  assert.deepEqual(resolveDesktopUpdate(releases, "0.1.0-beta.2"), {
+    checked: true,
+    update: null,
+  });
+  // A plain version still marked pre-release is not offered to betas either.
+  const staged = [release("v0.1.0", { prerelease: true }), ...releases];
+  assert.equal(resolveDesktopUpdate(staged, "0.1.0-beta.2").update, null);
+});
+
+test("resolveDesktopUpdate brings a beta build back to the formal line first", () => {
+  const releases = [
+    release("v0.2.0-beta.1", { prerelease: true }),
+    release("v0.1.0"),
+    release("v0.1.0-beta.3", { prerelease: true }),
+  ];
+  // The next line's beta is newer, but the formal release of this line wins.
+  assert.equal(resolveDesktopUpdate(releases, "0.1.0-beta.3").update?.version, "0.1.0");
+  // A beta of the next line is past that formal release, so newer betas apply.
+  const next = [release("v0.2.0-beta.2", { prerelease: true }), ...releases];
+  assert.equal(resolveDesktopUpdate(next, "0.2.0-beta.1").update?.version, "0.2.0-beta.2");
+});
+
+test("resolveDesktopUpdate reports unchecked when nothing is on the build's line", () => {
+  const betasOnly = [
+    release("v0.3.0-beta.2", { prerelease: true }),
+    release("v0.3.0-beta.1", { prerelease: true }),
+  ];
+  // The formal release a formal build needs may be past this one page.
+  assert.deepEqual(resolveDesktopUpdate(betasOnly, "0.2.0"), { checked: false, update: null });
+  assert.equal(resolveDesktopUpdate(betasOnly, "0.3.0-beta.1").checked, true);
+  // No desktop build at all, e.g. after the asset is renamed.
+  assert.deepEqual(resolveDesktopUpdate([release("v0.4.0", { desktop: false })], "0.3.0-beta.1"), {
+    checked: false,
+    update: null,
+  });
 });

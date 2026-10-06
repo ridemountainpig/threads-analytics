@@ -89,7 +89,8 @@ function findDesktopAsset(release: DesktopReleaseCandidate): DesktopReleaseAsset
 // downloads. The desktop app hands only URLs on its external_links allowlist
 // (desktop/app.json) to the system browser, so anything else would render as
 // a download button that silently does nothing. Parsing first normalizes
-// dot segments that a plain prefix check would let through.
+// dot segments that a plain prefix check would let through, and credentials
+// are rejected because the origin ignores them but the allowlist does not.
 export function releaseDownloadUrl(asset: DesktopReleaseAsset, repository: string): string | null {
   let url: URL;
   try {
@@ -97,9 +98,15 @@ export function releaseDownloadUrl(asset: DesktopReleaseAsset, repository: strin
   } catch {
     return null;
   }
-  if (url.origin !== "https://github.com") return null;
+  if (url.origin !== "https://github.com" || url.username || url.password) return null;
   if (!url.pathname.startsWith(`/${repository}/releases/download/`)) return null;
   return url.href;
+}
+
+export interface DesktopReleasePick<T extends DesktopReleaseCandidate> {
+  release: T;
+  version: string;
+  asset: DesktopReleaseAsset;
 }
 
 // The newest published release that actually ships a desktop build. Releases
@@ -110,18 +117,12 @@ export function releaseDownloadUrl(asset: DesktopReleaseAsset, repository: strin
 // release workflow marks even plain versions as pre-releases by default, so
 // one reaches users only once it is published (or later edited) with that
 // box unchecked. Versions with a pre-release suffix (0.2.0-beta.1) are only
-// offered when includePrereleases is set, so a user on a formal build is
-// never nudged onto a beta.
+// considered when includePrereleases is set.
 export function pickLatestDesktopRelease<T extends DesktopReleaseCandidate>(
   releases: T[],
-  { includePrereleases = true }: { includePrereleases?: boolean } = {},
-): { release: T; version: string; asset: DesktopReleaseAsset } | null {
-  let best: {
-    release: T;
-    version: string;
-    asset: DesktopReleaseAsset;
-    parsed: ReleaseVersion;
-  } | null = null;
+  { includePrereleases = false }: { includePrereleases?: boolean } = {},
+): DesktopReleasePick<T> | null {
+  let best: (DesktopReleasePick<T> & { parsed: ReleaseVersion }) | null = null;
 
   for (const release of releases) {
     if (release.draft) continue;
@@ -138,4 +139,29 @@ export function pickLatestDesktopRelease<T extends DesktopReleaseCandidate>(
   }
 
   return best ? { release: best.release, version: best.version, asset: best.asset } : null;
+}
+
+// What a build running currentVersion should be offered from a releases
+// listing. A formal build is only offered formal releases. A beta build is
+// offered a newer formal release first, so it returns to the formal line once
+// one ships even if a beta for the next line is already out, and newer betas
+// otherwise. `checked` is false when the listing holds nothing on the build's
+// line (no formal release for a formal build, nothing at all for a beta):
+// the listing is one page, so the update may simply be past it, and the
+// caller should say it couldn't check rather than "up to date".
+export function resolveDesktopUpdate<T extends DesktopReleaseCandidate>(
+  releases: T[],
+  currentVersion: string,
+): { checked: boolean; update: DesktopReleasePick<T> | null } {
+  const formal = pickLatestDesktopRelease(releases);
+  if (formal && isNewerReleaseVersion(formal.version, currentVersion)) {
+    return { checked: true, update: formal };
+  }
+
+  const isBetaBuild = (parseReleaseVersion(currentVersion)?.prerelease.length ?? 0) > 0;
+  if (!isBetaBuild) return { checked: formal !== null, update: null };
+
+  const newest = pickLatestDesktopRelease(releases, { includePrereleases: true });
+  const update = newest && isNewerReleaseVersion(newest.version, currentVersion) ? newest : null;
+  return { checked: newest !== null, update };
 }
