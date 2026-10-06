@@ -5,6 +5,7 @@ import {
   isNewerReleaseVersion,
   parseReleaseVersion,
   pickLatestDesktopRelease,
+  releaseDownloadUrl,
 } from "../../lib/release-version.ts";
 
 test("parses release versions with and without a tag prefix", () => {
@@ -69,12 +70,23 @@ test("isNewerReleaseVersion treats a release as newer than its own pre-releases"
   assert.equal(isNewerReleaseVersion("v0.2.0", "dev"), false);
 });
 
-function release(tag, { draft = false, desktop = true } = {}) {
+function asset(tag, name) {
+  return {
+    name,
+    browser_download_url: `https://github.com/example/app/releases/download/${tag}/${name}`,
+  };
+}
+
+function release(tag, { draft = false, prerelease = false, desktop = true } = {}) {
+  const zip = `App-${tag.slice(1)}-macos-arm64.zip`;
   return {
     tag_name: tag,
     html_url: `https://github.com/example/app/releases/tag/${tag}`,
     draft,
-    assets: desktop ? [{ name: `App-${tag.slice(1)}-macos-arm64.zip` }] : [{ name: "web.tar.gz" }],
+    prerelease,
+    // The release workflow publishes a checksum next to the ZIP; list it first
+    // so the picker has to skip it.
+    assets: desktop ? [asset(tag, `${zip}.sha256`), asset(tag, zip)] : [asset(tag, "web.tar.gz")],
   };
 }
 
@@ -82,12 +94,35 @@ test("pickLatestDesktopRelease skips drafts, web-only releases, and unparsable t
   const picked = pickLatestDesktopRelease([
     release("v0.2.0", { draft: true }),
     release("v0.1.5", { desktop: false }),
-    { tag_name: "nightly", html_url: "", draft: false, assets: [{ name: "x-macos-arm64.zip" }] },
+    {
+      tag_name: "nightly",
+      html_url: "",
+      draft: false,
+      prerelease: false,
+      assets: [asset("nightly", "x-macos-arm64.zip")],
+    },
     release("v0.1.0-beta.2"),
     release("v0.1.0-beta.1"),
   ]);
   assert.equal(picked?.version, "0.1.0-beta.2");
   assert.equal(picked?.release.tag_name, "v0.1.0-beta.2");
+});
+
+test("pickLatestDesktopRelease returns the ZIP, not its checksum", () => {
+  const picked = pickLatestDesktopRelease([release("v0.1.0-beta.2")]);
+  assert.equal(picked?.asset.name, "App-0.1.0-beta.2-macos-arm64.zip");
+  assert.equal(
+    pickLatestDesktopRelease([
+      {
+        tag_name: "v0.1.0",
+        html_url: "",
+        draft: false,
+        prerelease: false,
+        assets: [asset("v0.1.0", "App-0.1.0-macos-arm64.zip.sha256")],
+      },
+    ]),
+    null,
+  );
 });
 
 test("pickLatestDesktopRelease chooses by version, not by listing order", () => {
@@ -101,7 +136,7 @@ test("pickLatestDesktopRelease chooses by version, not by listing order", () => 
   assert.equal(pickLatestDesktopRelease([release("v0.1.0", { desktop: false })]), null);
 });
 
-test("pickLatestDesktopRelease hides pre-releases from stable builds", () => {
+test("pickLatestDesktopRelease offers only formal releases unless asked for pre-releases", () => {
   const releases = [release("v0.2.0-beta.1"), release("v0.1.1"), release("v0.1.0")];
   assert.equal(pickLatestDesktopRelease(releases, { includePrereleases: false })?.version, "0.1.1");
   assert.equal(
@@ -112,4 +147,29 @@ test("pickLatestDesktopRelease hides pre-releases from stable builds", () => {
     pickLatestDesktopRelease([release("v0.2.0-beta.1")], { includePrereleases: false }),
     null,
   );
+  // A plain version still marked pre-release on GitHub is not formal yet.
+  const flagged = [release("v0.2.0", { prerelease: true }), release("v0.1.1")];
+  assert.equal(pickLatestDesktopRelease(flagged, { includePrereleases: false })?.version, "0.1.1");
+  assert.equal(pickLatestDesktopRelease(flagged, { includePrereleases: true })?.version, "0.2.0");
+});
+
+test("releaseDownloadUrl only accepts the repository's own release downloads", () => {
+  const repository = "ridemountainpig/threads-analytics";
+  const url = (browser_download_url) =>
+    releaseDownloadUrl({ name: "App-macos-arm64.zip", browser_download_url }, repository);
+  const download =
+    "https://github.com/ridemountainpig/threads-analytics/releases/download/v0.1.0-beta.1/Threads-Analytics-0.1.0-beta.1-macos-arm64.zip";
+
+  assert.equal(url(download), download);
+  assert.equal(url(download.replace("https://", "http://")), null);
+  assert.equal(url(download.replace("github.com", "evil.example")), null);
+  assert.equal(url(download.replace("threads-analytics", "other-repo")), null);
+  assert.equal(
+    url(
+      "https://github.com/ridemountainpig/threads-analytics/releases/download/../../../other/x.zip",
+    ),
+    null,
+  );
+  assert.equal(url("https://github.com/ridemountainpig/threads-analytics/archive/main.zip"), null);
+  assert.equal(url("not a url"), null);
 });

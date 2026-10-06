@@ -1,10 +1,12 @@
 "use client";
 
-import { ArrowUpRight, CheckCircle2, RefreshCw } from "lucide-react";
+import { ArrowUpRight, CheckCircle2, Download, RefreshCw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { buttonVariants } from "@/components/ui/button";
 import type { Locale } from "@/lib/i18n";
 import type { VersionLink } from "@/lib/update-status";
 import { updateGuideUrl } from "@/lib/update-guide";
+import { cn } from "@/lib/utils";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
 type UpdateState = "checking" | "upToDate" | "updateAvailable" | "unavailable";
@@ -25,6 +27,7 @@ export default function VersionInfo({
     updateAvailable: string;
     checkFailed: string;
     howToUpdate: string;
+    download: string;
   };
 }) {
   const { status, failed } = useUpdateStatus(Boolean(version));
@@ -71,32 +74,50 @@ export default function VersionInfo({
             </p>
           )}
           {updateState === "updateAvailable" && (
-            <p className="flex items-center gap-2">
-              <RefreshCw className="size-4 shrink-0 text-amber-600 dark:text-amber-500" />
-              <span className="min-w-0">
-                {labels.updateAvailable}{" "}
-                {status?.latest && (
-                  <>
-                    <a
-                      href={status.latest.url}
-                      target="_blank"
-                      rel="noreferrer"
-                      className="text-foreground/80 hover:text-foreground font-mono underline underline-offset-2"
-                    >
-                      {status.latest.label}
-                    </a>{" "}
-                  </>
-                )}
+            <div className="flex items-center justify-between gap-3">
+              <p className="flex min-w-0 items-center gap-2">
+                <RefreshCw className="size-4 shrink-0 text-amber-600 dark:text-amber-500" />
+                <span className="min-w-0">
+                  {labels.updateAvailable}{" "}
+                  {status?.latest && (
+                    <>
+                      <a
+                        href={status.latest.url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="text-foreground/80 hover:text-foreground font-mono underline underline-offset-2"
+                      >
+                        {status.latest.label}
+                      </a>{" "}
+                    </>
+                  )}
+                  <a
+                    href={updateGuideUrl(locale)}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="text-tint font-medium underline underline-offset-2 hover:opacity-80"
+                  >
+                    {labels.howToUpdate}
+                  </a>
+                </span>
+              </p>
+              {status?.download && status.latest && (
                 <a
-                  href={updateGuideUrl(locale)}
+                  href={status.download}
                   target="_blank"
                   rel="noreferrer"
-                  className="text-tint font-medium underline underline-offset-2 hover:opacity-80"
+                  className={cn(
+                    buttonVariants({
+                      size: "sm",
+                      className: "rounded-full px-3 has-data-[icon=inline-start]:pl-2.5",
+                    }),
+                  )}
                 >
-                  {labels.howToUpdate}
+                  <Download data-icon="inline-start" />
+                  {labels.download.replace("{version}", status.latest.label)}
                 </a>
-              </span>
-            </p>
+              )}
+            </div>
           )}
         </div>
       ) : (

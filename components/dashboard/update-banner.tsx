@@ -1,10 +1,12 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { RefreshCw, X } from "lucide-react";
+import { Download, RefreshCw, X } from "lucide-react";
+import { buttonVariants } from "@/components/ui/button";
 import { Collapse } from "@/components/ui/collapse";
 import type { Locale } from "@/lib/i18n";
 import { updateGuideUrl } from "@/lib/update-guide";
+import { cn } from "@/lib/utils";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
 const DISMISSED_UPDATE_KEY = "threads_analytics_dismissed_update";
@@ -14,12 +16,14 @@ export default function UpdateBanner({
   labels,
 }: {
   locale: Locale;
-  labels: { newVersionAvailable: string; howToUpdate: string; dismiss: string };
+  labels: { newVersionAvailable: string; howToUpdate: string; download: string; dismiss: string };
 }) {
   const [updateId, setUpdateId] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   // The banner is best-effort; a failed check should never disturb the dashboard.
   const { status } = useUpdateStatus();
+  const download = status?.download;
+  const latestVersion = status?.latest?.label;
 
   useEffect(() => {
     if (!status?.updateAvailable || !status.updateId) return;
@@ -57,6 +61,22 @@ export default function UpdateBanner({
             {labels.howToUpdate}
           </a>
         </p>
+        {download && latestVersion && (
+          <a
+            href={download}
+            target="_blank"
+            rel="noreferrer"
+            className={cn(
+              buttonVariants({
+                size: "xs",
+                className: "rounded-full px-2.5 has-data-[icon=inline-start]:pl-2",
+              }),
+            )}
+          >
+            <Download data-icon="inline-start" />
+            {labels.download.replace("{version}", latestVersion)}
+          </a>
+        )}
         <button
           type="button"
           aria-label={labels.dismiss}

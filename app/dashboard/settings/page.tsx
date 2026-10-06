@@ -157,6 +157,7 @@ export default async function SettingsPage() {
                   ? t.versionInfo.sourceBuildHelpDesktop
                   : t.versionInfo.sourceBuildHelp,
                 howToUpdate: t.updateBanner.howToUpdate,
+                download: t.updateBanner.download,
               }}
             />
           </CardContent>

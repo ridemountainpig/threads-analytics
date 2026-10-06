@@ -19,7 +19,7 @@ on:
         required: true
         type: string
       prerelease:
-        description: "Mark the GitHub Release as a pre-release. Versions with a suffix (-beta.1, -rc.1) are always pre-releases."
+        description: "Mark the GitHub Release as a pre-release. Versions with a suffix (-beta.1, -rc.1) are always pre-releases. Installed apps are only prompted to update to releases that are not pre-releases."
         required: false
         type: boolean
         default: true
