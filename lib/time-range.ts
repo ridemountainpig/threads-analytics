@@ -12,6 +12,8 @@ export const DESKTOP_TIME_ZONE = isDesktopApp ? systemTimeZone() : null;
 
 const DEFAULT_TIME_ZONE = DESKTOP_TIME_ZONE ?? process.env.ANALYTICS_TIME_ZONE ?? "Asia/Taipei";
 
+const DAY_MS = 24 * 60 * 60 * 1000;
+
 const RANGE_DAYS: Record<string, number | null> = {
   "7": 7,
   "30": 30,
@@ -85,16 +87,27 @@ export function parseDateOnlyInTimeZone(value: string, timeZone: string, endOfDa
   const minute = endOfDay ? 59 : 0;
   const second = endOfDay ? 59 : 0;
   const millisecond = endOfDay ? 999 : 0;
-  const utcGuess = new Date(Date.UTC(year, month - 1, day, hour, minute, second, millisecond));
-  const offset = getTimeZoneOffsetMs(timeZone, utcGuess);
-  let result = new Date(utcGuess.getTime() - offset);
+  const wallTime = Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
 
-  const adjustedOffset = getTimeZoneOffsetMs(timeZone, result);
-  if (adjustedOffset !== offset) {
-    result = new Date(utcGuess.getTime() - adjustedOffset);
+  // The wall time occurs at wallTime - offset, for whichever offset holds at
+  // that instant. The offsets a day either side cover any DST change near it:
+  // after a fall-back the wall time occurs twice, and where clocks spring
+  // forward at midnight (Santiago, Havana) a day's 00:00 never occurs at all.
+  const offsets = new Set(
+    [-DAY_MS, 0, DAY_MS].map((shift) => getTimeZoneOffsetMs(timeZone, new Date(wallTime + shift))),
+  );
+  const candidates = [...offsets].map((offset) => wallTime - offset).sort((a, b) => a - b);
+  const occurrences = candidates.filter(
+    (instant) => wallTime - getTimeZoneOffsetMs(timeZone, new Date(instant)) === instant,
+  );
+
+  // A day runs from the first occurrence of its midnight to the last of its
+  // 23:59:59.999. A skipped wall time instead resolves to where the clock
+  // jumps, so the day neither starts in the one before nor ends in the next.
+  if (occurrences.length > 0) {
+    return new Date(endOfDay ? occurrences[occurrences.length - 1] : occurrences[0]);
   }
-
-  return result;
+  return new Date(endOfDay ? candidates[0] : candidates[candidates.length - 1]);
 }
 
 function getTimeZoneOffsetMs(timeZone: string, date: Date) {
