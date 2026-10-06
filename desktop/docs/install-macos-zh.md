@@ -62,7 +62,7 @@ Threads Analytics 桌面版會將 Threads 資料儲存在你的 Mac，不需要�
 
 ## 更新 App
 
-桌面版會檢查 GitHub Releases 是否有新版本，有的話會在儀表板頂端顯示提示（只有正式版會觸發，標示為 **Pre-release** 的版本不會）；你也可以在「設定」→「關於」查看目前版本與更新狀態。App 不會自行安裝更新，更新時：
+桌面版會檢查 GitHub Releases 是否有新版本，有的話會在儀表板頂端顯示提示（使用正式版時只有較新的正式版會觸發；使用 beta 版時，較新的 beta 版也會觸發）；你也可以在「設定」→「關於」查看目前版本與更新狀態。App 不會自行安裝更新，更新時：
 
 1. 在更新提示或「設定」→「關於」選擇「下載」，瀏覽器會下載最新版的 ZIP；也可以直接從 [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) 下載。
 2. 結束 Threads Analytics。

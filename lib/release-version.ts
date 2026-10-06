@@ -105,11 +105,13 @@ export function releaseDownloadUrl(asset: DesktopReleaseAsset, repository: strin
 // The newest published release that actually ships a desktop build. Releases
 // come from the API in creation order, which is not version order (a hotfix
 // for an older line can be created later), so the highest version wins.
-// Drafts and releases without a macOS asset (web-only releases) are skipped.
-// Unless includePrereleases is set, only formal releases count: a plain X.Y.Z
-// version that is also not marked pre-release on GitHub. The release workflow
-// marks even plain versions as pre-releases by default, so a release reaches
-// users only once it is published (or later edited) with that box unchecked.
+// Drafts and releases without a macOS asset (web-only releases) are skipped,
+// and so is a plain X.Y.Z version still marked pre-release on GitHub: the
+// release workflow marks even plain versions as pre-releases by default, so
+// one reaches users only once it is published (or later edited) with that
+// box unchecked. Versions with a pre-release suffix (0.2.0-beta.1) are only
+// offered when includePrereleases is set, so a user on a formal build is
+// never nudged onto a beta.
 export function pickLatestDesktopRelease<T extends DesktopReleaseCandidate>(
   releases: T[],
   { includePrereleases = true }: { includePrereleases?: boolean } = {},
@@ -127,7 +129,9 @@ export function pickLatestDesktopRelease<T extends DesktopReleaseCandidate>(
     if (!asset) continue;
     const parsed = parseReleaseVersion(release.tag_name);
     if (!parsed) continue;
-    if (!includePrereleases && (parsed.prerelease.length > 0 || release.prerelease)) continue;
+    const isPrereleaseVersion = parsed.prerelease.length > 0;
+    if (!isPrereleaseVersion && release.prerelease) continue;
+    if (isPrereleaseVersion && !includePrereleases) continue;
     if (!best || compareReleaseVersions(parsed, best.parsed) > 0) {
       best = { release, version: release.tag_name.replace(/^v/, ""), asset, parsed };
     }

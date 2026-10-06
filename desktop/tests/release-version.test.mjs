@@ -136,21 +136,38 @@ test("pickLatestDesktopRelease chooses by version, not by listing order", () => 
   assert.equal(pickLatestDesktopRelease([release("v0.1.0", { desktop: false })]), null);
 });
 
-test("pickLatestDesktopRelease offers only formal releases unless asked for pre-releases", () => {
-  const releases = [release("v0.2.0-beta.1"), release("v0.1.1"), release("v0.1.0")];
+test("pickLatestDesktopRelease offers betas only when asked for pre-releases", () => {
+  const releases = [
+    release("v0.2.0-beta.1", { prerelease: true }),
+    release("v0.1.1"),
+    release("v0.1.0"),
+  ];
   assert.equal(pickLatestDesktopRelease(releases, { includePrereleases: false })?.version, "0.1.1");
   assert.equal(
     pickLatestDesktopRelease(releases, { includePrereleases: true })?.version,
     "0.2.0-beta.1",
   );
   assert.equal(
-    pickLatestDesktopRelease([release("v0.2.0-beta.1")], { includePrereleases: false }),
+    pickLatestDesktopRelease([release("v0.2.0-beta.1", { prerelease: true })], {
+      includePrereleases: false,
+    }),
     null,
   );
-  // A plain version still marked pre-release on GitHub is not formal yet.
-  const flagged = [release("v0.2.0", { prerelease: true }), release("v0.1.1")];
-  assert.equal(pickLatestDesktopRelease(flagged, { includePrereleases: false })?.version, "0.1.1");
-  assert.equal(pickLatestDesktopRelease(flagged, { includePrereleases: true })?.version, "0.2.0");
+});
+
+test("pickLatestDesktopRelease holds back plain versions still marked pre-release", () => {
+  // Published with the workflow's default pre-release box still checked, so
+  // neither formal nor beta builds are offered it yet.
+  const staged = [
+    release("v0.2.0", { prerelease: true }),
+    release("v0.2.0-beta.1", { prerelease: true }),
+    release("v0.1.1"),
+  ];
+  assert.equal(pickLatestDesktopRelease(staged, { includePrereleases: false })?.version, "0.1.1");
+  assert.equal(
+    pickLatestDesktopRelease(staged, { includePrereleases: true })?.version,
+    "0.2.0-beta.1",
+  );
 });
 
 test("releaseDownloadUrl only accepts the repository's own release downloads", () => {

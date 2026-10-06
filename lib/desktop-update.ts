@@ -2,6 +2,7 @@ import "server-only";
 
 import {
   isNewerReleaseVersion,
+  parseReleaseVersion,
   pickLatestDesktopRelease,
   releaseDownloadUrl,
   type DesktopReleaseCandidate,
@@ -64,10 +65,13 @@ export async function getDesktopUpdateStatus(
     const releases = (await response.json()) as DesktopReleaseCandidate[];
     if (!Array.isArray(releases)) throw new Error("GitHub releases response is not a list");
 
-    // Every build, beta builds included, is only offered formal releases, so
-    // pre-releases can be shared for testing without prompting anyone. With
-    // no formal release yet there is simply nothing to update to.
-    const latest = pickLatestDesktopRelease(releases, { includePrereleases: false });
+    // Formal builds are only offered formal releases; a beta build (e.g.
+    // 0.1.0-beta.1) is also offered newer betas until the formal release
+    // brings it back to the formal line. With nothing newer to offer, the
+    // running build is up to date.
+    const latest = pickLatestDesktopRelease(releases, {
+      includePrereleases: (parseReleaseVersion(currentVersion)?.prerelease.length ?? 0) > 0,
+    });
     const updateAvailable =
       latest !== null && isNewerReleaseVersion(latest.version, currentVersion);
 

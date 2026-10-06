@@ -52,7 +52,7 @@ Native SDK manifest 只接受純 `X.Y.Z` 版本號，因此 pre-release 後綴�
 
 發行版本採臨時簽章且未經 Apple 公證，自動產生的 release notes 會註明這點並連結到安裝說明。
 
-workflow 也會透過 `THREADS_ANALYTICS_DESKTOP_VERSION` 把完整的發行版本號傳給建置流程。`desktop/scripts/build-next.mjs` 會將它以 `NEXT_PUBLIC_DESKTOP_APP_VERSION` 烘入 app（本機封裝則退回 manifest 的版本號），執行中的 app 會拿它與最新且附有 `-macos-arm64.zip` 資產的正式 GitHub Release 比較。只有純 `X.Y.Z` 版本號、且沒有標記為 pre-release 的版本才算正式版，beta 建置也套用同樣規則，因此 pre-release 不會提示任何人更新。workflow 預設會把純版本號也標記為 pre-release，所以要在發布時（或之後編輯 release）取消勾選，已安裝的 app 才會收到這個版本。有新版本時會在儀表板顯示 banner，並在「設定」→「關於」中顯示，兩處都會直接連到該版本的 ZIP。下載交給系統瀏覽器而不是 app 本身，因此 macOS 會照常標記隔離屬性，新版第一次開啟時仍會經過 Gatekeeper 檢查。只有本 repo 的 release 下載網址才會顯示下載連結，這個範圍已涵蓋在 `desktop/app.json` 的 `external_links` 允許清單內。開發版建置沒有烘入版本號，因此會略過檢查。
+workflow 也會透過 `THREADS_ANALYTICS_DESKTOP_VERSION` 把完整的發行版本號傳給建置流程。`desktop/scripts/build-next.mjs` 會將它以 `NEXT_PUBLIC_DESKTOP_APP_VERSION` 烘入 app（本機封裝則退回 manifest 的版本號），執行中的 app 會拿它與最新且附有 `-macos-arm64.zip` 資產的 GitHub Release 比較。正式版建置只會收到正式版的提示，也就是純 `X.Y.Z` 版本號、且沒有標記為 pre-release 的版本。beta 建置（例如 `0.1.0-beta.1`）還會收到帶有 pre-release 後綴的較新版本，所以 beta 使用者會知道有新的 beta，直到正式版發布後回到正式版。仍標記為 pre-release 的純版本號不會提示任何人。workflow 預設會把純版本號也標記為 pre-release，所以要在發布時（或之後編輯 release）取消勾選，已安裝的 app 才會收到這個正式版。有新版本時會在儀表板顯示 banner，並在「設定」→「關於」中顯示，兩處都會直接連到該版本的 ZIP。下載交給系統瀏覽器而不是 app 本身，因此 macOS 會照常標記隔離屬性，新版第一次開啟時仍會經過 Gatekeeper 檢查。只有本 repo 的 release 下載網址才會顯示下載連結，這個範圍已涵蓋在 `desktop/app.json` 的 `external_links` 允許清單內。開發版建置沒有烘入版本號，因此會略過檢查。
 
 桌面版的 Next build 會設定 `experimental.isrFlushToDisk: false`，讓 fetch / ISR 快取只保留在記憶體中。否則 standalone server 第一次使用時會把 `.next/cache` 寫進已簽章的 `.app` bundle，導致簽章失效。
 

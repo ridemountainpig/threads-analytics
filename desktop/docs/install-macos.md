@@ -62,7 +62,7 @@ If the app still does not open, report the macOS version and a screenshot of the
 
 ## Update the app
 
-The desktop app checks GitHub Releases for newer versions and shows a notice at the top of the dashboard when one is available. Only official releases trigger the notice; releases marked **Pre-release** do not. You can also see the installed version and update status under **Settings** → **About**. The app does not install updates itself. To update it:
+The desktop app checks GitHub Releases for newer versions and shows a notice at the top of the dashboard when one is available. On an official release, only newer official releases trigger the notice. On a beta, newer betas do too. You can also see the installed version and update status under **Settings** → **About**. The app does not install updates itself. To update it:
 
 1. Select **Download** in the update notice or under **Settings** → **About**. Your browser downloads the newest version's ZIP. You can also download it from [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases).
 2. Quit Threads Analytics.
