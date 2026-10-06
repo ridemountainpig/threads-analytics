@@ -247,6 +247,11 @@ test("resolveDesktopUpdate reports unchecked when nothing is on the build's line
   // The formal release a formal build needs may be past this one page.
   assert.deepEqual(resolveDesktopUpdate(betasOnly, "0.2.0"), { checked: false, update: null });
   assert.equal(resolveDesktopUpdate(betasOnly, "0.3.0-beta.1").checked, true);
+  // A running version that does not parse cannot be compared at all.
+  assert.deepEqual(resolveDesktopUpdate([release("v0.2.0")], "0.1.0-beta..1"), {
+    checked: false,
+    update: null,
+  });
   // No desktop build at all, e.g. after the asset is renamed.
   assert.deepEqual(resolveDesktopUpdate([release("v0.4.0", { desktop: false })], "0.3.0-beta.1"), {
     checked: false,

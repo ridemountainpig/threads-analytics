@@ -148,18 +148,21 @@ export function pickLatestDesktopRelease<T extends DesktopReleaseCandidate>(
 // otherwise. `checked` is false when the listing holds nothing on the build's
 // line (no formal release for a formal build, nothing at all for a beta):
 // the listing is one page, so the update may simply be past it, and the
-// caller should say it couldn't check rather than "up to date".
+// caller should say it couldn't check rather than "up to date". The same goes
+// for a running version that does not parse, which nothing compares against.
 export function resolveDesktopUpdate<T extends DesktopReleaseCandidate>(
   releases: T[],
   currentVersion: string,
 ): { checked: boolean; update: DesktopReleasePick<T> | null } {
+  const current = parseReleaseVersion(currentVersion);
+  if (!current) return { checked: false, update: null };
+
   const formal = pickLatestDesktopRelease(releases);
   if (formal && isNewerReleaseVersion(formal.version, currentVersion)) {
     return { checked: true, update: formal };
   }
 
-  const isBetaBuild = (parseReleaseVersion(currentVersion)?.prerelease.length ?? 0) > 0;
-  if (!isBetaBuild) return { checked: formal !== null, update: null };
+  if (current.prerelease.length === 0) return { checked: formal !== null, update: null };
 
   const newest = pickLatestDesktopRelease(releases, { includePrereleases: true });
   const update = newest && isNewerReleaseVersion(newest.version, currentVersion) ? newest : null;

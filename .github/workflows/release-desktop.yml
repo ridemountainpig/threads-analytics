@@ -59,8 +59,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          if [[ ! "$VERSION" =~ ^[0-9]+\.[0-9]+\.[0-9]+(-[0-9A-Za-z.]+)?$ ]]; then
-            echo "::error::Version '$VERSION' must look like X.Y.Z or X.Y.Z-suffix (e.g. 0.1.0-beta.1)"
+          # Must stay within what parseReleaseVersion (lib/release-version.ts)
+          # accepts, or installed apps cannot compare against the release: no
+          # leading zeros in X.Y.Z and no empty dot-separated suffix parts.
+          version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$'
+          if [[ ! "$VERSION" =~ $version_pattern ]]; then
+            echo "::error::Version '$VERSION' must look like X.Y.Z or X.Y.Z-suffix (e.g. 0.1.0-beta.1), with no leading zeros and no empty suffix parts"
             exit 1
           fi
 
