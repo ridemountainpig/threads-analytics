@@ -46,6 +46,7 @@ function toImagePayload(
     current: toVersionLink(versionLink),
     // Image updates have no per-version page; the banner links to the guide.
     latest: null,
+    download: null,
     updateId: status.updateAvailable ? status.latestDigest : null,
   };
 }
