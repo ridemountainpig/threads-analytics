@@ -1,7 +1,7 @@
 import "server-only";
 
 import { db } from "@/lib/db";
-import { Prisma } from "@/lib/generated/prisma";
+import type { Prisma } from "@/lib/generated/prisma";
 import { decryptToken } from "@/lib/crypto";
 import {
   DEMOGRAPHICS_MIN_FOLLOWERS,
