@@ -312,44 +312,45 @@ export default async function PostsPage({ searchParams }: PageProps) {
         currentQuery={query}
         currentType={mediaFilter}
         availableTypes={availableTypes}
-        hasPagination={totalPosts > POSTS_PER_PAGE}
+        pagination={
+          totalPosts > POSTS_PER_PAGE && (
+            <div className="flex items-center justify-between gap-3">
+              {currentPage > 1 ? (
+                <Link
+                  href={pageHref(currentPage - 1)}
+                  className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+                >
+                  {t.postsPage.previousPage}
+                </Link>
+              ) : (
+                <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
+                  {t.postsPage.previousPage}
+                </span>
+              )}
+              <span className="text-muted-foreground text-sm tabular-nums">
+                {t.postsPage.pageStatus
+                  .replace("{page}", String(currentPage))
+                  .replace("{total}", String(pageCount))}
+              </span>
+              {currentPage < pageCount ? (
+                <Link
+                  href={pageHref(currentPage + 1)}
+                  className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+                >
+                  {t.postsPage.nextPage}
+                </Link>
+              ) : (
+                <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
+                  {t.postsPage.nextPage}
+                </span>
+              )}
+            </div>
+          )
+        }
         labels={t.postsPage}
         dateLocale={dateLocale}
         timeZone={tz}
       />
-      {totalPosts > POSTS_PER_PAGE && (
-        <div className="flex items-center justify-between gap-3">
-          {currentPage > 1 ? (
-            <Link
-              href={pageHref(currentPage - 1)}
-              className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-            >
-              {t.postsPage.previousPage}
-            </Link>
-          ) : (
-            <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
-              {t.postsPage.previousPage}
-            </span>
-          )}
-          <span className="text-muted-foreground text-sm tabular-nums">
-            {t.postsPage.pageStatus
-              .replace("{page}", String(currentPage))
-              .replace("{total}", String(pageCount))}
-          </span>
-          {currentPage < pageCount ? (
-            <Link
-              href={pageHref(currentPage + 1)}
-              className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-            >
-              {t.postsPage.nextPage}
-            </Link>
-          ) : (
-            <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
-              {t.postsPage.nextPage}
-            </span>
-          )}
-        </div>
-      )}
     </div>
   );
 }

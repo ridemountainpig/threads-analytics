@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, type ReactNode } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   ArrowDown,
@@ -124,7 +124,8 @@ interface PostListProps {
   currentQuery: string;
   currentType: string;
   availableTypes: string[];
-  hasPagination?: boolean;
+  /** Belongs to the list, so it hides while a post is open below lg. */
+  pagination?: ReactNode;
   dateLocale?: string;
   timeZone: string;
   labels: {
@@ -770,7 +771,7 @@ export default function PostList({
   currentQuery,
   currentType,
   availableTypes,
-  hasPagination = false,
+  pagination,
   labels,
   dateLocale,
   timeZone,
@@ -912,172 +913,175 @@ export default function PostList({
   const selectedPost = posts.find((p) => p.id === activeId) ?? posts[0] ?? null;
 
   return (
-    <div
-      ref={containerRef}
-      className={cn(
-        "ring-foreground/10 flex min-h-[520px] scroll-mt-20 flex-col gap-0 overflow-hidden rounded-xl ring-1 lg:flex-row",
-        hasPagination ? "lg:h-[calc(100vh-13rem)]" : "lg:h-[calc(100vh-10rem)]",
-      )}
-    >
-      {/* Left: post list */}
+    <>
       <div
+        ref={containerRef}
         className={cn(
-          "shrink-0 flex-col lg:flex lg:w-[40%] lg:border-r",
-          openPostId ? "hidden" : "flex",
+          "ring-foreground/10 flex min-h-[520px] scroll-mt-20 flex-col gap-0 overflow-hidden rounded-xl ring-1 lg:flex-row",
+          pagination ? "lg:h-[calc(100vh-13rem)]" : "lg:h-[calc(100vh-10rem)]",
         )}
       >
-        {/* Sort controls */}
-        <div className="space-y-2 border-b px-4 py-2.5">
-          <div className="-mx-4 flex scrollbar-none items-center gap-1.5 overflow-x-auto px-4 py-0.5 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:py-0">
-            <span className="text-muted-foreground mr-0.5 shrink-0 text-xs whitespace-nowrap">
-              {labels.sort}
-            </span>
-            {SORT_OPTIONS.map((value) => (
-              <FilterChip
-                key={value}
-                selected={currentSort === value}
-                onClick={() => setSort(value)}
-              >
-                {sortLabels[value]}
-              </FilterChip>
-            ))}
-            <button
-              onClick={toggleDir}
-              title={currentDir === "asc" ? labels.ascending : labels.descending}
-              aria-label={currentDir === "asc" ? labels.ascending : labels.descending}
-              className="bg-muted/70 text-foreground/70 hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
-            >
-              {currentDir === "asc" ? (
-                <ArrowUp className="size-3.5" />
-              ) : (
-                <ArrowDown className="size-3.5" />
-              )}
-            </button>
-          </div>
-          {/* Search: a recessed capsule field, Apple search-bar style */}
-          <div className="flex flex-wrap items-center gap-2">
-            <div className="relative flex-1">
-              <Search className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
-              <input
-                ref={searchInputRef}
-                type="search"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder={labels.searchPlaceholder ?? "Search posts..."}
-                className="bg-muted/70 placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-full py-1.5 pr-9 pl-9 text-sm transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none [&::-webkit-search-cancel-button]:hidden"
-              />
-              {/* Apple search-bar grammar: a clear affordance appears once
-                  there's something to clear, and hands focus back for the
-                  next query. */}
-              {searchQuery.length > 0 && (
-                <button
-                  type="button"
-                  aria-label={labels.clearSearch ?? "Clear search"}
-                  onClick={() => {
-                    setSearchQuery("");
-                    searchInputRef.current?.focus();
-                  }}
-                  className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
-                >
-                  <X className="size-3.5" />
-                </button>
-              )}
-            </div>
-          </div>
-          {availableTypes.length > 1 && (
-            <div className="flex flex-wrap items-center gap-1.5">
-              <FilterChip
-                size="xs"
-                selected={currentType === ""}
-                onClick={() => setMediaFilter("")}
-              >
-                {labels.allTypes ?? "All"}
-              </FilterChip>
-              {availableTypes.map((type) => (
+        {/* Left: post list */}
+        <div
+          className={cn(
+            "shrink-0 flex-col lg:flex lg:w-[40%] lg:border-r",
+            openPostId ? "hidden" : "flex",
+          )}
+        >
+          {/* Sort controls */}
+          <div className="space-y-2 border-b px-4 py-2.5">
+            <div className="-mx-4 flex scrollbar-none items-center gap-1.5 overflow-x-auto px-4 py-0.5 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:py-0">
+              <span className="text-muted-foreground mr-0.5 shrink-0 text-xs whitespace-nowrap">
+                {labels.sort}
+              </span>
+              {SORT_OPTIONS.map((value) => (
                 <FilterChip
-                  key={type}
-                  size="xs"
-                  selected={currentType === type}
-                  onClick={() => setMediaFilter(type)}
+                  key={value}
+                  selected={currentSort === value}
+                  onClick={() => setSort(value)}
                 >
-                  {labels.mediaTypes?.[type] ?? type}
+                  {sortLabels[value]}
                 </FilterChip>
               ))}
+              <button
+                onClick={toggleDir}
+                title={currentDir === "asc" ? labels.ascending : labels.descending}
+                aria-label={currentDir === "asc" ? labels.ascending : labels.descending}
+                className="bg-muted/70 text-foreground/70 hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+              >
+                {currentDir === "asc" ? (
+                  <ArrowUp className="size-3.5" />
+                ) : (
+                  <ArrowDown className="size-3.5" />
+                )}
+              </button>
+            </div>
+            {/* Search: a recessed capsule field, Apple search-bar style */}
+            <div className="flex flex-wrap items-center gap-2">
+              <div className="relative flex-1">
+                <Search className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
+                  placeholder={labels.searchPlaceholder ?? "Search posts..."}
+                  className="bg-muted/70 placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-full py-1.5 pr-9 pl-9 text-sm transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none [&::-webkit-search-cancel-button]:hidden"
+                />
+                {/* Apple search-bar grammar: a clear affordance appears once
+                  there's something to clear, and hands focus back for the
+                  next query. */}
+                {searchQuery.length > 0 && (
+                  <button
+                    type="button"
+                    aria-label={labels.clearSearch ?? "Clear search"}
+                    onClick={() => {
+                      setSearchQuery("");
+                      searchInputRef.current?.focus();
+                    }}
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+                  >
+                    <X className="size-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
+            {availableTypes.length > 1 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                <FilterChip
+                  size="xs"
+                  selected={currentType === ""}
+                  onClick={() => setMediaFilter("")}
+                >
+                  {labels.allTypes ?? "All"}
+                </FilterChip>
+                {availableTypes.map((type) => (
+                  <FilterChip
+                    key={type}
+                    size="xs"
+                    selected={currentType === type}
+                    onClick={() => setMediaFilter(type)}
+                  >
+                    {labels.mediaTypes?.[type] ?? type}
+                  </FilterChip>
+                ))}
+              </div>
+            )}
+          </div>
+
+          {/* Post list: floating rounded selection, macOS-sidebar style */}
+          <div ref={listScrollRef} className="flex-1 overflow-y-auto p-1.5">
+            {posts.length === 0 ? (
+              <div className="text-muted-foreground p-6 text-center text-sm">{labels.noPosts}</div>
+            ) : null}
+            {posts.map((post) => (
+              <button
+                key={post.id}
+                type="button"
+                data-post-id={post.id}
+                onClick={() => selectPost(post.id)}
+                className={cn(
+                  "hover:bg-muted/60 active:bg-muted focus-visible:ring-ring/50 block w-full rounded-lg px-3 py-3 text-left transition-colors duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none",
+                  activeId === post.id && "lg:bg-accent lg:hover:bg-accent lg:active:bg-accent",
+                )}
+              >
+                <p className="line-clamp-2 text-sm leading-snug">{post.text || labels.noText}</p>
+                <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
+                  <span className="text-xs font-semibold tabular-nums">
+                    {post.views.toLocaleString(locale)} {labels.views.toLowerCase()}
+                  </span>
+                  <span className="text-muted-foreground text-[11px] tabular-nums">
+                    {post.likes} {labels.likes.toLowerCase()} · {post.replies}{" "}
+                    {labels.replies.toLowerCase()}
+                  </span>
+                  {post.threadParts.length > 0 && (
+                    <ThreadBadge count={post.threadParts.length + 1} label={labels.threadBadge} />
+                  )}
+                  <span className="text-muted-foreground/80 ml-auto text-[11px] tabular-nums">
+                    {formatPostDate(post.timestamp, locale, timeZone)}
+                  </span>
+                </div>
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Right: detail panel */}
+        <div
+          ref={detailScrollRef}
+          className={cn("flex-1 overflow-y-auto lg:block", !openPostId && "hidden")}
+        >
+          {selectedPost ? (
+            <div className="p-4 sm:p-6">
+              <button
+                type="button"
+                onClick={closeDetail}
+                className="text-tint -mt-1 mb-3 -ml-1.5 inline-flex items-center gap-0.5 rounded-full py-1 pr-2.5 pl-1 text-sm transition-[opacity,transform] duration-150 active:scale-[0.97] active:opacity-70 motion-reduce:transition-none motion-reduce:active:scale-100 lg:hidden"
+              >
+                <ChevronLeft className="size-4.5" />
+                {labels.backToList ?? "All posts"}
+              </button>
+              <PostDetail
+                key={selectedPost.id}
+                post={selectedPost}
+                medianViews={medianViews}
+                metricRateMedians={metricRateMedians}
+                engagementRateMedian={engagementRateMedian}
+                retention={retention}
+                features={features}
+                labels={labels}
+                dateLocale={dateLocale}
+                timeZone={timeZone}
+              />
+            </div>
+          ) : (
+            <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
+              {labels.selectPost}
             </div>
           )}
         </div>
-
-        {/* Post list: floating rounded selection, macOS-sidebar style */}
-        <div ref={listScrollRef} className="flex-1 overflow-y-auto p-1.5">
-          {posts.length === 0 ? (
-            <div className="text-muted-foreground p-6 text-center text-sm">{labels.noPosts}</div>
-          ) : null}
-          {posts.map((post) => (
-            <button
-              key={post.id}
-              type="button"
-              data-post-id={post.id}
-              onClick={() => selectPost(post.id)}
-              className={cn(
-                "hover:bg-muted/60 active:bg-muted focus-visible:ring-ring/50 block w-full rounded-lg px-3 py-3 text-left transition-colors duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none",
-                activeId === post.id && "lg:bg-accent lg:hover:bg-accent lg:active:bg-accent",
-              )}
-            >
-              <p className="line-clamp-2 text-sm leading-snug">{post.text || labels.noText}</p>
-              <div className="mt-1.5 flex flex-wrap items-baseline gap-x-2.5 gap-y-0.5">
-                <span className="text-xs font-semibold tabular-nums">
-                  {post.views.toLocaleString(locale)} {labels.views.toLowerCase()}
-                </span>
-                <span className="text-muted-foreground text-[11px] tabular-nums">
-                  {post.likes} {labels.likes.toLowerCase()} · {post.replies}{" "}
-                  {labels.replies.toLowerCase()}
-                </span>
-                {post.threadParts.length > 0 && (
-                  <ThreadBadge count={post.threadParts.length + 1} label={labels.threadBadge} />
-                )}
-                <span className="text-muted-foreground/80 ml-auto text-[11px] tabular-nums">
-                  {formatPostDate(post.timestamp, locale, timeZone)}
-                </span>
-              </div>
-            </button>
-          ))}
-        </div>
       </div>
-
-      {/* Right: detail panel */}
-      <div
-        ref={detailScrollRef}
-        className={cn("flex-1 overflow-y-auto lg:block", !openPostId && "hidden")}
-      >
-        {selectedPost ? (
-          <div className="p-4 sm:p-6">
-            <button
-              type="button"
-              onClick={closeDetail}
-              className="text-tint -mt-1 mb-3 -ml-1.5 inline-flex items-center gap-0.5 rounded-full py-1 pr-2.5 pl-1 text-sm transition-[opacity,transform] duration-150 active:scale-[0.97] active:opacity-70 motion-reduce:transition-none motion-reduce:active:scale-100 lg:hidden"
-            >
-              <ChevronLeft className="size-4.5" />
-              {labels.backToList ?? "All posts"}
-            </button>
-            <PostDetail
-              key={selectedPost.id}
-              post={selectedPost}
-              medianViews={medianViews}
-              metricRateMedians={metricRateMedians}
-              engagementRateMedian={engagementRateMedian}
-              retention={retention}
-              features={features}
-              labels={labels}
-              dateLocale={dateLocale}
-              timeZone={timeZone}
-            />
-          </div>
-        ) : (
-          <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-            {labels.selectPost}
-          </div>
-        )}
-      </div>
-    </div>
+      {pagination && <div className={cn(openPostId && "hidden lg:block")}>{pagination}</div>}
+    </>
   );
 }
