@@ -100,10 +100,11 @@ export default function TimeRangePicker({
 
   // The two modes swap via paired collapses, so the row morphs between the
   // preset chips and the custom-date fields instead of hard-cutting.
+  // Below sm the rows bleed into the page's 16px gutter so chips scroll to the screen edge.
   return (
-    <div className="flex w-full flex-col lg:w-auto lg:items-end">
+    <div className="-mx-4 flex flex-col sm:mx-0 lg:items-end">
       <Collapse open={showCustom} className="w-full">
-        <div className="flex flex-wrap items-center justify-end gap-2 py-0.5">
+        <div className="flex flex-wrap items-center gap-2 px-4 py-0.5 sm:px-0 lg:justify-end">
           <input
             type="date"
             lang={dateInputLang}
@@ -138,14 +139,14 @@ export default function TimeRangePicker({
         </div>
       </Collapse>
       <Collapse open={!showCustom} className="w-full">
-        <div className="flex flex-wrap justify-end gap-1.5 py-0.5">
+        <div className="flex scrollbar-none gap-1.5 overflow-x-auto px-4 py-0.5 sm:px-0 lg:flex-wrap lg:justify-end lg:overflow-visible">
           {PRESETS.map((opt) => (
             <button
               key={opt}
               type="button"
               onClick={() => setPreset(opt)}
               className={cn(
-                "inline-flex h-7 items-center rounded-full px-3 text-xs transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+                "inline-flex h-7 shrink-0 items-center rounded-full px-3 text-xs whitespace-nowrap transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
                 currentRange === opt
                   ? "bg-primary text-primary-foreground font-medium"
                   : "bg-muted/70 text-foreground/70 hover:text-foreground",
@@ -164,7 +165,7 @@ export default function TimeRangePicker({
             type="button"
             onClick={() => setShowCustom(true)}
             className={cn(
-              "inline-flex h-7 items-center rounded-full px-3 text-xs transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+              "inline-flex h-7 shrink-0 items-center rounded-full px-3 text-xs whitespace-nowrap transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
               currentRange === "custom"
                 ? "bg-primary text-primary-foreground font-medium"
                 : "bg-muted/70 text-muted-foreground hover:text-foreground",

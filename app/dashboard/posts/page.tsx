@@ -7,8 +7,7 @@ import { getTimeRange } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
 import Link from "next/link";
-import TimeRangePicker from "@/components/dashboard/time-range-picker";
-import SyncButton from "@/components/dashboard/sync-button";
+import PageHeader from "@/components/dashboard/page-header";
 import ExportCsvButton from "@/components/dashboard/export-csv-button";
 import PostList from "./post-list";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
@@ -271,42 +270,36 @@ export default async function PostsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{t.postsPage.title}</h1>
-          <p className="text-muted-foreground text-sm">
-            {totalPosts} {t.common.posts}
-          </p>
-        </div>
-        <div className="flex w-full flex-col items-end gap-3 lg:w-auto lg:flex-row lg:items-start lg:gap-4">
-          <TimeRangePicker
-            locale={locale}
-            labels={t.timeRange}
-            defaultRange={range}
-            defaultFrom={from}
-            defaultTo={to}
-          />
-          <div className="flex flex-col items-end gap-2 sm:flex-row sm:items-center">
-            {totalPosts > 0 && (
-              <ExportCsvButton
-                href={exportHref}
-                labels={{
-                  exportCsv: t.postsPage.exportCsv,
-                  exportSaved: t.postsPage.exportSaved,
-                  exportFailed: t.postsPage.exportFailed,
-                }}
-              />
-            )}
-            <SyncButton
-              lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
-              syncInterval={syncInterval}
-              timeZone={tz}
-              labels={t.sync}
-              dateLocale={dateLocale}
+      <PageHeader
+        title={t.postsPage.title}
+        subtitle={`${totalPosts} ${t.common.posts}`}
+        range={{
+          locale,
+          labels: t.timeRange,
+          defaultRange: range,
+          defaultFrom: from,
+          defaultTo: to,
+        }}
+        sync={{
+          lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString(),
+          syncInterval,
+          timeZone: tz,
+          labels: t.sync,
+          dateLocale,
+        }}
+        actions={
+          totalPosts > 0 && (
+            <ExportCsvButton
+              href={exportHref}
+              labels={{
+                exportCsv: t.postsPage.exportCsv,
+                exportSaved: t.postsPage.exportSaved,
+                exportFailed: t.postsPage.exportFailed,
+              }}
             />
-          </div>
-        </div>
-      </div>
+          )
+        }
+      />
       <PostList
         posts={postsWithBenchmarks}
         medianViews={medianViews}

@@ -6,6 +6,7 @@ import {
   ArrowDown,
   ArrowUp,
   ChevronDown,
+  ChevronLeft,
   ChevronUp,
   ExternalLink,
   Layers,
@@ -44,7 +45,7 @@ function FilterChip({
       title={title}
       aria-label={title}
       className={cn(
-        "inline-flex items-center rounded-full text-xs transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+        "inline-flex shrink-0 items-center rounded-full text-xs whitespace-nowrap transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
         size === "sm" ? "h-7 px-3" : "h-6 px-2.5",
         selected
           ? "bg-primary text-primary-foreground font-medium"
@@ -169,6 +170,7 @@ interface PostListProps {
     allTypes?: string;
     ascending?: string;
     descending?: string;
+    backToList?: string;
   };
 }
 
@@ -274,6 +276,9 @@ function ThreadBadge({ count, label }: { count: number; label?: string }) {
     </span>
   );
 }
+
+// Tailwind's lg breakpoint, where the list and the detail sit side by side.
+const WIDE_LAYOUT = "(min-width: 64rem)";
 
 const SORT_OPTIONS = ["date", "views", "likes", "replies", "shares", "engRate"] as const;
 type SortOption = (typeof SORT_OPTIONS)[number];
@@ -775,16 +780,21 @@ export default function PostList({
   const pathname = usePathname();
   const searchParams = useSearchParams();
 
-  const [selectedId, setSelectedId] = useState<string | null>(() => {
-    const fromUrl = searchParams.get("post");
-    if (fromUrl && posts.some((p) => p.id === fromUrl)) return fromUrl;
-    return posts[0]?.id ?? null;
-  });
+  // Below lg, `?post=` switches the list for the detail, so the back gesture returns to the list.
+  const urlPostId = searchParams.get("post");
+  const openPostId = urlPostId && posts.some((p) => p.id === urlPostId) ? urlPostId : null;
+  const [selectedId, setSelectedId] = useState<string | null>(
+    () => openPostId ?? posts[0]?.id ?? null,
+  );
+  const activeId = openPostId ?? selectedId;
   const [searchQuery, setSearchQuery] = useState(currentQuery);
   const lastPushedQuery = useRef(currentQuery);
   const searchInputRef = useRef<HTMLInputElement>(null);
+  const containerRef = useRef<HTMLDivElement>(null);
   const listScrollRef = useRef<HTMLDivElement>(null);
   const detailScrollRef = useRef<HTMLDivElement>(null);
+  const pushedDetailUrl = useRef<string | null>(null);
+  const prevOpenPostId = useRef(openPostId);
 
   // When the visible page changes (pagination/sort/filter), keep the current
   // selection if it's still present, otherwise fall back to the first post.
@@ -808,6 +818,20 @@ export default function PostList({
     }, 350);
     return () => clearTimeout(handle);
   }, [searchQuery, currentQuery, searchParams, pathname, router]);
+
+  // Mobile: open the detail at its top, and come back to the row that was opened.
+  useEffect(() => {
+    const prev = prevOpenPostId.current;
+    prevOpenPostId.current = openPostId;
+    if (prev === openPostId || window.matchMedia(WIDE_LAYOUT).matches) return;
+    if (openPostId) {
+      containerRef.current?.scrollIntoView({ block: "start" });
+    } else if (prev) {
+      listScrollRef.current
+        ?.querySelector(`[data-post-id="${CSS.escape(prev)}"]`)
+        ?.scrollIntoView({ block: "center" });
+    }
+  }, [openPostId]);
 
   // Sync the input when the query changes from outside (e.g. back/forward).
   useEffect(() => {
@@ -848,11 +872,32 @@ export default function PostList({
 
   function selectPost(id: string) {
     setSelectedId(id);
-    if (typeof window !== "undefined") {
-      const params = new URLSearchParams(window.location.search);
-      params.set("post", id);
-      window.history.replaceState(null, "", `${window.location.pathname}?${params.toString()}`);
+    const params = new URLSearchParams(window.location.search);
+    params.set("post", id);
+    const url = `${window.location.pathname}?${params.toString()}`;
+    if (window.matchMedia(WIDE_LAYOUT).matches) {
+      window.history.replaceState(null, "", url);
+    } else {
+      window.history.pushState(null, "", url);
+      pushedDetailUrl.current = url;
     }
+  }
+
+  function closeDetail() {
+    if (pushedDetailUrl.current === window.location.pathname + window.location.search) {
+      pushedDetailUrl.current = null;
+      window.history.back();
+      return;
+    }
+    // Arrived straight at a post (e.g. from Overview): no list entry to go back to.
+    const params = new URLSearchParams(window.location.search);
+    params.delete("post");
+    const query = params.toString();
+    window.history.replaceState(
+      null,
+      "",
+      query ? `${window.location.pathname}?${query}` : window.location.pathname,
+    );
   }
 
   const sortLabels: Record<SortOption, string> = {
@@ -864,21 +909,29 @@ export default function PostList({
     engRate: labels.engRate,
   };
 
-  const selectedPost = posts.find((p) => p.id === selectedId) ?? posts[0] ?? null;
+  const selectedPost = posts.find((p) => p.id === activeId) ?? posts[0] ?? null;
 
   return (
     <div
+      ref={containerRef}
       className={cn(
-        "ring-foreground/10 flex min-h-[520px] flex-col gap-0 overflow-hidden rounded-xl ring-1 lg:flex-row",
+        "ring-foreground/10 flex min-h-[520px] scroll-mt-20 flex-col gap-0 overflow-hidden rounded-xl ring-1 lg:flex-row",
         hasPagination ? "lg:h-[calc(100vh-13rem)]" : "lg:h-[calc(100vh-10rem)]",
       )}
     >
       {/* Left: post list */}
-      <div className="flex max-h-[45vh] shrink-0 flex-col border-b lg:max-h-none lg:w-[40%] lg:border-r lg:border-b-0">
+      <div
+        className={cn(
+          "shrink-0 flex-col lg:flex lg:w-[40%] lg:border-r",
+          openPostId ? "hidden" : "flex",
+        )}
+      >
         {/* Sort controls */}
         <div className="space-y-2 border-b px-4 py-2.5">
-          <div className="flex flex-wrap items-center gap-1.5">
-            <span className="text-muted-foreground mr-0.5 text-xs">{labels.sort}</span>
+          <div className="-mx-4 flex scrollbar-none items-center gap-1.5 overflow-x-auto px-4 py-0.5 lg:mx-0 lg:flex-wrap lg:overflow-visible lg:px-0 lg:py-0">
+            <span className="text-muted-foreground mr-0.5 shrink-0 text-xs whitespace-nowrap">
+              {labels.sort}
+            </span>
             {SORT_OPTIONS.map((value) => (
               <FilterChip
                 key={value}
@@ -892,7 +945,7 @@ export default function PostList({
               onClick={toggleDir}
               title={currentDir === "asc" ? labels.ascending : labels.descending}
               aria-label={currentDir === "asc" ? labels.ascending : labels.descending}
-              className="bg-muted/70 text-foreground/70 hover:text-foreground flex size-7 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+              className="bg-muted/70 text-foreground/70 hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               {currentDir === "asc" ? (
                 <ArrowUp className="size-3.5" />
@@ -963,10 +1016,11 @@ export default function PostList({
             <button
               key={post.id}
               type="button"
+              data-post-id={post.id}
               onClick={() => selectPost(post.id)}
               className={cn(
                 "hover:bg-muted/60 active:bg-muted focus-visible:ring-ring/50 block w-full rounded-lg px-3 py-3 text-left transition-colors duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none",
-                selectedId === post.id && "bg-accent hover:bg-accent active:bg-accent",
+                activeId === post.id && "lg:bg-accent lg:hover:bg-accent lg:active:bg-accent",
               )}
             >
               <p className="line-clamp-2 text-sm leading-snug">{post.text || labels.noText}</p>
@@ -991,9 +1045,20 @@ export default function PostList({
       </div>
 
       {/* Right: detail panel */}
-      <div ref={detailScrollRef} className="flex-1 overflow-y-auto">
+      <div
+        ref={detailScrollRef}
+        className={cn("flex-1 overflow-y-auto lg:block", !openPostId && "hidden")}
+      >
         {selectedPost ? (
-          <div className="p-6">
+          <div className="p-4 sm:p-6">
+            <button
+              type="button"
+              onClick={closeDetail}
+              className="text-tint -mt-1 mb-3 -ml-1.5 inline-flex items-center gap-0.5 rounded-full py-1 pr-2.5 pl-1 text-sm transition-[opacity,transform] duration-150 active:scale-[0.97] active:opacity-70 motion-reduce:transition-none motion-reduce:active:scale-100 lg:hidden"
+            >
+              <ChevronLeft className="size-4.5" />
+              {labels.backToList ?? "All posts"}
+            </button>
             <PostDetail
               key={selectedPost.id}
               post={selectedPost}
