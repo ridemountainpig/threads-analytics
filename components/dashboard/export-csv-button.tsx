@@ -55,10 +55,10 @@ export default function ExportCsvButton({
     <a
       href={href}
       onClick={saveWithNativeDialog}
-      className="bg-muted/70 text-foreground hover:bg-muted flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+      className="bg-muted/70 text-foreground hover:bg-muted flex h-7 w-7 items-center justify-center gap-1.5 rounded-full text-xs font-medium transition-[background-color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 sm:w-auto sm:px-3"
     >
       <Download className="size-3.5" />
-      {labels.exportCsv}
+      <span className="sr-only sm:not-sr-only">{labels.exportCsv}</span>
     </a>
   );
 }

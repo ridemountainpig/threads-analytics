@@ -45,8 +45,7 @@ import {
   type PostWithInsights,
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
-import TimeRangePicker from "@/components/dashboard/time-range-picker";
-import SyncButton from "@/components/dashboard/sync-button";
+import PageHeader from "@/components/dashboard/page-header";
 import HourlyBreakdownChart from "@/components/charts/hourly-breakdown-chart";
 import EngagementRateChart from "@/components/charts/engagement-rate-chart";
 import ContentTypeChart from "@/components/charts/content-type-chart";
@@ -493,28 +492,24 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{t.analytics.title}</h1>
-          <p className="text-muted-foreground text-sm">{t.analytics.subtitle}</p>
-        </div>
-        <div className="flex w-full flex-col gap-3 sm:items-end lg:w-auto lg:flex-row lg:items-start lg:gap-4">
-          <TimeRangePicker
-            locale={locale}
-            labels={t.timeRange}
-            defaultRange={range}
-            defaultFrom={from}
-            defaultTo={to}
-          />
-          <SyncButton
-            lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
-            syncInterval={syncInterval}
-            timeZone={tz}
-            labels={t.sync}
-            dateLocale={dateLocale}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title={t.analytics.title}
+        subtitle={t.analytics.subtitle}
+        range={{
+          locale,
+          labels: t.timeRange,
+          defaultRange: range,
+          defaultFrom: from,
+          defaultTo: to,
+        }}
+        sync={{
+          lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString(),
+          syncInterval,
+          timeZone: tz,
+          labels: t.sync,
+          dateLocale,
+        }}
+      />
 
       {postCapReached && (
         <p className="text-muted-foreground text-xs">

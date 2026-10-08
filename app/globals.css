@@ -199,6 +199,14 @@
   scrollbar-color: color-mix(in oklab, var(--muted-foreground) 35%, transparent) transparent;
 }
 
+/* Swipeable chip rows: the clipped chip already signals there's more. */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* Wrong-password shake — a short, non-vestibular nudge; reduced motion gets
    the plain fade the error already has. */
 @keyframes login-shake {

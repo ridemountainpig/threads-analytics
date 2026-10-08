@@ -1,5 +1,6 @@
 import Link from "next/link";
-import { BookOpen, ChevronRight } from "lucide-react";
+import { BookOpen, ChevronRight, LogOut } from "lucide-react";
+import { logoutAction } from "@/actions/auth";
 import { db } from "@/lib/db";
 import { getSyncIntervalCached, requireSession } from "@/lib/dashboard-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
@@ -162,6 +163,18 @@ export default async function SettingsPage() {
             />
           </CardContent>
         </Card>
+
+        {!isDesktopApp && (
+          <form action={logoutAction} className="md:hidden">
+            <button
+              type="submit"
+              className="bg-card ring-foreground/10 text-destructive active:bg-muted/60 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium ring-1 transition-[background-color,transform] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+            >
+              <LogOut className="size-4" />
+              {t.nav.signOut}
+            </button>
+          </form>
+        )}
       </div>
     </div>
   );
