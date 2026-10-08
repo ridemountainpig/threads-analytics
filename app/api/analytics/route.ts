@@ -107,7 +107,10 @@ export async function GET(request: NextRequest) {
 
   const totalShares = posts.reduce((sum, p) => sum + p.shares, 0);
   const bestTimeToPost = computeBestTimeToPost(posts);
-  const dailyPerformance = computeDailyPerformance(posts, userInsights.views);
+  const dailyPerformance = computeDailyPerformance(posts, userInsights.views, undefined, {
+    since,
+    until,
+  });
 
   const result: AnalyticsResult = {
     userViews: userInsights.views,

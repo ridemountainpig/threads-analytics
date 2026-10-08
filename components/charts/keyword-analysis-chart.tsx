@@ -66,9 +66,14 @@ export default function KeywordAnalysisChart({ data, labels }: Props) {
   }
 
   const ticks = rateTicks(Math.max(...data.map((point) => point.avgEngagementRate)));
-  const chartData = data.map((point) => ({
+  const truncated = data.map((point) => truncate(point.word));
+  // Keywords sharing a truncated prefix would read as duplicates, so they keep the full word.
+  const chartData = data.map((point, index) => ({
     ...point,
-    label: truncate(point.word),
+    label:
+      truncated.filter((label) => label === truncated[index]).length > 1
+        ? point.word
+        : truncated[index],
     display: `${point.avgEngagementRate.toFixed(2)}% · ${formatCompactNumber(point.avgViews)} ${copy.viewsUnit ?? "views"}`,
   }));
 
