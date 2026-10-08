@@ -21,16 +21,17 @@ import {
   formatCompactNumber,
   gridProps,
   lineCursor,
+  postsAxisDomain,
 } from "./chart-style";
 import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   day: string;
-  avgViews: number;
-  medianViews: number;
+  avgViews: number | null;
+  medianViews: number | null;
   postCount: number;
-  engagementRate: number;
-  hitRate: number;
+  engagementRate: number | null;
+  hitRate: number | null;
   confidence: "low" | "medium" | "high";
 }
 
@@ -73,7 +74,7 @@ export default function DayOfWeekChart({ data, labels }: Props) {
   const confidenceLabel = copy.confidence ?? "Confidence";
   const chartData = data.map((item, index) => ({ ...item, day: copy.days[index] ?? item.day }));
 
-  if (!data.length || data.every((d) => d.medianViews === 0)) {
+  if (!data.length || data.every((d) => d.postCount === 0)) {
     return <ChartEmptyState label={copy.noData} height={180} />;
   }
 
@@ -88,7 +89,7 @@ export default function DayOfWeekChart({ data, labels }: Props) {
         items={[
           { label: medianViewsLabel, color: chartColors.views, shape: "line" },
           { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
-          { label: copy.posts, color: chartColors.bar, shape: "dot" },
+          { label: copy.posts, color: chartColors.volume, shape: "dot" },
         ]}
       />
       <ResponsiveContainer width="100%" height={180}>
@@ -103,7 +104,8 @@ export default function DayOfWeekChart({ data, labels }: Props) {
             axisLine={false}
             width={36}
           />
-          <YAxis yAxisId="posts" hide domain={[0, "dataMax + 1"]} />
+          {/* mirror keeps this hidden axis from pushing the visible ticks off-canvas. */}
+          <YAxis yAxisId="posts" hide mirror domain={postsAxisDomain} />
           <YAxis
             yAxisId="rate"
             orientation="right"
@@ -121,20 +123,28 @@ export default function DayOfWeekChart({ data, labels }: Props) {
               return (
                 <ChartTooltip
                   title={String(label)}
-                  subtitle={`${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence] ?? point.confidence}`}
+                  subtitle={
+                    point.postCount > 0
+                      ? `${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence] ?? point.confidence}`
+                      : undefined
+                  }
                   rows={[
                     {
                       label: medianViewsLabel,
-                      value: point.medianViews.toLocaleString(),
+                      value: point.medianViews?.toLocaleString() ?? "—",
                       color: chartColors.views,
                     },
-                    { label: copy.avgViews, value: point.avgViews.toLocaleString() },
+                    { label: copy.avgViews, value: point.avgViews?.toLocaleString() ?? "—" },
                     {
                       label: copy.engagementRate,
-                      value: `${point.engagementRate.toFixed(2)}%`,
+                      value:
+                        point.engagementRate === null ? "—" : `${point.engagementRate.toFixed(2)}%`,
                       color: chartColors.engagement,
                     },
-                    { label: hitRateLabel, value: `${point.hitRate}%` },
+                    {
+                      label: hitRateLabel,
+                      value: point.hitRate === null ? "—" : `${point.hitRate}%`,
+                    },
                     { label: copy.posts, value: point.postCount.toLocaleString(), muted: true },
                   ]}
                 />
@@ -144,10 +154,10 @@ export default function DayOfWeekChart({ data, labels }: Props) {
           <Bar
             yAxisId="posts"
             dataKey="postCount"
-            fill={chartColors.bar}
+            fill={chartColors.volume}
             radius={barRadius}
             name={copy.posts}
-            maxBarSize={22}
+            maxBarSize={12}
             {...motion}
           >
             {chartData.map((entry) => (
@@ -160,7 +170,7 @@ export default function DayOfWeekChart({ data, labels }: Props) {
             dataKey="medianViews"
             stroke={chartColors.views}
             strokeWidth={2}
-            dot={false}
+            dot={{ r: 2.5, fill: chartColors.views, strokeWidth: 0 }}
             activeDot={activeDot(chartColors.views)}
             name={medianViewsLabel}
             {...motion}
@@ -171,7 +181,7 @@ export default function DayOfWeekChart({ data, labels }: Props) {
             dataKey="engagementRate"
             stroke={chartColors.engagement}
             strokeWidth={1.5}
-            dot={false}
+            dot={{ r: 2.5, fill: chartColors.engagement, strokeWidth: 0 }}
             activeDot={activeDot(chartColors.engagement)}
             name={copy.engagementRate}
             {...motion}

@@ -15,6 +15,7 @@ import {
   chartColors,
   compactAxisTick,
   compactChartMargin,
+  formatCompactNumber,
   spansMultipleYears,
   gridProps,
   lineCursor,
@@ -24,9 +25,10 @@ import {
   aggregateByGranularity,
   formatBucketLabel,
   formatBucketTooltipLabel,
+  isPartialBucket,
   useGranularity,
 } from "./granularity";
-import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
+import { ChartEmptyState, ChartTooltip, seriesDot, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   date: string;
@@ -52,9 +54,13 @@ interface Props {
     granularityGroup?: string;
     granularityWeek?: string;
     granularityMonth?: string;
+    partialBucket?: string;
   };
 }
 
+type SeriesKey = "likes" | "replies" | "reposts" | "quotes";
+
+// One chart per type: on a shared axis, likes flatten the other three.
 export default function EngagementBreakdownChart({ data, dateLocale, timeZone, labels }: Props) {
   const locale = dateLocale ?? "en-US";
   const motion = useChartMotion();
@@ -78,13 +84,14 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
     "engagement-breakdown",
   );
 
-  if (!data.length) {
+  // Days without posts are zero-filled, so an all-zero series is still empty.
+  if (!data.some((point) => point.likes + point.replies + point.reposts + point.quotes > 0)) {
     return <ChartEmptyState label={copy.noData} height={200} />;
   }
 
-  const series =
+  const series = (
     granularity === "day"
-      ? data
+      ? data.map((point) => ({ ...point, days: 1 }))
       : aggregateByGranularity(
           data,
           granularity,
@@ -96,16 +103,23 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
             replies: items.reduce((sum, item) => sum + item.replies, 0),
             reposts: items.reduce((sum, item) => sum + item.reposts, 0),
             quotes: items.reduce((sum, item) => sum + item.quotes, 0),
+            days: items.length,
           }),
-        );
+        )
+  ).map((point) => ({
+    ...point,
+    partial: isPartialBucket(point.date, granularity, timeZone, point.days),
+  }));
 
   const withYear = spansMultipleYears(series.map((point) => point.date));
+  const formatTick = (value: unknown) =>
+    formatBucketLabel(String(value), granularity, locale, timeZone, { year: withYear });
 
-  const seriesMeta = [
-    { key: "likes" as const, label: copy.likes, color: chartColors.likes },
-    { key: "replies" as const, label: copy.replies, color: chartColors.reply },
-    { key: "reposts" as const, label: copy.reposts, color: chartColors.repost },
-    { key: "quotes" as const, label: copy.quotes, color: chartColors.quote },
+  const seriesMeta: Array<{ key: SeriesKey; label: string; color: string }> = [
+    { key: "likes", label: copy.likes, color: chartColors.likes },
+    { key: "replies", label: copy.replies, color: chartColors.reply },
+    { key: "reposts", label: copy.reposts, color: chartColors.repost },
+    { key: "quotes", label: copy.quotes, color: chartColors.quote },
   ];
 
   return (
@@ -120,57 +134,87 @@ export default function EngagementBreakdownChart({ data, dateLocale, timeZone, l
           />
         )}
       </div>
-      <ChartLegend
-        className="mb-2"
-        items={seriesMeta.map((meta) => ({ label: meta.label, color: meta.color, shape: "line" }))}
-      />
-      <ResponsiveContainer width="100%" height={200}>
-        <LineChart data={series} margin={compactChartMargin}>
-          <CartesianGrid {...gridProps} />
-          <XAxis
-            dataKey="date"
-            tickFormatter={(value) =>
-              formatBucketLabel(String(value), granularity, locale, timeZone, { year: withYear })
-            }
-            tick={compactAxisTick}
-            tickLine={false}
-            axisLine={false}
-          />
-          <YAxis tick={compactAxisTick} tickLine={false} axisLine={false} width={34} />
-          <Tooltip
-            cursor={lineCursor}
-            content={({ active, payload, label }) => {
-              if (!active || !payload?.length) return null;
-              const point = payload[0]?.payload as DataPoint;
-              return (
-                <ChartTooltip
-                  title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
-                    year: withYear,
-                  })}
-                  rows={seriesMeta.map((meta) => ({
-                    label: meta.label,
-                    value: point[meta.key].toLocaleString(locale),
-                    color: meta.color,
-                  }))}
-                />
-              );
-            }}
-          />
-          {seriesMeta.map((meta) => (
-            <Line
-              key={meta.key}
-              type="monotone"
-              dataKey={meta.key}
-              name={meta.label}
-              stroke={meta.color}
-              strokeWidth={1.8}
-              dot={false}
-              activeDot={activeDot(meta.color)}
-              {...motion}
-            />
-          ))}
-        </LineChart>
-      </ResponsiveContainer>
+      <div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-2">
+        {seriesMeta.map((meta) => {
+          const total = series.reduce((sum, point) => sum + point[meta.key], 0);
+          return (
+            <div key={meta.key} className="min-w-0">
+              <div className="mb-1 flex items-baseline justify-between gap-2 text-[11px] leading-4">
+                <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                  <span
+                    aria-hidden
+                    className="inline-block size-2 rounded-full"
+                    style={{ backgroundColor: meta.color }}
+                  />
+                  {meta.label}
+                </span>
+                <span className="text-foreground font-medium tabular-nums">
+                  {total.toLocaleString(locale)}
+                </span>
+              </div>
+              <ResponsiveContainer width="100%" height={110}>
+                <LineChart data={series} margin={compactChartMargin}>
+                  <CartesianGrid {...gridProps} />
+                  <XAxis
+                    dataKey="date"
+                    tickFormatter={formatTick}
+                    tick={compactAxisTick}
+                    tickLine={false}
+                    axisLine={false}
+                    interval="preserveStartEnd"
+                    minTickGap={24}
+                  />
+                  <YAxis
+                    allowDecimals={false}
+                    tickFormatter={formatCompactNumber}
+                    tick={compactAxisTick}
+                    tickLine={false}
+                    axisLine={false}
+                    tickCount={3}
+                    width={40}
+                  />
+                  <Tooltip
+                    cursor={lineCursor}
+                    content={({ active, payload, label }) => {
+                      if (!active || !payload?.length) return null;
+                      const point = payload[0]?.payload as (typeof series)[number];
+                      return (
+                        <ChartTooltip
+                          title={formatBucketTooltipLabel(
+                            String(label),
+                            granularity,
+                            locale,
+                            timeZone,
+                            { year: withYear },
+                          )}
+                          subtitle={point.partial ? copy.partialBucket : undefined}
+                          rows={[
+                            {
+                              label: meta.label,
+                              value: point[meta.key].toLocaleString(locale),
+                              color: meta.color,
+                            },
+                          ]}
+                        />
+                      );
+                    }}
+                  />
+                  <Line
+                    type="monotone"
+                    dataKey={meta.key}
+                    name={meta.label}
+                    stroke={meta.color}
+                    strokeWidth={1.6}
+                    dot={seriesDot(meta.color, series.length)}
+                    activeDot={activeDot(meta.color)}
+                    {...motion}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          );
+        })}
+      </div>
     </>
   );
 }

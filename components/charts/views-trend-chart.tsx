@@ -20,14 +20,17 @@ import {
   compactAxisTick,
   compactChartMargin,
   formatCompactNumber,
+  formatShortDate,
   gridProps,
   lineCursor,
+  postsAxisDomain,
 } from "./chart-style";
 import {
   ChartAreaGradient,
   ChartEmptyState,
   ChartLegend,
   ChartTooltip,
+  seriesDot,
   useChartMotion,
 } from "./chart-chrome";
 
@@ -40,6 +43,7 @@ interface ViewsTrendChartProps {
       medianViews: number;
       avgViews: number;
       p75Views: number;
+      partial?: boolean;
     }>;
   };
   dateLocale?: string;
@@ -51,6 +55,7 @@ interface ViewsTrendChartProps {
     week: string;
     month: string;
     noData: string;
+    partialBucket?: string;
   };
 }
 
@@ -69,7 +74,8 @@ function formatPeriod(
       timeZone: "UTC",
     }).format(new Date(`${period}-01T00:00:00Z`));
   }
-  return withYear ? period : period.replace(/^\d{4}-/, "");
+  // Weeks are keyed by their Monday, so they read as dates rather than "W05".
+  return formatShortDate(period, locale, "UTC", { year: withYear });
 }
 
 export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrendChartProps) {
@@ -104,7 +110,7 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
         items={[
           { label: copy.medianViews, color: chartColors.views, shape: "line" },
           { label: copy.avgViews, color: chartColors.avgViews, shape: "dash" },
-          { label: copy.posts, color: chartColors.bar, shape: "dot" },
+          { label: copy.posts, color: chartColors.volume, shape: "dot" },
         ]}
       />
       <ResponsiveContainer width="100%" height={240}>
@@ -127,7 +133,8 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
             axisLine={false}
             width={44}
           />
-          <YAxis yAxisId="posts" hide domain={[0, "dataMax + 2"]} />
+          {/* mirror keeps this hidden axis from pushing the visible ticks off-canvas. */}
+          <YAxis yAxisId="posts" hide mirror domain={postsAxisDomain} />
           <Tooltip
             cursor={lineCursor}
             content={({ active, payload, label }) => {
@@ -136,6 +143,7 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
               return (
                 <ChartTooltip
                   title={fmt(String(label))}
+                  subtitle={point.partial ? copy.partialBucket : undefined}
                   rows={[
                     {
                       label: copy.medianViews,
@@ -162,9 +170,9 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
             yAxisId="posts"
             dataKey="postCount"
             name={copy.posts}
-            fill={chartColors.bar}
+            fill={chartColors.volume}
             radius={barRadius}
-            maxBarSize={16}
+            maxBarSize={12}
             {...motion}
           />
           <Area
@@ -185,7 +193,7 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
             name={copy.medianViews}
             stroke={chartColors.views}
             strokeWidth={2}
-            dot={false}
+            dot={seriesDot(chartColors.views, points.length)}
             activeDot={activeDot(chartColors.views)}
             {...motion}
           />
@@ -197,7 +205,7 @@ export default function ViewsTrendChart({ data, dateLocale, labels }: ViewsTrend
             stroke={chartColors.avgViews}
             strokeWidth={1.5}
             strokeDasharray="4 3"
-            dot={false}
+            dot={points.length === 1 ? seriesDot(chartColors.avgViews, 1) : false}
             activeDot={activeDot(chartColors.avgViews)}
             {...motion}
           />

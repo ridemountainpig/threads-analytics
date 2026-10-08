@@ -5,7 +5,11 @@ import { getUserInsightsCached } from "@/lib/user-insights-cache";
 import type { UserInsights } from "@/lib/threads-api";
 import { getTimeRange, toUnix } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
-import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
+import {
+  DASHBOARD_POST_LIMIT,
+  getActiveAccount,
+  getSyncIntervalCached,
+} from "@/lib/dashboard-data";
 import {
   computeBestTimeToPost,
   computeDayHourHeatmap,
@@ -21,6 +25,7 @@ import {
   computePostingCalendar,
   computeDailyPerformance,
   computePostQualityScatter,
+  computePostQualityThresholds,
   computeContentFormatLengthMatrix,
   computeActionFunnel,
   computeSharesTrend,
@@ -35,6 +40,8 @@ import {
   computeTextFeatureComparison,
   computePostingGapAnalysis,
   DEFAULT_TZ,
+  estimateDailyContentViews,
+  getBaselineMedianViews,
   type PostWithInsights,
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -207,6 +214,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const { firstKey: sinceKey, lastKey: untilKey } = snapshotDays({ since, until });
 
   const shouldFetchUserInsights = range !== "all";
+  // Posts published up to two weeks before the range still draw views inside it.
+  const contentSince = new Date(since.getTime() - 14 * 24 * 60 * 60 * 1000);
   const [
     userInsights,
     dbPosts,
@@ -214,6 +223,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     followerSnapshots,
     demographicDates,
     latestSnapshot,
+    contentItems,
   ] = await Promise.all([
     shouldFetchUserInsights
       ? getUserInsightsCached(account.id, accessToken, toUnix(since), toUnix(until)).catch(
@@ -227,7 +237,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
         mediaType: { not: "REPOST_FACADE" },
       },
       orderBy: { timestamp: "desc" },
-      take: 2000,
+      take: DASHBOARD_POST_LIMIT,
     }),
     db.post.findMany({
       where: {
@@ -259,6 +269,22 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
       select: { followersCount: true },
       orderBy: { date: "desc" },
     }),
+    shouldFetchUserInsights
+      ? Promise.all([
+          db.post.findMany({
+            where: {
+              accountId: account.id,
+              timestamp: { gte: contentSince, lte: until },
+              mediaType: { not: "REPOST_FACADE" },
+            },
+            select: { timestamp: true, views: true },
+          }),
+          db.threadReply.findMany({
+            where: { accountId: account.id, timestamp: { gte: contentSince, lte: until } },
+            select: { timestamp: true, views: true },
+          }),
+        ]).then(([postRows, partRows]) => [...postRows, ...partRows])
+      : Promise.resolve([]),
   ]);
 
   // The demographic comparison is driven by two explicitly chosen snapshot dates
@@ -311,6 +337,17 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     shares: p.shares,
   }));
 
+  const postCapReached = dbPosts.length >= DASHBOARD_POST_LIMIT;
+  // "All" starts at a fixed 2020 date and a capped load stops at its oldest post, so
+  // per-day and per-week figures count from the first post actually loaded.
+  const firstPostAt = postCapReached
+    ? dbPosts[dbPosts.length - 1]?.timestamp
+    : range === "all"
+      ? allPostTimestamps[0]?.timestamp
+      : undefined;
+  const effectiveSince = firstPostAt && firstPostAt > since ? firstPostAt : since;
+  const dateRange = { since: effectiveSince, until };
+
   const dbTotalViews = posts.reduce((sum, p) => sum + p.views, 0);
   const dbTotalLikes = posts.reduce((sum, p) => sum + p.likes, 0);
   const dbTotalReplies = posts.reduce((sum, p) => sum + p.replies, 0);
@@ -327,7 +364,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     : posts.length > 0
       ? Math.round(
           totalViews /
-            Math.max(1, Math.ceil((until.getTime() - since.getTime()) / (24 * 60 * 60 * 1000))),
+            Math.max(
+              1,
+              Math.ceil((until.getTime() - effectiveSince.getTime()) / (24 * 60 * 60 * 1000)),
+            ),
         )
       : 0;
   const totalEngagement =
@@ -339,20 +379,30 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
 
   const bestTimeToPost = computeBestTimeToPost(posts, tz);
   const heatmap = computeDayHourHeatmap(posts, tz);
-  const dailyPerformance = computeDailyPerformance(posts, userInsights.views, tz);
-  const engagementRateTrend = computeEngagementRateTrend(posts, userInsights.views, tz);
+  const dailyPerformance = computeDailyPerformance(posts, userInsights.views, tz, dateRange);
+  // Split each day's account views into a rough "from posts and thread parts" share and the rest.
+  const contentViews = hasApiInsights ? estimateDailyContentViews(contentItems, tz) : null;
+  const overallPerformance = contentViews
+    ? dailyPerformance.map((point) => {
+        const estimated = Math.min(point.views, Math.round(contentViews.get(point.date) ?? 0));
+        return { ...point, estimatedPostViews: estimated, otherViews: point.views - estimated };
+      })
+    : dailyPerformance;
+  const engagementRateTrend = computeEngagementRateTrend(posts, tz, dateRange);
   const dayOfWeek = computeDayOfWeekPerformance(posts, tz);
-  const engagementBreakdown = computeEngagementBreakdownByDay(posts, tz);
+  const engagementBreakdown = computeEngagementBreakdownByDay(posts, tz, dateRange);
   const postQualityScatter = computePostQualityScatter(posts);
+  const postQualityThresholds = computePostQualityThresholds(posts);
+  const baselineMedianViews = getBaselineMedianViews(posts);
   const actionFunnel = computeActionFunnel(posts);
-  const viewsTrend = computeViewsTrend(posts, tz);
+  const viewsTrend = computeViewsTrend(posts, tz, dateRange);
   const viewsDistribution = computeViewsDistribution(posts);
 
   // Content metrics
   const contentTypeAnalysis = computeContentTypeAnalysis(posts);
   const postLengthAnalysis = computePostLengthAnalysis(posts);
-  const weeklyFrequency = computeWeeklyFrequency(posts, tz);
-  const consistency = computePostingConsistency(posts, since, until, tz);
+  const weeklyFrequency = computeWeeklyFrequency(posts, tz, dateRange);
+  const consistency = computePostingConsistency(posts, effectiveSince, until, tz);
   const replyRateLeaders = computeReplyRateLeaders(posts);
   const topByEngRate = computeTopPostsByEngagementRate(posts);
   const shareLeaders = computeShareLeaders(posts);
@@ -367,10 +417,10 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     tz,
   );
   const contentFormatLengthMatrix = computeContentFormatLengthMatrix(posts);
-  const sharesTrend = computeSharesTrend(posts, tz);
+  const sharesTrend = computeSharesTrend(posts, tz, dateRange);
   const engagementBreakdownPie = computeEngagementBreakdownPie(posts);
   const keywordAnalysis = computeKeywordAnalysis(posts);
-  const optimalFrequency = computeOptimalFrequency(posts, tz);
+  const optimalFrequency = computeOptimalFrequency(posts, tz, dateRange);
   const contentTypeTimeSlot = computeContentTypeTimeSlot(posts, tz);
   const postingStreak = computePostingStreak(posts, tz);
 
@@ -438,7 +488,8 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     totalQuotes + totalReposts > 0
       ? Math.round((totalQuotes / (totalQuotes + totalReposts)) * 100)
       : 0;
-  const shareRate = totalViews > 0 ? ((totalShares / totalViews) * 100).toFixed(2) : "0.00";
+  // Shares only exist per post, so the rate divides by the same posts' views.
+  const shareRate = dbTotalViews > 0 ? ((totalShares / dbTotalViews) * 100).toFixed(2) : "0.00";
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
@@ -464,6 +515,15 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
           />
         </div>
       </div>
+
+      {postCapReached && (
+        <p className="text-muted-foreground text-xs">
+          {t.analytics.postCapNotice.replace(
+            "{count}",
+            DASHBOARD_POST_LIMIT.toLocaleString(dateLocale),
+          )}
+        </p>
+      )}
 
       <AnalyticsTabs defaultTab={activeTab}>
         {/* Pill segmented control, matching the granularity toggle grammar */}
@@ -494,7 +554,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             labels={cardLabels}
           >
             <OverallPerformanceChart
-              data={dailyPerformance}
+              data={overallPerformance}
               dateLocale={dateLocale}
               timeZone={tz}
               labels={t.chart}
@@ -519,6 +579,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                   week: t.chart.week,
                   month: t.chart.month,
                   noData: t.chart.noData,
+                  partialBucket: t.chart.partialBucket,
                 }}
               />
             </ChartCard>
@@ -550,7 +611,11 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               subtitle={t.analytics.postQualitySub}
               labels={cardLabels}
             >
-              <PostQualityScatterChart data={postQualityScatter} labels={t.chart} />
+              <PostQualityScatterChart
+                data={postQualityScatter}
+                thresholds={postQualityThresholds}
+                labels={t.chart}
+              />
             </ChartCard>
 
             <ChartCard
@@ -599,7 +664,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             </ChartCard>
           </div>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-5 lg:items-start">
             <ChartCard
               className="lg:col-span-3"
               title={t.analytics.formatLengthMatrix}
@@ -608,6 +673,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             >
               <ContentFormatLengthMatrix
                 data={contentFormatLengthMatrix}
+                baselineMedianViews={baselineMedianViews}
                 numberLocale={dateLocale}
                 labels={t.chart}
               />
@@ -737,7 +803,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
             subtitle={t.analytics.publishingFrequencySub}
             labels={cardLabels}
           >
-            <WeeklyFrequencyChart data={weeklyFrequency} labels={t.chart} />
+            <WeeklyFrequencyChart data={weeklyFrequency} dateLocale={dateLocale} labels={t.chart} />
           </ChartCard>
 
           <ChartCard
@@ -756,6 +822,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 granularityDay: t.chart.granularityDay,
                 granularityWeek: t.chart.granularityWeek,
                 granularityMonth: t.chart.granularityMonth,
+                partialBucket: t.chart.partialBucket,
               }}
             />
           </ChartCard>
@@ -772,6 +839,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 avgViews: t.chart.avgViews,
                 engagementRate: t.chart.engagementRate,
                 shareRate: t.chart.shareRate,
+                keyword: t.chart.keyword,
+                viewsUnit: t.chart.viewsUnit,
+                noData: t.chart.noData,
               }}
             />
           </ChartCard>
@@ -825,12 +895,13 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
           >
             <ContentTypeTimeSlotChart
               data={contentTypeTimeSlot}
+              baselineMedianViews={baselineMedianViews}
               dateLocale={dateLocale}
               labels={t.chart}
             />
           </ChartCard>
 
-          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+          <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
             {/* Top by Engagement Rate */}
             {topByEngRate.length > 0 && (
               <Card>
@@ -1093,7 +1164,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                   />
                 )}
               </div>
-              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+              <div className="grid grid-cols-1 gap-4 lg:grid-cols-2 lg:items-start">
                 {DEMOGRAPHIC_BREAKDOWNS.filter(
                   (breakdown) => demographicSlices[breakdown].length > 0,
                 ).map((breakdown) => (

@@ -34,9 +34,9 @@ interface PostLengthChartProps {
     confidence: "low" | "medium" | "high";
     avgLikes: number;
     postCount: number;
-    engagementRate: number;
-    replyRate: number;
-    shareRate: number;
+    engagementRate: number | null;
+    replyRate: number | null;
+    shareRate: number | null;
   }>;
   labels?: {
     avgViews: string;
@@ -138,12 +138,13 @@ export default function PostLengthChart({ data, labels }: PostLengthChartProps) 
                     { label: p75ViewsLabel, value: point.p75Views.toLocaleString() },
                     {
                       label: copy.engagementRate,
-                      value: `${point.engagementRate.toFixed(2)}%`,
+                      value:
+                        point.engagementRate === null ? "—" : `${point.engagementRate.toFixed(2)}%`,
                       color: chartColors.engagement,
                     },
                     {
                       label: copy.replyRate,
-                      value: `${point.replyRate.toFixed(2)}%`,
+                      value: point.replyRate === null ? "—" : `${point.replyRate.toFixed(2)}%`,
                       color: chartColors.reply,
                     },
                     { label: hitRateLabel, value: `${point.hitRate}%`, muted: true },
@@ -172,7 +173,7 @@ export default function PostLengthChart({ data, labels }: PostLengthChartProps) 
             name={copy.engagementRate}
             stroke={chartColors.engagement}
             strokeWidth={1.5}
-            dot={false}
+            dot={{ r: 2.5, fill: chartColors.engagement, strokeWidth: 0 }}
             activeDot={activeDot(chartColors.engagement)}
             {...motion}
           />
@@ -183,7 +184,7 @@ export default function PostLengthChart({ data, labels }: PostLengthChartProps) 
             name={copy.replyRate}
             stroke={chartColors.reply}
             strokeWidth={1.5}
-            dot={false}
+            dot={{ r: 2.5, fill: chartColors.reply, strokeWidth: 0 }}
             activeDot={activeDot(chartColors.reply)}
             {...motion}
           />

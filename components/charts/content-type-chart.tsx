@@ -91,14 +91,13 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
     <>
       <AxisHint
         x={copy.contentType ?? "Content Type"}
-        y={`${medianViewsLabel} / ${copy.engagementRate} / ${copy.shareRate}`}
+        y={`${medianViewsLabel} / ${copy.engagementRate}`}
       />
       <ChartLegend
         className="mb-2"
         items={[
           { label: medianViewsLabel, color: chartColors.views, shape: "dot" },
-          { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
-          { label: copy.shareRate, color: chartColors.share, shape: "line" },
+          { label: copy.engagementRate, color: chartColors.engagement, shape: "dot" },
         ]}
       />
       <ResponsiveContainer width="100%" height={220}>
@@ -146,11 +145,7 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
                       value: `${point.engagementRate.toFixed(2)}%`,
                       color: chartColors.engagement,
                     },
-                    {
-                      label: copy.shareRate,
-                      value: `${point.shareRate.toFixed(2)}%`,
-                      color: chartColors.share,
-                    },
+                    { label: copy.shareRate, value: `${point.shareRate.toFixed(2)}%` },
                     { label: hitRateLabel, value: `${point.hitRate}%`, muted: true },
                   ]}
                 />
@@ -170,26 +165,19 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
               <Cell key={entry.type} fillOpacity={CONFIDENCE_OPACITY[entry.confidence]} />
             ))}
           </Bar>
+          {/* Content types have no order, so the rate is plotted as points, not a line. */}
           <Line
             yAxisId="rate"
-            type="monotone"
             dataKey="engagementRate"
             name={copy.engagementRate}
-            stroke={chartColors.engagement}
-            strokeWidth={1.5}
-            dot={false}
+            stroke="none"
+            dot={{
+              r: 4,
+              fill: chartColors.engagement,
+              stroke: "var(--background)",
+              strokeWidth: 2,
+            }}
             activeDot={activeDot(chartColors.engagement)}
-            {...motion}
-          />
-          <Line
-            yAxisId="rate"
-            type="monotone"
-            dataKey="shareRate"
-            name={copy.shareRate}
-            stroke={chartColors.share}
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={activeDot(chartColors.share)}
             {...motion}
           />
         </ComposedChart>

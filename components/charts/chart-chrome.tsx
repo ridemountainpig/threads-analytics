@@ -177,3 +177,34 @@ export function useChartMotion() {
     animationEasing: "ease-out",
   } as const;
 }
+
+interface SeriesDotProps {
+  cx?: number;
+  cy?: number;
+  index?: number;
+  value?: unknown;
+  payload?: { partial?: boolean };
+}
+
+// Recharts draws no path for a lone point; incomplete buckets get a hollow dot.
+export function seriesDot(color: string, pointCount: number) {
+  return function SeriesDot({ cx, cy, index, value, payload }: SeriesDotProps) {
+    const key = `dot-${index}`;
+    if (cx == null || cy == null || value == null) return <g key={key} />;
+    if (payload?.partial) {
+      return (
+        <circle
+          key={key}
+          cx={cx}
+          cy={cy}
+          r={3}
+          fill="var(--background)"
+          stroke={color}
+          strokeWidth={1.5}
+        />
+      );
+    }
+    if (pointCount === 1) return <circle key={key} cx={cx} cy={cy} r={3.5} fill={color} />;
+    return <g key={key} />;
+  };
+}

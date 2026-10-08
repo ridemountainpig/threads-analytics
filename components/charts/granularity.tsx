@@ -36,6 +36,31 @@ function calendarSpanDays(dates: string[], timeZone: string): number {
   return Math.round((utcDate(last).getTime() - utcDate(first).getTime()) / 86_400_000) + 1;
 }
 
+function shiftKey(dateKey: string, days: number): string {
+  const date = utcDate(dateKey);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function bucketDayCount(bucket: string, granularity: Granularity): number {
+  if (granularity === "day") return 1;
+  if (granularity === "week") return 7;
+  const date = utcDate(bucket);
+  return new Date(Date.UTC(date.getUTCFullYear(), date.getUTCMonth() + 1, 0)).getUTCDate();
+}
+
+// Incomplete: still running (reaches today) or cut off by the range (fewer `coveredDays`).
+export function isPartialBucket(
+  bucket: string,
+  granularity: Granularity,
+  timeZone: string,
+  coveredDays = bucketDayCount(bucket, granularity),
+): boolean {
+  const length = bucketDayCount(bucket, granularity);
+  const today = toCalendarDate(new Date().toISOString(), timeZone);
+  return coveredDays < length || shiftKey(bucket, length - 1) >= today;
+}
+
 export function aggregateByGranularity<T, R>(
   data: T[],
   granularity: Granularity,

@@ -4,7 +4,7 @@ import { Fragment, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
-import { chartPalette } from "./chart-style";
+import { MEDIAN_RATIO_STEPS, chartPalette, medianRatioBg, medianRatioStep } from "./chart-style";
 import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
 
 interface DataPoint {
@@ -20,6 +20,8 @@ interface DataPoint {
 
 interface Props {
   data: DataPoint[];
+  /** The account's median views; cells are colored by their ratio to it. */
+  baselineMedianViews: number;
   numberLocale?: string;
   labels?: {
     posts: string;
@@ -32,6 +34,9 @@ interface Props {
     contentType?: string;
     lengthBucket?: string;
     colorIntensity?: string;
+    vsMedian?: string;
+    belowMedian?: string;
+    aboveMedian?: string;
     less: string;
     more: string;
     mediaTypes?: Record<string, string>;
@@ -41,22 +46,6 @@ interface Props {
 
 const LENGTH_BUCKETS = ["0-50", "51-150", "151-300", "301+"];
 
-function getIntensity(value: number, max: number) {
-  if (value <= 0 || max <= 0) return 0;
-  return Math.max(1, Math.ceil((value / max) * 4));
-}
-
-// One hue stepped toward the muted track, matching the posting calendar —
-// performance reads as saturation, not as a rainbow. The top step stays a
-// mix (not the full hue) because these cells carry text.
-const INTENSITY_BG: Record<number, string> = {
-  0: "var(--muted)",
-  1: `color-mix(in oklch, ${chartPalette.blue} 22%, var(--muted))`,
-  2: `color-mix(in oklch, ${chartPalette.blue} 44%, var(--muted))`,
-  3: `color-mix(in oklch, ${chartPalette.blue} 66%, var(--muted))`,
-  4: `color-mix(in oklch, ${chartPalette.blue} 85%, var(--muted))`,
-};
-
 interface TooltipState {
   point: DataPoint;
   label: string;
@@ -64,7 +53,12 @@ interface TooltipState {
   y: number;
 }
 
-export default function ContentFormatLengthMatrix({ data, numberLocale, labels }: Props) {
+export default function ContentFormatLengthMatrix({
+  data,
+  baselineMedianViews,
+  numberLocale,
+  labels,
+}: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const locale = numberLocale ?? "en-US";
 
@@ -90,7 +84,8 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
   }
 
   const mediaTypes = Array.from(new Set(data.map((point) => point.mediaType))).sort();
-  const max = Math.max(...data.map((point) => point.medianViews));
+  const formatRatio = (value: number) =>
+    baselineMedianViews > 0 ? `${(value / baselineMedianViews).toFixed(1)}×` : "—";
   const byKey = new Map(data.map((point) => [`${point.mediaType}:${point.lengthBucket}`, point]));
 
   const showTooltip = (point: DataPoint, label: string) => (e: React.MouseEvent<HTMLElement>) => {
@@ -104,7 +99,7 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
         <AxisHint
           columns={copy.lengthBucket ?? "Character Count"}
           rows={copy.contentType ?? "Content Type"}
-          color={`${medianViewsLabel} / ${copy.colorIntensity ?? "Color Intensity"}`}
+          color={copy.vsMedian ?? "vs. your median"}
         />
         <div
           className="grid min-w-[520px] gap-1"
@@ -128,7 +123,7 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
               </div>
               {LENGTH_BUCKETS.map((bucket) => {
                 const point = byKey.get(`${type}:${bucket}`);
-                const intensity = getIntensity(point?.medianViews ?? 0, max);
+                const step = point ? medianRatioStep(point.medianViews, baselineMedianViews) : 0;
                 return (
                   <div
                     key={`${type}-${bucket}`}
@@ -150,7 +145,11 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
                       // one with a grain of salt" mark; details live in the tooltip.
                       point?.confidence === "low" && "border-foreground/20 border-dashed",
                     )}
-                    style={{ backgroundColor: INTENSITY_BG[intensity] }}
+                    style={{
+                      backgroundColor: point
+                        ? medianRatioBg[step]
+                        : "color-mix(in oklch, var(--muted) 40%, transparent)",
+                    }}
                   >
                     <span className="text-foreground text-sm font-semibold tabular-nums">
                       {point ? point.medianViews.toLocaleString(locale) : "–"}
@@ -165,15 +164,19 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
           ))}
         </div>
         <div className="mt-2.5 flex items-center justify-end gap-1">
-          <span className="text-muted-foreground/80 text-[9px]">{copy.less}</span>
-          {[0, 1, 2, 3, 4].map((intensity) => (
+          <span className="text-muted-foreground/80 text-[9px]">
+            {copy.belowMedian ?? copy.less}
+          </span>
+          {MEDIAN_RATIO_STEPS.map((step) => (
             <div
-              key={intensity}
+              key={step}
               className="size-[10px] rounded-[3px]"
-              style={{ backgroundColor: INTENSITY_BG[intensity] }}
+              style={{ backgroundColor: medianRatioBg[step] }}
             />
           ))}
-          <span className="text-muted-foreground/80 text-[9px]">{copy.more}</span>
+          <span className="text-muted-foreground/80 text-[9px]">
+            {copy.aboveMedian ?? copy.more}
+          </span>
         </div>
       </div>
 
@@ -190,6 +193,10 @@ export default function ContentFormatLengthMatrix({ data, numberLocale, labels }
                   label: medianViewsLabel,
                   value: tooltip.point.medianViews.toLocaleString(locale),
                   color: chartPalette.blue,
+                },
+                {
+                  label: copy.vsMedian ?? "vs. your median",
+                  value: formatRatio(tooltip.point.medianViews),
                 },
                 { label: copy.avgViews, value: tooltip.point.avgViews.toLocaleString(locale) },
                 { label: p75ViewsLabel, value: tooltip.point.p75Views.toLocaleString(locale) },

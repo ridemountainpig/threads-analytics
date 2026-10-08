@@ -4,7 +4,13 @@ import { Fragment, useState } from "react";
 import { createPortal } from "react-dom";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
-import { chartPalette, formatCompactNumber } from "./chart-style";
+import {
+  MEDIAN_RATIO_STEPS,
+  chartPalette,
+  formatCompactNumber,
+  medianRatioBg,
+  medianRatioStep,
+} from "./chart-style";
 import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
 
 interface DataPoint {
@@ -18,6 +24,8 @@ interface DataPoint {
 
 interface Props {
   data: DataPoint[];
+  /** The account's median views; cells are colored by their ratio to it. */
+  baselineMedianViews: number;
   dateLocale?: string;
   labels?: {
     posts: string;
@@ -28,27 +36,15 @@ interface Props {
     contentType?: string;
     hour?: string;
     colorIntensity?: string;
+    vsMedian?: string;
+    belowMedian?: string;
+    aboveMedian?: string;
     less: string;
     more: string;
     mediaTypes?: Record<string, string>;
     noData?: string;
   };
 }
-
-function getIntensity(value: number, max: number) {
-  if (value <= 0 || max <= 0) return 0;
-  return Math.max(1, Math.ceil((value / max) * 4));
-}
-
-// A single-hue ramp blended toward the muted track keeps the heatmap calm
-// while intensity still reads at a glance.
-const INTENSITY_BG: Record<number, string> = {
-  0: "var(--muted)",
-  1: `color-mix(in oklch, ${chartPalette.blue} 22%, var(--muted))`,
-  2: `color-mix(in oklch, ${chartPalette.blue} 45%, var(--muted))`,
-  3: `color-mix(in oklch, ${chartPalette.blue} 70%, var(--muted))`,
-  4: chartPalette.blue,
-};
 
 const HOURS = Array.from({ length: 24 }, (_, i) => i);
 
@@ -70,7 +66,12 @@ interface TooltipState {
   y: number;
 }
 
-export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: Props) {
+export default function ContentTypeTimeSlotChart({
+  data,
+  baselineMedianViews,
+  dateLocale,
+  labels,
+}: Props) {
   const [tooltip, setTooltip] = useState<TooltipState | null>(null);
 
   const copy = labels ?? {
@@ -91,7 +92,8 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
   }
 
   const mediaTypes = Array.from(new Set(data.map((d) => d.mediaType))).sort();
-  const max = Math.max(...data.map((d) => d.medianViews));
+  const formatRatio = (value: number) =>
+    baselineMedianViews > 0 ? `${(value / baselineMedianViews).toFixed(1)}×` : "—";
   const byKey = new Map(data.map((d) => [`${d.mediaType}:${d.hour}`, d]));
 
   return (
@@ -100,7 +102,7 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
         <AxisHint
           columns={copy.hour ?? "Hour"}
           rows={copy.contentType ?? "Content Type"}
-          color={`${medianViewsLabel} / ${copy.colorIntensity ?? "Color Intensity"}`}
+          color={copy.vsMedian ?? "vs. your median"}
         />
         <div
           className="grid min-w-[720px] gap-[3px]"
@@ -124,7 +126,7 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
               </div>
               {HOURS.map((hour) => {
                 const point = byKey.get(`${type}:${hour}`);
-                const intensity = getIntensity(point?.medianViews ?? 0, max);
+                const step = point ? medianRatioStep(point.medianViews, baselineMedianViews) : 0;
                 return (
                   <div
                     key={`${type}-${hour}`}
@@ -148,7 +150,7 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
                     )}
                     style={{
                       backgroundColor: point
-                        ? INTENSITY_BG[intensity]
+                        ? medianRatioBg[step]
                         : "color-mix(in oklch, var(--muted) 40%, transparent)",
                     }}
                   >
@@ -157,7 +159,7 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
                         className={cn(
                           "text-[9px] leading-none font-medium tabular-nums",
                           // Keep the value legible as the cell darkens.
-                          intensity >= 3 ? "text-white" : "text-foreground/70",
+                          step === 2 ? "text-white" : "text-foreground/70",
                         )}
                       >
                         {formatCompactNumber(point.medianViews)}
@@ -170,15 +172,19 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
           ))}
         </div>
         <div className="mt-2.5 flex items-center justify-end gap-1">
-          <span className="text-muted-foreground/80 text-[10px]">{copy.less}</span>
-          {[0, 1, 2, 3, 4].map((i) => (
+          <span className="text-muted-foreground/80 text-[10px]">
+            {copy.belowMedian ?? copy.less}
+          </span>
+          {MEDIAN_RATIO_STEPS.map((step) => (
             <div
-              key={i}
+              key={step}
               className="size-3 rounded-[3px]"
-              style={{ backgroundColor: INTENSITY_BG[i] }}
+              style={{ backgroundColor: medianRatioBg[step] }}
             />
           ))}
-          <span className="text-muted-foreground/80 text-[10px]">{copy.more}</span>
+          <span className="text-muted-foreground/80 text-[10px]">
+            {copy.aboveMedian ?? copy.more}
+          </span>
         </div>
       </div>
 
@@ -198,6 +204,10 @@ export default function ContentTypeTimeSlotChart({ data, dateLocale, labels }: P
                   label: medianViewsLabel,
                   value: tooltip.point.medianViews.toLocaleString(),
                   color: chartPalette.blue,
+                },
+                {
+                  label: copy.vsMedian ?? "vs. your median",
+                  value: formatRatio(tooltip.point.medianViews),
                 },
                 { label: copy.avgViews, value: tooltip.point.avgViews.toLocaleString() },
                 {

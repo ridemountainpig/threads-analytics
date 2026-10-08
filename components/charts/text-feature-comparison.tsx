@@ -92,12 +92,13 @@ export default function TextFeatureComparison({
                       />
                     </div>
                     <span className="text-foreground shrink-0 text-xs font-medium tabular-nums">
-                      {row.stats.medianViews.toLocaleString(locale)}
+                      {row.stats.postCount > 0 ? row.stats.medianViews.toLocaleString(locale) : "—"}
                     </span>
                   </div>
                   <p className="text-muted-foreground mt-1.5 text-[11px] leading-4 tabular-nums">
-                    {copy.engagementRate} {row.stats.engagementRate.toFixed(2)}% · {copy.replyRate}{" "}
-                    {row.stats.replyRate.toFixed(2)}%
+                    {row.stats.postCount > 0
+                      ? `${copy.engagementRate} ${row.stats.engagementRate.toFixed(2)}% · ${copy.replyRate} ${row.stats.replyRate.toFixed(2)}%`
+                      : `${copy.engagementRate} — · ${copy.replyRate} —`}
                   </p>
                 </div>
               </div>
