@@ -49,6 +49,29 @@ export const seriesColors = [
 /** Warm pole for signed values, against seriesColors[0] as the cool pole. */
 export const negativeColor = "var(--series-negative)";
 
+export type MedianRatioStep = -2 | -1 | 0 | 1 | 2;
+
+// Relative to the account's median, so one viral post can't wash out every other cell.
+export function medianRatioStep(value: number, median: number): MedianRatioStep {
+  if (median <= 0) return 0;
+  const ratio = value / median;
+  if (ratio >= 2) return 2;
+  if (ratio >= 1.25) return 1;
+  if (ratio > 0.8) return 0;
+  if (ratio > 0.5) return -1;
+  return -2;
+}
+
+export const MEDIAN_RATIO_STEPS: MedianRatioStep[] = [-2, -1, 0, 1, 2];
+
+export const medianRatioBg: Record<MedianRatioStep, string> = {
+  [-2]: `color-mix(in oklch, ${negativeColor} 45%, var(--muted))`,
+  [-1]: `color-mix(in oklch, ${negativeColor} 20%, var(--muted))`,
+  0: "var(--muted)",
+  1: `color-mix(in oklch, ${chartPalette.blue} 40%, var(--muted))`,
+  2: `color-mix(in oklch, ${chartPalette.blue} 80%, var(--muted))`,
+};
+
 export const chartMargin = { top: 8, right: 12, left: 0, bottom: 0 };
 
 export const compactChartMargin = { top: 6, right: 10, left: 0, bottom: 0 };
@@ -89,6 +112,22 @@ export function activeDot(color: string) {
 }
 
 export const barRadius: [number, number, number, number] = [4, 4, 0, 0];
+
+// Post-count context bars: the busiest bucket fills only the bottom fifth.
+export const POSTS_AXIS_HEADROOM = 5;
+export const postsAxisDomain: [number, (dataMax: number) => number] = [
+  0,
+  (dataMax) => Math.max(dataMax, 1) * POSTS_AXIS_HEADROOM,
+];
+
+const RATE_STEPS = [0.01, 0.02, 0.05, 0.1, 0.2, 0.25, 0.5, 1, 2, 5, 10, 20, 25, 50];
+
+/** Round percentage ticks (0%, 0.5%, 1%, ...) from 0 up past `max`. */
+export function rateTicks(max: number) {
+  const step = RATE_STEPS.find((s) => s >= max / 4) ?? RATE_STEPS[RATE_STEPS.length - 1]!;
+  const count = Math.max(1, Math.ceil(max / step));
+  return Array.from({ length: count + 1 }, (_, i) => Math.round(i * step * 100) / 100);
+}
 
 export function formatCompactNumber(v: number) {
   if (v >= 1_000_000) return `${(v / 1_000_000).toFixed(1)}m`;

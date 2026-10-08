@@ -18,6 +18,7 @@ interface Props {
     reposts: string;
     quotes: string;
     shares: string;
+    totalActions?: string;
     noData?: string;
   };
 }
@@ -103,6 +104,12 @@ export default function EngagementBreakdownPieChart({ data, labels }: Props) {
           <p className="text-2xl leading-7 font-semibold tracking-[-0.02em] tabular-nums">
             {formatCompactNumber(total)}
           </p>
+          {/* Shares are a slice here, unlike "engagement" elsewhere, so the total is named apart. */}
+          {labels?.totalActions && (
+            <p className="text-muted-foreground mt-0.5 text-[10px] leading-3">
+              {labels.totalActions}
+            </p>
+          )}
         </div>
       </div>
 

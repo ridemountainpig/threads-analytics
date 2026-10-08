@@ -67,7 +67,7 @@ export interface AnalyticsResult {
     permalink: string;
     multiplier: number;
   }>;
-  engagementRateTrend: Array<{ date: string; rate: number; rollingAvg: number }>;
+  engagementRateTrend: Array<{ date: string; rate: number | null; rollingAvg: number | null }>;
   replyRateLeaders: Array<{
     id: string;
     text: string;
@@ -149,6 +149,50 @@ function getMonthString(date: Date, tz: string): string {
 export function getDateString(date: Date, tz: string): string {
   const { year, month, day } = getLocalDateTimeParts(date, tz);
   return `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+}
+
+export interface DateRange {
+  since: Date;
+  until: Date;
+}
+
+function shiftDateKey(key: string, days: number): string {
+  const date = new Date(`${key}T00:00:00Z`);
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+function weekStartKey(dateKey: string): string {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  return shiftDateKey(dateKey, -((date.getUTCDay() + 6) % 7));
+}
+
+function listDateKeys(range: DateRange, tz: string): string[] {
+  const last = getDateString(range.until, tz);
+  const keys: string[] = [];
+  for (let key = getDateString(range.since, tz); key <= last; key = shiftDateKey(key, 1)) {
+    keys.push(key);
+  }
+  return keys;
+}
+
+function listWeekKeys(range: DateRange, tz: string): string[] {
+  const last = getDateString(range.until, tz);
+  const keys: string[] = [];
+  for (
+    let key = weekStartKey(getDateString(range.since, tz));
+    key <= last;
+    key = shiftDateKey(key, 7)
+  ) {
+    keys.push(key);
+  }
+  return keys;
+}
+
+/** Whether the period [start, end] reaches past either edge of the range. */
+function isPartialPeriod(start: string, end: string, range: DateRange | undefined, tz: string) {
+  if (!range) return false;
+  return start < getDateString(range.since, tz) || end > getDateString(range.until, tz);
 }
 
 function getDayOfWeek(date: Date, tz: string): number {
@@ -304,9 +348,9 @@ export interface LengthPerformancePoint {
   p75Views: number;
   hitRate: number;
   confidence: ConfidenceLevel;
-  engagementRate: number;
-  replyRate: number;
-  shareRate: number;
+  engagementRate: number | null;
+  replyRate: number | null;
+  shareRate: number | null;
 }
 
 export interface HourPerformancePoint extends DistributionStats {
@@ -322,14 +366,17 @@ export interface HourHeatmapPoint extends DistributionStats {
 }
 
 export interface WeeklyPerformancePoint {
+  /** Monday of the ISO week, YYYY-MM-DD. */
   week: string;
   postCount: number;
-  avgViews: number;
-  medianViews: number;
-  engagementRate: number;
-  shareRate: number;
-  hitRate: number;
+  avgViews: number | null;
+  medianViews: number | null;
+  engagementRate: number | null;
+  shareRate: number | null;
+  hitRate: number | null;
   confidence: ConfidenceLevel;
+  /** The week reaches past the range, so it holds only part of its days. */
+  partial: boolean;
 }
 
 export type PostQualityQuadrant = "breakout" | "conversation" | "broadcast" | "underperforming";
@@ -456,19 +503,23 @@ export function computePostLengthAnalysis(posts: PostWithInsights[]): LengthPerf
 
   return BUCKETS.map((bucket) => {
     const data = buckets.get(bucket)!;
+    const rates = getMetricRates({
+      views: data.totalViews,
+      likes: data.totalLikes,
+      replies: data.totalReplies,
+      reposts: data.totalReposts,
+      quotes: data.totalQuotes,
+      shares: data.totalShares,
+    });
+    const empty = data.count === 0;
     return {
       bucket,
       avgLikes: data.count > 0 ? Math.round(data.totalLikes / data.count) : 0,
       postCount: data.count,
       ...getDistributionStats(data, baselineMedianViews),
-      ...getMetricRates({
-        views: data.totalViews,
-        likes: data.totalLikes,
-        replies: data.totalReplies,
-        reposts: data.totalReposts,
-        quotes: data.totalQuotes,
-        shares: data.totalShares,
-      }),
+      engagementRate: empty ? null : rates.engagementRate,
+      replyRate: empty ? null : rates.replyRate,
+      shareRate: empty ? null : rates.shareRate,
     };
   });
 }
@@ -478,53 +529,89 @@ export function getLengthBucket(text: string) {
   return len <= 50 ? "0-50" : len <= 150 ? "51-150" : len <= 300 ? "151-300" : "301+";
 }
 
+// With a range, every week in it is listed, so weeks without posts show as gaps.
 export function computeWeeklyFrequency(
   posts: PostWithInsights[],
   tz = DEFAULT_TZ,
+  range?: DateRange,
 ): WeeklyPerformancePoint[] {
   const baselineMedianViews = getBaselineMedianViews(posts);
   const buckets = new Map<string, AggregateBucket>();
 
   for (const post of posts) {
-    const week = getISOWeekString(new Date(post.timestamp), tz);
+    const week = weekStartKey(getDateString(new Date(post.timestamp), tz));
     const existing = buckets.get(week) ?? emptyBucket();
     addPostToBucket(existing, post);
     buckets.set(week, existing);
   }
 
-  return Array.from(buckets.entries())
-    .map(([week, data]) => {
-      const { engagementRate, shareRate } = getMetricRates({
-        views: data.totalViews,
-        likes: data.totalLikes,
-        replies: data.totalReplies,
-        reposts: data.totalReposts,
-        quotes: data.totalQuotes,
-        shares: data.totalShares,
-      });
+  const weeks = range ? listWeekKeys(range, tz) : Array.from(buckets.keys()).sort();
+  return weeks.map((week) => {
+    const data = buckets.get(week);
+    const partial = isPartialPeriod(week, shiftDateKey(week, 6), range, tz);
+    if (!data) {
       return {
         week,
-        postCount: data.count,
-        avgViews: data.count > 0 ? Math.round(data.totalViews / data.count) : 0,
-        medianViews: getMedian(data.views),
-        hitRate: getDistributionStats(data, baselineMedianViews).hitRate,
-        confidence: getConfidence(data.count),
-        engagementRate,
-        shareRate,
+        postCount: 0,
+        avgViews: null,
+        medianViews: null,
+        hitRate: null,
+        confidence: "low" as const,
+        engagementRate: null,
+        shareRate: null,
+        partial,
       };
-    })
-    .sort((a, b) => a.week.localeCompare(b.week));
+    }
+    const { engagementRate, shareRate } = getMetricRates({
+      views: data.totalViews,
+      likes: data.totalLikes,
+      replies: data.totalReplies,
+      reposts: data.totalReposts,
+      quotes: data.totalQuotes,
+      shares: data.totalShares,
+    });
+    return {
+      week,
+      postCount: data.count,
+      avgViews: Math.round(data.totalViews / data.count),
+      medianViews: getMedian(data.views),
+      hitRate: getDistributionStats(data, baselineMedianViews).hitRate,
+      confidence: getConfidence(data.count),
+      engagementRate,
+      shareRate,
+      partial,
+    };
+  });
 }
 
-export function computePostQualityScatter(posts: PostWithInsights[]): PostQualityPoint[] {
-  const baselineMedianViews = getBaselineMedianViews(posts);
+/** The medians that split the post quality map into its four quadrants. */
+export function computePostQualityThresholds(posts: PostWithInsights[]) {
   const engagementRates = posts
     .filter((post) => post.views > 0)
     .map((post) => getMetricRates(post).engagementRate);
-  const baselineMedianEngagementRate = getMedian(engagementRates);
+  const sorted = [...engagementRates].sort((a, b) => a - b);
+  const mid = Math.floor(sorted.length / 2);
+  const medianEngagementRate =
+    sorted.length === 0
+      ? 0
+      : sorted.length % 2 === 0
+        ? ((sorted[mid - 1] ?? 0) + (sorted[mid] ?? 0)) / 2
+        : (sorted[mid] ?? 0);
+  return {
+    medianViews: getBaselineMedianViews(posts),
+    medianEngagementRate: Math.round(medianEngagementRate * 100) / 100,
+  };
+}
+
+export function computePostQualityScatter(posts: PostWithInsights[]): PostQualityPoint[] {
+  const { medianViews: baselineMedianViews, medianEngagementRate: baselineMedianEngagementRate } =
+    computePostQualityThresholds(posts);
+  // Only near-zero reach is dropped (its rate is noise); the leaderboards' half-median floor
+  // would hide the weakest posts and leave the left of the median line half empty.
+  const minViews = Math.max(1, Math.floor(baselineMedianViews * 0.1));
 
   return posts
-    .filter((post) => post.views > 0)
+    .filter((post) => post.views >= minViews)
     .map((post) => {
       const rates = getMetricRates(post);
       const highViews = post.views >= baselineMedianViews;
@@ -645,21 +732,13 @@ export function computeViralPosts(posts: PostWithInsights[]): Array<{
 
 // ── New Analytics ──────────────────────────────────────────────────────
 
+// Post lifetime views as the denominator: account views are per viewing day and inflate older days.
 export function computeEngagementRateTrend(
   posts: PostWithInsights[],
-  userViews: UserViewPoint[] = [],
   tz = DEFAULT_TZ,
-): Array<{ date: string; rate: number; rollingAvg: number; views: number }> {
+  range?: DateRange,
+): Array<{ date: string; rate: number | null; rollingAvg: number | null; views: number }> {
   const byDate = new Map<string, AggregateBucket>();
-  // Prefer profile-level daily views as the denominator (consistent with
-  // computeDailyPerformance and the dashboard's headline engagement rate);
-  // fall back to summed post views for days the API didn't cover.
-  const viewByDate = new Map<string, number>();
-  for (const item of userViews) {
-    const date = getDateString(new Date(item.end_time), tz);
-    viewByDate.set(date, (viewByDate.get(date) ?? 0) + item.value);
-  }
-
   for (const post of posts) {
     const date = getDateString(new Date(post.timestamp), tz);
     const existing = byDate.get(date) ?? emptyBucket();
@@ -667,29 +746,26 @@ export function computeEngagementRateTrend(
     byDate.set(date, existing);
   }
 
-  const daily = Array.from(byDate.entries())
-    .map(([date, d]) => {
-      const views = viewByDate.get(date) ?? d.totalViews;
-      return {
-        date,
-        views,
-        rate: getMetricRates({
-          views,
-          likes: d.totalLikes,
-          replies: d.totalReplies,
-          reposts: d.totalReposts,
-          quotes: d.totalQuotes,
-          shares: d.totalShares,
-        }).engagementRate,
-      };
-    })
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const engagementOf = (d: AggregateBucket) =>
+    d.totalLikes + d.totalReplies + d.totalReposts + d.totalQuotes;
+  const dates = range ? listDateKeys(range, tz) : Array.from(byDate.keys()).sort();
 
-  // 7-day rolling average
-  return daily.map((item, i) => {
-    const window = daily.slice(Math.max(0, i - 6), i + 1);
-    const avg = window.reduce((sum, d) => sum + d.rate, 0) / window.length;
-    return { ...item, rollingAvg: Math.round(avg * 100) / 100 };
+  return dates.map((date) => {
+    const day = byDate.get(date);
+    let windowViews = 0;
+    let windowEngagement = 0;
+    for (let offset = 0; offset < 7; offset++) {
+      const d = byDate.get(shiftDateKey(date, -offset));
+      if (!d) continue;
+      windowViews += d.totalViews;
+      windowEngagement += engagementOf(d);
+    }
+    return {
+      date,
+      views: day?.totalViews ?? 0,
+      rate: day ? ratePct(engagementOf(day), day.totalViews) : null,
+      rollingAvg: ratePct(windowEngagement, windowViews),
+    };
   });
 }
 
@@ -721,6 +797,7 @@ export function computeReplyRateLeaders(posts: PostWithInsights[]): Array<{
 export function computeSharesTrend(
   posts: PostWithInsights[],
   tz = DEFAULT_TZ,
+  range?: DateRange,
 ): Array<{ date: string; shares: number }> {
   const byDate = new Map<string, number>();
 
@@ -729,9 +806,8 @@ export function computeSharesTrend(
     byDate.set(date, (byDate.get(date) ?? 0) + post.shares);
   }
 
-  return Array.from(byDate.entries())
-    .map(([date, shares]) => ({ date, shares }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const dates = range ? listDateKeys(range, tz) : Array.from(byDate.keys()).sort();
+  return dates.map((date) => ({ date, shares: byDate.get(date) ?? 0 }));
 }
 
 export function computePostingConsistency(
@@ -782,6 +858,7 @@ export function computeTopHours(
 export function computeEngagementBreakdownByDay(
   posts: PostWithInsights[],
   tz = DEFAULT_TZ,
+  range?: DateRange,
 ): Array<{ date: string; likes: number; replies: number; reposts: number; quotes: number }> {
   const byDate = new Map<
     string,
@@ -797,9 +874,11 @@ export function computeEngagementBreakdownByDay(
       quotes: existing.quotes + post.quotes,
     });
   }
-  return Array.from(byDate.entries())
-    .map(([date, d]) => ({ date, ...d }))
-    .sort((a, b) => a.date.localeCompare(b.date));
+  const dates = range ? listDateKeys(range, tz) : Array.from(byDate.keys()).sort();
+  return dates.map((date) => ({
+    date,
+    ...(byDate.get(date) ?? { likes: 0, replies: 0, reposts: 0, quotes: 0 }),
+  }));
 }
 
 export function computeDayOfWeekPerformance(
@@ -807,11 +886,11 @@ export function computeDayOfWeekPerformance(
   tz = DEFAULT_TZ,
 ): Array<{
   day: string;
-  avgViews: number;
-  medianViews: number;
+  avgViews: number | null;
+  medianViews: number | null;
   postCount: number;
-  engagementRate: number;
-  hitRate: number;
+  engagementRate: number | null;
+  hitRate: number | null;
   confidence: ConfidenceLevel;
 }> {
   const baselineMedianViews = getBaselineMedianViews(posts);
@@ -824,10 +903,21 @@ export function computeDayOfWeekPerformance(
     buckets.set(day, existing);
   }
   return Array.from({ length: 7 }, (_, day) => {
-    const data = buckets.get(day) ?? emptyBucket();
+    const data = buckets.get(day);
+    if (!data) {
+      return {
+        day: DAY_LABELS[day],
+        avgViews: null,
+        medianViews: null,
+        postCount: 0,
+        hitRate: null,
+        confidence: "low" as const,
+        engagementRate: null,
+      };
+    }
     return {
       day: DAY_LABELS[day],
-      avgViews: data.count > 0 ? Math.round(data.totalViews / data.count) : 0,
+      avgViews: Math.round(data.totalViews / data.count),
       medianViews: getMedian(data.views),
       postCount: data.count,
       hitRate: getDistributionStats(data, baselineMedianViews).hitRate,
@@ -924,6 +1014,7 @@ export function computeDailyPerformance(
   posts: PostWithInsights[],
   userViews: UserViewPoint[],
   tz = DEFAULT_TZ,
+  range?: DateRange,
 ): DailyPerformancePoint[] {
   const byDate = new Map<string, AggregateBucket>();
   const viewByDate = new Map<string, number>();
@@ -940,7 +1031,11 @@ export function computeDailyPerformance(
     byDate.set(date, existing);
   }
 
-  const dates = new Set([...viewByDate.keys(), ...byDate.keys()]);
+  const dates = new Set([
+    ...(range ? listDateKeys(range, tz) : []),
+    ...viewByDate.keys(),
+    ...byDate.keys(),
+  ]);
   const daily = Array.from(dates)
     .sort((a, b) => a.localeCompare(b))
     .map((date) => {
@@ -980,6 +1075,33 @@ export function computeDailyPerformance(
       rollingEngagementRate: Math.round(rolling * 100) / 100,
     };
   });
+}
+
+const CONTENT_VIEW_SPREAD_DAYS = 14;
+
+// The API has no per-day post views, so lifetime views are spread from the publish day, halving daily.
+export function estimateDailyContentViews(
+  items: Array<{ timestamp: Date; views: number }>,
+  tz = DEFAULT_TZ,
+  now = new Date(),
+): Map<string, number> {
+  const today = getDateString(now, tz);
+  const byDay = new Map<string, number>();
+  for (const item of items) {
+    if (item.views <= 0) continue;
+    const days: string[] = [];
+    let key = getDateString(new Date(item.timestamp), tz);
+    while (days.length < CONTENT_VIEW_SPREAD_DAYS && key <= today) {
+      days.push(key);
+      key = shiftDateKey(key, 1);
+    }
+    const weights = days.map((_, index) => 0.5 ** index);
+    const total = weights.reduce((sum, weight) => sum + weight, 0);
+    days.forEach((day, index) => {
+      byDay.set(day, (byDay.get(day) ?? 0) + (item.views * weights[index]!) / total);
+    });
+  }
+  return byDay;
 }
 
 export interface EngagementBreakdownPoint {
@@ -1199,6 +1321,62 @@ const STOP_WORDS = new Set([
   "會",
   "能",
   "可以",
+  "我們",
+  "你們",
+  "他們",
+  "大家",
+  "自己",
+  "這個",
+  "那個",
+  "這些",
+  "那些",
+  "這樣",
+  "那麼",
+  "什麼",
+  "怎麼",
+  "為什麼",
+  "因為",
+  "所以",
+  "但是",
+  "不過",
+  "如果",
+  "然後",
+  "而且",
+  "其實",
+  "就是",
+  "還是",
+  "還有",
+  "已經",
+  "現在",
+  "今天",
+  "真的",
+  "覺得",
+  "知道",
+  "一下",
+  "一些",
+  "一直",
+  "一樣",
+  "沒有",
+  "不是",
+  "可能",
+  "應該",
+  "需要",
+  "很多",
+  "非常",
+  "比較",
+  "有點",
+  "開始",
+  "時候",
+  "東西",
+  "我想",
+  "做了",
+  "看到",
+  "出來",
+  "起來",
+  "自分",
+  "今日",
+  "本当",
+  "時間",
   "the",
   "de",
   "le",
@@ -1234,19 +1412,28 @@ const STOP_WORDS = new Set([
   "être",
 ]);
 
+let wordSegmenter: Intl.Segmenter | null = null;
+
+// Dictionary word breaks: splitting on spaces keeps whole Chinese clauses and drops kana.
 function extractKeywords(text: string): string[] {
-  return text
-    .replace(/https?:\/\/\S+/g, "")
-    .replace(/[#@]\S+/g, (m) => m.slice(1))
-    .replace(/[^\w\u4e00-\u9fff#@]/g, " ")
-    .split(/\s+/)
-    .filter((w) => {
-      if (w.length < 2) return false;
-      if (STOP_WORDS.has(w.toLowerCase())) return false;
-      if (/^\d+$/.test(w)) return false;
-      return true;
-    })
-    .map((w) => w.toLowerCase());
+  wordSegmenter ??= new Intl.Segmenter("zh-TW", { granularity: "word" });
+  // Hashtag words stay keywords; CJK runs on without spaces, so only username chars go with the @.
+  const cleaned = text
+    .replace(/https?:\/\/\S+/g, " ")
+    .replace(/@[\w.]+/g, " ")
+    .replace(/#/g, " ");
+  const words: string[] = [];
+  for (const { segment, isWordLike } of wordSegmenter.segment(cleaned)) {
+    if (!isWordLike) continue;
+    const word = segment.toLowerCase();
+    if (word.length < 2) continue;
+    if (STOP_WORDS.has(word)) continue;
+    if (/^[\d_]+$/.test(word)) continue;
+    if (/^\p{Script=Hiragana}+$/u.test(word)) continue;
+    if (/^[a-z]+$/.test(word) && word.length < 3) continue;
+    words.push(word);
+  }
+  return words;
 }
 
 export interface KeywordAnalysisPoint {
@@ -1324,13 +1511,16 @@ export interface OptimalFrequencyPoint {
   shareRate: number;
 }
 
+// Weeks clipped by the range would land in a lower posts-per-week bucket, so they're skipped.
 export function computeOptimalFrequency(
   posts: PostWithInsights[],
   tz = DEFAULT_TZ,
+  range?: DateRange,
 ): OptimalFrequencyPoint[] {
   const weekBuckets = new Map<string, AggregateBucket>();
   for (const post of posts) {
-    const week = getISOWeekString(new Date(post.timestamp), tz);
+    const week = weekStartKey(getDateString(new Date(post.timestamp), tz));
+    if (isPartialPeriod(week, shiftDateKey(week, 6), range, tz)) continue;
     const existing = weekBuckets.get(week) ?? emptyBucket();
     addPostToBucket(existing, post);
     weekBuckets.set(week, existing);
@@ -1431,11 +1621,14 @@ export function computeContentTypeTimeSlot(
 }
 
 export interface ViewsTrendPoint {
+  /** Monday YYYY-MM-DD for weeks, YYYY-MM for months. */
   period: string;
   postCount: number;
   medianViews: number;
   avgViews: number;
   p75Views: number;
+  /** The period reaches past the range, so its posts are cut off or still young. */
+  partial: boolean;
 }
 
 export interface ViewsTrendResult {
@@ -1447,14 +1640,29 @@ export interface ViewsTrendResult {
 // "is the account growing?" — roll up to months instead.
 const VIEWS_TREND_MAX_WEEKS = 16;
 
-export function computeViewsTrend(posts: PostWithInsights[], tz = DEFAULT_TZ): ViewsTrendResult {
-  const weekKeys = new Set(posts.map((post) => getISOWeekString(new Date(post.timestamp), tz)));
+function monthEndKey(month: string): string {
+  const [year, monthIndex] = month.split("-").map(Number);
+  return new Date(Date.UTC(year, monthIndex, 0)).toISOString().slice(0, 10);
+}
+
+export function computeViewsTrend(
+  posts: PostWithInsights[],
+  tz = DEFAULT_TZ,
+  range?: DateRange,
+): ViewsTrendResult {
+  const weekKeys = new Set(
+    posts.map((post) => weekStartKey(getDateString(new Date(post.timestamp), tz))),
+  );
   const granularity: ViewsTrendResult["granularity"] =
     weekKeys.size > VIEWS_TREND_MAX_WEEKS ? "month" : "week";
   const keyOf =
     granularity === "month"
       ? (date: Date) => getMonthString(date, tz)
-      : (date: Date) => getISOWeekString(date, tz);
+      : (date: Date) => weekStartKey(getDateString(date, tz));
+  const periodBounds = (period: string): [string, string] =>
+    granularity === "month"
+      ? [`${period}-01`, monthEndKey(period)]
+      : [period, shiftDateKey(period, 6)];
 
   const buckets = new Map<string, AggregateBucket>();
   for (const post of posts) {
@@ -1471,6 +1679,7 @@ export function computeViewsTrend(posts: PostWithInsights[], tz = DEFAULT_TZ): V
       medianViews: getMedian(data.views),
       avgViews: data.count > 0 ? Math.round(data.totalViews / data.count) : 0,
       p75Views: getPercentile(data.views, 0.75),
+      partial: isPartialPeriod(...periodBounds(period), range, tz),
     }))
     .sort((a, b) => a.period.localeCompare(b.period));
 
@@ -1537,13 +1746,15 @@ export function computeViewsDistribution(posts: PostWithInsights[]): ViewsDistri
 
   const sortedViews = posts.map((post) => post.views).sort((a, b) => a - b);
 
-  const boundaries = [
-    ...new Set(
-      [0.125, 0.25, 0.375, 0.5, 0.625, 0.75, 0.875].map((q) =>
-        snapToLadder(viewsQuantile(sortedViews, q)),
-      ),
-    ),
-  ].sort((a, b) => a - b);
+  // Fixed ladder rungs, not quantiles, which always hold similar counts and hide the skew.
+  const low = sortedViews[Math.floor(sortedViews.length * 0.05)] ?? 0;
+  const high = sortedViews[sortedViews.length - 1] ?? 0;
+  let rungs = VIEW_THRESHOLD_LADDER.filter(
+    (rung) => rung >= snapToLadder(Math.max(low, 1)) && rung < nextLadderRung(high),
+  );
+  if (rungs.length === 0) rungs = [snapToLadder(Math.max(high, 1))];
+  // Past nine rungs the bars get too thin; every other rung keeps a steady ~5x step.
+  const boundaries = rungs.length > 9 ? rungs.filter((_, index) => index % 2 === 0) : rungs;
 
   const counts = Array.from({ length: boundaries.length + 1 }, () => 0);
   for (const post of posts) {

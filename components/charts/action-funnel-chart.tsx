@@ -11,7 +11,14 @@ import {
   YAxis,
 } from "recharts";
 import AxisHint from "./axis-hint";
-import { axisTick, barCursor, chartColors, formatCompactNumber, gridProps } from "./chart-style";
+import {
+  axisTick,
+  barCursor,
+  chartColors,
+  formatCompactNumber,
+  gridProps,
+  rateTicks,
+} from "./chart-style";
 import { ChartEmptyState, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
@@ -32,6 +39,7 @@ interface Props {
     action?: string;
     count?: string;
     conversionRate?: string;
+    viewsTotal?: string;
     noData?: string;
   };
 }
@@ -46,31 +54,45 @@ function getActionLabel(action: DataPoint["action"], labels?: Props["labels"]) {
   return labels.shares;
 }
 
+function formatRate(rate: number) {
+  return `${rate.toFixed(2)}%`;
+}
+
 export default function ActionFunnelChart({ data, labels }: Props) {
   const motion = useChartMotion();
   const conversionLabel = labels?.conversionRate ?? "Rate from Views";
-  const chartData = data.map((point) => ({
-    ...point,
-    label: getActionLabel(point.action, labels),
-  }));
+  const views = data.find((point) => point.action === "Views")?.value ?? 0;
+  const chartData = data
+    .filter((point) => point.action !== "Views")
+    .map((point) => ({
+      ...point,
+      label: getActionLabel(point.action, labels),
+      display: `${formatRate(point.rate)} · ${formatCompactNumber(point.value)}`,
+    }));
 
-  if (!data.length) {
+  if (!chartData.length || views <= 0) {
     return <ChartEmptyState label={labels?.noData ?? "No data"} height={220} />;
   }
+  const ticks = rateTicks(Math.max(...chartData.map((point) => point.rate)));
 
   return (
     <>
-      <AxisHint x={labels?.count ?? "Count"} y={labels?.action ?? "Action"} />
-      <ResponsiveContainer width="100%" height={260}>
+      <AxisHint x={conversionLabel} y={labels?.action ?? "Action"} />
+      <p className="text-muted-foreground mb-2 text-[11px] leading-4 tabular-nums">
+        {(labels?.viewsTotal ?? "{views} total views").replace("{views}", views.toLocaleString())}
+      </p>
+      <ResponsiveContainer width="100%" height={320}>
         <BarChart
           data={chartData}
           layout="vertical"
-          margin={{ top: 4, right: 44, left: 0, bottom: 0 }}
+          margin={{ top: 4, right: 88, left: 0, bottom: 0 }}
         >
           <CartesianGrid {...gridProps} horizontal={false} vertical />
           <XAxis
             type="number"
-            tickFormatter={formatCompactNumber}
+            domain={[0, ticks[ticks.length - 1]]}
+            ticks={ticks}
+            tickFormatter={(value: number) => `${Number(value.toFixed(2))}%`}
             tick={axisTick}
             tickLine={false}
             axisLine={false}
@@ -93,38 +115,32 @@ export default function ActionFunnelChart({ data, labels }: Props) {
                   title={point.label}
                   rows={[
                     {
-                      label: labels?.count ?? "Count",
-                      value: point.value.toLocaleString(),
+                      label: conversionLabel,
+                      value: formatRate(point.rate),
                       color: chartColors.views,
                     },
-                    ...(point.action !== "Views"
-                      ? [
-                          {
-                            label: conversionLabel,
-                            value: `${point.rate.toFixed(2)}%`,
-                            muted: true,
-                          },
-                        ]
-                      : []),
+                    {
+                      label: labels?.count ?? "Count",
+                      value: point.value.toLocaleString(),
+                      muted: true,
+                    },
                   ]}
                 />
               );
             }}
           />
           <Bar
-            dataKey="value"
+            dataKey="rate"
             fill={chartColors.views}
             fillOpacity={0.8}
             radius={[0, 5, 5, 0]}
-            maxBarSize={20}
+            maxBarSize={22}
             {...motion}
           >
-            {/* Values sit at each bar's end, so the drop-off reads without hovering. */}
             <LabelList
-              dataKey="value"
+              dataKey="display"
               position="right"
               offset={8}
-              formatter={(value) => formatCompactNumber(Number(value ?? 0))}
               style={{
                 fill: "var(--muted-foreground)",
                 fontSize: 10,

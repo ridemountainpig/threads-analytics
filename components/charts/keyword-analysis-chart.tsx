@@ -1,27 +1,25 @@
 "use client";
 
 import {
-  ComposedChart,
   Bar,
-  Line,
+  BarChart,
+  CartesianGrid,
+  LabelList,
+  ResponsiveContainer,
+  Tooltip,
   XAxis,
   YAxis,
-  CartesianGrid,
-  Tooltip,
-  ResponsiveContainer,
 } from "recharts";
 import AxisHint from "./axis-hint";
 import {
-  activeDot,
   axisTick,
-  barRadius,
+  barCursor,
   chartColors,
-  compactAxisTick,
   formatCompactNumber,
   gridProps,
-  lineCursor,
+  rateTicks,
 } from "./chart-style";
-import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
+import { ChartEmptyState, ChartTooltip, useChartMotion } from "./chart-chrome";
 
 interface DataPoint {
   word: string;
@@ -38,10 +36,21 @@ interface Props {
     avgViews: string;
     engagementRate: string;
     shareRate: string;
+    keyword?: string;
+    viewsUnit?: string;
     noData?: string;
   };
 }
 
+const MAX_LABEL_CHARS = 10;
+const ROW_HEIGHT = 26;
+
+function truncate(word: string) {
+  const chars = Array.from(word);
+  return chars.length > MAX_LABEL_CHARS ? `${chars.slice(0, MAX_LABEL_CHARS - 1).join("")}…` : word;
+}
+
+// Ranked by engagement rate, so the rate is the bar; views ride along in the label.
 export default function KeywordAnalysisChart({ data, labels }: Props) {
   const motion = useChartMotion();
   const copy = labels ?? {
@@ -53,74 +62,60 @@ export default function KeywordAnalysisChart({ data, labels }: Props) {
   };
 
   if (!data.length) {
-    return <ChartEmptyState label={copy.noData} height={220} />;
+    return <ChartEmptyState label={copy.noData ?? "No data"} height={220} />;
   }
+
+  const ticks = rateTicks(Math.max(...data.map((point) => point.avgEngagementRate)));
+  const chartData = data.map((point) => ({
+    ...point,
+    label: truncate(point.word),
+    display: `${point.avgEngagementRate.toFixed(2)}% · ${formatCompactNumber(point.avgViews)} ${copy.viewsUnit ?? "views"}`,
+  }));
 
   return (
     <>
-      <AxisHint x={copy.avgViews} y={`${copy.engagementRate} / ${copy.shareRate}`} />
-      <ChartLegend
-        className="mb-2"
-        items={[
-          { label: copy.avgViews, color: chartColors.views, shape: "dot" },
-          { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
-          { label: copy.shareRate, color: chartColors.share, shape: "line" },
-        ]}
-      />
-      <ResponsiveContainer width="100%" height={220}>
-        <ComposedChart data={data} margin={{ top: 6, right: 10, left: 0, bottom: 0 }}>
-          <CartesianGrid {...gridProps} />
+      <AxisHint x={copy.engagementRate} y={copy.keyword ?? "Keyword"} />
+      <ResponsiveContainer width="100%" height={Math.max(160, chartData.length * ROW_HEIGHT + 32)}>
+        <BarChart
+          data={chartData}
+          layout="vertical"
+          margin={{ top: 4, right: 116, left: 0, bottom: 0 }}
+        >
+          <CartesianGrid {...gridProps} horizontal={false} vertical />
           <XAxis
-            dataKey="word"
-            tick={compactAxisTick}
+            type="number"
+            domain={[0, ticks[ticks.length - 1] ?? 1]}
+            ticks={ticks}
+            tickFormatter={(value: number) => `${Number(value.toFixed(2))}%`}
+            tick={axisTick}
+            tickLine={false}
+            axisLine={false}
+          />
+          <YAxis
+            type="category"
+            dataKey="label"
+            tick={axisTick}
             tickLine={false}
             axisLine={false}
             interval={0}
-            angle={-25}
-            textAnchor="end"
-            height={60}
-          />
-          <YAxis
-            yAxisId="views"
-            tickFormatter={formatCompactNumber}
-            tick={axisTick}
-            tickLine={false}
-            axisLine={false}
-            width={40}
-          />
-          <YAxis
-            yAxisId="rate"
-            orientation="right"
-            tickFormatter={(v: number) => `${v}%`}
-            tick={axisTick}
-            tickLine={false}
-            axisLine={false}
-            width={38}
+            width={96}
           />
           <Tooltip
-            cursor={lineCursor}
+            cursor={barCursor}
             content={({ active, payload }) => {
               if (!active || !payload?.length) return null;
-              const point = payload[0]?.payload as DataPoint;
+              const point = payload[0]?.payload as (typeof chartData)[number];
               return (
                 <ChartTooltip
                   title={point.word}
                   rows={[
                     {
-                      label: copy.avgViews,
-                      value: point.avgViews.toLocaleString(),
-                      color: chartColors.views,
-                    },
-                    {
                       label: copy.engagementRate,
                       value: `${point.avgEngagementRate.toFixed(2)}%`,
                       color: chartColors.engagement,
                     },
-                    {
-                      label: copy.shareRate,
-                      value: `${point.avgShareRate.toFixed(2)}%`,
-                      color: chartColors.share,
-                    },
+                    { label: copy.avgViews, value: point.avgViews.toLocaleString() },
+                    { label: copy.shareRate, value: `${point.avgShareRate.toFixed(2)}%` },
                     { label: copy.posts, value: point.postCount.toLocaleString(), muted: true },
                   ]}
                 />
@@ -128,38 +123,25 @@ export default function KeywordAnalysisChart({ data, labels }: Props) {
             }}
           />
           <Bar
-            yAxisId="views"
-            dataKey="avgViews"
-            name={copy.avgViews}
-            fill={chartColors.views}
-            fillOpacity={0.75}
-            radius={barRadius}
-            maxBarSize={20}
-            {...motion}
-          />
-          <Line
-            yAxisId="rate"
-            type="monotone"
             dataKey="avgEngagementRate"
-            name={copy.engagementRate}
-            stroke={chartColors.engagement}
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={activeDot(chartColors.engagement)}
+            fill={chartColors.engagement}
+            fillOpacity={0.8}
+            radius={[0, 5, 5, 0]}
+            maxBarSize={16}
             {...motion}
-          />
-          <Line
-            yAxisId="rate"
-            type="monotone"
-            dataKey="avgShareRate"
-            name={copy.shareRate}
-            stroke={chartColors.share}
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={activeDot(chartColors.share)}
-            {...motion}
-          />
-        </ComposedChart>
+          >
+            <LabelList
+              dataKey="display"
+              position="right"
+              offset={8}
+              style={{
+                fill: "var(--muted-foreground)",
+                fontSize: 10,
+                fontVariantNumeric: "tabular-nums",
+              }}
+            />
+          </Bar>
+        </BarChart>
       </ResponsiveContainer>
     </>
   );

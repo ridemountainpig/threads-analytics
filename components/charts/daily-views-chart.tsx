@@ -3,6 +3,7 @@
 import {
   Bar,
   CartesianGrid,
+  Cell,
   ComposedChart,
   Line,
   ReferenceLine,
@@ -24,8 +25,10 @@ import {
 import {
   GranularityToggle,
   aggregateByGranularity,
+  toCalendarDate,
   formatBucketLabel,
   formatBucketTooltipLabel,
+  isPartialBucket,
   useGranularity,
 } from "./granularity";
 import AxisHint from "./axis-hint";
@@ -45,6 +48,7 @@ interface DailyViewsChartProps {
     granularityGroup?: string;
     granularityWeek?: string;
     granularityMonth?: string;
+    partialBucket?: string;
   };
 }
 
@@ -84,26 +88,43 @@ export default function DailyViewsChart({
     "daily-views",
   );
 
-  if (!data.length) {
+  // Days without posts are zero-filled, so an all-zero series is still empty.
+  if (!data.some((point) => point.value > 0)) {
     return <ChartEmptyState label={copy.noData} height={220} />;
   }
 
   const isDaily = granularity === "day";
-  const series = isDaily
-    ? data
-    : aggregateByGranularity(
-        data,
-        granularity,
-        timeZone,
-        (point) => point.end_time,
-        (items, bucket) => ({
-          end_time: bucket,
-          value: items.reduce((sum, item) => sum + item.value, 0),
-        }),
-      );
+  const series = (
+    isDaily
+      ? data.map((point) => ({ ...point, days: 1 }))
+      : aggregateByGranularity(
+          data,
+          granularity,
+          timeZone,
+          (point) => point.end_time,
+          (items, bucket) => ({
+            end_time: bucket,
+            value: items.reduce((sum, item) => sum + item.value, 0),
+            days: items.length,
+          }),
+        )
+  ).map((point) => ({
+    ...point,
+    partial: isPartialBucket(
+      isDaily ? toCalendarDate(point.end_time, timeZone) : point.end_time,
+      granularity,
+      timeZone,
+      point.days,
+    ),
+  }));
 
   const withYear = spansMultipleYears(series.map((point) => point.end_time));
-  const baseline = getMedian(series.map((point) => point.value).filter((value) => value > 0));
+  const baseline = getMedian(
+    series
+      .filter((point) => !point.partial)
+      .map((point) => point.value)
+      .filter((value) => value > 0),
+  );
   const chartData = series.map((point, index) => {
     if (!isDaily) return point;
     const window = series.slice(Math.max(0, index - 6), index + 1);
@@ -178,6 +199,7 @@ export default function DailyViewsChart({
                   title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
                     year: withYear,
                   })}
+                  subtitle={point.partial ? copy.partialBucket : undefined}
                   rows={[
                     {
                       label: copy.views,
@@ -209,7 +231,11 @@ export default function DailyViewsChart({
             radius={barRadius}
             maxBarSize={18}
             {...motion}
-          />
+          >
+            {chartData.map((point) => (
+              <Cell key={point.end_time} fillOpacity={point.partial ? 0.32 : 0.72} />
+            ))}
+          </Bar>
           {isDaily && (
             <Line
               type="monotone"
