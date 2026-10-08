@@ -5,7 +5,7 @@ function utcDate(key: string): Date {
   return new Date(`${key}T00:00:00Z`);
 }
 
-function listDays(since: Date, until: Date, tz: string): string[] {
+export function listDays(since: Date, until: Date, tz: string): string[] {
   const first = utcDate(getDateString(since, tz));
   const last = utcDate(getDateString(until, tz));
   const days: string[] = [];
@@ -13,6 +13,28 @@ function listDays(since: Date, until: Date, tz: string): string[] {
     days.push(d.toISOString().slice(0, 10));
   }
   return days;
+}
+
+function periodLength(key: string, granularity: Granularity): number {
+  if (granularity === "day") return 1;
+  if (granularity === "week") return 7;
+  const [year, month] = key.split("-").map(Number);
+  return new Date(Date.UTC(year, month, 0)).getUTCDate();
+}
+
+// Edge buckets holding only part of their period would read as a dip.
+function wholeBuckets(days: string[], granularity: Granularity): string[][] {
+  const groups = new Map<string, string[]>();
+  for (const day of days) {
+    const key = bucketStart(day, granularity);
+    (groups.get(key) ?? groups.set(key, []).get(key)!).push(day);
+  }
+  const entries = [...groups.entries()];
+  const isWhole = ([key, members]: [string, string[]]) =>
+    members.length >= periodLength(key, granularity);
+  if (entries.length > 2 && !isWhole(entries[entries.length - 1]!)) entries.pop();
+  if (entries.length > 2 && !isWhole(entries[0]!)) entries.shift();
+  return entries.map(([, members]) => members);
 }
 
 // Days with no data are 0 so the x-axis is calendar time, not "days that had posts".
@@ -32,12 +54,10 @@ export function bucketSeries(
         : getDateString(new Date(point.date), tz);
     perDay.set(key, (perDay.get(key) ?? 0) + point.value);
   }
-  const buckets = new Map<string, number>();
-  for (const day of days) {
-    const key = bucketStart(day, granularity);
-    buckets.set(key, (buckets.get(key) ?? 0) + (perDay.get(day) ?? 0));
-  }
-  return { values: [...buckets.values()], granularity };
+  const values = wholeBuckets(days, granularity).map((members) =>
+    members.reduce((sum, day) => sum + (perDay.get(day) ?? 0), 0),
+  );
+  return { values, granularity };
 }
 
 // Daily buckets take a trailing window; a single day rarely has enough posts for a median.
@@ -59,19 +79,9 @@ export function medianSeries(
     (byDay.get(key) ?? byDay.set(key, []).get(key)!).push(post.views);
   }
 
-  const buckets: string[] = [];
-  const bucketDays = new Map<string, string[]>();
-  for (const day of days) {
-    const key = bucketStart(day, granularity);
-    if (!bucketDays.has(key)) {
-      buckets.push(key);
-      bucketDays.set(key, []);
-    }
-    bucketDays.get(key)!.push(day);
-  }
+  const groups = wholeBuckets(days, granularity);
 
-  const values: Array<number | null> = buckets.map((key, index) => {
-    const own = bucketDays.get(key)!;
+  const values: Array<number | null> = groups.map((own, index) => {
     const span =
       granularity === "day" ? days.slice(Math.max(0, index - windowDays + 1), index + 1) : own;
     // Same population as getBaselineMedianViews: unsynced zero-view posts are excluded.

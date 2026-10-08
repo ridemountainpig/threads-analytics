@@ -20,22 +20,33 @@ import {
   compactAxisTick,
   compactChartMargin,
   formatCompactNumber,
+  formatShortDate,
   gridProps,
   lineCursor,
+  postsAxisDomain,
+  spansMultipleYears,
 } from "./chart-style";
-import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
+import {
+  ChartEmptyState,
+  ChartLegend,
+  ChartTooltip,
+  seriesDot,
+  useChartMotion,
+} from "./chart-chrome";
 
 interface WeeklyFrequencyChartProps {
   data: Array<{
     week: string;
     postCount: number;
-    avgViews: number;
-    medianViews: number;
-    engagementRate: number;
-    shareRate: number;
-    hitRate: number;
+    avgViews: number | null;
+    medianViews: number | null;
+    engagementRate: number | null;
+    shareRate: number | null;
+    hitRate: number | null;
     confidence: "low" | "medium" | "high";
+    partial?: boolean;
   }>;
+  dateLocale?: string;
   labels?: {
     posts: string;
     avgViews: string;
@@ -47,11 +58,8 @@ interface WeeklyFrequencyChartProps {
     engagementRate: string;
     shareRate: string;
     noData?: string;
+    partialBucket?: string;
   };
-}
-
-function formatWeek(week: string) {
-  return week.replace(/^\d{4}-/, "");
 }
 
 const CONFIDENCE_OPACITY: Record<"low" | "medium" | "high", number> = {
@@ -60,8 +68,13 @@ const CONFIDENCE_OPACITY: Record<"low" | "medium" | "high", number> = {
   high: 1,
 };
 
-export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyChartProps) {
+export default function WeeklyFrequencyChart({
+  data,
+  dateLocale,
+  labels,
+}: WeeklyFrequencyChartProps) {
   const motion = useChartMotion();
+  const locale = dateLocale ?? "en-US";
   const copy = labels ?? {
     posts: "Posts",
     avgViews: "Avg Views",
@@ -76,23 +89,30 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
   const hitRateLabel = copy.hitRate ?? "Hit Rate";
   const confidenceLabel = copy.confidence ?? "Confidence";
 
-  if (!data.length) {
+  if (!data.some((week) => week.postCount > 0)) {
     return <ChartEmptyState label={copy.noData} height={240} />;
   }
+
+  // Weeks are keyed by their Monday (YYYY-MM-DD), already in the analytics zone.
+  const withYear = spansMultipleYears(data.map((week) => week.week));
+  const formatWeek = (week: string) => formatShortDate(week, locale, "UTC", { year: withYear });
+  const postedWeeks = data.filter((week) => week.postCount > 0).length;
+  const formatRate = (value: number | null) => (value === null ? "—" : `${value.toFixed(2)}%`);
+  const formatCount = (value: number | null) =>
+    value === null ? "—" : value.toLocaleString(locale);
 
   return (
     <>
       <AxisHint
         x={copy.week ?? "Week"}
-        y={`${medianViewsLabel} / ${copy.engagementRate} / ${copy.shareRate} / ${copy.posts}`}
+        y={`${medianViewsLabel} / ${copy.engagementRate} / ${copy.posts}`}
       />
       <ChartLegend
         className="mb-2"
         items={[
           { label: medianViewsLabel, color: chartColors.views, shape: "line" },
           { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
-          { label: copy.shareRate, color: chartColors.share, shape: "line" },
-          { label: copy.posts, color: chartColors.bar, shape: "dot" },
+          { label: copy.posts, color: chartColors.volume, shape: "dot" },
         ]}
       />
       <ResponsiveContainer width="100%" height={240}>
@@ -114,7 +134,8 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             axisLine={false}
             width={44}
           />
-          <YAxis yAxisId="posts" hide domain={[0, "dataMax + 1"]} />
+          {/* mirror keeps this hidden axis from pushing the visible ticks off-canvas. */}
+          <YAxis yAxisId="posts" hide mirror domain={postsAxisDomain} />
           <YAxis
             yAxisId="rate"
             orientation="right"
@@ -132,26 +153,38 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
               return (
                 <ChartTooltip
                   title={formatWeek(String(label))}
-                  subtitle={`${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence] ?? point.confidence}`}
+                  subtitle={
+                    [
+                      point.postCount > 0
+                        ? `${confidenceLabel}: ${copy.confidenceLevels?.[point.confidence] ?? point.confidence}`
+                        : null,
+                      point.partial ? copy.partialBucket : null,
+                    ]
+                      .filter(Boolean)
+                      .join(" · ") || undefined
+                  }
                   rows={[
                     {
                       label: medianViewsLabel,
-                      value: point.medianViews.toLocaleString(),
+                      value: formatCount(point.medianViews),
                       color: chartColors.views,
                     },
-                    { label: copy.avgViews, value: point.avgViews.toLocaleString() },
+                    { label: copy.avgViews, value: formatCount(point.avgViews) },
                     {
                       label: copy.engagementRate,
-                      value: `${point.engagementRate.toFixed(2)}%`,
+                      value: formatRate(point.engagementRate),
                       color: chartColors.engagement,
                     },
+                    { label: copy.shareRate, value: formatRate(point.shareRate) },
                     {
-                      label: copy.shareRate,
-                      value: `${point.shareRate.toFixed(2)}%`,
-                      color: chartColors.share,
+                      label: hitRateLabel,
+                      value: point.hitRate === null ? "—" : `${point.hitRate}%`,
                     },
-                    { label: hitRateLabel, value: `${point.hitRate}%` },
-                    { label: copy.posts, value: point.postCount.toLocaleString(), muted: true },
+                    {
+                      label: copy.posts,
+                      value: point.postCount.toLocaleString(locale),
+                      muted: true,
+                    },
                   ]}
                 />
               );
@@ -161,9 +194,9 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             yAxisId="posts"
             dataKey="postCount"
             name={copy.posts}
-            fill={chartColors.bar}
+            fill={chartColors.volume}
             radius={barRadius}
-            maxBarSize={16}
+            maxBarSize={12}
             {...motion}
           >
             {data.map((entry) => (
@@ -177,8 +210,9 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             name={medianViewsLabel}
             stroke={chartColors.views}
             strokeWidth={2}
-            dot={false}
+            dot={seriesDot(chartColors.views, postedWeeks)}
             activeDot={activeDot(chartColors.views)}
+            connectNulls
             {...motion}
           />
           <Line
@@ -188,19 +222,9 @@ export default function WeeklyFrequencyChart({ data, labels }: WeeklyFrequencyCh
             name={copy.engagementRate}
             stroke={chartColors.engagement}
             strokeWidth={1.5}
-            dot={false}
+            dot={seriesDot(chartColors.engagement, postedWeeks)}
             activeDot={activeDot(chartColors.engagement)}
-            {...motion}
-          />
-          <Line
-            yAxisId="rate"
-            type="monotone"
-            dataKey="shareRate"
-            name={copy.shareRate}
-            stroke={chartColors.share}
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={activeDot(chartColors.share)}
+            connectNulls
             {...motion}
           />
         </ComposedChart>

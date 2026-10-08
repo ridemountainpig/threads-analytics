@@ -5,6 +5,9 @@ import { redirect } from "next/navigation";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
 
+/** Most posts a dashboard page loads for one range; pages say so when it's reached. */
+export const DASHBOARD_POST_LIMIT = 2000;
+
 // Layouts don't re-render on client-side navigation, so the session must be
 // re-verified here in the data layer, not only in the dashboard layout.
 export const requireSession = cache(async (): Promise<void> => {

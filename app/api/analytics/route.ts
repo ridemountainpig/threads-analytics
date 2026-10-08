@@ -107,7 +107,10 @@ export async function GET(request: NextRequest) {
 
   const totalShares = posts.reduce((sum, p) => sum + p.shares, 0);
   const bestTimeToPost = computeBestTimeToPost(posts);
-  const dailyPerformance = computeDailyPerformance(posts, userInsights.views);
+  const dailyPerformance = computeDailyPerformance(posts, userInsights.views, undefined, {
+    since,
+    until,
+  });
 
   const result: AnalyticsResult = {
     userViews: userInsights.views,
@@ -123,14 +126,14 @@ export async function GET(request: NextRequest) {
     contentTypeAnalysis: computeContentTypeAnalysis(posts),
     dayHourHeatmap: computeDayHourHeatmap(posts),
     postLengthAnalysis: computePostLengthAnalysis(posts),
-    weeklyFrequency: computeWeeklyFrequency(posts),
+    weeklyFrequency: computeWeeklyFrequency(posts, undefined, { since, until }),
     postQualityScatter: computePostQualityScatter(posts),
     contentFormatLengthMatrix: computeContentFormatLengthMatrix(posts),
     actionFunnel: computeActionFunnel(posts),
     viralPosts: computeViralPosts(posts),
-    engagementRateTrend: computeEngagementRateTrend(posts, userInsights.views),
+    engagementRateTrend: computeEngagementRateTrend(posts, undefined, { since, until }),
     replyRateLeaders: computeReplyRateLeaders(posts),
-    sharesTrend: computeSharesTrend(posts),
+    sharesTrend: computeSharesTrend(posts, undefined, { since, until }),
     postingConsistency: computePostingConsistency(posts, since, until),
     topHours: computeTopHours(bestTimeToPost),
     lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString(),

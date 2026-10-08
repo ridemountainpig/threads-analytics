@@ -25,6 +25,7 @@ import {
   aggregateByGranularity,
   formatBucketLabel,
   formatBucketTooltipLabel,
+  isPartialBucket,
   useGranularity,
 } from "./granularity";
 import {
@@ -32,11 +33,12 @@ import {
   ChartEmptyState,
   ChartLegend,
   ChartTooltip,
+  seriesDot,
   useChartMotion,
 } from "./chart-chrome";
 
 interface EngagementRateChartProps {
-  data: Array<{ date: string; rate: number; rollingAvg: number; views?: number }>;
+  data: Array<{ date: string; rate: number | null; rollingAvg: number | null; views?: number }>;
   dateLocale?: string;
   timeZone: string;
   labels?: {
@@ -49,6 +51,7 @@ interface EngagementRateChartProps {
     granularityGroup?: string;
     granularityWeek?: string;
     granularityMonth?: string;
+    partialBucket?: string;
   };
 }
 
@@ -79,34 +82,41 @@ export default function EngagementRateChart({
     "engagement-rate",
   );
 
-  if (!data.length) {
+  if (!data.some((point) => point.rate !== null)) {
     return <ChartEmptyState label={copy.noData} height={200} />;
   }
 
   const isDaily = granularity === "day";
   // Aggregated buckets carry the views-weighted engagement rate, matching how
   // the dashboard's headline rate is computed.
-  const series = isDaily
-    ? data
-    : aggregateByGranularity(
-        data,
-        granularity,
-        timeZone,
-        (point) => point.date,
-        (items, bucket) => {
-          const totalViews = items.reduce((sum, item) => sum + (item.views ?? 0), 0);
-          const rate =
-            totalViews > 0
-              ? items.reduce((sum, item) => sum + item.rate * (item.views ?? 0), 0) / totalViews
-              : items.reduce((sum, item) => sum + item.rate, 0) / Math.max(1, items.length);
-          return {
-            date: bucket,
-            rate: Math.round(rate * 100) / 100,
-            rollingAvg: 0,
-            views: totalViews,
-          };
-        },
-      );
+  const series = (
+    isDaily
+      ? data.map((point) => ({ ...point, days: 1 }))
+      : aggregateByGranularity(
+          data,
+          granularity,
+          timeZone,
+          (point) => point.date,
+          (items, bucket) => {
+            const totalViews = items.reduce((sum, item) => sum + (item.views ?? 0), 0);
+            const weighted = items.reduce(
+              (sum, item) => sum + (item.rate ?? 0) * (item.views ?? 0),
+              0,
+            );
+            return {
+              date: bucket,
+              rate: totalViews > 0 ? Math.round((weighted / totalViews) * 100) / 100 : null,
+              rollingAvg: null,
+              views: totalViews,
+              days: items.length,
+            };
+          },
+        )
+  ).map((point) => ({
+    ...point,
+    partial: isPartialBucket(point.date, granularity, timeZone, point.days),
+  }));
+  const ratedPoints = series.filter((point) => point.rate !== null).length;
 
   const withYear = spansMultipleYears(series.map((point) => point.date));
   const seriesName = isDaily ? copy.dailyRate : rateLabel;
@@ -163,17 +173,19 @@ export default function EngagementRateChart({
                   title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
                     year: withYear,
                   })}
+                  subtitle={point.partial ? copy.partialBucket : undefined}
                   rows={[
                     {
                       label: seriesName,
-                      value: `${point.rate.toFixed(2)}%`,
+                      value: point.rate === null ? "—" : `${point.rate.toFixed(2)}%`,
                       color: chartColors.engagement,
                     },
                     ...(isDaily
                       ? [
                           {
                             label: copy.sevenDayAvg,
-                            value: `${point.rollingAvg.toFixed(2)}%`,
+                            value:
+                              point.rollingAvg === null ? "—" : `${point.rollingAvg.toFixed(2)}%`,
                             color: chartColors.trend,
                           },
                         ]
@@ -190,6 +202,7 @@ export default function EngagementRateChart({
             fill="url(#engagement-rate-fill)"
             activeDot={false}
             tooltipType="none"
+            connectNulls
             {...motion}
           />
           <Line
@@ -197,9 +210,10 @@ export default function EngagementRateChart({
             dataKey="rate"
             stroke={chartColors.engagement}
             strokeWidth={1.8}
-            dot={false}
+            dot={seriesDot(chartColors.engagement, ratedPoints)}
             activeDot={activeDot(chartColors.engagement)}
             name={seriesName}
+            connectNulls
             {...motion}
           />
           {isDaily && (
@@ -212,6 +226,7 @@ export default function EngagementRateChart({
               activeDot={activeDot(chartColors.trend)}
               strokeDasharray="4 3"
               name={copy.sevenDayAvg}
+              connectNulls
               {...motion}
             />
           )}

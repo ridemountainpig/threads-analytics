@@ -36,6 +36,7 @@ import {
   ChartEmptyState,
   ChartLegend,
   ChartTooltip,
+  seriesDot,
   useChartMotion,
   type ChartTooltipRow,
 } from "./chart-chrome";
@@ -270,6 +271,7 @@ export default function FollowerTrendChart({
           <XAxis {...sharedX} tickFormatter={formatDate} />
           <YAxis
             domain={domain}
+            allowDecimals={false}
             tickFormatter={isChange ? formatSigned : formatCount}
             tick={axisTick}
             tickLine={false}
@@ -350,7 +352,7 @@ export default function FollowerTrendChart({
               name={copy.followers}
               stroke={chartColors.followers}
               strokeWidth={2}
-              dot={false}
+              dot={seriesDot(chartColors.followers, chartData.length)}
               activeDot={activeDot(chartColors.followers)}
               {...motion}
             />

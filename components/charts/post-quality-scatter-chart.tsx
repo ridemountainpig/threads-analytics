@@ -2,6 +2,7 @@
 
 import {
   CartesianGrid,
+  ReferenceLine,
   ResponsiveContainer,
   Scatter,
   ScatterChart,
@@ -38,6 +39,8 @@ interface DataPoint {
 
 interface Props {
   data: DataPoint[];
+  /** The medians that split the quadrants, drawn as guide lines. */
+  thresholds?: { medianViews: number; medianEngagementRate: number };
   labels?: {
     views: string;
     engagementRate: string;
@@ -55,6 +58,7 @@ interface Props {
     mediaTypes?: Record<string, string>;
     noData?: string;
     noText?: string;
+    medianGuides?: string;
   };
 }
 
@@ -88,11 +92,23 @@ function getQuadrantLabel(quadrant: DataPoint["quadrant"], labels?: Props["label
   return labels?.quadrantUnderperforming ?? fallback.underperforming;
 }
 
+// Powers of ten across the data, with 3x steps added when the span is narrow.
+function logTicks(min: number, max: number): number[] {
+  const low = Math.floor(Math.log10(Math.max(min, 1)));
+  const high = Math.ceil(Math.log10(Math.max(max, 1)));
+  const ticks: number[] = [];
+  for (let exp = low; exp <= high; exp++) {
+    ticks.push(10 ** exp);
+    if (high - low <= 2 && exp < high) ticks.push(3 * 10 ** exp);
+  }
+  return ticks.filter((tick) => tick >= 1);
+}
+
 function truncateText(text: string, noText?: string) {
   return text.length > 96 ? `${text.slice(0, 96)}...` : text || (noText ?? "(no text)");
 }
 
-export default function PostQualityScatterChart({ data, labels }: Props) {
+export default function PostQualityScatterChart({ data, thresholds, labels }: Props) {
   const motion = useChartMotion();
   const copy = labels ?? {
     views: "Views",
@@ -111,6 +127,10 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
 
   const getMediaTypeLabel = (mediaType: string) => labels?.mediaTypes?.[mediaType] ?? mediaType;
   const quadrants = ["breakout", "conversation", "broadcast", "underperforming"] as const;
+  // Views are long-tailed, so a linear axis would pile most posts against zero.
+  const viewValues = data.map((point) => point.views);
+  const xTicks = logTicks(Math.min(...viewValues), Math.max(...viewValues));
+  const xDomain: [number, number] = [xTicks[0] ?? 1, xTicks[xTicks.length - 1] ?? 10];
 
   return (
     <>
@@ -122,11 +142,22 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
       />
       <ChartLegend
         className="mb-2"
-        items={quadrants.map((quadrant) => ({
-          label: getQuadrantLabel(quadrant, labels),
-          color: QUADRANT_COLORS[quadrant],
-          shape: "dot",
-        }))}
+        items={[
+          ...quadrants.map((quadrant) => ({
+            label: getQuadrantLabel(quadrant, labels),
+            color: QUADRANT_COLORS[quadrant],
+            shape: "dot" as const,
+          })),
+          ...(thresholds
+            ? [
+                {
+                  label: labels?.medianGuides ?? "Dashed lines: your medians",
+                  color: chartColors.trend,
+                  shape: "dash" as const,
+                },
+              ]
+            : []),
+        ]}
       />
       <ResponsiveContainer width="100%" height={320}>
         <ScatterChart margin={compactChartMargin}>
@@ -135,6 +166,10 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
             type="number"
             dataKey="views"
             name={copy.views}
+            scale="log"
+            domain={xDomain}
+            ticks={xTicks}
+            allowDataOverflow
             tickFormatter={formatCompactNumber}
             tick={axisTick}
             tickLine={false}
@@ -189,6 +224,22 @@ export default function PostQualityScatterChart({ data, labels }: Props) {
               );
             }}
           />
+          {thresholds && thresholds.medianViews > 0 && (
+            <ReferenceLine
+              x={thresholds.medianViews}
+              stroke={chartColors.trend}
+              strokeDasharray="4 3"
+              strokeOpacity={0.7}
+            />
+          )}
+          {thresholds && (
+            <ReferenceLine
+              y={thresholds.medianEngagementRate}
+              stroke={chartColors.trend}
+              strokeDasharray="4 3"
+              strokeOpacity={0.7}
+            />
+          )}
           {quadrants.map((quadrant) => (
             <Scatter
               key={quadrant}

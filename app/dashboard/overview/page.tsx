@@ -5,7 +5,11 @@ import { getUserInsightsCached } from "@/lib/user-insights-cache";
 import type { UserInsights } from "@/lib/threads-api";
 import { getTimeRange, toUnix } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
-import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
+import {
+  DASHBOARD_POST_LIMIT,
+  getActiveAccount,
+  getSyncIntervalCached,
+} from "@/lib/dashboard-data";
 import { getNewPostPace } from "@/lib/post-growth-data";
 import {
   computeBestTimeToPost,
@@ -25,15 +29,14 @@ import {
 } from "@/lib/followers";
 import { formatDemographicKey } from "@/lib/demographic-labels";
 import { buildSummary } from "@/lib/summary";
-import { bucketSeries, medianSeries, ratioSeries, smoothSeries } from "@/lib/sparkline";
+import { bucketSeries, listDays, medianSeries, ratioSeries, smoothSeries } from "@/lib/sparkline";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SummaryCard } from "@/components/dashboard/summary-card";
 import { NewPostPaceCard } from "@/components/dashboard/new-post-pace-card";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
 import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
-import SyncButton from "@/components/dashboard/sync-button";
-import TimeRangePicker from "@/components/dashboard/time-range-picker";
+import PageHeader from "@/components/dashboard/page-header";
 import DailyViewsChart from "@/components/charts/daily-views-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ExternalLink } from "lucide-react";
@@ -166,6 +169,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     followerSnapshots,
     latestDemographics,
     newPostPace,
+    firstPost,
   ] = await Promise.all([
     userInsightsPromise,
     prevUserInsightsPromise,
@@ -176,7 +180,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
         mediaType: { not: "REPOST_FACADE" },
       },
       orderBy: { timestamp: "desc" },
-      take: 2000,
+      take: DASHBOARD_POST_LIMIT,
     }),
     showComparison
       ? db.post.findMany({
@@ -210,7 +214,22 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       orderBy: { date: "desc" },
     }),
     getNewPostPace(account.id),
+    range === "all"
+      ? db.post.findFirst({
+          where: { accountId: account.id, mediaType: { not: "REPOST_FACADE" } },
+          select: { timestamp: true },
+          orderBy: { timestamp: "asc" },
+        })
+      : Promise.resolve(null),
   ]);
+
+  const postCapReached = dbPosts.length >= DASHBOARD_POST_LIMIT;
+  // "All" starts at a fixed 2020 date and a capped load stops at its oldest post,
+  // so series count from the first post actually loaded.
+  const seriesStart = postCapReached
+    ? dbPosts[dbPosts.length - 1]?.timestamp
+    : firstPost?.timestamp;
+  const seriesSince = seriesStart && seriesStart > since ? seriesStart : since;
 
   const posts: PostWithInsights[] = dbPosts.map((p) => ({
     id: p.id,
@@ -249,17 +268,18 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const totalShares = curShares;
   const totalEngagements = totalLikes + totalReplies + totalReposts + totalQuotes;
   const engagementRate = totalViews > 0 ? (totalEngagements / totalViews) * 100 : 0;
+  // Without account insights: post views by publish day, every calendar day listed.
+  const postViewsByDay = posts.reduce((map, p) => {
+    const date = getDateString(new Date(p.timestamp), tz);
+    map.set(date, (map.get(date) ?? 0) + p.views);
+    return map;
+  }, new Map<string, number>());
   const dailyViewsData = hasApiInsights
     ? userInsights.views
-    : Array.from(
-        posts.reduce((map, p) => {
-          const date = getDateString(new Date(p.timestamp), tz);
-          map.set(date, (map.get(date) ?? 0) + p.views);
-          return map;
-        }, new Map<string, number>()),
-      )
-        .map(([end_time, value]) => ({ end_time, value }))
-        .sort((a, b) => a.end_time.localeCompare(b.end_time));
+    : listDays(seriesSince, until, tz).map((end_time) => ({
+        end_time,
+        value: postViewsByDay.get(end_time) ?? 0,
+      }));
 
   const prevViews = prevDbPosts.reduce((s, p) => s + p.views, 0);
   const prevLikes = prevDbPosts.reduce((s, p) => s + p.likes, 0);
@@ -302,10 +322,23 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const curMedianViews = getBaselineMedianViews(dbPosts);
   const prevMedianViews = getBaselineMedianViews(prevDbPosts);
 
-  const deltaViews = pctChange(curViews, prevViews);
-  const deltaLikes = pctChange(curLikes, prevLikes);
-  const deltaReplies = pctChange(curReplies, prevReplies);
-  const deltaRepostsQuotes = pctChange(curReposts + curQuotes, prevReposts + prevQuotes);
+  // Account totals when both periods have them, else post sums for both.
+  const sumViews = (insights: UserInsights) => insights.views.reduce((s, d) => s + d.value, 0);
+  const deltaViews = useProfileForEngDelta
+    ? pctChange(sumViews(userInsights), sumViews(prevUserInsights))
+    : pctChange(curViews, prevViews);
+  const deltaLikes = useProfileForEngDelta
+    ? pctChange(userInsights.totalLikes, prevUserInsights.totalLikes)
+    : pctChange(curLikes, prevLikes);
+  const deltaReplies = useProfileForEngDelta
+    ? pctChange(userInsights.totalReplies, prevUserInsights.totalReplies)
+    : pctChange(curReplies, prevReplies);
+  const deltaRepostsQuotes = useProfileForEngDelta
+    ? pctChange(
+        userInsights.totalReposts + userInsights.totalQuotes,
+        prevUserInsights.totalReposts + prevUserInsights.totalQuotes,
+      )
+    : pctChange(curReposts + curQuotes, prevReposts + prevQuotes);
   const deltaShares = pctChange(curShares, prevShares);
   const deltaEngRate = pctChange(curEng, prevEng);
   const deltaPosts = pctChange(dbPosts.length, prevDbPosts.length);
@@ -363,7 +396,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     smoothed(
       bucketSeries(
         dbPosts.map((p) => ({ date: p.timestamp, value: pick(p) })),
-        since,
+        seriesSince,
         until,
         tz,
       ),
@@ -371,7 +404,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const trendViews = smoothed(
     bucketSeries(
       dailyViewsData.map((d) => ({ date: d.end_time, value: d.value })),
-      since,
+      seriesSince,
       until,
       tz,
     ),
@@ -379,7 +412,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const trendPosts = spark(() => 1);
   const trendMedianViews = medianSeries(
     dbPosts.map((p) => ({ date: p.timestamp, views: p.views })),
-    since,
+    seriesSince,
     until,
     tz,
   );
@@ -394,28 +427,33 @@ export default async function OverviewPage({ searchParams }: PageProps) {
 
   return (
     <div className="space-y-6 p-4 sm:p-6">
-      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
-        <div>
-          <h1 className="text-2xl font-semibold">{t.overview.title}</h1>
-          <p className="text-muted-foreground text-sm">{t.overview.subtitle}</p>
-        </div>
-        <div className="flex w-full flex-col gap-3 sm:items-end lg:w-auto lg:flex-row lg:items-start lg:gap-4">
-          <TimeRangePicker
-            locale={locale}
-            labels={t.timeRange}
-            defaultRange={range}
-            defaultFrom={from}
-            defaultTo={to}
-          />
-          <SyncButton
-            lastSyncedAt={account.syncState?.lastSyncedAt?.toISOString()}
-            syncInterval={syncInterval}
-            timeZone={tz}
-            labels={t.sync}
-            dateLocale={dateLocale}
-          />
-        </div>
-      </div>
+      <PageHeader
+        title={t.overview.title}
+        subtitle={t.overview.subtitle}
+        range={{
+          locale,
+          labels: t.timeRange,
+          defaultRange: range,
+          defaultFrom: from,
+          defaultTo: to,
+        }}
+        sync={{
+          lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString(),
+          syncInterval,
+          timeZone: tz,
+          labels: t.sync,
+          dateLocale,
+        }}
+      />
+
+      {postCapReached && (
+        <p className="text-muted-foreground text-xs">
+          {t.overview.postCapNotice.replace(
+            "{count}",
+            DASHBOARD_POST_LIMIT.toLocaleString(dateLocale),
+          )}
+        </p>
+      )}
 
       {(dbPosts.length > 0 || hasApiInsights) && (
         <SummaryCard
@@ -521,14 +559,16 @@ export default async function OverviewPage({ searchParams }: PageProps) {
           <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
             {t.overview.dailyViews}
           </CardTitle>
-          <p className="text-muted-foreground text-xs">{t.overview.dailyViewsSub}</p>
+          <p className="text-muted-foreground text-xs">
+            {hasApiInsights ? t.overview.dailyViewsSub : t.overview.dailyViewsPostsSub}
+          </p>
         </CardHeader>
         <CardContent>
           <DailyViewsChart
             data={dailyViewsData}
             dateLocale={dateLocale}
             timeZone={tz}
-            labels={t.chart}
+            labels={hasApiInsights ? t.chart : { ...t.chart, views: t.chart.postViewsByPublishDay }}
           />
         </CardContent>
       </Card>

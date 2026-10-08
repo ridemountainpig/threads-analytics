@@ -1,14 +1,23 @@
 "use client";
 
-import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts";
+import {
+  BarChart,
+  Bar,
+  Cell,
+  XAxis,
+  YAxis,
+  CartesianGrid,
+  Tooltip,
+  ResponsiveContainer,
+} from "recharts";
 import AxisHint from "./axis-hint";
 import {
-  axisTick,
   barCursor,
   barRadius,
   chartColors,
   compactAxisTick,
   compactChartMargin,
+  formatCompactNumber,
   spansMultipleYears,
   gridProps,
 } from "./chart-style";
@@ -17,6 +26,7 @@ import {
   aggregateByGranularity,
   formatBucketLabel,
   formatBucketTooltipLabel,
+  isPartialBucket,
   useGranularity,
 } from "./granularity";
 import { ChartEmptyState, ChartTooltip, useChartMotion } from "./chart-chrome";
@@ -33,6 +43,7 @@ interface SharesTrendChartProps {
     granularityGroup?: string;
     granularityWeek?: string;
     granularityMonth?: string;
+    partialBucket?: string;
   };
 }
 
@@ -62,13 +73,13 @@ export default function SharesTrendChart({
     "shares-trend",
   );
 
-  if (!data.length) {
+  if (!data.some((point) => point.shares > 0)) {
     return <ChartEmptyState label={copy.empty} height={160} />;
   }
 
-  const series =
+  const series = (
     granularity === "day"
-      ? data
+      ? data.map((point) => ({ ...point, days: 1 }))
       : aggregateByGranularity(
           data,
           granularity,
@@ -77,8 +88,13 @@ export default function SharesTrendChart({
           (items, bucket) => ({
             date: bucket,
             shares: items.reduce((sum, item) => sum + item.shares, 0),
+            days: items.length,
           }),
-        );
+        )
+  ).map((point) => ({
+    ...point,
+    partial: isPartialBucket(point.date, granularity, timeZone, point.days),
+  }));
 
   const withYear = spansMultipleYears(series.map((point) => point.date));
 
@@ -107,7 +123,14 @@ export default function SharesTrendChart({
             axisLine={false}
             interval="preserveStartEnd"
           />
-          <YAxis tick={axisTick} tickLine={false} axisLine={false} width={34} />
+          <YAxis
+            allowDecimals={false}
+            tickFormatter={formatCompactNumber}
+            tick={compactAxisTick}
+            tickLine={false}
+            axisLine={false}
+            width={40}
+          />
           <Tooltip
             cursor={barCursor}
             content={({ active, payload, label }) => {
@@ -118,6 +141,7 @@ export default function SharesTrendChart({
                   title={formatBucketTooltipLabel(String(label), granularity, locale, timeZone, {
                     year: withYear,
                   })}
+                  subtitle={point.partial ? copy.partialBucket : undefined}
                   rows={[
                     {
                       label: copy.shares,
@@ -136,7 +160,11 @@ export default function SharesTrendChart({
             radius={barRadius}
             maxBarSize={14}
             {...motion}
-          />
+          >
+            {series.map((point) => (
+              <Cell key={point.date} fillOpacity={point.partial ? 0.35 : 0.78} />
+            ))}
+          </Bar>
         </BarChart>
       </ResponsiveContainer>
     </>

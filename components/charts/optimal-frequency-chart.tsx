@@ -20,7 +20,13 @@ import {
   gridProps,
   lineCursor,
 } from "./chart-style";
-import { ChartEmptyState, ChartLegend, ChartTooltip, useChartMotion } from "./chart-chrome";
+import {
+  ChartEmptyState,
+  ChartLegend,
+  ChartTooltip,
+  seriesDot,
+  useChartMotion,
+} from "./chart-chrome";
 
 interface DataPoint {
   range: string;
@@ -68,7 +74,6 @@ export default function OptimalFrequencyChart({ data, labels }: Props) {
         items={[
           { label: copy.avgViewsPost, color: chartColors.views, shape: "dot" },
           { label: copy.engagementRate, color: chartColors.engagement, shape: "line" },
-          { label: copy.shareRate, color: chartColors.share, shape: "line" },
         ]}
       />
       <ResponsiveContainer width="100%" height={220}>
@@ -112,11 +117,7 @@ export default function OptimalFrequencyChart({ data, labels }: Props) {
                       value: `${point.engagementRate.toFixed(2)}%`,
                       color: chartColors.engagement,
                     },
-                    {
-                      label: copy.shareRate,
-                      value: `${point.shareRate.toFixed(2)}%`,
-                      color: chartColors.share,
-                    },
+                    { label: copy.shareRate, value: `${point.shareRate.toFixed(2)}%` },
                   ]}
                 />
               );
@@ -139,19 +140,8 @@ export default function OptimalFrequencyChart({ data, labels }: Props) {
             name={copy.engagementRate}
             stroke={chartColors.engagement}
             strokeWidth={1.5}
-            dot={false}
+            dot={seriesDot(chartColors.engagement, data.length)}
             activeDot={activeDot(chartColors.engagement)}
-            {...motion}
-          />
-          <Line
-            yAxisId="rate"
-            type="monotone"
-            dataKey="shareRate"
-            name={copy.shareRate}
-            stroke={chartColors.share}
-            strokeWidth={1.5}
-            dot={false}
-            activeDot={activeDot(chartColors.share)}
             {...motion}
           />
         </ComposedChart>

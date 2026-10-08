@@ -150,13 +150,9 @@ export default function Sidebar({
       </aside>
 
       {/* Mobile tab bar: iOS grammar — the active tab is tinted, not boxed;
-          translucent material with safe-area padding for the home indicator */}
-      <nav
-        className={cn(
-          "bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden",
-          showSignOut ? "grid-cols-6" : "grid-cols-5",
-        )}
-      >
+          translucent material with safe-area padding for the home indicator.
+          Destinations only: sign-out lives at the end of Settings. */}
+      <nav className="bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden">
         {navItems.map(({ href, labelKey, icon: Icon }) => {
           const active = pathname === href || pathname.startsWith(href + "/");
           return (
@@ -173,17 +169,6 @@ export default function Sidebar({
             </Link>
           );
         })}
-        {showSignOut && (
-          <form action={logoutAction} className="flex min-w-0 flex-col items-center">
-            <button
-              type="submit"
-              className="text-muted-foreground flex w-full min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] leading-3 tracking-[0.01em] transition-[color,transform] duration-150 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100"
-            >
-              <LogOut className="size-5 shrink-0" />
-              <span className="max-w-full truncate">{labels.signOut}</span>
-            </button>
-          </form>
-        )}
       </nav>
     </>
   );

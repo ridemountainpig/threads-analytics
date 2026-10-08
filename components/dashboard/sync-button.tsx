@@ -17,7 +17,7 @@ const INTERVAL_LABELS: Record<string, string> = {
 
 const STALE_AFTER_DAYS = 7;
 
-interface SyncButtonProps {
+export interface SyncButtonProps {
   lastSyncedAt?: string | null;
   syncInterval?: string;
   timeZone: string;
@@ -39,7 +39,11 @@ interface SyncButtonProps {
     repliesPermissionMissing?: string;
   };
   dateLocale?: string;
+  /** Below sm, PageHeader shows the timestamp and stale notice instead. */
+  compact?: boolean;
 }
+
+type SyncLabels = NonNullable<SyncButtonProps["labels"]>;
 
 function formatDateTime(date: string, dateLocale: string, timeZone: string) {
   return normalizeIntlSpaces(
@@ -54,17 +58,97 @@ function formatDateTime(date: string, dateLocale: string, timeZone: string) {
   );
 }
 
+function getStaleness(
+  lastSyncedAt: string | null | undefined,
+  syncInterval: string | undefined,
+  copy: SyncLabels,
+) {
+  const staleDays = lastSyncedAt
+    ? Math.floor((Date.now() - new Date(lastSyncedAt).getTime()) / 86400000)
+    : 0;
+  const isStale = staleDays >= STALE_AFTER_DAYS && Boolean(copy.staleNotice);
+  // On desktop the scheduler only runs while the app is open, so a stale sync
+  // means "you were away", not a broken deployment.
+  const staleHintAuto = isDesktopApp
+    ? (copy.staleHintAutoDesktop ?? copy.staleHintAuto)
+    : copy.staleHintAuto;
+  const staleHint = syncInterval === "0" ? copy.staleHintManual : staleHintAuto;
+  return { staleDays, isStale, staleHint };
+}
+
+// The popover's settings CTA is pointless when we're already on the settings page.
+function useOnSettingsPage() {
+  return usePathname()?.startsWith("/dashboard/settings") ?? false;
+}
+
+export function LastSynced({
+  lastSyncedAt,
+  timeZone,
+  labels,
+  dateLocale,
+  className,
+}: SyncButtonProps & { className?: string }) {
+  if (!lastSyncedAt) return null;
+  return (
+    <p className={cn("text-muted-foreground text-xs tabular-nums", className)}>
+      {labels?.lastSynced ?? "Last synced"}{" "}
+      {formatDateTime(lastSyncedAt, dateLocale ?? "en-US", timeZone)}
+    </p>
+  );
+}
+
+// No hover on touch screens, so small viewports get an inline banner instead
+// of the dot + popover.
+export function StaleSyncBanner({
+  lastSyncedAt,
+  syncInterval,
+  labels,
+  className,
+}: SyncButtonProps & { className?: string }) {
+  const onSettingsPage = useOnSettingsPage();
+  if (!labels) return null;
+  const { staleDays, isStale, staleHint } = getStaleness(lastSyncedAt, syncInterval, labels);
+  if (!isStale) return null;
+  return (
+    <div
+      className={cn(
+        "w-full rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-left sm:hidden",
+        className,
+      )}
+    >
+      <div className="flex items-start gap-2">
+        <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-500" />
+        <div className="min-w-0">
+          <p className="text-xs font-medium">
+            {labels.staleNotice?.replace("{days}", String(staleDays))}
+          </p>
+          {staleHint && <p className="text-muted-foreground mt-0.5 text-xs">{staleHint}</p>}
+          {labels.goToSettings && !onSettingsPage && (
+            <Link
+              href="/dashboard/settings"
+              className="text-tint mt-1.5 inline-flex items-center gap-1 text-xs font-medium hover:opacity-80"
+            >
+              {labels.goToSettings}
+              <ArrowRight className="size-3" />
+            </Link>
+          )}
+        </div>
+      </div>
+    </div>
+  );
+}
+
 export default function SyncButton({
   lastSyncedAt,
   syncInterval,
   timeZone,
   labels,
   dateLocale,
+  compact = false,
 }: SyncButtonProps) {
   const [pending, startTransition] = useTransition();
   const [staleOpen, setStaleOpen] = useState(false);
-  // The popover's settings CTA is pointless when we're already on the settings page.
-  const onSettingsPage = usePathname()?.startsWith("/dashboard/settings") ?? false;
+  const onSettingsPage = useOnSettingsPage();
   const copy = labels ?? {
     sync: "Sync",
     syncing: "Syncing...",
@@ -94,22 +178,18 @@ export default function SyncButton({
     });
   }
 
-  const staleDays = lastSyncedAt
-    ? Math.floor((Date.now() - new Date(lastSyncedAt).getTime()) / 86400000)
-    : 0;
-  const isStale = staleDays >= STALE_AFTER_DAYS && Boolean(copy.staleNotice);
-  // On desktop the scheduler only runs while the app is open, so a stale sync
-  // means "you were away", not a broken deployment.
-  const staleHintAuto = isDesktopApp
-    ? (copy.staleHintAutoDesktop ?? copy.staleHintAuto)
-    : copy.staleHintAuto;
-  const staleHint = syncInterval === "0" ? copy.staleHintManual : staleHintAuto;
+  const { staleDays, isStale, staleHint } = getStaleness(lastSyncedAt, syncInterval, copy);
 
   return (
     <div className="flex max-w-full min-w-0 flex-col items-end gap-1">
       <div className="flex max-w-full flex-wrap items-center justify-end gap-x-3 gap-y-1">
         {lastSyncedAt && (
-          <span className="text-muted-foreground text-xs tabular-nums">
+          <span
+            className={cn(
+              "text-muted-foreground text-xs tabular-nums",
+              compact && "hidden sm:inline",
+            )}
+          >
             {copy.lastSynced} {formatDateTime(lastSyncedAt, dateLocale ?? "en-US", timeZone)}
           </span>
         )}
@@ -179,29 +259,14 @@ export default function SyncButton({
         </div>
       </div>
 
-      {/* No hover on touch screens, so small viewports get an inline banner instead
-          of the dot + popover. */}
-      {isStale && (
-        <div className="mt-1 w-full rounded-xl border border-amber-500/30 bg-amber-500/5 p-3 text-left sm:hidden">
-          <div className="flex items-start gap-2">
-            <TriangleAlert className="mt-0.5 size-3.5 shrink-0 text-amber-600 dark:text-amber-500" />
-            <div className="min-w-0">
-              <p className="text-xs font-medium">
-                {copy.staleNotice?.replace("{days}", String(staleDays))}
-              </p>
-              {staleHint && <p className="text-muted-foreground mt-0.5 text-xs">{staleHint}</p>}
-              {copy.goToSettings && !onSettingsPage && (
-                <Link
-                  href="/dashboard/settings"
-                  className="text-tint mt-1.5 inline-flex items-center gap-1 text-xs font-medium hover:opacity-80"
-                >
-                  {copy.goToSettings}
-                  <ArrowRight className="size-3" />
-                </Link>
-              )}
-            </div>
-          </div>
-        </div>
+      {!compact && (
+        <StaleSyncBanner
+          lastSyncedAt={lastSyncedAt}
+          syncInterval={syncInterval}
+          timeZone={timeZone}
+          labels={labels}
+          className="mt-1"
+        />
       )}
     </div>
   );

@@ -724,12 +724,9 @@ export function registerMcpServer(server: McpServer) {
       const wanted = new Set<SectionName>(sections?.length ? sections : DEFAULT_SECTIONS);
       const posts = await fetchPosts(account.id, range.since, range.until);
 
-      const needsUserInsights = [
-        "total_engagement",
-        "user_views",
-        "daily_performance",
-        "engagement_rate_trend",
-      ].some((s) => wanted.has(s as SectionName));
+      const needsUserInsights = ["total_engagement", "user_views", "daily_performance"].some((s) =>
+        wanted.has(s as SectionName),
+      );
       let userInsights = {
         views: [] as Array<{ end_time: string; value: number }>,
         totalLikes: 0,
@@ -764,7 +761,7 @@ export function registerMcpServer(server: McpServer) {
       };
       if (insightsUnavailable) {
         result.warning =
-          "Account-level Threads insights could not be fetched right now: total_engagement and user_views are omitted, and daily_performance/engagement_rate_trend fall back to per-post views.";
+          "Account-level Threads insights could not be fetched right now: total_engagement and user_views are omitted, and daily_performance falls back to per-post views.";
       }
       const bestTime = () => computeBestTimeToPost(posts, tz);
       const builders: Record<SectionName, () => unknown> = {
@@ -776,27 +773,27 @@ export function registerMcpServer(server: McpServer) {
           shares: posts.reduce((sum, p) => sum + p.shares, 0),
         }),
         user_views: () => userInsights.views,
-        daily_performance: () => computeDailyPerformance(posts, userInsights.views, tz),
+        daily_performance: () => computeDailyPerformance(posts, userInsights.views, tz, range),
         best_time_to_post: bestTime,
         top_hours: () => computeTopHours(bestTime()),
         content_type_analysis: () => computeContentTypeAnalysis(posts),
         day_hour_heatmap: () => computeDayHourHeatmap(posts, tz),
         post_length_analysis: () => computePostLengthAnalysis(posts),
-        weekly_frequency: () => computeWeeklyFrequency(posts, tz),
+        weekly_frequency: () => computeWeeklyFrequency(posts, tz, range),
         post_quality_scatter: () => computePostQualityScatter(posts),
         content_format_length_matrix: () => computeContentFormatLengthMatrix(posts),
         action_funnel: () => computeActionFunnel(posts),
         viral_posts: () => computeViralPosts(posts),
-        engagement_rate_trend: () => computeEngagementRateTrend(posts, userInsights.views, tz),
+        engagement_rate_trend: () => computeEngagementRateTrend(posts, tz, range),
         reply_rate_leaders: () => computeReplyRateLeaders(posts),
-        shares_trend: () => computeSharesTrend(posts, tz),
+        shares_trend: () => computeSharesTrend(posts, tz, range),
         posting_consistency: () => computePostingConsistency(posts, range.since, range.until, tz),
         keyword_analysis: () => computeKeywordAnalysis(posts),
         text_feature_comparison: () => computeTextFeatureComparison(posts),
         day_of_week_performance: () => computeDayOfWeekPerformance(posts, tz),
-        views_trend: () => computeViewsTrend(posts, tz),
+        views_trend: () => computeViewsTrend(posts, tz, range),
         views_distribution: () => computeViewsDistribution(posts),
-        optimal_frequency: () => computeOptimalFrequency(posts, tz),
+        optimal_frequency: () => computeOptimalFrequency(posts, tz, range),
         content_type_time_slot: () => computeContentTypeTimeSlot(posts, tz),
         posting_gap_analysis: () => computePostingGapAnalysis(posts, tz),
         posting_streak: () => computePostingStreak(posts, tz),
@@ -805,7 +802,7 @@ export function registerMcpServer(server: McpServer) {
         top_posts_by_engagement_rate: () => computeTopPostsByEngagementRate(posts),
         share_leaders: () => computeShareLeaders(posts),
         engagement_breakdown: () => computeEngagementBreakdownPie(posts),
-        engagement_breakdown_by_day: () => computeEngagementBreakdownByDay(posts, tz),
+        engagement_breakdown_by_day: () => computeEngagementBreakdownByDay(posts, tz, range),
       };
       for (const section of ANALYTICS_SECTIONS) {
         if (!wanted.has(section)) continue;

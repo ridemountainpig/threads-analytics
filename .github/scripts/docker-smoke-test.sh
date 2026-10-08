@@ -67,11 +67,12 @@ echo "== Booting against PostgreSQL on an internal network"
 docker network create --internal "$network" > /dev/null
 docker run -d --name "$database" --network "$network" \
   -e POSTGRES_PASSWORD=postgres -e POSTGRES_DB=threads_analytics postgres:16 > /dev/null
+# TCP, not the socket: postgres's first-boot init server is socket-only and restarts.
 for _ in $(seq 1 60); do
-  docker exec "$database" pg_isready -U postgres -d threads_analytics > /dev/null 2>&1 && break
+  docker exec "$database" pg_isready -h 127.0.0.1 -U postgres -d threads_analytics > /dev/null 2>&1 && break
   sleep 1
 done
-docker exec "$database" pg_isready -U postgres -d threads_analytics > /dev/null || fail "PostgreSQL did not become ready"
+docker exec "$database" pg_isready -h 127.0.0.1 -U postgres -d threads_analytics > /dev/null || fail "PostgreSQL did not become ready"
 
 docker run -d --name "$app" --network "$network" \
   -e DATABASE_URL="postgresql://postgres:postgres@$database:5432/threads_analytics" \
