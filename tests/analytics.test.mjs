@@ -4,11 +4,15 @@ import {
   computeBestTimeToPost,
   computeDailyPerformance,
   computeDayOfWeekPerformance,
+  computeEngagementBreakdownByDay,
+  computeEngagementRateTrend,
   computeKeywordAnalysis,
+  computeOptimalFrequency,
   computePostingCalendar,
   computePostingConsistency,
   computePostingGapAnalysis,
   computePostingStreak,
+  computeSharesTrend,
   computeTopPostsByEngagementRate,
   computeViewsTrend,
   computeViralPosts,
@@ -156,19 +160,76 @@ test("hours and weekdays are read in the analytics time zone", () => {
   assert.equal(computeDayOfWeekPerformance(posts, "UTC").length, 7);
 });
 
-test("weeks follow ISO numbering across the turn of the year", () => {
-  // 2026 has 53 ISO weeks: Monday 28 Dec and Friday 1 Jan share 2026-W53, and
-  // Monday 4 Jan starts 2027-W01.
+test("weeks are keyed by their Monday, even across the turn of the year", () => {
+  // Monday 28 Dec and Friday 1 Jan share one week; Monday 4 Jan starts the next.
   const posts = ["2026-12-28T12:00:00", "2027-01-01T12:00:00", "2027-01-04T12:00:00"].map((iso) =>
     post(tpe(iso)),
   );
   assert.deepEqual(
     computeWeeklyFrequency(posts, "Asia/Taipei").map((week) => [week.week, week.postCount]),
     [
-      ["2026-W53", 2],
-      ["2027-W01", 1],
+      ["2026-12-28", 2],
+      ["2027-01-04", 1],
     ],
   );
+});
+
+test("with a range, every week is listed and the clipped edge weeks are flagged", () => {
+  // Wednesday 7 to Wednesday 28 October clips the weeks of 5 and 26 October.
+  const range = { since: tpe("2026-10-07T00:00:00"), until: tpe("2026-10-28T23:59:59.999") };
+  const posts = [post(tpe("2026-10-08T12:00:00")), post(tpe("2026-10-20T12:00:00"))];
+  const weeks = computeWeeklyFrequency(posts, "Asia/Taipei", range);
+  assert.deepEqual(
+    weeks.map((week) => [week.week, week.postCount, week.partial]),
+    [
+      ["2026-10-05", 1, true],
+      ["2026-10-12", 0, false],
+      ["2026-10-19", 1, false],
+      ["2026-10-26", 0, true],
+    ],
+  );
+  // An empty week has no rates to report, rather than a 0% one.
+  assert.equal(weeks[1].avgViews, null);
+  assert.equal(weeks[1].engagementRate, null);
+  assert.deepEqual(
+    computeWeeklyFrequency(posts, "Asia/Taipei").map((week) => [week.week, week.partial]),
+    [
+      ["2026-10-05", false],
+      ["2026-10-19", false],
+    ],
+  );
+  assert.deepEqual(
+    computeViewsTrend(posts, "Asia/Taipei", range).points.map((p) => [p.period, p.partial]),
+    [
+      ["2026-10-05", true],
+      ["2026-10-19", false],
+    ],
+  );
+});
+
+test("the optimal frequency leaves out weeks the range clips", () => {
+  // Wednesday 7 to Sunday 25 October clips only the week of 5 October.
+  const range = { since: tpe("2026-10-07T00:00:00"), until: tpe("2026-10-25T23:59:59.999") };
+  const posts = [
+    "2026-10-08T12:00:00",
+    "2026-10-13T12:00:00",
+    "2026-10-14T12:00:00",
+    "2026-10-20T12:00:00",
+  ].map((iso) => post(tpe(iso)));
+  const buckets = (r) =>
+    computeOptimalFrequency(posts, "Asia/Taipei", r).map((b) => [
+      b.range,
+      b.weekCount,
+      b.postCount,
+    ]);
+  assert.deepEqual(buckets(range), [
+    ["1", 1, 1],
+    ["2", 1, 2],
+  ]);
+  assert.deepEqual(buckets(undefined), [
+    ["1", 2, 2],
+    ["2", 1, 2],
+  ]);
 });
 
 test("the views trend rolls weeks up into months past 16 weeks", () => {
@@ -273,6 +334,55 @@ test("daily performance prefers profile views and weights the rolling rate by vi
   assert.equal(daily[1].rollingEngagementRate, 1.1);
 });
 
+test("with a range, daily series list every day, empty ones included", () => {
+  const range = { since: tpe("2026-10-01T00:00:00"), until: tpe("2026-10-03T23:59:59.999") };
+  // Half past midnight in Taipei is still 1 October in UTC.
+  const posts = [post(tpe("2026-10-02T00:30:00"), { views: 200, likes: 4, shares: 3 })];
+  assert.deepEqual(computeSharesTrend(posts, "Asia/Taipei", range), [
+    { date: "2026-10-01", shares: 0 },
+    { date: "2026-10-02", shares: 3 },
+    { date: "2026-10-03", shares: 0 },
+  ]);
+  assert.deepEqual(
+    computeEngagementBreakdownByDay(posts, "Asia/Taipei", range).map((d) => [d.date, d.likes]),
+    [
+      ["2026-10-01", 0],
+      ["2026-10-02", 4],
+      ["2026-10-03", 0],
+    ],
+  );
+  assert.deepEqual(
+    computeDailyPerformance(posts, [], "Asia/Taipei", range).map((d) => [d.date, d.postCount]),
+    [
+      ["2026-10-01", 0],
+      ["2026-10-02", 1],
+      ["2026-10-03", 0],
+    ],
+  );
+  assert.deepEqual(computeSharesTrend(posts, "Asia/Taipei"), [{ date: "2026-10-02", shares: 3 }]);
+});
+
+test("the engagement rate trend divides by post views and leaves empty days blank", () => {
+  const range = { since: tpe("2026-10-01T00:00:00"), until: tpe("2026-10-10T23:59:59.999") };
+  const posts = [
+    post(tpe("2026-10-01T10:00:00"), { views: 100, likes: 10 }),
+    post(tpe("2026-10-03T10:00:00"), { views: 300, likes: 6 }),
+  ];
+  const trend = computeEngagementRateTrend(posts, "Asia/Taipei", range);
+  assert.equal(trend.length, 10);
+  assert.deepEqual(
+    trend.slice(0, 3).map((d) => [d.date, d.views, d.rate, d.rollingAvg]),
+    [
+      ["2026-10-01", 100, 10, 10],
+      ["2026-10-02", 0, null, 10],
+      // 16 engagements over 400 views, not the mean of 10% and 2%.
+      ["2026-10-03", 300, 2, 4],
+    ],
+  );
+  // Both posts have left the seven-day window by 10 October.
+  assert.equal(trend.at(-1).rollingAvg, null);
+});
+
 test("viral posts beat twice the median and rank by multiplier", () => {
   const posts = [100, 100, 100, 100, 150, 250, 600].map((views, i) =>
     post(new Date(Date.UTC(2026, 9, i + 1)), { views }),
@@ -305,15 +415,17 @@ test("keywords pool engagement across the posts that use them", () => {
   const posts = [
     post(at, { text: "Coffee notes #coffee https://example.com/latte", views: 100, likes: 10 }),
     post(at, { text: "more COFFEE and the 2026 plan", views: 300, likes: 6 }),
-    post(at, { text: "@coffee says hi", views: 600 }),
+    post(at, { text: "#coffee says hi", views: 600 }),
+    post(at, { text: "@coffee was here", views: 50 }),
   ];
-  // Hashtags and mentions count as the bare word, case folded; a post counts once.
+  // Hashtags count as the bare word, case folded; a post counts once. A mention
+  // names an account, not a topic.
   assert.deepEqual(computeKeywordAnalysis(posts), [
     { word: "coffee", postCount: 3, avgViews: 333, avgEngagementRate: 1.6, avgShareRate: 0 },
   ]);
-  // Links, stop words and numbers are not keywords.
+  // Links, stop words, numbers and two-letter Latin words are not keywords.
   const words = computeKeywordAnalysis(posts, 1, 50).map((k) => k.word);
-  for (const word of ["latte", "example", "https", "the", "and", "more", "2026"]) {
+  for (const word of ["latte", "example", "https", "the", "and", "more", "2026", "hi"]) {
     assert.ok(!words.includes(word), word);
   }
   assert.ok(words.includes("plan"));
