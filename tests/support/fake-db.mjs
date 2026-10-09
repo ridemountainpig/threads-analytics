@@ -3,7 +3,7 @@
 // API the tested modules call: reads and writes that match on equality, the
 // lt/lte/gt/gte/not/in operators, OR/AND, compound unique keys and the
 // relations listed below; `include` for those relations; upserts, createMany,
-// groupBy with _max, array transactions; the schema's column defaults; and
+// count, groupBy with _max, array transactions; the schema's column defaults; and
 // Prisma's error when update or delete finds no row. Every call is async and
 // hands out copies, as a real client would.
 
@@ -131,6 +131,9 @@ function model(name) {
         found.sort((a, b) => sign * (a[field] < b[field] ? -1 : a[field] > b[field] ? 1 : 0));
       }
       return found.map((row) => withIncludes(name, row, include));
+    },
+    async count({ where } = {}) {
+      return rows().filter((row) => matches(name, row, where)).length;
     },
     async create({ data }) {
       return structuredClone(insert(data));

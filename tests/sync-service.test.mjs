@@ -12,7 +12,7 @@ import {
 // lib/analytics.ts is first imported.
 delete process.env.NEXT_PUBLIC_RUNTIME_TARGET;
 process.env.NEXT_PUBLIC_ANALYTICS_TIME_ZONE = "Asia/Taipei";
-const { syncAccount } = await import("../lib/sync-service.ts");
+const { syncAccount, syncAccounts } = await import("../lib/sync-service.ts");
 const { encryptToken } = await import("../lib/crypto.ts");
 const { DEFAULT_TZ, getDateString } = await import("../lib/analytics.ts");
 
@@ -75,7 +75,7 @@ const stored = (id, ageMs, values) => ({
   text: `post ${id}`,
   timestamp: ago(ageMs),
   mediaType: "TEXT_POST",
-  permalink: "",
+  permalink: `https://www.threads.com/@someone/post/${id}`,
   syncedAt: ago(HOUR),
   ...values,
 });
@@ -144,27 +144,31 @@ test("a first sync stores every post, its thread parts and today's followers", a
   );
 });
 
-test("settled posts aren't re-fetched, but a post stuck at zero always is", async () => {
+test("insights are re-read on the post's spacing, and one stuck at zero once a day", async () => {
   rowsOf("post").push(
-    stored("settled", 40 * DAY, metrics(50)),
-    stored("stuck-at-zero", 40 * DAY, zero),
-    stored("recent", 2 * DAY, metrics(10)),
+    stored("due", 3 * DAY, { ...metrics(10), syncedAt: ago(7 * HOUR) }),
+    stored("just-read", 3 * DAY, metrics(10)),
+    stored("settled", 40 * DAY, { ...metrics(50), syncedAt: ago(2 * DAY) }),
+    stored("stuck-at-zero", 40 * DAY, { ...zero, syncedAt: ago(2 * DAY) }),
+    stored("retried-today", 40 * DAY, zero),
   );
   api.posts = [
+    listed("due", 3 * DAY),
+    listed("just-read", 3 * DAY),
     listed("settled", 40 * DAY),
     listed("stuck-at-zero", 40 * DAY),
-    listed("recent", 2 * DAY),
+    listed("retried-today", 40 * DAY),
   ];
-  api.insights.set("stuck-at-zero", metrics(80)).set("recent", metrics(20));
+  api.insights.set("due", metrics(20)).set("stuck-at-zero", metrics(80));
 
-  assert.equal((await syncAccount(account())).postsCount, 3);
+  assert.equal((await syncAccount(account())).postsCount, 5);
   assert.deepEqual(
     insightCalls().map((r) => r.key),
-    ["insights:stuck-at-zero", "insights:recent"],
+    ["insights:due", "insights:stuck-at-zero"],
   );
+  assert.equal(post("due").views, 20);
   assert.equal(post("settled").views, 50);
   assert.equal(post("stuck-at-zero").views, 80);
-  assert.equal(post("recent").views, 20);
 });
 
 test("a failed insights fetch keeps the post's numbers and is counted", async () => {
@@ -184,6 +188,105 @@ test("a failed insights fetch keeps the post's numbers and is counted", async ()
     rowsOf("postMetricSnapshot").map((row) => row.postId),
     ["p2"],
   );
+
+  // The read is still due, so the next sync tries again.
+  api.failures.clear();
+  api.insights.set("p1", metrics(120));
+  await syncAccount(account());
+  assert.equal(post("p1").views, 120);
+});
+
+test("a post whose first read failed is retried on the next sync, however old", async () => {
+  api.posts = [listed("old", 40 * DAY)];
+  api.failures.set("insights:old", serverError());
+  assert.equal((await syncAccount(account())).insightsFailed, 1);
+  assert.equal(post("old").views, 0);
+
+  api.failures.clear();
+  api.insights.set("old", metrics(80));
+  await syncAccount(account());
+  assert.equal(post("old").views, 80);
+});
+
+test("an edited post is rewritten without waiting for its next reading", async () => {
+  const readAt = ago(HOUR);
+  rowsOf("post").push(stored("p1", 3 * DAY, { ...metrics(100), syncedAt: readAt }));
+  api.posts = [{ ...listed("p1", 3 * DAY), text: "post p1, edited" }];
+
+  await syncAccount(account());
+  assert.equal(insightCalls().length, 0);
+  assert.equal(post("p1").text, "post p1, edited");
+  assert.equal(post("p1").views, 100);
+  assert.deepEqual(post("p1").syncedAt, readAt);
+});
+
+test("later syncs list back to the snapshot window, or a day before a longer gap", async () => {
+  api = createThreadsApi({ pageSize: 1 });
+  globalThis.fetch.mock.mockImplementation(api.fetch);
+  api.posts = [HOUR, 10 * DAY, 31 * DAY, 40 * DAY, 50 * DAY, 60 * DAY].map((ageMs, i) =>
+    listed(`p${i}`, ageMs),
+  );
+  const listings = () => api.calls("threads").length;
+
+  await syncAccount(account());
+  assert.equal(listings(), 6);
+
+  // Stops at the first page past 30 days, picking up the new post on the way.
+  api.posts.unshift(listed("new", 10 * 60_000));
+  await syncAccount(account());
+  assert.equal(listings(), 6 + 4);
+  assert.ok(post("new"));
+
+  rowsOf("syncState")[0].lastSyncedAt = ago(45 * DAY);
+  await syncAccount(account());
+  assert.equal(listings(), 6 + 4 + 6);
+  assert.equal(rowsOf("post").length, 7);
+});
+
+test("a post at zero past the listed range is read by id, a deleted one is not", async () => {
+  api = createThreadsApi({ pageSize: 1 });
+  globalThis.fetch.mock.mockImplementation(api.fetch);
+  rowsOf("syncState").push({
+    accountId: ACCOUNT_ID,
+    lastSyncedAt: ago(HOUR),
+    repliesSyncedAt: ago(HOUR),
+  });
+  rowsOf("post").push(
+    stored("deleted", 5 * DAY, { ...zero, syncedAt: ago(2 * DAY) }),
+    stored("month-old", 31 * DAY, metrics(10)),
+    stored("old-at-zero", 60 * DAY, { ...zero, syncedAt: ago(2 * DAY) }),
+  );
+  api.posts = [listed("month-old", 31 * DAY), listed("old-at-zero", 60 * DAY)];
+  api.failures.set("insights:old-at-zero", serverError());
+
+  assert.equal((await syncAccount(account())).insightsFailed, 1);
+  assert.equal(api.calls("threads").length, 1);
+  assert.deepEqual(
+    insightCalls().map((r) => r.key),
+    ["insights:old-at-zero"],
+  );
+
+  // A failed read by id may mean the post is gone, so the next try waits a day.
+  await syncAccount(account());
+  assert.equal(insightCalls().length, 1);
+});
+
+test("an interrupted first import keeps what it stored and lists everything again", async () => {
+  api = createThreadsApi({ pageSize: 10 });
+  globalThis.fetch.mock.mockImplementation(api.fetch);
+  api.posts = Array.from({ length: 60 }, (_, i) => listed(`p${i}`, i * DAY + HOUR));
+  for (const { id } of api.posts) api.insights.set(id, metrics(10));
+  api.failures.set("insights:p55", expiredToken());
+
+  assert.deepEqual(await syncAccount(account()), { error: "token_expired" });
+  // Posts are written 50 at a time, so the first batch survives.
+  assert.equal(rowsOf("post").length, 50);
+  assert.equal(rowsOf("syncState").length, 0);
+
+  api.failures.clear();
+  const listedBefore = api.calls("threads").length;
+  assert.equal((await syncAccount(account())).postsCount, 60);
+  assert.equal(api.calls("threads").length - listedBefore, 6);
 });
 
 test("an expired token stops the sync without marking it done", async () => {
@@ -245,6 +348,7 @@ test("later reply pulls start a day early and refresh parts stored before", asyn
     timestamp: ago(ageMs),
     mediaType: "TEXT_POST",
     permalink: "",
+    syncedAt: ago(7 * HOUR),
     ...values,
   });
   rowsOf("threadReply").push(
@@ -267,14 +371,24 @@ test("later reply pulls start a day early and refresh parts stored before", asyn
   assert.equal(rowsOf("threadReply").find((row) => row.id === "p1-2").views, 30);
 });
 
-test("growth readings are spaced by the post's age, not taken every sync", async () => {
+test("readings are spaced by the post's age, not taken every sync", async () => {
   api.posts = [listed("p1", HOUR)];
   api.insights.set("p1", metrics(100));
   await syncAccount(account());
   await syncAccount(account());
+  assert.equal(insightCalls().length, 1);
   assert.equal(rowsOf("postMetricSnapshot").length, 1);
-  // The second sync still refreshed the post itself.
-  assert.equal(insightCalls().length, 2);
+
+  // An hour-old post is due again fifteen minutes later.
+  post("p1").syncedAt = ago(15 * 60_000);
+  rowsOf("postMetricSnapshot")[0].capturedAt = ago(15 * 60_000);
+  api.insights.set("p1", metrics(150));
+  await syncAccount(account());
+  assert.equal(post("p1").views, 150);
+  assert.deepEqual(
+    rowsOf("postMetricSnapshot").map((row) => row.views),
+    [100, 150],
+  );
 });
 
 test("demographics are fetched once a day while the count follows every sync", async () => {
@@ -335,6 +449,20 @@ test("a failed count falls back to the stored one, so a due retry still runs", a
   const [snapshot] = rowsOf("followerSnapshot");
   assert.equal(snapshot.followersCount, 1000);
   assert.ok(snapshot.demographics);
+});
+
+test("syncAccounts reports each account in turn and carries on past a failure", async () => {
+  api.posts = [listed("p1", HOUR)];
+  const accounts = [account({ id: "2", username: "expired", expiresAt: ago(1000) }), account()];
+  const reported = [];
+  await syncAccounts(accounts, (synced, result) => reported.push([synced.username, result]));
+  assert.deepEqual(reported, [
+    ["expired", { error: "token_expired" }],
+    ["someone", { postsCount: 1, threadRepliesCount: 0 }],
+  ]);
+  assert.ok(
+    console.warn.mock.calls.some((call) => call.arguments[0] === "[sync] expired: token_expired"),
+  );
 });
 
 test("a token renewed at the start of a sync is the one the sync uses", async () => {
