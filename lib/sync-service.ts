@@ -263,7 +263,9 @@ interface Reading<T> {
 /**
  * Requests insights for the items `shouldRead` picks and hands them to `store`
  * WRITE_CHUNK_SIZE at a time, each chunk stored before the next is read.
- * Returns how many reads failed.
+ * Returns how many reads failed. A read that throws (an expired token) ends the
+ * run once the reads in flight have settled, and the queued ones never start,
+ * so no request outlives the sync.
  */
 async function readInChunks<T extends { id: string }>(
   items: T[],
@@ -274,14 +276,24 @@ async function readInChunks<T extends { id: string }>(
 ): Promise<number> {
   let failed = 0;
   for (let i = 0; i < items.length; i += WRITE_CHUNK_SIZE) {
+    let thrown = null as { error: unknown } | null;
     const chunk = await Promise.all(
       items.slice(i, i + WRITE_CHUNK_SIZE).map(async (item): Promise<Reading<T>> => {
         if (!shouldRead(item)) return { item, read: false, insights: null };
-        const insights = await limit(() => getPostInsights(item.id, accessToken));
+        const insights = await limit(async () => {
+          if (thrown) return null;
+          try {
+            return await getPostInsights(item.id, accessToken);
+          } catch (error) {
+            thrown ??= { error };
+            return null;
+          }
+        });
         if (!insights) failed++;
         return { item, read: true, insights };
       }),
     );
+    if (thrown) throw thrown.error;
     await store(chunk, new Date());
   }
   return failed;

@@ -289,6 +289,17 @@ test("an interrupted first import keeps what it stored and lists everything agai
   assert.equal(api.calls("threads").length - listedBefore, 6);
 });
 
+test("a read that throws starts none of the queued reads and leaves none running", async () => {
+  api.posts = Array.from({ length: 50 }, (_, i) => listed(`p${i}`, HOUR));
+  api.failures.set("insights:p0", expiredToken());
+
+  assert.deepEqual(await syncAccount(account()), { error: "token_expired" });
+  const reads = insightCalls().length;
+  await new Promise((resolve) => setTimeout(resolve, 20));
+  assert.equal(insightCalls().length, reads);
+  assert.ok(reads < 50, `${reads} reads`);
+});
+
 test("an expired token stops the sync without marking it done", async () => {
   api.posts = [listed("p1", HOUR)];
   api.failures.set("insights:p1", expiredToken());
