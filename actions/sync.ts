@@ -1,33 +1,49 @@
 "use server";
 
 import { revalidatePath, updateTag } from "next/cache";
+import { after } from "next/server";
 import { db } from "@/lib/db";
 import { getSession } from "@/lib/auth";
-import { syncAccount, syncAllAccounts, type SyncResult } from "@/lib/sync-service";
+import { syncAccount, syncAccounts, type SyncResult } from "@/lib/sync-service";
 import { withSyncLock } from "@/lib/sync-lock";
 import { USER_INSIGHTS_TAG } from "@/lib/user-insights-cache";
 
-// Syncs every connected account; the reported result is the active account's,
-// which is the one the dashboard that triggered the sync is showing.
+// Syncs the account the dashboard is showing and reports its result. Every
+// other connected account syncs after the response, so the button never waits
+// on them, yet switching accounts still never lands on stale data and each
+// token keeps getting renewed even with scheduled syncs turned off.
 export async function syncDataAction(): Promise<SyncResult> {
   if (!(await getSession())) return { error: "Unauthorized" };
 
-  const locked = await withSyncLock(() => syncAllAccounts());
-  if (!locked.acquired) return { error: "sync_in_progress" };
+  const [active, ...others] = await db.threadsAccount.findMany({
+    orderBy: [{ isActive: "desc" }, { createdAt: "asc" }],
+  });
+  if (!active) return { error: "No active account. Please add a Threads account first." };
 
-  const results = locked.value;
-  if (results.length === 0)
-    return { error: "No active account. Please add a Threads account first." };
+  // One lock hold covers every account, so nothing can slip in between the
+  // active account and the rest; the response just doesn't wait for the rest.
+  let reportActive!: (result: SyncResult) => void;
+  const activeSynced = new Promise<SyncResult>((resolve) => (reportActive = resolve));
+  const run = withSyncLock(() =>
+    syncAccounts([active, ...others], (account, result) => {
+      if (account === active) reportActive(result);
+    }),
+  );
+  after(() => run);
 
-  if (results.some((r) => !r.error)) {
+  const result = await Promise.race([
+    activeSynced,
+    run.then((locked) => (locked.acquired ? activeSynced : null)),
+  ]);
+  if (!result) return { error: "sync_in_progress" };
+
+  if (!result.error) {
     // revalidatePath doesn't touch unstable_cache entries, so expire them too.
     updateTag(USER_INSIGHTS_TAG);
     revalidatePath("/dashboard", "layout");
   }
 
-  const { postsCount, insightsFailed, threadRepliesCount, repliesPermissionMissing, error } =
-    results[0];
-  return { postsCount, insightsFailed, threadRepliesCount, repliesPermissionMissing, error };
+  return result;
 }
 
 // Syncs a specific account regardless of which one is active, so a newly
