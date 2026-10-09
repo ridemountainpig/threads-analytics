@@ -1,20 +1,25 @@
-// Decides when a sync records a post's metrics as a PostMetricSnapshot. Kept
-// dependency-free so the test suite can exercise it directly with Node's type
-// stripping, outside of Next.
+// Decides when a sync re-reads a post's insights and records them as a
+// PostMetricSnapshot. Kept dependency-free so the test suite can exercise it
+// directly with Node's type stripping, outside of Next.
 //
 // Recording every sync would let a short custom interval (down to a minute)
 // write thousands of rows per post, so readings are spaced by the post's age:
 // dense while it is young — the first hours decide how far a post travels —
 // and sparse once its growth flattens. Whatever the sync interval, a post ends
-// up with fewer than 120 rows (about 90 with hourly syncs).
+// up with fewer than 120 rows (about 90 with hourly syncs). Insights requests
+// follow the same spacing, since a reading between two recorded ones would
+// only nudge the running totals.
 
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
 const DAY_MS = 24 * HOUR_MS;
 
-/** Posts are recorded until this age. Matches INSIGHTS_REFRESH_DAYS in
- *  sync-service, after which a post's insights stop being re-fetched. */
+/** Posts are recorded, and their insights re-read, until this age. */
 export const SNAPSHOT_WINDOW_MS = 30 * DAY_MS;
+
+/** Spacing between retries for a post past the window that never got a
+ *  non-zero reading, so one failed read can't leave it at zero for good. */
+export const ZERO_METRICS_RETRY_MS = DAY_MS;
 
 /** Minimum spacing between two readings of one post, by the post's age at
  *  the time of the reading. Ordered by age; the last tier ends the window. */
@@ -48,4 +53,21 @@ export function isPostSnapshotDue(
   if (!lastCapturedAt) return true;
 
   return now.getTime() - lastCapturedAt.getTime() >= tier.minGapMs * (1 - EARLY_TOLERANCE_RATIO);
+}
+
+/**
+ * Whether a sync should request the insights of a post (or thread part)
+ * published at `postedAt` whose insights were last read at `lastReadAt`.
+ * Inside the window this follows the snapshot spacing; past it, metrics have
+ * settled and only a post still at zero is retried.
+ */
+export function isInsightsReadDue(
+  postedAt: Date,
+  lastReadAt: Date | null | undefined,
+  hasMetrics: boolean,
+  now: Date,
+): boolean {
+  if (hasMetrics) return isPostSnapshotDue(postedAt, lastReadAt, now);
+  if (now.getTime() - postedAt.getTime() < SNAPSHOT_WINDOW_MS) return true;
+  return !lastReadAt || now.getTime() - lastReadAt.getTime() >= ZERO_METRICS_RETRY_MS;
 }

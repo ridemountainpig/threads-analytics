@@ -1,9 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 import {
+  isInsightsReadDue,
   isPostSnapshotDue,
   SNAPSHOT_SPACING,
   SNAPSHOT_WINDOW_MS,
+  ZERO_METRICS_RETRY_MS,
 } from "../lib/post-metric-snapshots.ts";
 
 const MINUTE = 60_000;
@@ -82,4 +84,32 @@ test("keeps the rows per post bounded at any sync interval", () => {
   assert.ok(rowsAt(HOUR) >= 48, `hourly syncs wrote ${rowsAt(HOUR)} rows`);
   // A daily sync still records once a day across the whole window.
   assert.equal(rowsAt(DAY), 30);
+});
+
+test("re-reads insights on the snapshot spacing inside the window", () => {
+  const readAfter = (ageMs, sinceLastMs) =>
+    isInsightsReadDue(postedAt, at(ageMs - sinceLastMs), true, at(ageMs));
+  assert.equal(readAfter(3 * HOUR, 10 * MINUTE), false);
+  assert.equal(readAfter(3 * HOUR, 15 * MINUTE), true);
+  assert.equal(readAfter(10 * DAY, HOUR), false);
+  assert.equal(readAfter(10 * DAY, DAY), true);
+  assert.equal(isInsightsReadDue(postedAt, null, true, at(10 * DAY)), true);
+});
+
+test("stops re-reading settled insights past the window", () => {
+  assert.equal(
+    isInsightsReadDue(postedAt, at(29 * DAY), true, at(SNAPSHOT_WINDOW_MS + DAY)),
+    false,
+  );
+  assert.equal(isInsightsReadDue(postedAt, null, true, at(400 * DAY)), false);
+});
+
+test("keeps retrying a post that never got a non-zero reading", () => {
+  // Inside the window on every sync, however recent the last read.
+  assert.equal(isInsightsReadDue(postedAt, at(DAY - MINUTE), false, at(DAY)), true);
+  // Past it, once per retry interval.
+  const old = at(60 * DAY);
+  assert.equal(isInsightsReadDue(postedAt, null, false, old), true);
+  assert.equal(isInsightsReadDue(postedAt, at(60 * DAY - HOUR), false, old), false);
+  assert.equal(isInsightsReadDue(postedAt, at(60 * DAY - ZERO_METRICS_RETRY_MS), false, old), true);
 });

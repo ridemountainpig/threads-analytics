@@ -67,7 +67,7 @@ Stats at the top of the tab: **Followers**, **Net Growth** (with `+/−%`), **Av
 
 > Threads only reports follower counts and demographics as of right now, so history starts from your first sync and missed days can’t be filled in later. The follower count refreshes on every sync. Demographics are fetched once a day; if a fetch fails, the next sync at least six hours later retries it. Demographics require at least 100 followers. The date selectors only list days that have data.
 
-> Post metrics are running totals updated on each sync. The dashboard doesn’t keep snapshots at fixed points like 24 or 48 hours after posting, so comparing posts at the same age means recording those numbers yourself.
+> Post metrics are running totals. A sync re-reads them on the same spacing as the [growth readings](#growth) — at most every 15 minutes while a post is new, daily by the end of its first 30 days — and after that they stay at their last reading.
 
 ## Posts page
 
