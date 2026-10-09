@@ -35,28 +35,11 @@ Threads Analytics 桌面版會將 Threads 資料儲存在你的 Mac，不需要�
 
 尚未取得 Access Token 時，請參閱[如何生成 Threads Access Token](../../public/token-generate-step/README-zh.md)。
 
-## Preview 版本的首次開啟
+## 第一次開啟
 
-正式發行版完成 Developer ID 簽署與 Apple 公證後，可以直接從「應用程式」開啟。
+發行版本都以 Developer ID 簽署並經過 Apple 公證。第一次開啟新下載的版本時，macOS 會詢問是否要打開這個從網路下載的 App，選擇「打開」即可。
 
-如果 GitHub Release 明確標示為 **Preview** 或「尚未公證」，macOS 會在第一次啟動時阻擋，並顯示無法驗證 App 的訊息。確認安裝檔來自本專案的 GitHub Releases 後：
-
-**macOS 15（Sequoia）或更新版本**
-
-1. 從「應用程式」開啟一次 **Threads Analytics**，並關閉警告視窗。
-2. 開啟「系統設定」→「隱私權與安全性」。
-3. 往下捲到「安全性」區塊，找到 Threads Analytics 被阻擋的訊息，選擇「仍要打開」。
-4. 輸入密碼或使用 Touch ID 確認，然後在最後的視窗中選擇「打開」。
-
-**macOS 14（Sonoma）或更早版本**
-
-1. 在 Finder 的「應用程式」資料夾中，按住 Control 鍵並點擊 **Threads Analytics**。
-2. 選擇「打開」。
-3. 在確認視窗中再次選擇「打開」。
-
-同一個版本只需要在第一次開啟時這麼做。更新到新版本後，請再重複一次上述步驟。
-
-如果仍無法開啟，請在該版本的 Release 或 GitHub Issues 回報 macOS 版本與錯誤畫面。不要使用來源不明的終端指令停用 Gatekeeper。
+如果 macOS 改為顯示無法驗證 Threads Analytics 不含惡意軟體，代表這份檔案來自公證之前發佈的版本，或不是從本專案的 GitHub Releases 下載。請將它移到垃圾桶，再從 GitHub Releases 下載最新版本。如果仍出現警告，請在該版本的 Release 或 GitHub Issues 回報 macOS 版本與錯誤畫面。不要使用來源不明的終端指令停用 Gatekeeper。
 
 <a id="updating"></a>
 

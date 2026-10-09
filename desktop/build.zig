@@ -181,7 +181,7 @@ pub fn build(b: *std.Build) void {
     package.addFileArg(package_exe.getEmittedBin());
     package.step.dependOn(&package_exe.step);
     package.step.dependOn(&frontend_build.step);
-    const package_step = b.step("package", "Create the ad-hoc signed macOS app bundle");
+    const package_step = b.step("package", "Create the signed macOS app bundle");
     package_step.dependOn(&package.step);
 
     const tests = b.addTest(.{ .root_module = app_mod });

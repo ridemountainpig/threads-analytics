@@ -49,7 +49,7 @@ pnpm desktop:test           # Run the desktop test suite
 pnpm desktop:dev:web        # Start the desktop Next.js development server
 pnpm desktop:build:web      # Build and stage the Next.js runtime in desktop/dist
 pnpm desktop:package:check  # Verify the pinned Node runtime and native SQLite ABI
-pnpm desktop:package:macos  # Build and package an ad-hoc-signed macOS app bundle
+pnpm desktop:package:macos  # Build and package the macOS app bundle (ad-hoc signed unless MACOS_SIGNING_IDENTITY is set)
 pnpm desktop:open:macos     # Open the packaged app
 ```
 

@@ -35,28 +35,11 @@ The desktop app does not require a sign-in password. After opening the app:
 
 If you do not have an access token yet, see [How to generate a Threads access token](../../public/token-generate-step/README.md).
 
-## Opening a Preview build for the first time
+## Opening the app for the first time
 
-Once a production release is signed with a Developer ID and notarized by Apple, it can be opened normally from Applications.
+Releases are signed with a Developer ID and notarized by Apple. The first time you open a newly downloaded version, macOS asks you to confirm opening an app downloaded from the internet. Select **Open**.
 
-If a GitHub Release is explicitly marked **Preview** or “not notarized,” macOS blocks its first launch with a message that the app could not be verified. After confirming that the app came from this project's GitHub Releases:
-
-**macOS 15 (Sequoia) or later**
-
-1. Open **Threads Analytics** from Applications once and close the warning dialog.
-2. Open **System Settings** → **Privacy & Security**.
-3. Scroll to the **Security** section, find the message about Threads Analytics being blocked, and select **Open Anyway**.
-4. Confirm with your password or Touch ID, then select **Open** in the final dialog.
-
-**macOS 14 (Sonoma) or earlier**
-
-1. In the Applications folder, Control-click **Threads Analytics**.
-2. Select **Open**.
-3. Select **Open** again in the confirmation dialog.
-
-This is only needed the first time you open a given version. After updating to a new version, repeat the steps above.
-
-If the app still does not open, report the macOS version and a screenshot of the error on that Release or in GitHub Issues. Do not run terminal commands from an unknown source to disable Gatekeeper.
+If macOS instead says it cannot verify that Threads Analytics is free of malware, that copy comes from a release published before notarization or not from this project's GitHub Releases. Move it to the Trash and download the newest release from GitHub Releases. If the warning persists, report the macOS version and a screenshot of the error on that Release or in GitHub Issues. Do not run terminal commands from an unknown source to disable Gatekeeper.
 
 <a id="updating"></a>
 

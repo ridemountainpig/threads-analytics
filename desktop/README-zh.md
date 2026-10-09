@@ -49,7 +49,7 @@ pnpm desktop:test           # 執行桌面版測試套件
 pnpm desktop:dev:web        # 啟動桌面版 Next.js 開發伺服器
 pnpm desktop:build:web      # 建置 Next.js 執行階段並暫存至 desktop/dist
 pnpm desktop:package:check  # 驗證固定的 Node runtime 與原生 SQLite ABI
-pnpm desktop:package:macos  # 建置並封裝經臨時簽署的 macOS app bundle
+pnpm desktop:package:macos  # 建置並封裝 macOS app bundle（未設定 MACOS_SIGNING_IDENTITY 時採臨時簽章）
 pnpm desktop:open:macos     # 開啟封裝後的 app
 ```
 

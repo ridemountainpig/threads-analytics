@@ -1,8 +1,17 @@
 name: Release Desktop (macOS)
 
-# Manually triggered. Builds the ad-hoc signed Apple silicon app on a macOS
-# runner, zips it, and publishes a GitHub Release tagged v<version> at the
-# commit the workflow was dispatched from. Only dispatches from main publish.
+# Manually triggered. Builds the Apple silicon app on a macOS runner, signs
+# it with a Developer ID, notarizes and staples it, zips it, and publishes a
+# GitHub Release tagged v<version> at the commit the workflow was dispatched
+# from. Only dispatches from main publish.
+#
+# Signing and notarization read these repository secrets:
+#   MACOS_CERTIFICATE_P12       base64 of the Developer ID Application .p12
+#   MACOS_CERTIFICATE_PASSWORD  password of that .p12
+#   MACOS_SIGNING_IDENTITY      e.g. "Developer ID Application: Name (TEAMID)"
+#   APPLE_API_KEY_P8            App Store Connect API team key (.p8 contents)
+#   APPLE_API_KEY_ID            its Key ID
+#   APPLE_API_ISSUER_ID         its Issuer ID
 #
 # desktop/app.json only accepts a plain X.Y.Z version (Native SDK manifest
 # schema), so pre-release suffixes live in the tag and asset name only:
@@ -124,11 +133,88 @@ jobs:
           pnpm desktop:typecheck
           pnpm desktop:test
 
+      # codesign needs the identity in a searchable keychain, plus Apple's
+      # Developer ID G2 intermediate to build the certificate chain.
+      - name: Import signing certificate
+        env:
+          CERTIFICATE_P12: ${{ secrets.MACOS_CERTIFICATE_P12 }}
+          CERTIFICATE_PASSWORD: ${{ secrets.MACOS_CERTIFICATE_PASSWORD }}
+          SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
+          INTERMEDIATE_SHA256: f16cd3c54c7f83cea4bf1a3e6a0819c8aaa8e4a1528fd144715f350643d2df3a
+        run: |
+          set -euo pipefail
+          if [[ -z "$CERTIFICATE_P12" || -z "$CERTIFICATE_PASSWORD" || -z "$SIGNING_IDENTITY" ]]; then
+            echo "::error::MACOS_CERTIFICATE_P12, MACOS_CERTIFICATE_PASSWORD, and MACOS_SIGNING_IDENTITY secrets are required"
+            exit 1
+          fi
+
+          keychain="$RUNNER_TEMP/signing.keychain-db"
+          keychain_password="$(openssl rand -base64 24)"
+          printf '%s' "$CERTIFICATE_P12" | base64 --decode > "$RUNNER_TEMP/signing.p12"
+          curl -fsSL -o "$RUNNER_TEMP/DeveloperIDG2CA.cer" \
+            https://www.apple.com/certificateauthority/DeveloperIDG2CA.cer
+          echo "$INTERMEDIATE_SHA256  $RUNNER_TEMP/DeveloperIDG2CA.cer" | shasum -a 256 -c -
+
+          security create-keychain -p "$keychain_password" "$keychain"
+          security set-keychain-settings -lut 21600 "$keychain"
+          security unlock-keychain -p "$keychain_password" "$keychain"
+          security import "$RUNNER_TEMP/signing.p12" -k "$keychain" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$keychain"
+          security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain" > /dev/null
+          security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
+          rm "$RUNNER_TEMP/signing.p12"
+
+          identities="$(security find-identity -v -p codesigning "$keychain")"
+          if [[ "$identities" != *"\"$SIGNING_IDENTITY\""* ]]; then
+            echo "::error::MACOS_SIGNING_IDENTITY does not match a valid identity in MACOS_CERTIFICATE_P12"
+            echo "$identities"
+            exit 1
+          fi
+
       - name: Build and package macOS app
         env:
           # Baked into the app so it can compare itself against GitHub Releases.
           THREADS_ANALYTICS_DESKTOP_VERSION: ${{ steps.release.outputs.version }}
+          MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: pnpm desktop:package:macos
+
+      # Notarizes the bundle and staples the ticket so Gatekeeper accepts the
+      # app offline. On rejection, the notary log names the offending files.
+      - name: Notarize app bundle
+        working-directory: desktop/zig-out/package
+        env:
+          API_KEY_P8: ${{ secrets.APPLE_API_KEY_P8 }}
+          API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          API_ISSUER_ID: ${{ secrets.APPLE_API_ISSUER_ID }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$API_KEY_P8" || -z "$API_KEY_ID" || -z "$API_ISSUER_ID" ]]; then
+            echo "::error::APPLE_API_KEY_P8, APPLE_API_KEY_ID, and APPLE_API_ISSUER_ID secrets are required"
+            exit 1
+          fi
+
+          key="$RUNNER_TEMP/AuthKey.p8"
+          submission="$RUNNER_TEMP/notarize.zip"
+          printf '%s\n' "$API_KEY_P8" > "$key"
+          auth=(--key "$key" --key-id "$API_KEY_ID" --issuer "$API_ISSUER_ID")
+          ditto -c -k --keepParent "${APP_NAME}.app" "$submission"
+
+          # Kept going on a non-zero exit so a rejection still prints its log.
+          result="$(xcrun notarytool submit "$submission" "${auth[@]}" --wait --output-format json)" || true
+          echo "$result"
+          field() {
+            node -e 'const s = process.argv[1]; try { console.log(JSON.parse(s.slice(s.indexOf("{"), s.lastIndexOf("}") + 1))[process.argv[2]] ?? ""); } catch { console.log(""); }' "$result" "$1"
+          }
+          status="$(field status)"
+          if [[ "$status" != "Accepted" ]]; then
+            submission_id="$(field id)"
+            if [[ -n "$submission_id" ]]; then xcrun notarytool log "$submission_id" "${auth[@]}" || true; fi
+            echo "::error::Notarization did not succeed (status: ${status:-unknown})"
+            exit 1
+          fi
+
+          xcrun stapler staple "${APP_NAME}.app"
+          rm "$submission"
 
       - name: Zip app bundle
         working-directory: desktop/zig-out/package
@@ -154,6 +240,8 @@ jobs:
           test -f "$app/Contents/Resources/dist/server/server.js"
           test -d "$app/Contents/Resources/dist/runtime/prisma/migrations"
           codesign --verify --deep --strict --verbose=2 "$app"
+          xcrun stapler validate "$app"
+          spctl --assess --type execute --verbose=2 "$app"
           # Boots the extracted bundle's own Node sidecar outside the checkout
           # and checks it serves (migrations, SQLite, loopback Host guard).
           node desktop/scripts/smoke-test-app.mjs "$app"
@@ -172,7 +260,7 @@ jobs:
           cat > "$RUNNER_TEMP/notes.md" <<NOTES
           ## Threads Analytics Desktop $VERSION ($label)
 
-          macOS, Apple silicon (arm64) only. This build is ad-hoc signed and **not notarized** by Apple, so macOS may block the first launch. See the install guide for how to open it and how to update an existing installation:
+          macOS, Apple silicon (arm64) only. Signed with a Developer ID and notarized by Apple. See the install guide for how to install it and how to update an existing installation:
 
           - [Install guide (English)](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/desktop/docs/install-macos.md)
           - [安裝說明（繁體中文）](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/desktop/docs/install-macos-zh.md)
@@ -209,3 +297,9 @@ jobs:
             "$RUNNER_TEMP/$ASSET" \
             "$RUNNER_TEMP/$ASSET.sha256"
           echo "Published https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
+
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/signing.p12" "$RUNNER_TEMP/AuthKey.p8"
