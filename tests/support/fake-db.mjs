@@ -2,10 +2,10 @@
 // in so that no test reaches a real database. It covers the slice of Prisma's
 // API the tested modules call: reads and writes that match on equality, the
 // lt/lte/gt/gte/not/in operators, OR/AND, compound unique keys and the
-// relations listed below; `include` for those relations; upserts, createMany,
-// count, groupBy with _max, array transactions; the schema's column defaults; and
-// Prisma's error when update or delete finds no row. Every call is async and
-// hands out copies, as a real client would.
+// relations listed below; `include` for those relations; counts, upserts,
+// createMany, groupBy with _max, array transactions; the schema's column
+// defaults; and Prisma's error when update or delete finds no row. Every call
+// is async and hands out copies, as a real client would.
 
 /** model → relation → [related model, foreign key on this model]. */
 const RELATIONS = {

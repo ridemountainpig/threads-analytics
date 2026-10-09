@@ -16,7 +16,8 @@ const { syncAccount, syncAccounts } = await import("../lib/sync-service.ts");
 const { encryptToken } = await import("../lib/crypto.ts");
 const { DEFAULT_TZ, getDateString } = await import("../lib/analytics.ts");
 
-const HOUR = 60 * 60_000;
+const MINUTE = 60_000;
+const HOUR = 60 * MINUTE;
 const DAY = 24 * HOUR;
 const ACCOUNT_ID = "1789";
 const TOKEN = "THAAG-current";
@@ -144,31 +145,34 @@ test("a first sync stores every post, its thread parts and today's followers", a
   );
 });
 
-test("insights are re-read on the post's spacing, and one stuck at zero once a day", async () => {
+test("insights are re-read on the post's spacing: settled never, zero once a day", async () => {
   rowsOf("post").push(
-    stored("due", 3 * DAY, { ...metrics(10), syncedAt: ago(7 * HOUR) }),
-    stored("just-read", 3 * DAY, metrics(10)),
     stored("settled", 40 * DAY, { ...metrics(50), syncedAt: ago(2 * DAY) }),
-    stored("stuck-at-zero", 40 * DAY, { ...zero, syncedAt: ago(2 * DAY) }),
-    stored("retried-today", 40 * DAY, zero),
+    stored("zero-due", 40 * DAY, { ...zero, syncedAt: ago(2 * DAY) }),
+    stored("zero-waiting", 40 * DAY, { ...zero, syncedAt: ago(HOUR) }),
+    // A two-day-old post is read every six hours.
+    stored("recent-due", 2 * DAY, { ...metrics(10), syncedAt: ago(7 * HOUR) }),
+    stored("recent-fresh", 2 * DAY, { ...metrics(10), syncedAt: ago(HOUR) }),
   );
-  api.posts = [
-    listed("due", 3 * DAY),
-    listed("just-read", 3 * DAY),
-    listed("settled", 40 * DAY),
-    listed("stuck-at-zero", 40 * DAY),
-    listed("retried-today", 40 * DAY),
-  ];
-  api.insights.set("due", metrics(20)).set("stuck-at-zero", metrics(80));
+  api.posts = ["settled", "zero-due", "zero-waiting"]
+    .map((id) => listed(id, 40 * DAY))
+    .concat(["recent-due", "recent-fresh"].map((id) => listed(id, 2 * DAY)));
+  for (const id of ["zero-due", "zero-waiting"]) api.insights.set(id, metrics(80));
+  for (const id of ["recent-due", "recent-fresh"]) api.insights.set(id, metrics(20));
 
   assert.equal((await syncAccount(account())).postsCount, 5);
   assert.deepEqual(
-    insightCalls().map((r) => r.key),
-    ["insights:due", "insights:stuck-at-zero"],
+    insightCalls()
+      .map((r) => r.key)
+      .sort(),
+    ["insights:recent-due", "insights:zero-due"],
   );
-  assert.equal(post("due").views, 20);
-  assert.equal(post("settled").views, 50);
-  assert.equal(post("stuck-at-zero").views, 80);
+  assert.deepEqual(
+    ["settled", "zero-due", "zero-waiting", "recent-due", "recent-fresh"].map(
+      (id) => post(id).views,
+    ),
+    [50, 80, 0, 20, 10],
+  );
 });
 
 test("a failed insights fetch keeps the post's numbers and is counted", async () => {
@@ -232,7 +236,7 @@ test("later syncs list back to the snapshot window, or a day before a longer gap
   assert.equal(listings(), 6);
 
   // Stops at the first page past 30 days, picking up the new post on the way.
-  api.posts.unshift(listed("new", 10 * 60_000));
+  api.posts.unshift(listed("new", 10 * MINUTE));
   await syncAccount(account());
   assert.equal(listings(), 6 + 4);
   assert.ok(post("new"));
@@ -359,12 +363,12 @@ test("later reply pulls start a day early and refresh parts stored before", asyn
     timestamp: ago(ageMs),
     mediaType: "TEXT_POST",
     permalink: "",
-    syncedAt: ago(7 * HOUR),
     ...values,
   });
   rowsOf("threadReply").push(
-    part("p1-2", "p1", 2 * DAY, metrics(5)),
-    part("old-2", "old", 40 * DAY, metrics(5)),
+    // Last read seven hours ago, past a two-day-old part's six-hour spacing.
+    part("p1-2", "p1", 2 * DAY, { ...metrics(5), syncedAt: ago(7 * HOUR) }),
+    part("old-2", "old", 40 * DAY, { ...metrics(5), syncedAt: ago(2 * DAY) }),
   );
   api.posts = [listed("p1", 2 * DAY), listed("old", 40 * DAY)];
   api.insights.set("p1", metrics(100)).set("p1-2", metrics(30));
@@ -382,24 +386,33 @@ test("later reply pulls start a day early and refresh parts stored before", asyn
   assert.equal(rowsOf("threadReply").find((row) => row.id === "p1-2").views, 30);
 });
 
-test("readings are spaced by the post's age, not taken every sync", async () => {
+test("insights and growth readings follow the post's age, not every sync", async () => {
   api.posts = [listed("p1", HOUR)];
   api.insights.set("p1", metrics(100));
   await syncAccount(account());
   await syncAccount(account());
+  // Straight after a reading the next one isn't due: no request, no new row.
   assert.equal(insightCalls().length, 1);
   assert.equal(rowsOf("postMetricSnapshot").length, 1);
 
-  // An hour-old post is due again fifteen minutes later.
-  post("p1").syncedAt = ago(15 * 60_000);
-  rowsOf("postMetricSnapshot")[0].capturedAt = ago(15 * 60_000);
+  // Once an hour-old post's 15-minute spacing has passed, both resume.
+  post("p1").syncedAt = ago(20 * MINUTE);
+  rowsOf("postMetricSnapshot")[0].capturedAt = ago(20 * MINUTE);
   api.insights.set("p1", metrics(150));
   await syncAccount(account());
+  assert.equal(insightCalls().length, 2);
+  assert.equal(rowsOf("postMetricSnapshot").length, 2);
   assert.equal(post("p1").views, 150);
-  assert.deepEqual(
-    rowsOf("postMetricSnapshot").map((row) => row.views),
-    [100, 150],
-  );
+});
+
+test("a young post still at zero is re-read every sync, but its readings stay spaced", async () => {
+  api.posts = [listed("p1", HOUR)];
+  await syncAccount(account());
+  await syncAccount(account());
+  // A zero reading may be a failed first read, so it isn't left to the spacing...
+  assert.equal(insightCalls().length, 2);
+  // ...but the growth series still gets one reading per spacing interval.
+  assert.equal(rowsOf("postMetricSnapshot").length, 1);
 });
 
 test("demographics are fetched once a day while the count follows every sync", async () => {
