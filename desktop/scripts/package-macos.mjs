@@ -2,11 +2,14 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import {
   chmodSync,
+  closeSync,
   copyFileSync,
   existsSync,
   mkdirSync,
+  openSync,
   readlinkSync,
   readFileSync,
+  readSync,
   readdirSync,
   rmSync,
   symlinkSync,
@@ -20,9 +23,8 @@ const desktopDirectory = path.join(repositoryRoot, "desktop");
 const appBundleName = "Threads Analytics.app";
 const appPath = path.join(desktopDirectory, "zig-out", "package", appBundleName);
 const resourcesDirectory = path.join(appPath, "Contents", "Resources");
-const mainExecutable = path.join(appPath, "Contents", "MacOS", "threads-analytics-desktop");
 const defaultBinary = path.join(desktopDirectory, "zig-out", "bin", "threads-analytics-desktop");
-// V8 needs JIT memory, which the hardened runtime blocks without these.
+// V8 needs JIT memory, which the hardened runtime blocks without allow-jit.
 const nodeEntitlements = path.join(desktopDirectory, "assets", "node.entitlements");
 const signingIdentity = process.env.MACOS_SIGNING_IDENTITY?.trim() || null;
 const require = createRequire(import.meta.url);
@@ -75,12 +77,30 @@ function codesign(target, entitlements) {
   run("codesign", [...args, target]);
 }
 
-function findNativeAddons(directory) {
+const machOMagics = new Set([0xfeedface, 0xfeedfacf, 0xcefaedfe, 0xcffaedfe]);
+const fatMagics = new Set([0xcafebabe, 0xcafebabf]);
+
+// Notarization rejects any nested Mach-O not signed with the Developer ID, so
+// match by header rather than by extension (.node, .dylib, bare executables).
+function isMachO(file) {
+  const header = Buffer.alloc(8);
+  const descriptor = openSync(file, "r");
+  try {
+    if (readSync(descriptor, header, 0, header.length, 0) < header.length) return false;
+  } finally {
+    closeSync(descriptor);
+  }
+  const magic = header.readUInt32BE(0);
+  // Java class files share the fat magic; their version field is far above any arch count.
+  return machOMagics.has(magic) || (fatMagics.has(magic) && header.readUInt32BE(4) < 20);
+}
+
+function findMachOFiles(directory) {
   const results = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) results.push(...findNativeAddons(entryPath));
-    if (entry.isFile() && entry.name.endsWith(".node")) results.push(entryPath);
+    if (entry.isDirectory()) results.push(...findMachOFiles(entryPath));
+    if (entry.isFile() && isMachO(entryPath)) results.push(entryPath);
   }
   return results;
 }
@@ -170,9 +190,11 @@ if (process.argv.includes("--check")) {
     `${signingIdentity ? "Developer ID signed" : "Ad-hoc signed local"} Native SDK macOS app bundle with an embedded Node sidecar.\n`,
   );
 
-  for (const addon of findNativeAddons(resourcesDirectory)) codesign(addon);
+  for (const binary of findMachOFiles(resourcesDirectory)) {
+    if (binary !== embeddedNode) codesign(binary);
+  }
   codesign(embeddedNode, nodeEntitlements);
-  codesign(mainExecutable);
+  // Signing the bundle also signs its main executable.
   codesign(appPath);
   run("codesign", ["--verify", "--deep", "--strict", "--verbose=2", appPath]);
 

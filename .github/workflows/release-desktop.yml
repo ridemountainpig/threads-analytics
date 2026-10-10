@@ -5,7 +5,8 @@ name: Release Desktop (macOS)
 # GitHub Release tagged v<version> at the commit the workflow was dispatched
 # from. Only dispatches from main publish.
 #
-# Signing and notarization read these repository secrets:
+# Signing and notarization read these secrets from the desktop-release
+# environment:
 #   MACOS_CERTIFICATE_P12       base64 of the Developer ID Application .p12
 #   MACOS_CERTIFICATE_PASSWORD  password of that .p12
 #   MACOS_SIGNING_IDENTITY      e.g. "Developer ID Application: Name (TEAMID)"
@@ -49,7 +50,11 @@ env:
 # publish releases (contents: write).
 jobs:
   package-macos:
-    runs-on: macos-14
+    # Older runners' `security import` can reject a .p12 exported by newer
+    # Keychain Access (AES encryption) as a wrong password.
+    runs-on: macos-15
+    # Holds the signing secrets; restrict its deployment branches to main.
+    environment: desktop-release
     steps:
       - name: Require the main branch
         if: github.ref != 'refs/heads/main'
@@ -143,6 +148,10 @@ jobs:
           INTERMEDIATE_SHA256: f16cd3c54c7f83cea4bf1a3e6a0819c8aaa8e4a1528fd144715f350643d2df3a
         run: |
           set -euo pipefail
+          shopt -s extglob
+          # package-macos.mjs trims the identity too, so a pasted newline matches.
+          SIGNING_IDENTITY="${SIGNING_IDENTITY##+([[:space:]])}"
+          SIGNING_IDENTITY="${SIGNING_IDENTITY%%+([[:space:]])}"
           if [[ -z "$CERTIFICATE_P12" || -z "$CERTIFICATE_PASSWORD" || -z "$SIGNING_IDENTITY" ]]; then
             echo "::error::MACOS_CERTIFICATE_P12, MACOS_CERTIFICATE_PASSWORD, and MACOS_SIGNING_IDENTITY secrets are required"
             exit 1
@@ -178,6 +187,13 @@ jobs:
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: pnpm desktop:package:macos
 
+      # Fails fast, before waiting on the notary service: the sidecar under the
+      # hardened runtime, then the signed shell launching it.
+      - name: Smoke-test signed app
+        run: |
+          pnpm desktop:smoke:macos
+          pnpm desktop:smoke:macos --shell
+
       # Notarizes the bundle and staples the ticket so Gatekeeper accepts the
       # app offline. On rejection, the notary log names the offending files.
       - name: Notarize app bundle
@@ -200,7 +216,8 @@ jobs:
           ditto -c -k --keepParent "${APP_NAME}.app" "$submission"
 
           # Kept going on a non-zero exit so a rejection still prints its log.
-          result="$(xcrun notarytool submit "$submission" "${auth[@]}" --wait --output-format json)" || true
+          # The timeout leaves room in the 6-hour job limit to report the state.
+          result="$(xcrun notarytool submit "$submission" "${auth[@]}" --wait --timeout 4h --output-format json)" || true
           echo "$result"
           field() {
             node -e 'const s = process.argv[1]; try { console.log(JSON.parse(s.slice(s.indexOf("{"), s.lastIndexOf("}") + 1))[process.argv[2]] ?? ""); } catch { console.log(""); }' "$result" "$1"
@@ -209,7 +226,7 @@ jobs:
           if [[ "$status" != "Accepted" ]]; then
             submission_id="$(field id)"
             if [[ -n "$submission_id" ]]; then xcrun notarytool log "$submission_id" "${auth[@]}" || true; fi
-            echo "::error::Notarization did not succeed (status: ${status:-unknown})"
+            echo "::error::Notarization did not succeed (status: ${status:-unknown}, submission: ${submission_id:-none})"
             exit 1
           fi
 
@@ -241,7 +258,14 @@ jobs:
           test -d "$app/Contents/Resources/dist/runtime/prisma/migrations"
           codesign --verify --deep --strict --verbose=2 "$app"
           xcrun stapler validate "$app"
-          spctl --assess --type execute --verbose=2 "$app"
+          # Checks the reported source, not just the exit status, so a host with
+          # assessments disabled cannot pass vacuously.
+          assessment="$(spctl --assess --type execute --verbose=2 "$app" 2>&1)" || true
+          echo "$assessment"
+          if [[ "$assessment" != *"source=Notarized Developer ID"* ]]; then
+            echo "::error::Gatekeeper does not accept the app as notarized"
+            exit 1
+          fi
           # Boots the extracted bundle's own Node sidecar outside the checkout
           # and checks it serves (migrations, SQLite, loopback Host guard).
           node desktop/scripts/smoke-test-app.mjs "$app"

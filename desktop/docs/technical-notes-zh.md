@@ -38,7 +38,7 @@ Threads Access Token 會經過加密。開發環境會將金鑰儲存在 `deskto
 
 `pnpm desktop:build:web` 會產生 SQLite Prisma client、以 `THREADS_ANALYTICS_TARGET=desktop` 建置根目錄的 Next.js 應用程式，並將 standalone 伺服器、公開資產、靜態檔案、遷移檔案與本機伺服器啟動器暫存至 `desktop/dist`。
 
-`pnpm desktop:package:macos` 會嵌入建置時使用的 Node 執行檔，因此產生的 `.app` 不需要全域安裝 Node。Native SDK 封裝網頁執行階段後，指令碼會還原必要的符號連結、將 Node 暫存於資產清單之外，並簽署原生附加元件、Node、外殼執行檔與最終 app bundle。將 `MACOS_SIGNING_IDENTITY` 設為 Developer ID Application 身分時，會以 hardened runtime 與安全時間戳記簽署以供公證，並為 Node 加上 `desktop/assets/node.entitlements` 中 V8 在 hardened runtime 下所需的 JIT entitlements；未設定時則採臨時簽章，本機與 CI 測試建置都是這種方式。
+`pnpm desktop:package:macos` 會嵌入建置時使用的 Node 執行檔，因此產生的 `.app` 不需要全域安裝 Node。Native SDK 封裝網頁執行階段後，指令碼會還原必要的符號連結、將 Node 暫存於資產清單之外，並簽署 bundle 內所有 Mach-O 檔案（依檔頭判斷，而非副檔名）、Node 與最終 app bundle。將 `MACOS_SIGNING_IDENTITY` 設為 Developer ID Application 身分時，會以 hardened runtime 與安全時間戳記簽署以供公證，並為 Node 加上 `desktop/assets/node.entitlements` 中的 `allow-jit` entitlement，否則 V8 在 hardened runtime 下一啟動就會中止；未設定時則採臨時簽章，本機與 CI 測試建置都是這種方式。
 
 封裝前會先確認目前的 Node 版本符合 `.nvmrc`，並驗證 `better-sqlite3` 可使用相同的 Node ABI 載入。`pnpm desktop:package:macos` 與 `zig build package` 都會使用這一份封裝實作。
 
@@ -50,7 +50,7 @@ Threads Access Token 會經過加密。開發環境會將金鑰儲存在 `deskto
 
 Native SDK manifest 只接受純 `X.Y.Z` 版本號，因此 pre-release 後綴只會出現在 tag 與檔名中。workflow 會檢查 `X.Y.Z` 前綴同時符合 `desktop/app.json` 與 `package.json`，在 Apple silicon runner 上建置 app，壓縮為 `Threads-Analytics-<version>-macos-arm64.zip` 並附上 SHA-256 檔案，然後建立 `v<version>` tag 與 GitHub Release。帶後綴的版本一律標記為 pre-release；純版本號則依 workflow 的 pre-release 輸入決定。
 
-workflow 會從 repository secrets 將 Developer ID 憑證匯入臨時鑰匙圈，以該身分封裝 app，再用 App Store Connect API key 送交 Apple 公證服務，並在壓縮前 staple 公證票證。驗證步驟會檢查解壓後 app 的 staple 票證與 Gatekeeper 評估結果。所需的 secrets 列在 workflow 檔案開頭。
+workflow 會從 `desktop-release` environment 的 secrets 將 Developer ID 憑證匯入臨時鑰匙圈，以該身分封裝 app，對 sidecar 與已簽章的外殼各執行一次 smoke test（`pnpm desktop:smoke:macos --shell`），再用 App Store Connect API key 送交 Apple 公證服務，並在壓縮前 staple 公證票證。驗證步驟會檢查解壓後 app 的 staple 票證與 Gatekeeper 評估結果。所需的 secrets 列在 workflow 檔案開頭；請放在 `desktop-release` environment，並將其部署分支限制為 `main`，讓其他分支的 workflow 讀不到。
 
 workflow 也會透過 `THREADS_ANALYTICS_DESKTOP_VERSION` 把完整的發行版本號傳給建置流程。`desktop/scripts/build-next.mjs` 會將它以 `NEXT_PUBLIC_DESKTOP_APP_VERSION` 烘入 app（本機封裝則退回 manifest 的版本號），執行中的 app 會拿它與最新且附有 `-macos-arm64.zip` 資產的 GitHub Release 比較。正式版建置只會收到正式版的提示，也就是純 `X.Y.Z` 版本號、且沒有標記為 pre-release 的版本。beta 建置（例如 `0.1.0-beta.1`）會優先收到較新的正式版，即使下一個版本的 beta 已經發布，也會先回到正式版；沒有較新的正式版時，才會收到帶有 pre-release 後綴的較新版本。如果第一頁的 release 中沒有這個建置所屬類型的版本，「設定」→「關於」會顯示無法檢查，而不是顯示已是最新版本。仍標記為 pre-release 的純版本號不會提示任何人。workflow 預設會把純版本號也標記為 pre-release，所以要在發布時（或之後編輯 release）取消勾選，已安裝的 app 才會收到這個正式版。有新版本時會在儀表板顯示 banner，並在「設定」→「關於」中顯示，兩處都會直接連到該版本的 ZIP。下載交給系統瀏覽器而不是 app 本身，因此 macOS 會照常標記隔離屬性，新版第一次開啟時仍會經過 Gatekeeper 檢查。只有本 repo 的 release 下載網址才會顯示下載連結，這個範圍已涵蓋在 `desktop/app.json` 的 `external_links` 允許清單內。開發版建置沒有烘入版本號，因此會略過檢查。
 
