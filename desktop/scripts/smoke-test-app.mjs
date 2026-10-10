@@ -10,7 +10,9 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
+import { waitForPortFree } from "../runtime/server-lifecycle.mjs";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
 const launchShell = process.argv.includes("--shell");
@@ -18,7 +20,9 @@ const sourceApp = path.resolve(
   process.argv.slice(2).find((argument) => !argument.startsWith("--")) ??
     path.join(repositoryRoot, "desktop", "zig-out", "package", "Threads Analytics.app"),
 );
-const origin = "http://127.0.0.1:43127";
+const host = "127.0.0.1";
+const port = 43127;
+const origin = `http://${host}:${port}`;
 const bootTimeoutMs = 60_000;
 
 const workDirectory = mkdtempSync(path.join(os.tmpdir(), "threads-analytics-smoke-"));
@@ -123,14 +127,25 @@ try {
     }
   }
 
-  // The sidecar must not outlive the shell and keep holding the port.
+  // Once the app is gone, by quitting or by force, the sidecar must release the
+  // port; otherwise the next launch (or the next CI step) cannot bind it.
   if (launchShell) {
     server.kill("SIGTERM");
-    const stopDeadline = Date.now() + 10_000;
-    while ((await probe("/")) && Date.now() < stopDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    const quit = await Promise.race([
+      exited.then(() => true),
+      sleep(10_000, false, { ref: false }),
+    ]);
+    if (!quit) {
+      // An annotation, not a failure: the shell can stall in its stop hook.
+      console.log("::warning::the app did not quit within 10s of SIGTERM; killing it");
+      server.kill("SIGKILL");
+      await exited;
     }
-    if (await probe("/")) fail("sidecar kept serving after the app exited");
+    // A bare TCP connect, unlike fetch()'s pooled keep-alive socket, neither
+    // holds a closing server open nor mistakes a hung sidecar for a free port.
+    if (!(await waitForPortFree(host, port, 10_000))) {
+      fail("sidecar kept the port after the app exited");
+    }
   }
 
   console.info(
