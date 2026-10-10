@@ -146,7 +146,8 @@ jobs:
   native-shell:
     needs: changes
     if: needs.changes.outputs.app == 'true'
-    runs-on: macos-14
+    # Matches the release workflow's runner.
+    runs-on: macos-15
     permissions:
       contents: read
       # Only used to post the test-build download link on the PR.
@@ -181,6 +182,11 @@ jobs:
       # node_modules cannot mask a dependency missing from the bundle.
       - name: Smoke-test packaged app
         run: pnpm desktop:smoke:macos
+
+      # Launches the bundle's own shell, which must start the sidecar and take
+      # it down again when it exits.
+      - name: Smoke-test packaged app shell
+        run: pnpm desktop:smoke:macos --shell
 
       - name: Test Native SDK shell
         run: node_modules/.bin/native test desktop --yes

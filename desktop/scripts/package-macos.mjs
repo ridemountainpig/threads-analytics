@@ -2,11 +2,14 @@ import { spawnSync } from "node:child_process";
 import { createRequire } from "node:module";
 import {
   chmodSync,
+  closeSync,
   copyFileSync,
   existsSync,
   mkdirSync,
+  openSync,
   readlinkSync,
   readFileSync,
+  readSync,
   readdirSync,
   rmSync,
   symlinkSync,
@@ -20,8 +23,10 @@ const desktopDirectory = path.join(repositoryRoot, "desktop");
 const appBundleName = "Threads Analytics.app";
 const appPath = path.join(desktopDirectory, "zig-out", "package", appBundleName);
 const resourcesDirectory = path.join(appPath, "Contents", "Resources");
-const mainExecutable = path.join(appPath, "Contents", "MacOS", "threads-analytics-desktop");
 const defaultBinary = path.join(desktopDirectory, "zig-out", "bin", "threads-analytics-desktop");
+// V8 needs JIT memory, which the hardened runtime blocks without allow-jit.
+const nodeEntitlements = path.join(desktopDirectory, "assets", "node.entitlements");
+const signingIdentity = process.env.MACOS_SIGNING_IDENTITY?.trim() || null;
 const require = createRequire(import.meta.url);
 
 function argumentValue(name) {
@@ -63,12 +68,39 @@ function run(command, args, cwd = repositoryRoot) {
   if (result.status !== 0) process.exit(result.status ?? 1);
 }
 
-function findNativeAddons(directory) {
+// Notarization requires the hardened runtime and a secure timestamp.
+function codesign(target, entitlements) {
+  const args = signingIdentity
+    ? ["--force", "--sign", signingIdentity, "--options", "runtime", "--timestamp"]
+    : ["--force", "--sign", "-", "--timestamp=none"];
+  if (entitlements) args.push("--entitlements", entitlements);
+  run("codesign", [...args, target]);
+}
+
+const machOMagics = new Set([0xfeedface, 0xfeedfacf, 0xcefaedfe, 0xcffaedfe]);
+const fatMagics = new Set([0xcafebabe, 0xcafebabf]);
+
+// Notarization rejects any nested Mach-O not signed with the Developer ID, so
+// match by header rather than by extension (.node, .dylib, bare executables).
+function isMachO(file) {
+  const header = Buffer.alloc(8);
+  const descriptor = openSync(file, "r");
+  try {
+    if (readSync(descriptor, header, 0, header.length, 0) < header.length) return false;
+  } finally {
+    closeSync(descriptor);
+  }
+  const magic = header.readUInt32BE(0);
+  // Java class files share the fat magic; their version field is far above any arch count.
+  return machOMagics.has(magic) || (fatMagics.has(magic) && header.readUInt32BE(4) < 20);
+}
+
+function findMachOFiles(directory) {
   const results = [];
   for (const entry of readdirSync(directory, { withFileTypes: true })) {
     const entryPath = path.join(directory, entry.name);
-    if (entry.isDirectory()) results.push(...findNativeAddons(entryPath));
-    if (entry.isFile() && entry.name.endsWith(".node")) results.push(entryPath);
+    if (entry.isDirectory()) results.push(...findMachOFiles(entryPath));
+    if (entry.isFile() && isMachO(entryPath)) results.push(entryPath);
   }
   return results;
 }
@@ -142,26 +174,29 @@ if (process.argv.includes("--check")) {
   copyFileSync(process.execPath, embeddedNode);
   chmodSync(embeddedNode, 0o755);
 
+  const signingMode = signingIdentity ? "developer-id" : "adhoc";
   const packageManifestPath = path.join(resourcesDirectory, "package-manifest.zon");
   const packageManifest = readFileSync(packageManifestPath, "utf8").replace(
     '.signing = "none",',
-    '.signing = "adhoc-after-sidecar-staging",',
+    `.signing = "${signingMode}-after-sidecar-staging",`,
   );
   writeFileSync(packageManifestPath, packageManifest);
   writeFileSync(
     path.join(resourcesDirectory, "signing-plan.txt"),
-    "signing=adhoc\nNode sidecar staged after Native SDK asset bundling\n",
+    `signing=${signingMode}\nNode sidecar staged after Native SDK asset bundling\n`,
   );
   writeFileSync(
     path.join(resourcesDirectory, "README.txt"),
-    "Ad-hoc signed local Native SDK macOS app bundle with an embedded Node sidecar.\n",
+    `${signingIdentity ? "Developer ID signed" : "Ad-hoc signed local"} Native SDK macOS app bundle with an embedded Node sidecar.\n`,
   );
 
-  for (const binary of [...findNativeAddons(resourcesDirectory), embeddedNode, mainExecutable]) {
-    run("codesign", ["--force", "--sign", "-", "--timestamp=none", binary]);
+  for (const binary of findMachOFiles(resourcesDirectory)) {
+    if (binary !== embeddedNode) codesign(binary);
   }
-  run("codesign", ["--force", "--sign", "-", "--timestamp=none", appPath]);
+  codesign(embeddedNode, nodeEntitlements);
+  // Signing the bundle also signs its main executable.
+  codesign(appPath);
   run("codesign", ["--verify", "--deep", "--strict", "--verbose=2", appPath]);
 
-  console.info(`[desktop] packaged ad-hoc signed app at ${appPath}`);
+  console.info(`[desktop] packaged ${signingMode} signed app at ${appPath}`);
 }

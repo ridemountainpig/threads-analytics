@@ -49,7 +49,7 @@ pnpm desktop:test           # デスクトップ版のテストスイートを�
 pnpm desktop:dev:web        # デスクトップ版 Next.js 開発サーバーを起動
 pnpm desktop:build:web      # Next.js ランタイムをビルドして desktop/dist に配置
 pnpm desktop:package:check  # 固定 Node ランタイムとネイティブ SQLite ABI を検証
-pnpm desktop:package:macos  # アドホック署名済み macOS app bundle をビルドしてパッケージ化
+pnpm desktop:package:macos  # macOS app bundle をビルドしてパッケージ化（MACOS_SIGNING_IDENTITY 未設定時はアドホック署名）
 pnpm desktop:open:macos     # パッケージ化された app を開く
 ```
 
