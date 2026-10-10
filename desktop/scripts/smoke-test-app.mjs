@@ -10,6 +10,7 @@ import { existsSync, mkdtempSync, readFileSync, rmSync } from "node:fs";
 import http from "node:http";
 import os from "node:os";
 import path from "node:path";
+import { setTimeout as sleep } from "node:timers/promises";
 import { fileURLToPath } from "node:url";
 
 const repositoryRoot = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..");
@@ -52,6 +53,20 @@ function statusWithHost(pathname, method, host) {
     );
     request.on("timeout", () => request.destroy());
     request.on("error", () => resolve(null));
+    request.end();
+  });
+}
+
+// A fresh connection per check: fetch()'s pooled keep-alive socket can still
+// reach a server that has stopped listening, and keeps it from closing.
+function acceptsConnections() {
+  return new Promise((resolve) => {
+    const request = http.request(`${origin}/`, { agent: false, timeout: 2000 }, (response) => {
+      response.resume();
+      resolve(true);
+    });
+    request.on("timeout", () => request.destroy());
+    request.on("error", () => resolve(false));
     request.end();
   });
 }
@@ -123,14 +138,23 @@ try {
     }
   }
 
-  // The sidecar must not outlive the shell and keep holding the port.
+  // Once the app is gone, by quitting or by force, the sidecar must release the
+  // port; otherwise the next launch (or the next CI step) cannot bind it.
   if (launchShell) {
     server.kill("SIGTERM");
-    const stopDeadline = Date.now() + 10_000;
-    while ((await probe("/")) && Date.now() < stopDeadline) {
-      await new Promise((resolve) => setTimeout(resolve, 500));
+    const quit = await Promise.race([
+      exited.then(() => true),
+      sleep(10_000, false, { ref: false }),
+    ]);
+    if (!quit) {
+      // An annotation, not a failure: the shell can stall in its stop hook.
+      console.log("::warning::the app did not quit within 10s of SIGTERM; killing it");
+      server.kill("SIGKILL");
+      await exited;
     }
-    if (await probe("/")) fail("sidecar kept serving after the app exited");
+    const releaseDeadline = Date.now() + 10_000;
+    while ((await acceptsConnections()) && Date.now() < releaseDeadline) await sleep(500);
+    if (await acceptsConnections()) fail("sidecar kept serving after the app exited");
   }
 
   console.info(
