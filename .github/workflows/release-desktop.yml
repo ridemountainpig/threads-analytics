@@ -62,8 +62,12 @@ jobs:
           echo "::error::Desktop releases are only published from main (dispatched from $GITHUB_REF)"
           exit 1
 
+      # Dependency code runs in this job, so the write-scoped token stays out
+      # of .git/config; only the release step gets it, through GH_TOKEN.
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Validate release version
         id: release
@@ -167,7 +171,8 @@ jobs:
           security create-keychain -p "$keychain_password" "$keychain"
           security set-keychain-settings -lut 21600 "$keychain"
           security unlock-keychain -p "$keychain_password" "$keychain"
-          security import "$RUNNER_TEMP/signing.p12" -k "$keychain" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign
+          # -x: the private key can sign but never be exported from the keychain.
+          security import "$RUNNER_TEMP/signing.p12" -k "$keychain" -P "$CERTIFICATE_PASSWORD" -T /usr/bin/codesign -x
           security import "$RUNNER_TEMP/DeveloperIDG2CA.cer" -k "$keychain"
           security set-key-partition-list -S apple-tool:,apple: -s -k "$keychain_password" "$keychain" > /dev/null
           security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
@@ -185,7 +190,10 @@ jobs:
           # Baked into the app so it can compare itself against GitHub Releases.
           THREADS_ANALYTICS_DESKTOP_VERSION: ${{ steps.release.outputs.version }}
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
-        run: pnpm desktop:package:macos
+        run: |
+          pnpm desktop:package:macos
+          # Signing is done; the smoke tests below run the bundled app's code.
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db"
 
       # Fails fast, before waiting on the notary service: the sidecar under the
       # hardened runtime, then the signed shell launching it.
@@ -211,6 +219,8 @@ jobs:
 
           key="$RUNNER_TEMP/AuthKey.p8"
           submission="$RUNNER_TEMP/notarize.zip"
+          # The verify step runs the app's code; the key must be gone by then.
+          trap 'rm -f "$key" "$submission"' EXIT
           printf '%s\n' "$API_KEY_P8" > "$key"
           auth=(--key "$key" --key-id "$API_KEY_ID" --issuer "$API_ISSUER_ID")
           ditto -c -k --keepParent "${APP_NAME}.app" "$submission"
@@ -231,7 +241,6 @@ jobs:
           fi
 
           xcrun stapler staple "${APP_NAME}.app"
-          rm "$submission"
 
       - name: Zip app bundle
         working-directory: desktop/zig-out/package
