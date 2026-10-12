@@ -22,20 +22,24 @@ function withSuffix(url) {
     const candidate = new URL(url.href + suffix);
     if (existsSync(candidate)) return candidate.href;
   }
-  return url.href;
+  const index = new URL(`${url.href}/index.js`);
+  return existsSync(index) ? index.href : url.href;
 }
 
-// No test reaches a real database: the app's client resolves to an in-memory
-// stand-in, which tests import from ./fake-db.mjs to seed and inspect.
-const APP_DB = new URL("lib/db.ts", root).href;
-const FAKE_DB = new URL("fake-db.mjs", import.meta.url).href;
+// No test reaches a real database: the app's client and the Postgres sync lock
+// resolve to in-memory stand-ins, which tests import from ./ to seed and inspect.
+const FAKES = new Map(
+  [
+    ["lib/db.ts", "fake-db.mjs"],
+    ["lib/database/postgres-sync-lock.ts", "fake-sync-lock.mjs"],
+  ].map(([app, fake]) => [new URL(app, root).href, new URL(fake, import.meta.url).href]),
+);
 
 module.registerHooks({
   resolve(specifier, context, nextResolve) {
     const resolved = resolveLikeNext(specifier, context, nextResolve);
-    return resolved.url === APP_DB
-      ? { url: FAKE_DB, format: "module", shortCircuit: true }
-      : resolved;
+    const fake = FAKES.get(resolved.url);
+    return fake ? { url: fake, format: "module", shortCircuit: true } : resolved;
   },
 });
 

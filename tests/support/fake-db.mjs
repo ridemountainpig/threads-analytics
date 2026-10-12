@@ -1,17 +1,23 @@
 // An in-memory stand-in for lib/db.ts, which tests/support/resolve.mjs swaps
 // in so that no test reaches a real database. It covers the slice of Prisma's
 // API the tested modules call: reads and writes that match on equality, the
-// lt/lte/gt/gte/not/in operators, OR/AND, compound unique keys and the
-// relations listed below; `include` for those relations; counts, upserts,
-// createMany, groupBy with _max, array transactions; the schema's column
-// defaults; and Prisma's error when update or delete finds no row. Every call
-// is async and hands out copies, as a real client would.
+// lt/lte/gt/gte/not/in operators, OR/AND, compound unique keys, Prisma's JSON
+// nulls and the relations listed below; `include` for those relations; counts,
+// upserts, createMany, groupBy with _max, array transactions; the schema's
+// column defaults; and Prisma's error when update or delete finds no row.
+// Every call is async and hands out copies, as a real client would.
 
 /** model → relation → [related model, foreign key on this model]. */
 const RELATIONS = {
   oAuthToken: { client: ["oAuthClient", "clientId"] },
   oAuthCode: { client: ["oAuthClient", "clientId"] },
   postMetricSnapshot: { post: ["post", "postId"] },
+  threadReply: { rootPost: ["post", "rootPostId"] },
+};
+
+/** One-to-one back sides: model → relation → [related model, its key to this model]. */
+const BACK_RELATIONS = {
+  threadsAccount: { syncState: ["syncState", "accountId"] },
 };
 
 const METRICS = { views: 0, likes: 0, replies: 0, reposts: 0, quotes: 0, shares: 0 };
@@ -40,7 +46,12 @@ const same = (a, b) =>
 const isPlainObject = (value) =>
   value !== null && typeof value === "object" && !(value instanceof Date) && !Array.isArray(value);
 
+// Prisma.DbNull, JsonNull and AnyNull, which are all a plain null here.
+const isNullFilter = (value) =>
+  ["DbNull", "JsonNull", "AnyNull"].includes(value?.constructor?.name);
+
 function matchesValue(value, condition) {
+  if (isNullFilter(condition)) return value === null;
   if (!isPlainObject(condition)) return same(value, condition);
   return Object.entries(condition).every(([operator, operand]) => {
     switch (operator) {
@@ -64,10 +75,19 @@ function matchesValue(value, condition) {
   });
 }
 
-function related(name, row, relation) {
-  const [target, foreignKey] = RELATIONS[name]?.[relation] ?? [];
+/** The related model, and whether one of its rows belongs to `row`. */
+function relation(name, field) {
+  const [target, foreignKey] = RELATIONS[name]?.[field] ?? [];
+  if (target) return [target, (row, other) => other.id === row[foreignKey]];
+  const [owner, ownerKey] = BACK_RELATIONS[name]?.[field] ?? [];
+  if (owner) return [owner, (row, other) => other[ownerKey] === row.id];
+  return [];
+}
+
+function related(name, row, field) {
+  const [target, belongs] = relation(name, field);
   if (!target) return undefined;
-  return table(target).find((other) => other.id === row[foreignKey]) ?? null;
+  return table(target).find((other) => belongs(row, other)) ?? null;
 }
 
 function matches(name, row, where = {}) {
@@ -76,7 +96,7 @@ function matches(name, row, where = {}) {
     if (field === "AND") return condition.every((branch) => matches(name, row, branch));
     const relatedRow = related(name, row, field);
     if (relatedRow !== undefined) {
-      return relatedRow !== null && matches(RELATIONS[name][field][0], relatedRow, condition);
+      return relatedRow !== null && matches(relation(name, field)[0], relatedRow, condition);
     }
     // A compound unique key, e.g. accountId_date: { accountId, date }.
     if (isPlainObject(condition) && !Object.keys(condition).some((key) => OPERATORS.has(key))) {
@@ -120,8 +140,9 @@ function model(name) {
       const row = find(where);
       return row ? withIncludes(name, row, include) : null;
     },
-    async findFirst({ where, include } = {}) {
-      return this.findUnique({ where, include });
+    async findFirst({ where, include, orderBy } = {}) {
+      const [row] = await this.findMany({ where, include, orderBy });
+      return row ?? null;
     },
     async findMany({ where, include, orderBy } = {}) {
       const found = rows().filter((row) => matches(name, row, where));
