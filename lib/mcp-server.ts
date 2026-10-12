@@ -125,12 +125,12 @@ const dateArg = (description: string) =>
 // A bare YYYY-MM-DD is a whole day in `tz`. Datetimes without a zone would
 // otherwise be parsed in the server's local zone, so they are pinned to UTC.
 function parseDate(value: string, endOfDay: boolean, tz: string): Date {
-  if (!value.includes("T")) {
-    // Date.UTC would roll a month like 13 into next year instead of rejecting it.
-    if (Number.isNaN(new Date(value).getTime())) return new Date(NaN);
-    return parseDateOnlyInTimeZone(value, tz, endOfDay);
-  }
-  return new Date(value.endsWith("Z") ? value : `${value}Z`);
+  if (!value.includes("T")) return parseDateOnlyInTimeZone(value, tz, endOfDay);
+  const date = new Date(value.endsWith("Z") ? value : `${value}Z`);
+  // Date parsing rolls a day past the month's end (2026-02-31T…) into the next month.
+  const sameDay =
+    !Number.isNaN(date.getTime()) && date.toISOString().slice(0, 10) === value.slice(0, 10);
+  return sameDay ? date : new Date(NaN);
 }
 
 function parseRange(since: string | undefined, until: string | undefined, tz: string) {

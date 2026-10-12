@@ -1975,19 +1975,20 @@ export function computePostingStreak(
     prev = d;
   }
 
-  const today = getDateString(now, tz);
-  const todayDate = new Date(today + "T12:00:00Z");
-  const cursor = new Date(todayDate);
+  // daysWithPosts already holds tz calendar dates, so walk those keys in UTC
+  // rather than reading an instant back in tz: from UTC+12 eastward, noon UTC
+  // already falls on the next local day.
+  const cursor = new Date(`${getDateString(now, tz)}T00:00:00Z`);
+  const cursorKey = () => cursor.toISOString().slice(0, 10);
 
   // A streak stays "active" until a full day is missed, so if nothing is posted
   // yet today the run through yesterday should still count — start from
-  // yesterday rather than reporting 0. Step by whole UTC days from the noon-UTC
-  // anchor so the local (tz) calendar date advances exactly once per iteration.
-  if (!daysWithPosts.has(getDateString(cursor, tz))) {
+  // yesterday rather than reporting 0.
+  if (!daysWithPosts.has(cursorKey())) {
     cursor.setUTCDate(cursor.getUTCDate() - 1);
   }
   let streakFromToday = 0;
-  while (daysWithPosts.has(getDateString(cursor, tz))) {
+  while (daysWithPosts.has(cursorKey())) {
     streakFromToday++;
     cursor.setUTCDate(cursor.getUTCDate() - 1);
   }

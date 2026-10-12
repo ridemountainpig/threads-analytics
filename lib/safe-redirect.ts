@@ -16,5 +16,9 @@ export function sanitizeRedirectPath(
     if (code <= 0x1f || code === 0x7f || code === 0x5c /* \ */) return fallback;
   }
   if (!input.startsWith("/") || input.startsWith("//")) return fallback;
+  // Dot segments collapse when the path is parsed: "/.//evil.com" and
+  // "/%2e//evil.com" both become the path "//evil.com", which any later step
+  // that reads it as a URL again would take for a host.
+  if (new URL(input, "http://localhost").pathname.startsWith("//")) return fallback;
   return input;
 }

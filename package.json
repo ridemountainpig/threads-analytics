@@ -25,7 +25,7 @@
     "desktop:smoke:macos": "node desktop/scripts/smoke-test-app.mjs",
     "desktop:open:macos": "open 'desktop/zig-out/package/Threads Analytics.app'",
     "desktop:start:web": "node desktop/runtime/start-server.mjs",
-    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test tests/*.test.mjs",
+    "test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --import ./tests/support/resolve.mjs --test tests/*.test.mjs",
     "desktop:test": "node --experimental-strip-types --disable-warning=ExperimentalWarning --test desktop/tests/*.test.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check ."
