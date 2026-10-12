@@ -88,6 +88,9 @@ export function parseDateOnlyInTimeZone(value: string, timeZone: string, endOfDa
   const second = endOfDay ? 59 : 0;
   const millisecond = endOfDay ? 999 : 0;
   const wallTime = Date.UTC(year, month - 1, day, hour, minute, second, millisecond);
+  // Date.UTC rolls a day or month past its end (2026-02-31) into the next one.
+  const parsed = new Date(wallTime);
+  if (parsed.getUTCMonth() !== month - 1 || parsed.getUTCDate() !== day) return new Date(NaN);
 
   // The wall time occurs at wallTime - offset, for whichever offset holds at
   // that instant. The offsets a day either side cover any DST change near it:

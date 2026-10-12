@@ -103,6 +103,18 @@ test("a custom range falls back to a preset when a date can't be read", () => {
   assert.ok(Math.abs(open.until.getTime() - open.since.getTime() - 30 * DAY) < 1000);
 });
 
+test("a day past the end of its month is not a date, rather than the next month's", () => {
+  for (const day of ["2026-02-29", "2026-02-31", "2026-04-31", "2026-13-01", "2026-01-00"]) {
+    assert.ok(Number.isNaN(parseDateOnlyInTimeZone(day, "Asia/Taipei", true).getTime()), day);
+  }
+  assert.equal(
+    parseDateOnlyInTimeZone("2028-02-29", "UTC", true).toISOString(),
+    "2028-02-29T23:59:59.999Z",
+  );
+  const { since, until } = getTimeRange({ from: "2026-02-01", to: "2026-02-31", range: "7" });
+  assert.ok(Math.abs(until.getTime() - since.getTime() - 7 * DAY) < 1000);
+});
+
 test("preset ranges count back from now, defaulting to 90 days", () => {
   const span = (range) => {
     const { since, until } = getTimeRange(range);
