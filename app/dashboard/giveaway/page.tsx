@@ -83,8 +83,8 @@ export default async function GiveawayPage({ searchParams }: PageProps) {
         <p className="text-muted-foreground text-sm">{t.giveaway.subtitle}</p>
       </div>
       <GiveawayTool
-        // A newly requested post starts a fresh draw instead of keeping the old selection.
-        key={initialPostId ?? ""}
+        // Any new ?post= request starts a fresh draw, even one that can't be preselected.
+        key={postParam ?? ""}
         posts={posts.map((p) => ({ ...p, timestamp: p.timestamp.toISOString() }))}
         labels={t.giveaway}
         dateLocale={dateLocales[locale]}
