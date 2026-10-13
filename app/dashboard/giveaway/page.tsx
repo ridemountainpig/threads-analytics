@@ -74,6 +74,8 @@ export default async function GiveawayPage({ searchParams }: PageProps) {
     if (linked) posts.push(linked);
   }
 
+  const initialPostId = posts.some((p) => p.id === postParam) ? postParam : undefined;
+
   return (
     <div className="space-y-4 p-4 sm:p-6">
       <div>
@@ -81,11 +83,13 @@ export default async function GiveawayPage({ searchParams }: PageProps) {
         <p className="text-muted-foreground text-sm">{t.giveaway.subtitle}</p>
       </div>
       <GiveawayTool
+        // A newly requested post starts a fresh draw instead of keeping the old selection.
+        key={initialPostId ?? ""}
         posts={posts.map((p) => ({ ...p, timestamp: p.timestamp.toISOString() }))}
         labels={t.giveaway}
         dateLocale={dateLocales[locale]}
         timeZone={tz}
-        initialPostId={posts.some((p) => p.id === postParam) ? postParam : undefined}
+        initialPostId={initialPostId}
       />
     </div>
   );
