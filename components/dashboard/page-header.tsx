@@ -17,7 +17,7 @@ export default function PageHeader({
 }: {
   title: string;
   subtitle: ReactNode;
-  range: ComponentProps<typeof TimeRangePicker>;
+  range?: ComponentProps<typeof TimeRangePicker>;
   sync: SyncButtonProps;
   actions?: ReactNode;
 }) {
@@ -28,9 +28,11 @@ export default function PageHeader({
         <p className="text-muted-foreground text-sm">{subtitle}</p>
         <LastSynced {...sync} className="mt-0.5 sm:hidden" />
       </div>
-      <div className="order-1 min-w-0 basis-full lg:order-none lg:basis-auto">
-        <TimeRangePicker {...range} />
-      </div>
+      {range && (
+        <div className="order-1 min-w-0 basis-full lg:order-none lg:basis-auto">
+          <TimeRangePicker {...range} />
+        </div>
+      )}
       <div className="mt-0.5 flex shrink-0 items-center gap-2 lg:mt-0">
         {actions}
         <SyncButton {...sync} compact />

@@ -1,3 +1,5 @@
+import { isHiddenStatus, type ConversationReply } from "./today-replies";
+
 const BASE_URL = "https://graph.threads.net/v1.0";
 // Token renewal sits outside the versioned graph path.
 const AUTH_BASE_URL = "https://graph.threads.net";
@@ -429,35 +431,33 @@ export async function getUserReplies(
 // anyway and the loop must not spin on the rate limit.
 const REPLY_PAGE_LIMIT = 100;
 
-/**
- * Fetches every reply (all nesting depths) under one of the user's own root
- * posts via /{media_id}/conversation. Replies from private profiles come back
- * without a username and are dropped — they can't be credited to an entrant.
- */
-export async function getAllReplies(
+interface ConversationItem {
+  id: string;
+  username?: string;
+  text?: string;
+  timestamp?: string;
+  permalink?: string;
+  replied_to?: { id?: string };
+  is_reply_owned_by_me?: boolean;
+  hide_status?: string;
+}
+
+async function fetchConversation(
   mediaId: string,
   accessToken: string,
-): Promise<{ replies: ThreadsReply[]; truncated: boolean }> {
+  fields: string,
+  maxPages: number,
+): Promise<{ items: ConversationItem[]; truncated: boolean }> {
   interface ConversationResponse {
-    data: Array<{
-      id: string;
-      username?: string;
-      text?: string;
-      timestamp?: string;
-      permalink?: string;
-    }>;
+    data: ConversationItem[];
     paging?: { cursors?: { after?: string }; next?: string };
   }
 
-  const replies: ThreadsReply[] = [];
+  const items: ConversationItem[] = [];
   let after: string | undefined;
 
-  for (let page = 0; page < REPLY_PAGE_LIMIT; page++) {
-    const params: Record<string, string> = {
-      fields: "id,username,text,timestamp,permalink",
-      limit: "100",
-      access_token: accessToken,
-    };
+  for (let page = 0; page < maxPages; page++) {
+    const params: Record<string, string> = { fields, limit: "100", access_token: accessToken };
     if (after) params["after"] = after;
 
     let data: ConversationResponse;
@@ -469,22 +469,73 @@ export async function getAllReplies(
       throw err;
     }
 
-    for (const r of data.data ?? []) {
-      if (!r.username || !r.timestamp) continue;
-      replies.push({
-        id: r.id,
-        username: r.username,
-        text: r.text ?? "",
-        timestamp: r.timestamp,
-        permalink: r.permalink ?? "",
-      });
-    }
-
+    items.push(...(data.data ?? []));
     after = data.paging?.cursors?.after && data.paging.next ? data.paging.cursors.after : undefined;
-    if (!after) return { replies, truncated: false };
+    if (!after) return { items, truncated: false };
   }
 
-  return { replies, truncated: true };
+  return { items, truncated: true };
+}
+
+/**
+ * Fetches every reply (all nesting depths) under one of the user's own root
+ * posts via /{media_id}/conversation. Replies from private profiles come back
+ * without a username and are dropped — they can't be credited to an entrant.
+ */
+export async function getAllReplies(
+  mediaId: string,
+  accessToken: string,
+): Promise<{ replies: ThreadsReply[]; truncated: boolean }> {
+  const { items, truncated } = await fetchConversation(
+    mediaId,
+    accessToken,
+    "id,username,text,timestamp,permalink",
+    REPLY_PAGE_LIMIT,
+  );
+  const replies: ThreadsReply[] = [];
+  for (const r of items) {
+    if (!r.username || !r.timestamp) continue;
+    replies.push({
+      id: r.id,
+      username: r.username,
+      text: r.text ?? "",
+      timestamp: r.timestamp,
+      permalink: r.permalink ?? "",
+    });
+  }
+  return { replies, truncated };
+}
+
+// Keeps a viral post from paging through the rate limit on every load.
+const CONVERSATION_PAGE_LIMIT = 10;
+
+export async function getConversation(
+  mediaId: string,
+  accessToken: string,
+): Promise<{ replies: ConversationReply[]; truncated: boolean }> {
+  const { items, truncated } = await fetchConversation(
+    mediaId,
+    accessToken,
+    "id,username,text,timestamp,permalink,replied_to,is_reply_owned_by_me,hide_status",
+    CONVERSATION_PAGE_LIMIT,
+  );
+  const replies: ConversationReply[] = [];
+  for (const r of items) {
+    // Threads writes "+0000" offsets, which some browsers can't parse.
+    const time = r.timestamp ? new Date(r.timestamp) : null;
+    if (!time || isNaN(time.getTime())) continue;
+    replies.push({
+      id: r.id,
+      username: r.username ?? null,
+      text: r.text ?? "",
+      timestamp: time.toISOString(),
+      permalink: r.permalink ?? "",
+      repliedToId: r.replied_to?.id ?? null,
+      ownedByMe: r.is_reply_owned_by_me === true,
+      hidden: isHiddenStatus(r.hide_status),
+    });
+  }
+  return { replies, truncated };
 }
 
 export async function getUserInsights(

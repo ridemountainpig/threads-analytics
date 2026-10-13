@@ -9,7 +9,12 @@ import GiveawayTool from "./giveaway-tool";
 
 const POST_PICKER_LIMIT = 100;
 
-export default async function GiveawayPage() {
+interface PageProps {
+  searchParams: Promise<{ post?: string }>;
+}
+
+export default async function GiveawayPage({ searchParams }: PageProps) {
+  const { post: postParam } = await searchParams;
   const [{ locale, t }, account, tz] = await Promise.all([
     getDictionary(),
     getActiveAccount(),
@@ -53,12 +58,21 @@ export default async function GiveawayPage() {
     );
   }
 
+  const postSelect = { id: true, text: true, timestamp: true, replies: true, permalink: true };
   const posts = await db.post.findMany({
     where: { accountId: account.id, mediaType: { not: "REPOST_FACADE" } },
     orderBy: { timestamp: "desc" },
     take: POST_PICKER_LIMIT,
-    select: { id: true, text: true, timestamp: true, replies: true, permalink: true },
+    select: postSelect,
   });
+  // A post linked from its detail page may be older than the picker reaches.
+  if (postParam && !posts.some((p) => p.id === postParam)) {
+    const linked = await db.post.findFirst({
+      where: { id: postParam, accountId: account.id, mediaType: { not: "REPOST_FACADE" } },
+      select: postSelect,
+    });
+    if (linked) posts.push(linked);
+  }
 
   return (
     <div className="space-y-4 p-4 sm:p-6">
@@ -71,6 +85,7 @@ export default async function GiveawayPage() {
         labels={t.giveaway}
         dateLocale={dateLocales[locale]}
         timeZone={tz}
+        initialPostId={posts.some((p) => p.id === postParam) ? postParam : undefined}
       />
     </div>
   );

@@ -43,7 +43,8 @@
 
 ## Features
 
-- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, viral posts, and how your newest posts are pacing against your typical post
+- **Today** — everything about today on one page: totals of today's posts with replies awaiting you and follower change, posting rhythm and best hours, every number for each of today's posts, yesterday's posts and what they picked up today, and an inbox of today's replies showing which are still waiting on you (read live from Threads, never stored)
+- **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, and viral posts
 - **Analytics** — 31 charts across **Performance**, **Content**, and **Audience** tabs
 - **Posts** — searchable, filterable list with per-post analytics panel, including each post's growth curve over its first week
 - **MCP server** — let Claude and other AI agents query your analytics through an OAuth-protected endpoint
