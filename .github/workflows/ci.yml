@@ -294,6 +294,9 @@ jobs:
         run: pnpm build
 
       - name: SEO smoke test
+        env:
+          SITE_URL: https://threads-analytics.app
+          NEXT_TELEMETRY_DISABLED: "1"
         run: |
           pnpm start > "$RUNNER_TEMP/threads-analytics-website.log" 2>&1 &
           server_pid=$!
