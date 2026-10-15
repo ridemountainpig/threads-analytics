@@ -172,6 +172,13 @@
   }
 }
 
+/* Caption tracking suits Latin capitals; it spreads CJK characters apart.
+   Unlayered so it outranks the tracking utilities. */
+:lang(zh) .uppercase,
+:lang(ja) .uppercase {
+  letter-spacing: 0;
+}
+
 /* Stat-card sparklines fade in on the same 500ms ease-out as the charts
    below them. Not a dash-offset draw: with preserveAspectRatio="none" plus
    non-scaling strokes, browsers measure dashes against the unstretched path,

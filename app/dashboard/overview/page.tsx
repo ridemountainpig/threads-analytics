@@ -10,7 +10,7 @@ import {
   getActiveAccount,
   getSyncIntervalCached,
 } from "@/lib/dashboard-data";
-import { getNewPostPace } from "@/lib/post-growth-data";
+import { getTodayBounds } from "@/lib/today-data";
 import {
   computeBestTimeToPost,
   computeTopHours,
@@ -32,14 +32,14 @@ import { buildSummary } from "@/lib/summary";
 import { bucketSeries, listDays, medianSeries, ratioSeries, smoothSeries } from "@/lib/sparkline";
 import { StatCard } from "@/components/dashboard/stat-card";
 import { SummaryCard } from "@/components/dashboard/summary-card";
-import { NewPostPaceCard } from "@/components/dashboard/new-post-pace-card";
 import { NoAccountNotice } from "@/components/dashboard/no-account-notice";
 import { TokenExpiredNotice } from "@/components/dashboard/token-expired-notice";
 import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
 import PageHeader from "@/components/dashboard/page-header";
 import DailyViewsChart from "@/components/charts/daily-views-chart";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ExternalLink } from "lucide-react";
+import Link from "next/link";
+import { ChevronRight, ExternalLink } from "lucide-react";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
 
@@ -168,7 +168,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     syncInterval,
     followerSnapshots,
     latestDemographics,
-    newPostPace,
+    postsToday,
     firstPost,
   ] = await Promise.all([
     userInsightsPromise,
@@ -213,7 +213,13 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       select: { demographics: true },
       orderBy: { date: "desc" },
     }),
-    getNewPostPace(account.id),
+    db.post.count({
+      where: {
+        accountId: account.id,
+        timestamp: { gte: getTodayBounds(tz).todayStart },
+        mediaType: { not: "REPOST_FACADE" },
+      },
+    }),
     range === "all"
       ? db.post.findFirst({
           where: { accountId: account.id, mediaType: { not: "REPOST_FACADE" } },
@@ -536,21 +542,21 @@ export default async function OverviewPage({ searchParams }: PageProps) {
         />
       </div>
 
-      {/* New posts against the typical post at the same age; only shown once
-          there is a new post and enough history to compare it with */}
-      {newPostPace.posts.length > 0 && (
-        <NewPostPaceCard
-          posts={newPostPace.posts}
-          typicalSample={newPostPace.typicalSample}
-          locale={dateLocale}
-          labels={{
-            ...t.overview.newPosts,
-            noText: t.postsPage.noText,
-            thisPost: t.postsPage.growth.thisPost,
-            typicalPost: t.postsPage.growth.typical,
-          }}
-          ageLabels={t.postsPage.growth}
-        />
+      {postsToday > 0 && (
+        <Link
+          href="/dashboard/today"
+          className="bg-card ring-foreground/10 hover:bg-muted/40 group flex items-center gap-3 rounded-xl px-4 py-3 ring-1 transition-[background-color,transform] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+        >
+          <span className="min-w-0 flex-1 text-sm">
+            {postsToday === 1
+              ? t.overview.todayLinkOne
+              : t.overview.todayLinkOther.replace("{count}", postsToday.toLocaleString(dateLocale))}
+          </span>
+          <span className="text-tint flex shrink-0 items-center gap-0.5 text-sm font-medium">
+            {t.overview.todayLinkCta}
+            <ChevronRight className="size-4 transition-transform duration-150 group-hover:translate-x-0.5 motion-reduce:transition-none motion-reduce:group-hover:translate-x-0" />
+          </span>
+        </Link>
       )}
 
       {/* Daily Views */}

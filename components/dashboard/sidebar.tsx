@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
+  Sun,
   LayoutDashboard,
   BarChart2,
   FileText,
@@ -11,22 +12,40 @@ import {
   LogOut,
   ArrowUpRight,
   Tag,
+  Ellipsis,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
 import AccountSwitcher from "@/components/dashboard/account-switcher";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuLinkItem,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import type { Locale } from "@/lib/i18n";
 import type { VersionLink } from "@/lib/update-status";
 
 const navItems = [
+  { href: "/dashboard/today", labelKey: "today", icon: Sun },
   { href: "/dashboard/overview", labelKey: "overview", icon: LayoutDashboard },
   { href: "/dashboard/analytics", labelKey: "analytics", icon: BarChart2 },
   { href: "/dashboard/posts", labelKey: "posts", icon: FileText },
   { href: "/dashboard/giveaway", labelKey: "giveaway", icon: Gift },
   { href: "/dashboard/settings", labelKey: "settings", icon: Settings },
 ] as const;
+
+// Five tabs at most: the rest go in the More menu.
+const tabItems = navItems.slice(0, 4);
+const moreItems = navItems.slice(4);
+
+const tabClassName =
+  "flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] leading-3 tracking-[0.01em] outline-none transition-[color,transform] duration-150 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100";
+
+const isWithin = (pathname: string, href: string) =>
+  pathname === href || pathname.startsWith(href + "/");
 
 interface Account {
   id: string;
@@ -41,11 +60,13 @@ interface SidebarProps {
   version: VersionLink | null;
   showSignOut?: boolean;
   labels: {
+    today: string;
     overview: string;
     analytics: string;
     posts: string;
     giveaway: string;
     settings: string;
+    more: string;
     signOut: string;
     switchAccount: string;
   };
@@ -60,6 +81,7 @@ export default function Sidebar({
   showSignOut = true,
 }: SidebarProps) {
   const pathname = usePathname();
+  const moreActive = moreItems.some(({ href }) => isWithin(pathname, href));
   const activeUsername = accounts.find((a) => a.isActive)?.username;
   const multiAccount = accounts.length > 1;
   // The server-rendered link may still be the package overview (the GHCR deep
@@ -106,7 +128,7 @@ export default function Sidebar({
               href={href}
               className={cn(
                 "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,color,transform] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100",
-                pathname === href || pathname.startsWith(href + "/")
+                isWithin(pathname, href)
                   ? "bg-accent text-accent-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
               )}
@@ -153,14 +175,14 @@ export default function Sidebar({
           translucent material with safe-area padding for the home indicator.
           Destinations only: sign-out lives at the end of Settings. */}
       <nav className="bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden">
-        {navItems.map(({ href, labelKey, icon: Icon }) => {
-          const active = pathname === href || pathname.startsWith(href + "/");
+        {tabItems.map(({ href, labelKey, icon: Icon }) => {
+          const active = isWithin(pathname, href);
           return (
             <Link
               key={href}
               href={href}
               className={cn(
-                "flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] leading-3 tracking-[0.01em] transition-[color,transform] duration-150 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100",
+                tabClassName,
                 active ? "text-tint font-semibold" : "text-muted-foreground",
               )}
             >
@@ -169,6 +191,39 @@ export default function Sidebar({
             </Link>
           );
         })}
+        <DropdownMenu>
+          <DropdownMenuTrigger
+            className={cn(
+              tabClassName,
+              moreActive
+                ? "text-tint font-semibold"
+                : "text-muted-foreground data-[popup-open]:text-foreground",
+            )}
+          >
+            <Ellipsis className={cn("size-5 shrink-0", moreActive && "stroke-[2.25]")} />
+            <span className="max-w-full truncate">{labels.more}</span>
+          </DropdownMenuTrigger>
+          <DropdownMenuContent side="top" align="end" sideOffset={8} className="w-auto min-w-44">
+            {moreItems.map(({ href, labelKey, icon: Icon }) => {
+              const active = isWithin(pathname, href);
+              return (
+                <DropdownMenuLinkItem
+                  key={href}
+                  closeOnClick
+                  render={<Link href={href} />}
+                  aria-current={active ? "page" : undefined}
+                  className={cn(
+                    "gap-2.5 px-2.5 py-2.5 text-[15px]",
+                    active && "text-tint font-medium",
+                  )}
+                >
+                  <Icon className="size-[18px]" />
+                  {labels[labelKey]}
+                </DropdownMenuLinkItem>
+              );
+            })}
+          </DropdownMenuContent>
+        </DropdownMenu>
       </nav>
     </>
   );

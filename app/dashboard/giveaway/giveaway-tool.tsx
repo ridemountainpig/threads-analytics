@@ -57,6 +57,7 @@ interface GiveawayToolProps {
   labels: Dictionary["giveaway"];
   dateLocale: string;
   timeZone: string;
+  initialPostId?: string;
 }
 
 const MENTION_RE = /@[a-z0-9._]+/gi;
@@ -273,8 +274,14 @@ function ConditionRow({
   );
 }
 
-export default function GiveawayTool({ posts, labels, dateLocale, timeZone }: GiveawayToolProps) {
-  const [postId, setPostId] = useState<string>("");
+export default function GiveawayTool({
+  posts,
+  labels,
+  dateLocale,
+  timeZone,
+  initialPostId,
+}: GiveawayToolProps) {
+  const [postId, setPostId] = useState<string>(initialPostId ?? "");
   const [replies, setReplies] = useState<ThreadsReply[] | null>(null);
   const [loadedPost, setLoadedPost] = useState<GiveawayPost | null>(null);
   const [truncated, setTruncated] = useState(false);

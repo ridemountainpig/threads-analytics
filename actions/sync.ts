@@ -7,6 +7,7 @@ import { getSession } from "@/lib/auth";
 import { syncAccount, syncAccounts, type SyncResult } from "@/lib/sync-service";
 import { withSyncLock } from "@/lib/sync-lock";
 import { USER_INSIGHTS_TAG } from "@/lib/user-insights-cache";
+import { TODAY_LIVE_TAG } from "@/lib/today-data";
 
 // Syncs the account the dashboard is showing and reports its result. Every
 // other connected account syncs after the response, so the button never waits
@@ -40,6 +41,7 @@ export async function syncDataAction(): Promise<SyncResult> {
   if (!result.error) {
     // revalidatePath doesn't touch unstable_cache entries, so expire them too.
     updateTag(USER_INSIGHTS_TAG);
+    updateTag(TODAY_LIVE_TAG);
     revalidatePath("/dashboard", "layout");
   }
 
@@ -62,6 +64,7 @@ export async function syncAccountAction(accountId: string): Promise<SyncResult> 
   if (!result.error) {
     // revalidatePath doesn't touch unstable_cache entries, so expire them too.
     updateTag(USER_INSIGHTS_TAG);
+    updateTag(TODAY_LIVE_TAG);
     revalidatePath("/dashboard", "layout");
   }
 

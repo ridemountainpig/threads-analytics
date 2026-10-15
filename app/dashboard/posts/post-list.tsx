@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useRef, type ReactNode } from "react";
+import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
   ArrowDown,
@@ -9,6 +10,7 @@ import {
   ChevronLeft,
   ChevronUp,
   ExternalLink,
+  Gift,
   Layers,
   Search,
   X,
@@ -137,6 +139,7 @@ interface PostListProps {
     noPosts: string;
     noText: string;
     viewOnThreads: string;
+    startGiveaway: string;
     engRate: string;
     vsAvgViews: string;
     vsMedianViews?: string;
@@ -438,6 +441,13 @@ function PostDetail({
               {labels.viewOnThreads}
             </a>
           )}
+          <Link
+            href={`/dashboard/giveaway?post=${encodeURIComponent(post.id)}`}
+            className="text-tint flex items-center gap-1 text-sm hover:opacity-80"
+          >
+            <Gift className="size-3.5" />
+            {labels.startGiveaway}
+          </Link>
         </div>
       </div>
 

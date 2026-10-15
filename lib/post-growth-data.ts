@@ -25,8 +25,6 @@ export const TYPICAL_SAMPLE_SIZE = 60;
 const HOUR_MS = 60 * 60 * 1000;
 /** The chart covers a post's first week; growth has flattened by then. */
 const CHART_WINDOW_MS = 7 * 24 * HOUR_MS;
-/** Posts younger than this count as new on the overview. */
-const NEW_POST_WINDOW_MS = 48 * HOUR_MS;
 
 const SNAPSHOT_SELECT = {
   capturedAt: true,
@@ -42,8 +40,6 @@ const toHours = (ms: number) => Math.round((ms / HOUR_MS) * 100) / 100;
 
 interface TrackedPost {
   id: string;
-  text: string;
-  permalink: string;
   postedAt: Date;
   points: GrowthPoint[];
 }
@@ -55,16 +51,12 @@ async function loadRecentTrackedPosts(accountId: string, take: number): Promise<
     take,
     select: {
       id: true,
-      text: true,
-      permalink: true,
       timestamp: true,
       metricSnapshots: { orderBy: { capturedAt: "asc" }, select: SNAPSHOT_SELECT },
     },
   });
   return rows.map((row) => ({
     id: row.id,
-    text: row.text,
-    permalink: row.permalink,
     postedAt: row.timestamp,
     points: toGrowthPoints(row.timestamp, row.metricSnapshots),
   }));
@@ -152,53 +144,43 @@ export async function getPostGrowthDetail(
   };
 }
 
-export interface NewPostPace {
-  id: string;
-  text: string;
-  permalink: string;
-  postedAt: string;
+export interface PostPace {
+  readings: number;
   /** Age of the post's latest reading, which the comparison is made at. */
   readingAgeHours: number;
   views: number;
-  typical: number;
+  typical: number | null;
   vsTypical: number | null;
   curve: GrowthCurvePoint[];
 }
 
-/**
- * The newest posts (published in the last 48 hours) against the typical post
- * at the age of their latest reading. Posts the typical post can't speak for
- * yet — too few older posts were read at that age — are left out, so an
- * account without enough history simply gets an empty list.
- */
-export async function getNewPostPace(
+export async function getRecentPostPace(
   accountId: string,
-  { now = new Date(), limit = 3 }: { now?: Date; limit?: number } = {},
-): Promise<{ posts: NewPostPace[]; typicalSample: number }> {
-  const tracked = await loadRecentTrackedPosts(accountId, TYPICAL_SAMPLE_SIZE + limit);
-  // Each new post is compared with the others, so one fewer than were loaded.
-  const typicalSample = Math.min(Math.max(tracked.length - 1, 0), TYPICAL_SAMPLE_SIZE);
-  const fresh = tracked.filter((p) => now.getTime() - p.postedAt.getTime() < NEW_POST_WINDOW_MS);
+  postIds: readonly string[],
+): Promise<{ pace: Map<string, PostPace>; typicalSample: number }> {
+  const pace = new Map<string, PostPace>();
+  if (postIds.length === 0) return { pace, typicalSample: 0 };
 
-  const pace: NewPostPace[] = [];
-  for (const post of fresh) {
+  // The requested posts are the newest, so they fall inside this window.
+  const tracked = await loadRecentTrackedPosts(accountId, TYPICAL_SAMPLE_SIZE + postIds.length);
+  // Each post is compared with the others, so one fewer than were loaded.
+  const typicalSample = Math.min(Math.max(tracked.length - 1, 0), TYPICAL_SAMPLE_SIZE);
+  const wanted = new Set(postIds);
+
+  for (const post of tracked) {
+    if (!wanted.has(post.id)) continue;
     const latest = post.points[post.points.length - 1];
     if (!latest) continue;
     const peers = tracked.filter((p) => p !== post).slice(0, TYPICAL_SAMPLE_SIZE);
     const typical = typicalViewsAt(peers, latest.ageMs);
-    if (typical === null) continue;
-    pace.push({
-      id: post.id,
-      text: post.text,
-      permalink: post.permalink,
-      postedAt: post.postedAt.toISOString(),
+    pace.set(post.id, {
+      readings: post.points.length,
       readingAgeHours: toHours(latest.ageMs),
       views: latest.views,
       typical,
       vsTypical: ratio(latest.views, typical),
       curve: curveAgainstTypical(post.points, peers, latest.ageMs),
     });
-    if (pace.length === limit) break;
   }
-  return { posts: pace, typicalSample };
+  return { pace, typicalSample };
 }
