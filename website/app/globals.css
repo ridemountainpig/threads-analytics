@@ -80,6 +80,57 @@ summary:focus-visible {
   margin-inline: auto;
 }
 
+.not-found-page {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 48px 24px;
+  background:
+    radial-gradient(circle at 50% 12%, rgba(158, 91, 239, 0.2), transparent 34rem),
+    var(--paper);
+}
+
+.not-found-card {
+  width: min(100%, 620px);
+  padding: clamp(32px, 7vw, 64px);
+  border: 1px solid var(--rule);
+  border-radius: 28px;
+  background: color-mix(in srgb, var(--paper-strong) 92%, transparent);
+  box-shadow: 0 30px 80px rgba(44, 27, 59, 0.12);
+  text-align: center;
+}
+
+.not-found-code {
+  margin: 0 0 12px;
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 14px;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+}
+
+.not-found-card h1 {
+  margin: 0;
+  font-size: clamp(38px, 8vw, 72px);
+  letter-spacing: -0.05em;
+  line-height: 0.98;
+  text-wrap: balance;
+}
+
+.not-found-card > p:not(.not-found-code) {
+  margin: 24px auto 0;
+  color: var(--ink-soft);
+  line-height: 1.7;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 12px;
+  margin-top: 32px;
+}
+
 /* Visually hidden but exposed to assistive technology. */
 .sr-only {
   position: absolute;

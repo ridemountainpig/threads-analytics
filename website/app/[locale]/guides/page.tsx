@@ -16,8 +16,6 @@ import { localizedPageMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
 import { getGuideHubStructuredData } from "@/lib/structured-data";
 
-export const dynamicParams = false;
-
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }

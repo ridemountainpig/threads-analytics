@@ -86,7 +86,7 @@ export const guideUi: Record<Locale, GuideUi> = {
   },
   "zh-TW": {
     relatedKicker: "延伸閱讀",
-    relatedTitle: "更⁠多 T⁠h⁠r⁠e⁠a⁠d⁠s 數⁠據⁠分⁠析⁠指⁠南⁠。",
+    relatedTitle: "更多 Threads 數據分析指南。",
     relatedDescription: "看懂指標、找出發文時段，弄清楚觀看數為什麼變了。",
     readMore: "閱讀全文",
     allGuides: "所有指南",
@@ -94,7 +94,7 @@ export const guideUi: Record<Locale, GuideUi> = {
   },
   ja: {
     relatedKicker: "あわせて読む",
-    relatedTitle: "T⁠h⁠r⁠e⁠a⁠d⁠s デ⁠ー⁠タ⁠分⁠析⁠のガ⁠イ⁠ド⁠をも⁠っ⁠と⁠。",
+    relatedTitle: "Threads データ分析のガイドをもっと。",
     relatedDescription: "指標の読み方、投稿時間の見つけ方、閲覧数が変わった理由の調べ方。",
     readMore: "ガイドを読む",
     allGuides: "すべてのガイド",
@@ -169,8 +169,8 @@ export const guideHub: Record<Locale, GuideHubCopy> = {
     },
     label: "指南",
     kicker: "指南 / Threads 數據",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s 數⁠據⁠分⁠析⁠指⁠南⁠，",
-    lineTwo: "從⁠看⁠懂⁠數⁠字到⁠找⁠出⁠原⁠因⁠。",
+    lineOne: "Threads 數據分析指南，",
+    lineTwo: "從看懂數字到找出原因。",
     description:
       "三篇一步步的教學，全部用你自己的貼文來練習：看懂 Threads 洞察報告、找出適合受眾的發文時段，並判斷觀看數下降是不是真的。",
     primaryCta: "從第一篇開始",
@@ -185,12 +185,12 @@ export const guideHub: Record<Locale, GuideHubCopy> = {
     },
     list: {
       kicker: "三篇指南",
-      title: "先⁠看⁠懂⁠指⁠標⁠，再⁠找⁠出⁠原⁠因⁠。",
+      title: "先看懂指標，再找出原因。",
       description: "每篇都能單獨閱讀，裡面的範例都能用你自己的數據照做一次。",
       outlineLabel: "內容",
     },
     cta: {
-      title: "用⁠自⁠己⁠的⁠數⁠據⁠，把⁠每⁠一⁠步⁠做⁠一⁠次⁠。",
+      title: "用自己的數據，把每一步做一次。",
       description: "部署 Threads Analytics 並連接帳號，指南裡的比較方法，儀表板都有對應的圖表。",
       primary: "部署儀表板",
       secondary: "前往 GitHub",
@@ -205,8 +205,8 @@ export const guideHub: Record<Locale, GuideHubCopy> = {
     },
     label: "ガイド",
     kicker: "ガイド / Threads データ",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s デ⁠ー⁠タ⁠分⁠析ガ⁠イ⁠ド⁠。",
-    lineTwo: "数⁠字⁠の読⁠み⁠方⁠か⁠ら⁠、原⁠因⁠探⁠し⁠ま⁠で⁠。",
+    lineOne: "Threads データ分析ガイド。",
+    lineTwo: "数字の読み方から、原因探しまで。",
     description:
       "自分の投稿を使って進める、3本のステップ解説です。Threads インサイトの読み方、読者に合う投稿時間の見つけ方、閲覧数の低下が本物かどうかの確かめ方を紹介します。",
     primaryCta: "1本目から読む",
@@ -221,12 +221,12 @@ export const guideHub: Record<Locale, GuideHubCopy> = {
     },
     list: {
       kicker: "3本のガイド",
-      title: "指⁠標⁠を理⁠解⁠し⁠て⁠か⁠ら⁠、原⁠因⁠を⁠探⁠す⁠。",
+      title: "指標を理解してから、原因を探す。",
       description: "どのガイドも単独で読めて、紹介している例は自分のデータでそのまま試せます。",
       outlineLabel: "内容",
     },
     cta: {
-      title: "す⁠べ⁠て⁠の手⁠順⁠を⁠、自⁠分⁠のデ⁠ー⁠タ⁠で⁠。",
+      title: "すべての手順を、自分のデータで。",
       description:
         "Threads Analytics をデプロイしてアカウントを連携すれば、ガイドで紹介した比較をダッシュボードのグラフでそのまま確認できます。",
       primary: "ダッシュボードをデプロイ",

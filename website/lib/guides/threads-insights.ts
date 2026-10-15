@@ -9,7 +9,7 @@ const en: GuideCopy = {
   menuTitle: "Insights explained",
   menuDescription: "What views and interactions count",
   metadata: {
-    title: "Threads Insights Explained: Views, Interactions and Followers",
+    title: "Threads Insights: Views, Interactions and Followers",
     description:
       "Where to find Threads Insights, what views, interactions and followers count, how to read Home / Profile / Search, and what to check when numbers look off.",
   },
@@ -68,14 +68,14 @@ const zh: GuideCopy = {
   },
   hero: {
     kicker: "指南 / THREADS 洞察報告",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s 洞⁠察⁠報⁠告怎⁠麼⁠看⁠？",
-    lineTwo: "瀏⁠覽⁠、互⁠動⁠、粉⁠絲一⁠次⁠看⁠懂",
+    lineOne: "Threads 洞察報告怎麼看？",
+    lineTwo: "瀏覽、互動、粉絲一次看懂",
     description:
       "打開洞察報告，看到一堆數字卻不知道該看哪個？這篇帶你搞懂瀏覽次數、互動和粉絲各自代表什麼，以及哪些結論其實讀不出來。",
     readingTime: "閱讀約 8 分鐘",
   },
   faq: {
-    title: "常⁠見⁠問⁠題",
+    title: "常見問題",
     items: [
       {
         question: "Threads 洞察報告的「搜尋」是什麼意思？",
@@ -100,7 +100,7 @@ const zh: GuideCopy = {
     ],
   },
   cta: {
-    title: "開⁠始⁠累⁠積自⁠己⁠的分⁠析⁠紀⁠錄⁠。",
+    title: "開始累積自己的分析紀錄。",
     description: "部署 Threads Analytics，每次同步都會幫你累積歷史紀錄，能比較的不只是最近 90 天。",
     primary: "部署儀表板",
     primaryHref: "#deploy",
@@ -120,14 +120,14 @@ const ja: GuideCopy = {
   },
   hero: {
     kicker: "ガイド / THREADS インサイト",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s イ⁠ン⁠サ⁠イ⁠ト⁠の見⁠方⁠：",
-    lineTwo: "閲⁠覧⁠数⁠・イ⁠ン⁠タ⁠ラ⁠ク⁠シ⁠ョ⁠ン⁠・フ⁠ォ⁠ロ⁠ワ⁠ー⁠を読⁠み⁠解⁠く",
+    lineOne: "Threads インサイトの見方：",
+    lineTwo: "閲覧数・インタラクション・フォロワーを読み解く",
     description:
       "インサイトを開いたものの、数字が多すぎてどれを見ればいいかわからない。そんな人のために、閲覧数・インタラクション・フォロワーがそれぞれ何を数えているのか、そして数字からは読み取れないことを整理しました。",
     readingTime: "約8分で読めます",
   },
   faq: {
-    title: "よ⁠く⁠あ⁠る⁠質⁠問",
+    title: "よくある質問",
     items: [
       {
         question: "Threads インサイトの「検索」とは何ですか？",
@@ -152,7 +152,7 @@ const ja: GuideCopy = {
     ],
   },
   cta: {
-    title: "自⁠分⁠の分⁠析⁠記⁠録⁠を残⁠し⁠は⁠じ⁠め⁠る⁠。",
+    title: "自分の分析記録を残しはじめる。",
     description:
       "Threads Analytics をデプロイすれば、同期のたびに履歴がたまり、直近90日を超えて比較できるようになります。",
     primary: "ダッシュボードをデプロイ",

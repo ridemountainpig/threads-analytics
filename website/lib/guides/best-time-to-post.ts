@@ -68,14 +68,14 @@ const zh: GuideCopy = {
   },
   hero: {
     kicker: "指南 / 發文時間",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s 最⁠佳⁠發⁠文⁠時⁠間怎⁠麼⁠找⁠？",
-    lineTwo: "用⁠自⁠己⁠的⁠數⁠據找⁠出⁠來",
+    lineOne: "Threads 最佳發文時間怎麼找？",
+    lineTwo: "用自己的數據找出來",
     description:
       "網路上的「最佳發文時間」各說各話，因為每個帳號的受眾都不一樣。這篇教你用自己的貼文紀錄，找出值得測試的時段，再用簡單的方法驗證。",
     readingTime: "閱讀約 8 分鐘",
   },
   faq: {
-    title: "常⁠見⁠問⁠題",
+    title: "常見問題",
     items: [
       {
         question: "Threads 幾點發文最好？",
@@ -100,7 +100,7 @@ const zh: GuideCopy = {
     ],
   },
   cta: {
-    title: "用⁠自⁠己⁠的⁠貼⁠文找⁠出發⁠文⁠時⁠段⁠。",
+    title: "用自己的貼文找出發文時段。",
     description: "部署 Threads Analytics 並連接帳號，就能用你的貼文紀錄比較各個發文時段。",
     primary: "部署儀表板",
     primaryHref: "#deploy",
@@ -120,14 +120,14 @@ const ja: GuideCopy = {
   },
   hero: {
     kicker: "ガイド / 投稿時間",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s の最⁠適⁠な⁠投⁠稿⁠時⁠間⁠は⁠、",
-    lineTwo: "自⁠分⁠の⁠デ⁠ー⁠タ⁠で見⁠つ⁠け⁠る",
+    lineOne: "Threads の最適な投稿時間は、",
+    lineTwo: "自分のデータで見つける",
     description:
       "「おすすめ投稿時間」の答えが記事ごとに違うのは、アカウントごとに読者が違うからです。自分の投稿履歴から試す価値のある時間帯を見つけ、きちんと検証する方法を紹介します。",
     readingTime: "約8分で読めます",
   },
   faq: {
-    title: "よ⁠く⁠あ⁠る⁠質⁠問",
+    title: "よくある質問",
     items: [
       {
         question: "Threads に投稿するのに最適な時間は？",
@@ -152,7 +152,7 @@ const ja: GuideCopy = {
     ],
   },
   cta: {
-    title: "自⁠分⁠の⁠投⁠稿⁠か⁠ら投⁠稿⁠時⁠間⁠を見⁠つ⁠け⁠る⁠。",
+    title: "自分の投稿から投稿時間を見つける。",
     description:
       "Threads Analytics をデプロイしてアカウントを連携すれば、投稿履歴をもとに時間帯ごとの成績を比べられます。",
     primary: "ダッシュボードをデプロイ",

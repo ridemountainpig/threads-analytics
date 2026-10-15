@@ -1,23 +1,18 @@
 import type { MetadataRoute } from "next";
 import { guideMeta, guideSlugs } from "@/lib/guides";
 import { defaultLocale, locales } from "@/lib/locales";
+import { staticPublicRoutes } from "@/lib/public-routes";
 import { selfHostMeta } from "@/lib/self-host";
 import { siteConfig } from "@/lib/site";
 
 export default function sitemap(): MetadataRoute.Sitemap {
   const guideDates = guideSlugs.map((slug) => guideMeta[slug].modified);
   const routes: { path: string; lastModified?: string }[] = [
-    { path: "" },
-    { path: "/deploy/railway-agent" },
-    { path: "/deploy/zeabur-agent" },
-    { path: "/deploy/vercel-agent" },
-    { path: "/deploy/self-host", lastModified: selfHostMeta.modified },
-    { path: "/desktop" },
-    { path: "/token-guide" },
-    { path: "/mcp" },
-    { path: "/giveaway" },
-    { path: "/analytics" },
-    { path: "/guides", lastModified: guideDates.toSorted().at(-1) },
+    ...staticPublicRoutes.map((path) => ({
+      path,
+      ...(path === "/deploy/self-host" && { lastModified: selfHostMeta.modified }),
+      ...(path === "/guides" && { lastModified: guideDates.toSorted().at(-1) }),
+    })),
     ...guideSlugs.map((slug) => ({
       path: `/guides/${slug}`,
       lastModified: guideMeta[slug].modified,

@@ -1,5 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { isLocale, locales, matchLocale } from "./lib/locales";
+import { isSharedPublicPath } from "./lib/public-routes";
 
 export function proxy(request: NextRequest) {
   const url = request.nextUrl.clone();
@@ -18,10 +19,13 @@ export function proxy(request: NextRequest) {
     return NextResponse.redirect(url, 308);
   }
 
-  // No locale prefix (the root, or a shared link like /token-guide):
-  // send the visitor to their preferred language's version of the same
-  // path. The redirect target depends on Accept-Language; Vary keeps
-  // shared caches from serving one locale's redirect to another visitor.
+  // Only the root and known shared links receive locale negotiation. Unknown
+  // paths continue into the app and return a real 404 instead of first being
+  // redirected to a localized 404 (which wastes crawl budget and log volume).
+  if (url.pathname !== "/" && !isSharedPublicPath(url.pathname)) {
+    return NextResponse.next();
+  }
+
   const locale = matchLocale(request.headers.get("accept-language"));
   url.pathname = `/${locale}${url.pathname === "/" ? "" : url.pathname}`;
   const response = NextResponse.redirect(url);
@@ -31,6 +35,7 @@ export function proxy(request: NextRequest) {
 
 export const config = {
   // Everything except Next internals and files with an extension
-  // (/_next/*, /og/*.png, /sitemap.xml, /robots.txt, /favicon.ico, …).
-  matcher: "/((?!_next|.*\\..*).*)",
+  // (/_next/*, /og/*.png, /sitemap.xml, /robots.txt, /favicon.ico, …), and
+  // the non-localized Railway health endpoint.
+  matcher: "/((?!_next|healthz|.*\\..*).*)",
 };

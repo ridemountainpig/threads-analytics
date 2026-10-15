@@ -9,9 +9,9 @@
 // - Turns the first cell of each table body row into a row header and scopes
 //   the head cells, matching the tables the guides rendered before MDX.
 
-// Word joiners keep CJK headings from breaking mid-word (see the guide copy);
-// they stay in the heading text but not in ids.
-const INVISIBLE = /[​-‍⁠﻿]/g;
+// Keep generated ids stable if pasted copy contains zero-width formatting
+// characters. The source copy itself should not rely on them for wrapping.
+const INVISIBLE = /[\u200b-\u200d\u2060\ufeff]/g;
 
 function textOf(node) {
   if (node.type === "text") return node.value;

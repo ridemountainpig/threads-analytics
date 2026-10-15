@@ -52,7 +52,7 @@ export const gettingStarted: Record<Locale, GettingStartedCopy> = {
   },
   "zh-TW": {
     kicker: "開始前先了解",
-    title: "這⁠個 Threads 分⁠析⁠工⁠具適⁠合⁠你⁠嗎⁠？",
+    title: "這個 Threads 分析工具適合你嗎？",
     description: "免費開源的 Threads 數據分析儀表板，適合想自己架設工具、長期保存數據的創作者。",
     items: [
       {
