@@ -42,14 +42,14 @@ export function UpdateAction({ status, labels, size }: UpdateActionProps) {
   if (!status.updateAvailable || !version) return null;
   const className = cn(buttonVariants({ size }), "rounded-full", paddingBySize[size]);
 
-  if (status.inAppInstall && !installFailed) {
+  // Without a download to fall back to, keep the button so it can be retried.
+  if (status.inAppInstall && !(installFailed && status.download)) {
     const install = async () => {
       try {
         const commands = nativeCommands();
         if (!commands) throw new Error("The Native SDK bridge is unavailable");
         await commands.invoke({ name: CHECK_FOR_UPDATES_COMMAND });
       } catch {
-        // The manual download still works, and the update guide covers it.
         setInstallFailed(true);
       }
     };
