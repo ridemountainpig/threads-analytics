@@ -16,8 +16,8 @@ An Intel Mac (x86_64) build is not currently available.
 
 ## Download and install
 
-1. Open [Threads Analytics Releases](https://github.com/ridemountainpig/threads-analytics/releases) and pick the newest release that lists a macOS ZIP. Beta builds are marked **Pre-release** and do not appear under **Latest**.
-2. Under **Assets**, download the ZIP whose name contains `macos-arm64`, such as `Threads-Analytics-0.1.0-beta.1-macos-arm64.zip`.
+1. Open [Threads Analytics Releases](https://github.com/ridemountainpig/threads-analytics/releases) and pick the newest release that lists a macOS ZIP. Previews are marked **Pre-release** and do not appear under **Latest**.
+2. Under **Assets**, download the ZIP whose name contains `macos-arm64`, such as `Threads-Analytics-0.1.0-macos-arm64.zip`.
 3. Open the ZIP in Finder.
 4. Drag **Threads Analytics** into the Applications folder.
 5. Open **Threads Analytics** from Applications.
@@ -45,7 +45,11 @@ If macOS instead says it cannot verify that Threads Analytics is free of malware
 
 ## Update the app
 
-The desktop app checks GitHub Releases for newer versions and shows a notice at the top of the dashboard when one is available. On an official release, only newer official releases trigger the notice. On a beta, newer betas do too. You can also see the installed version and update status under **Settings** → **About**. The app does not install updates itself. To update it:
+The desktop app checks GitHub Releases for newer versions and shows a notice at the top of the dashboard when one is available. Releases still marked **Pre-release** are not offered. You can also see the installed version and update status under **Settings** → **About**.
+
+To update, select **Install** in the update notice or under **Settings** → **About**, or choose **Threads Analytics** → **Check for Updates…** in the menu bar, then select **Install Update**. The app downloads the new version, checks that it is signed by this project, replaces itself, and reopens. The app must be able to replace itself, so keep it in a folder you can write to, such as Applications.
+
+If the update cannot finish, or the notice offers **Download** instead of **Install** (versions without in-app updates, such as the 0.1.0 betas), update the app by hand:
 
 1. Select **Download** in the update notice or under **Settings** → **About**. Your browser downloads the newest version's ZIP. You can also download it from [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases).
 2. Quit Threads Analytics.

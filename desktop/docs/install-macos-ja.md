@@ -16,8 +16,8 @@ Threads Analytics デスクトップ版では、Threads のデータを Mac 内�
 
 ## ダウンロードとインストール
 
-1. [Threads Analytics Releases](https://github.com/ridemountainpig/threads-analytics/releases) を開き、macOS 用 ZIP が含まれる最新のリリースを選びます。ベータ版は **Pre-release** と表示され、**Latest** には含まれません。
-2. **Assets** から、`Threads-Analytics-0.1.0-beta.1-macos-arm64.zip` のようにファイル名に `macos-arm64` を含む ZIP をダウンロードします。
+1. [Threads Analytics Releases](https://github.com/ridemountainpig/threads-analytics/releases) を開き、macOS 用 ZIP が含まれる最新のリリースを選びます。プレビュー版は **Pre-release** と表示され、**Latest** には含まれません。
+2. **Assets** から、`Threads-Analytics-0.1.0-macos-arm64.zip` のようにファイル名に `macos-arm64` を含む ZIP をダウンロードします。
 3. Finder で ZIP を開きます。
 4. **Threads Analytics** を「アプリケーション」フォルダへドラッグします。
 5. 「アプリケーション」から **Threads Analytics** を開きます。
@@ -45,7 +45,11 @@ Threads Analytics デスクトップ版では、Threads のデータを Mac 内�
 
 ## App のアップデート
 
-デスクトップ版は GitHub Releases に新しいバージョンがあるかを確認し、見つかるとダッシュボード上部に通知を表示します。正式リリースを使用している場合は、より新しい正式リリースのみが通知の対象です。ベータ版を使用している場合は、より新しいベータ版も通知されます。インストール済みのバージョンと更新状況は「設定」→「このアプリについて」でも確認できます。App 自体がアップデートをインストールすることはありません。アップデートするには、次の手順を行います。
+デスクトップ版は GitHub Releases に新しいバージョンがあるかを確認し、見つかるとダッシュボード上部に通知を表示します。**Pre-release** と表示されたままのリリースは通知されません。インストール済みのバージョンと更新状況は「設定」→「このアプリについて」でも確認できます。
+
+アップデートするには、更新の通知または「設定」→「このアプリについて」で「インストール」を選択するか、メニューバーの **Threads Analytics** → **Check for Updates…** を選択し、**Install Update** を選択します。App は新しいバージョンをダウンロードし、このプロジェクトによる署名を確認してから自身を置き換え、再起動します。App が自身を置き換えられるよう、「アプリケーション」など書き込み可能なフォルダに置いてください。
+
+アップデートが完了しない場合や、通知に「インストール」ではなく「ダウンロード」が表示される場合（0.1.0 のベータ版など、アプリ内アップデートに対応していないバージョン）は、手動でアップデートします。
 
 1. 更新の通知または「設定」→「このアプリについて」で「ダウンロード」を選択すると、ブラウザで最新版の ZIP がダウンロードされます。[GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) から直接ダウンロードすることもできます。
 2. Threads Analytics を終了します。

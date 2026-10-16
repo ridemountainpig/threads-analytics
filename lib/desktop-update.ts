@@ -3,6 +3,7 @@ import "server-only";
 import {
   releaseDownloadUrl,
   resolveDesktopUpdate,
+  supportsInAppUpdate,
   type DesktopReleaseCandidate,
 } from "@/lib/release-version";
 import type { UpdateStatusPayload, VersionLink } from "@/lib/update-status";
@@ -31,6 +32,7 @@ const UNSUPPORTED_STATUS: UpdateStatusPayload = {
   current: null,
   latest: null,
   download: null,
+  inAppInstall: false,
   updateId: null,
 };
 
@@ -72,6 +74,7 @@ export async function getDesktopUpdateStatus(
       current,
       latest: update ? { label: update.version, url: update.release.html_url } : null,
       download: update ? releaseDownloadUrl(update.asset, RELEASES_REPOSITORY) : null,
+      inAppInstall: update !== null && supportsInAppUpdate(currentVersion),
       updateId: update ? update.release.tag_name : null,
     };
     cached = { expiresAt: Date.now() + UPDATE_STATUS_CACHE_MS, status };
@@ -84,6 +87,7 @@ export async function getDesktopUpdateStatus(
       current,
       latest: null,
       download: null,
+      inAppInstall: false,
       updateId: null,
     };
     cached = { expiresAt: Date.now() + UPDATE_STATUS_FAILURE_CACHE_MS, status };

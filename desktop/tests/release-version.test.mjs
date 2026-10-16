@@ -7,6 +7,7 @@ import {
   pickLatestDesktopRelease,
   releaseDownloadUrl,
   resolveDesktopUpdate,
+  supportsInAppUpdate,
 } from "../../lib/release-version.ts";
 
 test("parses release versions with and without a tag prefix", () => {
@@ -257,4 +258,11 @@ test("resolveDesktopUpdate reports unchecked when nothing is on the build's line
     checked: false,
     update: null,
   });
+});
+
+test("supportsInAppUpdate only lets formal builds update in place", () => {
+  assert.equal(supportsInAppUpdate("0.1.0"), true);
+  // The bundle of a beta carries only its X.Y.Z prefix.
+  assert.equal(supportsInAppUpdate("0.2.0-beta.1"), false);
+  assert.equal(supportsInAppUpdate("dev"), false);
 });

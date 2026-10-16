@@ -5,7 +5,7 @@ import { RefreshCw, X } from "lucide-react";
 import { Collapse } from "@/components/ui/collapse";
 import type { Locale } from "@/lib/i18n";
 import { updateGuideUrl } from "@/lib/update-guide";
-import { UpdateDownloadLink } from "@/components/dashboard/update-download-link";
+import { UpdateAction } from "@/components/dashboard/update-action";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
 const DISMISSED_UPDATE_KEY = "threads_analytics_dismissed_update";
@@ -15,14 +15,18 @@ export default function UpdateBanner({
   labels,
 }: {
   locale: Locale;
-  labels: { newVersionAvailable: string; howToUpdate: string; download: string; dismiss: string };
+  labels: {
+    newVersionAvailable: string;
+    howToUpdate: string;
+    install: string;
+    download: string;
+    dismiss: string;
+  };
 }) {
   const [updateId, setUpdateId] = useState<string | null>(null);
   const [dismissed, setDismissed] = useState(false);
   // The banner is best-effort; a failed check should never disturb the dashboard.
   const { status } = useUpdateStatus();
-  const download = status?.download;
-  const latestVersion = status?.latest?.label;
 
   useEffect(() => {
     if (!status?.updateAvailable || !status.updateId) return;
@@ -60,14 +64,7 @@ export default function UpdateBanner({
             {labels.howToUpdate}
           </a>
         </p>
-        {download && latestVersion && (
-          <UpdateDownloadLink
-            href={download}
-            version={latestVersion}
-            label={labels.download}
-            size="xs"
-          />
-        )}
+        {status && <UpdateAction status={status} labels={labels} size="xs" />}
         <button
           type="button"
           aria-label={labels.dismiss}
