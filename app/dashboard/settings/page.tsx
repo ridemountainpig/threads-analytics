@@ -158,6 +158,7 @@ export default async function SettingsPage() {
                   ? t.versionInfo.sourceBuildHelpDesktop
                   : t.versionInfo.sourceBuildHelp,
                 howToUpdate: t.updateBanner.howToUpdate,
+                install: t.updateBanner.install,
                 download: t.updateBanner.download,
               }}
             />

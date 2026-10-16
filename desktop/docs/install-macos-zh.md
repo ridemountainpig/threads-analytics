@@ -16,8 +16,8 @@ Threads Analytics 桌面版會將 Threads 資料儲存在你的 Mac，不需要�
 
 ## 下載與安裝
 
-1. 前往 [Threads Analytics Releases](https://github.com/ridemountainpig/threads-analytics/releases)，選擇最新且附有 macOS ZIP 的版本。Beta 版會標示為 **Pre-release**，不會出現在 **Latest** 之下。
-2. 在 **Assets** 下載檔名包含 `macos-arm64` 的 ZIP 檔，例如 `Threads-Analytics-0.1.0-beta.1-macos-arm64.zip`。
+1. 前往 [Threads Analytics Releases](https://github.com/ridemountainpig/threads-analytics/releases)，選擇最新且附有 macOS ZIP 的版本。預覽版會標示為 **Pre-release**，不會出現在 **Latest** 之下。
+2. 在 **Assets** 下載檔名包含 `macos-arm64` 的 ZIP 檔，例如 `Threads-Analytics-0.1.0-macos-arm64.zip`。
 3. 在 Finder 中打開 ZIP 檔。
 4. 將 **Threads Analytics** 拖曳到「應用程式」資料夾。
 5. 從「應用程式」打開 **Threads Analytics**。
@@ -45,7 +45,11 @@ Threads Analytics 桌面版會將 Threads 資料儲存在你的 Mac，不需要�
 
 ## 更新 App
 
-桌面版會檢查 GitHub Releases 是否有新版本，有的話會在儀表板頂端顯示提示（使用正式版時只有較新的正式版會觸發；使用 beta 版時，較新的 beta 版也會觸發）；你也可以在「設定」→「關於」查看目前版本與更新狀態。App 不會自行安裝更新，更新時：
+桌面版會檢查 GitHub Releases 是否有新版本，有的話會在儀表板頂端顯示提示；仍標示為 **Pre-release** 的版本不會提示。你也可以在「設定」→「關於」查看目前版本與更新狀態。
+
+更新時，在更新提示或「設定」→「關於」選擇「安裝」，或從選單列選擇 **Threads Analytics** → **Check for Updates…**，再選擇 **Install Update**。App 會下載新版、確認它是由本專案簽署，接著取代自己並重新開啟。App 必須能取代自己，所以請放在你有寫入權限的資料夾，例如「應用程式」。
+
+如果更新無法完成，或提示中顯示的是「下載」而不是「安裝」（沒有 App 內更新的版本，例如 0.1.0 beta 版），請手動更新：
 
 1. 在更新提示或「設定」→「關於」選擇「下載」，瀏覽器會下載最新版的 ZIP；也可以直接從 [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) 下載。
 2. 結束 Threads Analytics。

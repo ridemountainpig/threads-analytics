@@ -24,6 +24,9 @@ export interface UpdateStatusPayload {
   // (the desktop release ZIP). It opens in the system browser, so macOS
   // quarantines the file and Gatekeeper still checks the app on first launch.
   download: string | null;
+  // Whether the desktop app can download and install the update itself
+  // (the Native SDK updater), so the UI offers that instead of the download.
+  inAppInstall: boolean;
   // Identifies the available update (image digest or release tag) so a
   // dismissed banner stays dismissed until a different update appears.
   updateId: string | null;

@@ -74,12 +74,19 @@ const App = struct {
 
 const server_origin = "http://127.0.0.1:43127";
 const allowed_origins = [_][]const u8{ "zero://app", server_origin };
-// WKWebView cannot download files, so CSV export saves via the native panel.
-const dialog_permissions = [_][]const u8{"dialog"};
+const bridge_permissions = [_][]const u8{ "dialog", "command" };
 const bridge_commands = [_]native_sdk.BridgeCommandPolicy{
+    // WKWebView cannot download files, so CSV export saves via the native panel.
     .{
         .name = "native-sdk.dialog.saveFile",
-        .permissions = &dialog_permissions,
+        .permissions = &.{"dialog"},
+        .origins = &.{server_origin},
+    },
+    // The dashboard's install button runs app.check-for-updates, which hands
+    // the update to the Native SDK updater (updates in app.json).
+    .{
+        .name = "native-sdk.command.invoke",
+        .permissions = &.{"command"},
         .origins = &.{server_origin},
     },
 };
@@ -106,7 +113,7 @@ pub fn main(init: std.process.Init) !void {
         .icon_path = "assets/icon.png",
         .builtin_bridge = .{
             .enabled = true,
-            .permissions = &dialog_permissions,
+            .permissions = &bridge_permissions,
             .commands = &bridge_commands,
         },
         .security = .{
@@ -129,6 +136,23 @@ test {
     // so reference the exports here to keep the test binary linkable.
     _ = native_sdk.updater.c_api.native_sdk_update_verify_feed;
     _ = native_sdk.updater.c_api.native_sdk_update_verify_archive;
+}
+
+// desktop/scripts/sign-update-feed.mjs signs release feeds; this checks the
+// verifier compiled into the app accepts its output. The feed and key come
+// from desktop/tests/update-feed.test.mjs, which checks the script still
+// produces this exact feed.
+test "updater accepts feeds from the release signing script" {
+    const public_key = "A6EHv/POEL4dcN0Y50vAmWfk1jCbpQ1fHdyGZBJVMbg=";
+    var verified = try native_sdk.updater.verifyEnvelope(std.testing.allocator, @embedFile("testdata/update-feed.json"), public_key);
+    defer verified.deinit(std.testing.allocator);
+    const release = verified.release;
+    try std.testing.expectEqualStrings("1.2.3", release.version);
+    try std.testing.expectEqual(@as(u64, 123456789), release.archive_bytes);
+    try std.testing.expectEqualStrings("9c7ec3bc3aaa0af39d787e991f33a9bef38c0ba61418fd15dc62077f304d66a4", release.sha256);
+    try std.testing.expectEqualStrings("Faster sync.\n同步更快。", release.release_notes);
+    try std.testing.expect(try native_sdk.updater.releaseApplies(release, "dev.ridemountainpig.threads-analytics", "1.2.2", "macos-aarch64"));
+    try std.testing.expect(!try native_sdk.updater.releaseApplies(release, "dev.ridemountainpig.threads-analytics", "1.2.3", "macos-aarch64"));
 }
 
 test "production source points at staged desktop assets" {

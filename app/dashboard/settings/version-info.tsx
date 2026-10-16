@@ -5,7 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import type { Locale } from "@/lib/i18n";
 import type { VersionLink } from "@/lib/update-status";
 import { updateGuideUrl } from "@/lib/update-guide";
-import { UpdateDownloadLink } from "@/components/dashboard/update-download-link";
+import { UpdateAction } from "@/components/dashboard/update-action";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 
 type UpdateState = "checking" | "upToDate" | "updateAvailable" | "unavailable";
@@ -26,6 +26,7 @@ export default function VersionInfo({
     updateAvailable: string;
     checkFailed: string;
     howToUpdate: string;
+    install: string;
     download: string;
   };
 }) {
@@ -100,14 +101,7 @@ export default function VersionInfo({
                   </a>
                 </span>
               </p>
-              {status?.download && status.latest && (
-                <UpdateDownloadLink
-                  href={status.download}
-                  version={status.latest.label}
-                  label={labels.download}
-                  size="sm"
-                />
-              )}
+              {status && <UpdateAction status={status} labels={labels} size="sm" />}
             </div>
           )}
         </div>

@@ -18,7 +18,7 @@ Threads Analytics 桌面版將現有的網頁儀表板封裝成 macOS app。你�
 - **本機資料庫** — 資料以 SQLite 儲存在你的 Mac 上，不需要 PostgreSQL 或架設伺服器。
 - **不需要密碼** — 沒有 `APP_PASSWORD` 登入，也沒有登出功能。
 - **內建自動同步** — 同步排程器固定啟用，不需要設定 `SYNC_SCHEDULER_ENABLED`。
-- **手動更新** — 有新版本時 app 會顯示通知，但需要自行下載並安裝。
+- **App 內更新** — 有新版本時 app 會顯示通知，並在確認簽章後直接安裝。
 
 ## 開發
 

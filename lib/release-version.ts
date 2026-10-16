@@ -141,6 +141,14 @@ export function pickLatestDesktopRelease<T extends DesktopReleaseCandidate>(
   return best ? { release: best.release, version: best.version, asset: best.asset } : null;
 }
 
+// Whether the Native SDK updater can move this build forward. It compares
+// plain X.Y.Z bundle versions, and a beta bundle carries only that prefix
+// (0.2.0-beta.1 ships as 0.2.0), so it would treat 0.2.0 as already installed.
+export function supportsInAppUpdate(currentVersion: string): boolean {
+  const current = parseReleaseVersion(currentVersion);
+  return current !== null && current.prerelease.length === 0;
+}
+
 // What a build running currentVersion should be offered from a releases
 // listing. A formal build is only offered formal releases. A beta build is
 // offered a newer formal release first, so it returns to the formal line once
