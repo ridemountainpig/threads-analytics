@@ -1,3 +1,5 @@
+import { isGuideSlug } from "./guides/slugs";
+
 /**
  * Locale-independent routes that are available in every supported language.
  *
@@ -28,7 +30,6 @@ export function isSharedPublicPath(pathname: string) {
 
   if (staticPublicRoutes.some((path) => path !== "" && path === normalized)) return true;
 
-  // Guide slugs are validated by the guide page. Restrict this to one segment
-  // so arbitrary paths do not get turned into localized redirect chains.
-  return /^\/guides\/[^/]+$/.test(normalized);
+  const guideMatch = /^\/guides\/([^/]+)$/.exec(normalized);
+  return guideMatch !== null && isGuideSlug(guideMatch[1]);
 }

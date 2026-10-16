@@ -298,7 +298,18 @@ jobs:
           SITE_URL: https://threads-analytics.app
           NEXT_TELEMETRY_DISABLED: "1"
         run: |
-          pnpm start > "$RUNNER_TEMP/threads-analytics-website.log" 2>&1 &
+          server_log="$RUNNER_TEMP/threads-analytics-website.log"
+          pnpm start > "$server_log" 2>&1 &
           server_pid=$!
-          trap 'kill "$server_pid"' EXIT
+          cleanup() {
+            status=$?
+            trap - EXIT
+            kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
+            if [ "$status" -ne 0 ]; then
+              cat "$server_log" || true
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
           pnpm seo:check -- http://127.0.0.1:3000

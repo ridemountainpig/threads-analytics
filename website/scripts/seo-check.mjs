@@ -76,6 +76,22 @@ async function checkRouting() {
     fail("unknown route", `expected a direct 404, received ${unknown.status}`);
   }
 
+  const unknownGuide = await request(new URL("/guides/__seo-check-missing-guide__", baseUrl), {
+    redirect: "manual",
+    headers: { "Accept-Language": "ja" },
+  });
+  if (unknownGuide.status !== 404) {
+    fail("unknown guide", `expected a direct 404, received ${unknownGuide.status}`);
+  }
+
+  const localizedUnknownGuide = await request(
+    new URL("/ja/guides/__seo-check-missing-guide__", baseUrl),
+    { redirect: "manual" },
+  );
+  if (localizedUnknownGuide.status !== 404) {
+    fail("localized unknown guide", `expected 404, received ${localizedUnknownGuide.status}`);
+  }
+
   const shared = await request(new URL("/guides", baseUrl), {
     redirect: "manual",
     headers: { "Accept-Language": "zh-TW,zh;q=0.9" },
@@ -177,7 +193,7 @@ async function checkPage(productionUrl, internalLinks, titles) {
 async function checkInternalLinks(internalLinks) {
   for (const productionUrl of internalLinks) {
     const response = await request(localUrl(productionUrl), { redirect: "manual" });
-    if (response.status >= 400) {
+    if (response.status !== 200) {
       fail(new URL(productionUrl).pathname, `internal link returned ${response.status}`);
     }
   }

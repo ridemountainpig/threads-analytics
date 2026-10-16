@@ -1,7 +1,10 @@
 import type { Locale } from "../locales";
 import { bestTimeToPost } from "./best-time-to-post";
 import { reachDrop } from "./reach-drop";
+import type { GuideSlug } from "./slugs";
 import { threadsInsights } from "./threads-insights";
+
+export { guideSlugs, isGuideSlug, type GuideSlug } from "./slugs";
 
 // Long-form guides that answer the question-shaped searches the product
 // pages cannot rank for ("how do I read Threads Insights", "best time to
@@ -9,14 +12,6 @@ import { threadsInsights } from "./threads-insights";
 // is the registry the page, sitemap, footer and OG generator all read from.
 // The article bodies are MDX, one file per locale, in content/guides/<slug>/
 // (loaded by lib/content.ts).
-
-export const guideSlugs = ["threads-insights", "best-time-to-post", "reach-drop"] as const;
-
-export type GuideSlug = (typeof guideSlugs)[number];
-
-export function isGuideSlug(value: string): value is GuideSlug {
-  return (guideSlugs as readonly string[]).includes(value);
-}
 
 /** Dashboard screenshots in public/guides/, rendered with demo data. Placed
  * in an MDX body with <Figure image="…" alt="…" caption="…" />. */
