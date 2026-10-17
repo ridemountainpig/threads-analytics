@@ -68,14 +68,14 @@ const zh: GuideCopy = {
   },
   hero: {
     kicker: "指南 / 觸及",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s 觸⁠及⁠率下⁠降⁠怎⁠麼⁠辦⁠？",
-    lineTwo: "先⁠判⁠斷是⁠真⁠的⁠掉⁠，還⁠是⁠正⁠常⁠波⁠動",
+    lineOne: "Threads 觸及率下降怎麼辦？",
+    lineTwo: "先判斷是真的掉，還是正常波動",
     description:
       "觀看數突然下滑，第一個念頭常常是「被限流了」。但很多時候，原因比你想的單純。這篇帶你一步步檢查，找出真正改變的地方。",
     readingTime: "閱讀約 9 分鐘",
   },
   faq: {
-    title: "常⁠見⁠問⁠題",
+    title: "常見問題",
     items: [
       {
         question: "Threads 有限流嗎？",
@@ -99,7 +99,7 @@ const zh: GuideCopy = {
     ],
   },
   cta: {
-    title: "建⁠立⁠基⁠準⁠，看⁠懂觀⁠看⁠變⁠化⁠。",
+    title: "建立基準，看懂觀看變化。",
     description:
       "部署 Threads Analytics，保存貼文指標和每日粉絲快照，下次觀看下降時就更容易找出原因。",
     primary: "部署儀表板",
@@ -120,14 +120,14 @@ const ja: GuideCopy = {
   },
   hero: {
     kicker: "ガイド / リーチ",
-    lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s のリ⁠ー⁠チ⁠が落⁠ち⁠た⁠ら⁠？",
-    lineTwo: "本⁠当⁠の⁠低⁠下⁠か⁠、い⁠つ⁠も⁠の⁠揺⁠れ⁠か⁠を見⁠分⁠け⁠る",
+    lineOne: "Threads のリーチが落ちたら？",
+    lineTwo: "本当の低下か、いつもの揺れかを見分ける",
     description:
       "閲覧数が急に落ちると、まず「制限されたのでは」と考えがちです。でも原因は、思っているより単純なことも少なくありません。一つずつ確認して、本当に変わったところを見つけましょう。",
     readingTime: "約9分で読めます",
   },
   faq: {
-    title: "よ⁠く⁠あ⁠る⁠質⁠問",
+    title: "よくある質問",
     items: [
       {
         question: "Threads にシャドウバンはありますか？",
@@ -152,7 +152,7 @@ const ja: GuideCopy = {
     ],
   },
   cta: {
-    title: "本⁠当⁠の⁠変⁠化⁠を見⁠分⁠け⁠る⁠た⁠め⁠の基⁠準⁠を⁠つ⁠く⁠る⁠。",
+    title: "本当の変化を見分けるための基準をつくる。",
     description:
       "Threads Analytics をデプロイして投稿の指標とフォロワーの記録を残しておけば、次に閲覧数が落ちたときに原因を読み解きやすくなります。",
     primary: "ダッシュボードをデプロイ",

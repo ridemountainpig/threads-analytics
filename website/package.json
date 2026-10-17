@@ -10,6 +10,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
+    "seo:check": "node scripts/seo-check.mjs",
     "og:generate": "tsx scripts/og/generate-og-images.tsx"
   },
   "dependencies": {

@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, BookOpen } from "lucide-react";
-import { FaGithub } from "react-icons/fa6";
+import { FaApple, FaGithub } from "react-icons/fa6";
 import { RiOpenaiFill } from "react-icons/ri";
 import { SiClaude, SiClaudecode, SiCursor } from "react-icons/si";
 import { AnalyticsDemo } from "@/components/analytics-demo";
@@ -81,15 +81,10 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 {copy.hero.primaryCta}
                 <ArrowRight aria-hidden="true" strokeWidth={2} />
               </a>
-              <a
-                href={siteConfig.github}
-                target="_blank"
-                rel="noreferrer"
-                className="button button-secondary"
-              >
-                <FaGithub className="github-icon" aria-hidden="true" />
+              <Link href={`/${locale}/desktop`} className="button button-secondary">
+                <FaApple aria-hidden="true" />
                 {copy.hero.secondaryCta}
-              </a>
+              </Link>
             </div>
             <p className="hero-note">{copy.hero.note}</p>
           </div>
@@ -288,6 +283,25 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
               />
             </div>
             <div className="deploy-grid" data-reveal="stagger" data-reveal-delay="1">
+              <Link href={`/${locale}/desktop`} className="deploy-card deploy-card-desktop">
+                <span className="deploy-card-topline">
+                  <span className="deploy-eyebrow">{copy.deploy.desktop.eyebrow}</span>
+                  <span className="deploy-brand-mark deploy-brand-mark-desktop" aria-hidden="true">
+                    <FaApple focusable="false" />
+                  </span>
+                </span>
+                <strong>{copy.deploy.desktop.title}</strong>
+                <p>{copy.deploy.desktop.body}</p>
+                <span className="deploy-desktop-action-row">
+                  <span className="deploy-tab-action">
+                    <span className="deploy-tab-action-text">{copy.deploy.desktop.action}</span>
+                    <span className="deploy-tab-action-chip" aria-hidden="true">
+                      <ArrowUpRight className="deploy-tab-action-arrow" strokeWidth={2} />
+                    </span>
+                  </span>
+                  <span className="deploy-desktop-note">{copy.deploy.desktop.note}</span>
+                </span>
+              </Link>
               <DeployTabsCard
                 copy={copy.deploy.railway}
                 templateHref={siteConfig.railway}
@@ -343,13 +357,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 </code>
               </Link>
             </div>
-            <p className="deploy-desktop-link" data-reveal="fade" data-reveal-delay="1">
-              {copy.deploy.desktop.text}
-              <Link href={`/${locale}/desktop`}>
-                {copy.deploy.desktop.action}
-                <ArrowRight aria-hidden="true" strokeWidth={2} />
-              </Link>
-            </p>
           </div>
         </section>
 

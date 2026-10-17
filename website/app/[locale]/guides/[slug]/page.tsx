@@ -25,8 +25,6 @@ import { getDictionary, isLocale, locales, type Locale } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
 import { getGuideStructuredData } from "@/lib/structured-data";
 
-export const dynamicParams = false;
-
 export function generateStaticParams() {
   return locales.flatMap((locale) => guideSlugs.map((slug) => ({ locale, slug })));
 }

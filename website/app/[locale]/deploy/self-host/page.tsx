@@ -19,8 +19,6 @@ import { getSelfHostStructuredData } from "@/lib/structured-data";
 
 const path = "/deploy/self-host";
 
-export const dynamicParams = false;
-
 export function generateStaticParams() {
   return locales.map((locale) => ({ locale }));
 }

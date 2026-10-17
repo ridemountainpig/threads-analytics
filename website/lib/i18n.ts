@@ -373,9 +373,9 @@ export type DesktopGuideCopy = {
 
 const tokenGuideEn: TokenGuideCopy = {
   metadata: {
-    title: "How to Get a Threads Access Token (Threads API): 18-Step Guide",
+    title: "Get a Threads Access Token: 18-Step API Guide",
     description:
-      "Get a long-lived Threads API access token step by step, with screenshots: create a Meta app, add the Threads API use case, invite a Threads Tester, copy the token.",
+      "Get a long-lived Threads API token with screenshots. Create a Meta app, add the Threads API, invite a tester, and copy your token in 18 steps.",
   },
   hero: {
     kicker: "GUIDE / THREADS ACCESS TOKEN",
@@ -550,8 +550,7 @@ const tokenGuideZh: TokenGuideCopy = {
   hero: {
     kicker: "教學 / THREADS ACCESS TOKEN",
     lineOne: "Threads Access Token，",
-    // \u2060 word joiners: line two only breaks between 跟著, 十八個步驟 and 拿到手.
-    lineTwo: "跟⁠著十⁠八⁠個⁠步⁠驟拿⁠到⁠手⁠。",
+    lineTwo: "跟著十八個步驟拿到手。",
     description:
       "Dashboard 部署好了，還差一把鑰匙。跟著 Meta for Developers 的畫面一步一步走，拿到 Long-lived Threads Access Token。",
     primaryCta: "從 Step 1 開始",
@@ -570,7 +569,7 @@ const tokenGuideZh: TokenGuideCopy = {
   },
   overview: {
     kicker: "01 / 路線圖",
-    title: "四⁠個⁠階⁠段⁠，十⁠八⁠個⁠步⁠驟⁠。",
+    title: "四個階段，十八個步驟。",
     description:
       "每一步都是一張截圖、一次點擊。其中三步在 Threads 完成，其餘都在 Meta for Developers。",
   },
@@ -702,7 +701,7 @@ const tokenGuideZh: TokenGuideCopy = {
   ],
   finish: {
     kicker: "拿到 TOKEN 之後",
-    title: "複⁠製⁠好⁠了⁠？把⁠它⁠帶⁠回⁠家⁠。",
+    title: "複製好了？把它帶回家。",
     description: "把 Token 貼到 Dashboard 的 **Settings → Add Threads account**，執行第一次同步。",
     expiry:
       "Token 有效期為 60 天，Dashboard 會在同步時自動續期，之後不需要再跑一次這份教學。若 App 離線太久導致 Token 過期，再依同樣流程產生一組，用帳號卡片上的 **Update token** 貼回即可，已同步的資料都會保留。",
@@ -719,8 +718,8 @@ const tokenGuideJa: TokenGuideCopy = {
   },
   hero: {
     kicker: "ガイド / THREADS ACCESS TOKEN",
-    lineOne: "18ス⁠テ⁠ッ⁠プで、",
-    lineTwo: "ア⁠ク⁠セ⁠ス⁠ト⁠ー⁠ク⁠ンを手に。",
+    lineOne: "18ステップで、",
+    lineTwo: "アクセストークンを手に。",
     description:
       "ダッシュボードの準備は完了。あとは鍵だけ。Meta for Developers の画面を 1 ステップずつ進み、Long-lived な Threads アクセストークンを取得します。",
     primaryCta: "Step 1 から始める",
@@ -739,7 +738,7 @@ const tokenGuideJa: TokenGuideCopy = {
   },
   overview: {
     kicker: "01 / 全体の流れ",
-    title: "4⁠つ⁠の⁠フ⁠ェ⁠ー⁠ズ⁠、1⁠8⁠の⁠ス⁠テ⁠ッ⁠プ⁠。",
+    title: "4つのフェーズ、18のステップ。",
     description:
       "各ステップはスクリーンショット1枚とクリック1回。3ステップは Threads 側、それ以外はすべて Meta for Developers 側です。",
   },
@@ -871,7 +870,7 @@ const tokenGuideJa: TokenGuideCopy = {
   ],
   finish: {
     kicker: "トークンを手にしたら",
-    title: "コ⁠ピ⁠ー⁠で⁠き⁠た⁠ら⁠、持⁠ち⁠帰⁠り⁠ま⁠し⁠ょ⁠う⁠。",
+    title: "コピーできたら、持ち帰りましょう。",
     description:
       "ダッシュボードの **Settings → Add Threads account** に貼り付けて、最初の同期を実行します。",
     expiry:
@@ -883,9 +882,9 @@ const tokenGuideJa: TokenGuideCopy = {
 
 const mcpGuideEn: McpGuideCopy = {
   metadata: {
-    title: "Threads MCP Server: Ask Claude or Cursor About Your Threads Data",
+    title: "Threads MCP Server for Claude, Cursor and AI Agents",
     description:
-      "A built-in Threads MCP server. Connect Claude Code, Claude, Cursor, or any MCP client and ask about your posts, analytics, and followers. Read-only, OAuth-protected.",
+      "Connect Claude, Cursor, Codex, or another MCP client to your Threads analytics. Ask about posts and followers through a read-only, OAuth-protected server.",
   },
   hero: {
     kicker: "GUIDE / MCP SERVER",
@@ -1110,16 +1109,14 @@ const mcpGuideEn: McpGuideCopy = {
 
 const mcpGuideZh: McpGuideCopy = {
   metadata: {
-    title: "Threads MCP Server：讓 Claude、Cursor 等 AI Agent 直接問你的 Threads 數據",
+    title: "Threads MCP Server：讓 Claude、Cursor 直接分析 Threads 數據",
     description:
       "內建 Threads MCP Server：連接 Claude Code、Claude、Cursor 或任何 MCP 客戶端，直接用 AI 問你的 Threads 貼文、數據與粉絲成長。唯讀存取、OAuth 保護、免 API Key。",
   },
   hero: {
     kicker: "教學 / MCP SERVER",
-    // ⁠ word joiners +   pin the break points: line one never breaks,
-    // line two only between 數據, 問一句 and 就能到手.
     lineOne: "Threads MCP，",
-    lineTwo: "數⁠據問⁠一⁠句就⁠能⁠到⁠手⁠。",
+    lineTwo: "數據問一句就能到手。",
     description:
       "你的 Dashboard 內建 MCP Server。連接 Claude Code、Claude、Codex 或 Cursor，就能直接問你的貼文、數據與粉絲紀錄。唯讀，每個連接都由你核准。",
     primaryCta: "開始連接 Agent",
@@ -1136,7 +1133,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / 它能做什麼",
-    title: "八⁠個唯⁠讀⁠工⁠具⁠，七⁠個報⁠告 P⁠r⁠o⁠m⁠p⁠t⁠。",
+    title: "八個唯讀工具，七個報告 Prompt。",
     description:
       "MCP Server 把你同步好的數據整理成結構化工具。你用自然語言發問，Agent 自己挑選工具、只讀取需要的部分。",
     panelBadge: "唯讀",
@@ -1181,7 +1178,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   connect: {
     kicker: "02 / 如何連接",
-    title: "不⁠需⁠要 A⁠P⁠I K⁠e⁠y⁠，在⁠瀏⁠覽⁠器按⁠下⁠核⁠准就⁠好⁠。",
+    title: "不需要 API Key，在瀏覽器按下核准就好。",
     description:
       "驗證採用 OAuth 2.1 with PKCE 與 Dynamic Client Registration：客戶端自動註冊，瀏覽器開啟你 Dashboard 的登入頁，由你在授權畫面親自核准。",
     steps: [
@@ -1257,7 +1254,7 @@ const mcpGuideZh: McpGuideCopy = {
   },
   usage: {
     kicker: "03 / 如何使用",
-    title: "用⁠自⁠己⁠的⁠話⁠問⁠，或⁠從 P⁠r⁠o⁠m⁠p⁠t 範⁠本開⁠始⁠。",
+    title: "用自己的話問，或從 Prompt 範本開始。",
     description:
       "連接完成後工具會自動出現，不需要任何設定。直接詢問帳號的任何問題，或執行七個內建 Prompt，多數都能加上像 30d、90d 的期間參數，月報則指定月份。",
     examplesLabel: "試著這樣問",
@@ -1326,7 +1323,7 @@ const mcpGuideZh: McpGuideCopy = {
     ],
   },
   cta: {
-    title: "讓⁠你⁠的 A⁠g⁠e⁠n⁠t 讀⁠懂你⁠的⁠數⁠據⁠。",
+    title: "讓你的 Agent 讀懂你的數據。",
     description: "部署 Dashboard、連接你慣用的 Agent，下一份成效報告只差一個 Prompt。",
     primary: "開始連接 Agent",
     secondary: "前往 GitHub",
@@ -1336,16 +1333,14 @@ const mcpGuideZh: McpGuideCopy = {
 
 const mcpGuideJa: McpGuideCopy = {
   metadata: {
-    title: "Threads MCP サーバー：Claude や Cursor などの AI エージェントから Threads データに質問",
+    title: "Threads MCP サーバー：Claude・Cursor でデータ分析",
     description:
       "Threads MCP サーバーを標準搭載。Claude Code、Claude、Cursor などの MCP クライアントを接続し、投稿・分析・フォロワーのデータに AI から直接質問。読み取り専用・OAuth 保護・API キー不要。",
   },
   hero: {
     kicker: "ガイド / MCP SERVER",
-    // ⁠ word joiners +   pin the break points: line one never breaks,
-    // line two only between データは, ひと言で and 手元に.
     lineOne: "Threads MCP で、",
-    lineTwo: "デ⁠ー⁠タ⁠はひ⁠と⁠言⁠で手⁠元⁠に⁠。",
+    lineTwo: "データはひと言で手元に。",
     description:
       "MCP サーバー内蔵。Claude Code、Claude、Codex、Cursor をつなげば、投稿・分析・フォロワーのデータに直接質問できます。読み取り専用で、接続はあなたが承認します。",
     primaryCta: "エージェントを接続する",
@@ -1362,7 +1357,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   capabilities: {
     kicker: "01 / できること",
-    title: "読⁠み⁠取⁠り⁠専⁠用ツ⁠ー⁠ル 8 つ⁠、レ⁠ポ⁠ー⁠トプ⁠ロ⁠ン⁠プ⁠ト 7 つ⁠。",
+    title: "読み取り専用ツール 8 つ、レポートプロンプト 7 つ。",
     description:
       "MCP サーバーは同期済みデータを構造化ツールとして公開します。自然な言葉で質問するだけで、エージェントが必要なツールを選び、必要な分だけ読み取ります。",
     panelBadge: "読み取り専用",
@@ -1407,7 +1402,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   connect: {
     kicker: "02 / 接続方法",
-    title: "A⁠P⁠I キ⁠ー⁠は不⁠要⁠。ブ⁠ラ⁠ウ⁠ザ⁠で承⁠認⁠す⁠る⁠だ⁠け⁠。",
+    title: "API キーは不要。ブラウザで承認するだけ。",
     description:
       "認証は OAuth 2.1（PKCE）と Dynamic Client Registration。クライアントが自動で登録し、ブラウザにダッシュボードのログイン画面が開き、同意画面であなたが承認します。",
     steps: [
@@ -1483,7 +1478,7 @@ const mcpGuideJa: McpGuideCopy = {
   },
   usage: {
     kicker: "03 / 使い方",
-    title: "自⁠分⁠の⁠言⁠葉⁠で質⁠問⁠す⁠る⁠か⁠、プ⁠ロ⁠ン⁠プ⁠ト⁠か⁠ら始⁠め⁠る⁠。",
+    title: "自分の言葉で質問するか、プロンプトから始める。",
     description:
       "接続すればツールは自動で現れ、設定は不要です。アカウントについて何でも質問するか、7 つの内蔵プロンプトを実行してください。多くは 30d や 90d のような期間指定に、月次レビューは月の指定に対応します。",
     examplesLabel: "こんな質問を",
@@ -1553,7 +1548,7 @@ const mcpGuideJa: McpGuideCopy = {
     ],
   },
   cta: {
-    title: "エ⁠ー⁠ジ⁠ェ⁠ン⁠ト⁠に⁠、自⁠分⁠の⁠デ⁠ー⁠タ⁠を⁠。",
+    title: "エージェントに、自分のデータを。",
     description:
       "ダッシュボードをデプロイし、いつものエージェントを接続すれば、次のレポートはプロンプト 1 つの距離です。",
     primary: "エージェントを接続する",
@@ -1814,10 +1809,8 @@ const giveawayGuideZh: GiveawayGuideCopy = {
   },
   hero: {
     kicker: "功能 / 抽獎",
-    // \u2060 word joiners pin the break points: line one only breaks after Threads,
-    // line two only between 留言, 就是你的 and 抽獎池.
-    lineOne: "Threads 抽⁠獎⁠工⁠具⁠，",
-    lineTwo: "留⁠言就⁠是⁠你⁠的抽⁠獎⁠池⁠。",
+    lineOne: "Threads 抽獎工具，",
+    lineTwo: "留言就是你的抽獎池。",
     description:
       "選一則貼文、載入全部留言、依你公告過的規則篩選，然後開獎。不用授權第三方抽獎機器人，名單也不會離開你的伺服器。",
     primaryCta: "試抽一次",
@@ -1838,7 +1831,7 @@ const giveawayGuideZh: GiveawayGuideCopy = {
   },
   how: {
     kicker: "01 / 怎麼運作",
-    title: "從⁠一⁠則⁠貼⁠文到⁠得⁠獎⁠者⁠，四⁠個⁠步⁠驟⁠。",
+    title: "從一則貼文到得獎者，四個步驟。",
     description:
       "全部都在你自己部署的 Dashboard 上執行，資料來自你早就同步好的貼文 — 和你看分析報表的是同一個地方。",
     steps: [
@@ -1866,7 +1859,7 @@ const giveawayGuideZh: GiveawayGuideCopy = {
   },
   conditions: {
     kicker: "02 / 抽獎條件",
-    title: "你⁠公⁠告⁠的⁠規⁠則⁠，逐⁠則⁠留⁠言自⁠動⁠核⁠對⁠。",
+    title: "你公告的規則，逐則留言自動核對。",
     description:
       "條件可以疊加。把你在貼文裡答應過的規則打開，面板會先告訴你還剩多少人符合資格，再開獎。",
     panelBadge: "可疊加",
@@ -1911,7 +1904,7 @@ const giveawayGuideZh: GiveawayGuideCopy = {
   },
   demo: {
     kicker: "03 / 試抽一次",
-    title: "切⁠換⁠條⁠件⁠，看⁠名⁠單⁠變⁠化⁠，然⁠後⁠開⁠獎⁠。",
+    title: "切換條件，看名單變化，然後開獎。",
     description:
       "這是抽獎面板的可操作復刻，裡面有 12 則範例留言。每個開關都會即時篩選名單，開獎用的也是產品實際採用的密碼學洗牌。",
     panel: {
@@ -2012,7 +2005,7 @@ const giveawayGuideZh: GiveawayGuideCopy = {
   },
   fairness: {
     kicker: "04 / 為什麼公平",
-    title: "說⁠得⁠清⁠楚⁠的隨⁠機⁠，跑⁠在你⁠自⁠己⁠的伺⁠服⁠器⁠上⁠。",
+    title: "說得清楚的隨機，跑在你自己的伺服器上。",
     description:
       "抽獎要辦得有意義，前提是參加的人相信結果。以下就是從留言名單到得獎者之間，實際發生的每一件事。",
     items: [
@@ -2042,7 +2035,7 @@ const giveawayGuideZh: GiveawayGuideCopy = {
     tokenCta: "看 Token 生成教學",
   },
   cta: {
-    title: "下⁠一⁠場⁠抽⁠獎⁠，就⁠在你⁠自⁠己⁠的 D⁠a⁠s⁠h⁠b⁠o⁠a⁠r⁠d 開⁠。",
+    title: "下一場抽獎，就在你自己的 Dashboard 開。",
     description:
       "部署 Threads Analytics、連接 Threads 帳號，抽獎面板就已經在側邊欄等你了 — 不需要再安裝任何東西。",
     primary: "部署 Dashboard",
@@ -2059,10 +2052,8 @@ const giveawayGuideJa: GiveawayGuideCopy = {
   },
   hero: {
     kicker: "機能 / 抽選",
-    // \u2060 word joiners pin the break points: line one only breaks after Threads,
-    // line two only between リプライが and 応募一覧に.
-    lineOne: "Threads 抽⁠選⁠ツ⁠ー⁠ル⁠で⁠、",
-    lineTwo: "リ⁠プ⁠ラ⁠イ⁠が応⁠募⁠一⁠覧⁠に⁠。",
+    lineOne: "Threads 抽選ツールで、",
+    lineTwo: "リプライが応募一覧に。",
     description:
       "投稿を選び、リプライを読み込み、告知したルールで絞り込んで抽選。抽選ボットの認可は不要で、応募者リストはサーバーの外に出ません。",
     primaryCta: "抽選を試す",
@@ -2083,7 +2074,7 @@ const giveawayGuideJa: GiveawayGuideCopy = {
   },
   how: {
     kicker: "01 / 仕組み",
-    title: "投⁠稿⁠か⁠ら当⁠選⁠者⁠ま⁠で⁠、4 ス⁠テ⁠ッ⁠プ⁠。",
+    title: "投稿から当選者まで、4 ステップ。",
     description:
       "すべては自分でデプロイしたダッシュボード上で、すでに同期済みの投稿に対して実行されます — 分析を見ているのと同じ場所です。",
     steps: [
@@ -2111,7 +2102,7 @@ const giveawayGuideJa: GiveawayGuideCopy = {
   },
   conditions: {
     kicker: "02 / 応募条件",
-    title: "告⁠知⁠し⁠たル⁠ー⁠ル⁠を⁠、す⁠べ⁠て⁠のリ⁠プ⁠ラ⁠イ⁠に自⁠動⁠で⁠適⁠用⁠。",
+    title: "告知したルールを、すべてのリプライに自動で適用。",
     description:
       "条件は重ねられます。投稿で約束したルールをオンにすると、抽選前に何件が対象として残るかをパネルが教えてくれます。",
     panelBadge: "重ねがけ可能",
@@ -2156,7 +2147,7 @@ const giveawayGuideJa: GiveawayGuideCopy = {
   },
   demo: {
     kicker: "03 / 抽選を試す",
-    title: "条⁠件⁠を切⁠り⁠替⁠え⁠、母⁠数⁠の⁠変⁠化⁠を見⁠て⁠、抽⁠選⁠す⁠る⁠。",
+    title: "条件を切り替え、母数の変化を見て、抽選する。",
     description:
       "12 件のサンプルリプライを使った、抽選パネルの実動レプリカです。スイッチを切り替えるたびにリストが即座に絞り込まれ、抽選には製品と同じ暗号学的シャッフルを使っています。",
     panel: {
@@ -2257,7 +2248,7 @@ const giveawayGuideJa: GiveawayGuideCopy = {
   },
   fairness: {
     kicker: "04 / 公正である理由",
-    title: "説⁠明⁠で⁠き⁠るラ⁠ン⁠ダ⁠ム⁠性⁠を⁠、自⁠分⁠のサ⁠ー⁠バ⁠ー⁠で⁠。",
+    title: "説明できるランダム性を、自分のサーバーで。",
     description:
       "抽選が意味を持つのは、応募した人が結果を信じられるときだけです。リプライ一覧から当選者が決まるまでに何が起きているかを、そのまま書いておきます。",
     items: [
@@ -2287,7 +2278,7 @@ const giveawayGuideJa: GiveawayGuideCopy = {
     tokenCta: "トークン生成ガイドを見る",
   },
   cta: {
-    title: "次⁠の⁠抽⁠選⁠は⁠、自⁠分⁠のダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ド⁠で⁠。",
+    title: "次の抽選は、自分のダッシュボードで。",
     description:
       "Threads Analytics をデプロイして Threads アカウントを接続すれば、抽選パネルはすでにサイドバーにあります — 追加インストールは不要です。",
     primary: "ダッシュボードをデプロイ",
@@ -2298,9 +2289,9 @@ const giveawayGuideJa: GiveawayGuideCopy = {
 
 const analyticsGuideEn: AnalyticsGuideCopy = {
   metadata: {
-    title: "31 Threads Analytics Charts: Post, Content & Audience Metrics",
+    title: "Threads Analytics Charts: 31 Metrics That Matter",
     description:
-      "All 31 Threads analytics charts in the dashboard: overview, performance, content, and audience metrics, plus per-post stats and the baselines behind every number.",
+      "Explore 31 Threads analytics charts covering performance, content, audience, per-post statistics, and the personal baselines behind every metric.",
   },
   hero: {
     kicker: "FEATURE / ANALYTICS",
@@ -2587,10 +2578,8 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
   },
   hero: {
     kicker: "功能 / 分析",
-    // \u2060 word joiners pin the break points: line one only breaks around Threads,
-    // line two only breaks between 各自回答 and 一個問題.
-    lineOne: "三⁠十⁠一⁠種 Threads 數⁠據⁠分⁠析⁠，",
-    lineTwo: "各⁠自⁠回⁠答一⁠個⁠問⁠題⁠。",
+    lineOne: "三十一種 Threads 數據分析，",
+    lineTwo: "各自回答一個問題。",
     description:
       "Dashboard 的每張圖表都在回答一個發文決策：何時發、什麼形式、寫多長、寫什麼、誰在看。以下是完整清單。",
     primaryCta: "看完整清單",
@@ -2615,7 +2604,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
     {
       index: "01",
       kicker: "01 / 總覽",
-      title: "一⁠眼⁠看⁠完帳⁠號⁠現⁠況⁠。",
+      title: "一眼看完帳號現況。",
       description: "在你開始找原因之前，登入後的第一個分頁先回答「我現在表現如何」。",
       panelName: "threads-analytics · overview",
       badge: "4 個區塊",
@@ -2642,7 +2631,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
     {
       index: "02",
       kicker: "02 / 成效分析",
-      title: "最⁠佳⁠發⁠文⁠時⁠間與⁠觸⁠及⁠率⁠：什⁠麼⁠時⁠候⁠發⁠，什⁠麼⁠真⁠的傳⁠得⁠出⁠去⁠。",
+      title: "最佳發文時間與觸及率：什麼時候發，什麼真的傳得出去。",
       description: "十一張關於觸及與互動的圖表：發文時機、單篇品質定位，以及帳號到底有沒有在成長。",
       panelName: "threads-analytics · performance",
       badge: "11 張圖表",
@@ -2689,7 +2678,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
     {
       index: "03",
       kicker: "03 / 內容分析",
-      title: "內⁠容⁠分⁠析⁠：寫⁠什⁠麼⁠、寫⁠多⁠長⁠、多⁠久⁠發⁠一⁠次⁠。",
+      title: "內容分析：寫什麼、寫多長、多久發一次。",
       description:
         "十三張關於內容本身的圖表 — 格式、長度、關鍵字、發文節奏，以及最能引發對話的貼文。",
       panelName: "threads-analytics · content",
@@ -2733,7 +2722,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
     {
       index: "04",
       kicker: "04 / 受眾分析",
-      title: "粉⁠絲⁠分⁠析⁠：另⁠一⁠頭在⁠看⁠的⁠是⁠誰⁠。",
+      title: "粉絲分析：另一頭在看的是誰。",
       description:
         "追蹤者歷史是 API 不給回補的資料，所以 Dashboard 從你部署那天起，一天一筆自己記下來。",
       panelName: "threads-analytics · audience",
@@ -2762,7 +2751,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
     {
       index: "05",
       kicker: "05 / 貼文頁",
-      title: "然⁠後⁠，一⁠篇⁠一⁠篇⁠讀⁠。",
+      title: "然後，一篇一篇讀。",
       description: "彙總數據最後總會指向某一篇貼文，貼文頁就是你去讀它的地方。",
       panelName: "threads-analytics · posts",
       badge: "4 項工具",
@@ -2784,7 +2773,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
   method: {
     index: "06",
     kicker: "06 / 方法論",
-    title: "為⁠什⁠麼這⁠些⁠數⁠字值⁠得⁠相⁠信⁠。",
+    title: "為什麼這些數字值得相信。",
     description: "數據分析要做得好看很容易，以下四條規則是讓這個 Dashboard 保持誠實的原因。",
     railMeta: "4 條規則",
     items: [
@@ -2811,7 +2800,7 @@ const analyticsGuideZh: AnalyticsGuideCopy = {
     ],
   },
   cta: {
-    title: "把⁠這⁠一⁠整⁠套指⁠向你⁠自⁠己⁠的⁠帳⁠號⁠。",
+    title: "把這一整套指向你自己的帳號。",
     description:
       "部署 Dashboard 並連接 Threads 帳號。貼文相關圖表在第一次同步後就會出現，粉絲與受眾圖表則從那天起逐日累積。",
     primary: "部署 Dashboard",
@@ -2828,10 +2817,8 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
   },
   hero: {
     kicker: "機能 / 分析",
-    // \u2060 word joiners pin the break points: line one only breaks after Threads,
-    // line two only breaks between 問いは and ひとつずつ.
-    lineOne: "Threads 分⁠析⁠は⁠ ⁠3⁠1⁠ ⁠種⁠類⁠、",
-    lineTwo: "問⁠い⁠はひ⁠と⁠つ⁠ず⁠つ⁠。",
+    lineOne: "Threads 分析は 31 種類、",
+    lineTwo: "問いはひとつずつ。",
     description:
       "すべてのチャートは投稿の判断に答えます。いつ、どの形式で、どれくらい、何を書くか、誰が読んでいるか。以下がその全一覧です。",
     primaryCta: "完全な一覧を見る",
@@ -2856,7 +2843,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
     {
       index: "01",
       kicker: "01 / 概要",
-      title: "ア⁠カ⁠ウ⁠ン⁠ト⁠をひ⁠と⁠目⁠で⁠。",
+      title: "アカウントをひと目で。",
       description: "理由を探しに行く前に、最初のタブが「今どうなっているか」に答えます。",
       panelName: "threads-analytics · overview",
       badge: "4 セクション",
@@ -2883,7 +2870,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
     {
       index: "02",
       kicker: "02 / パフォーマンス",
-      title: "お⁠す⁠す⁠め⁠の投⁠稿⁠時⁠間⁠：い⁠つ⁠出⁠す⁠か⁠、何⁠が⁠実⁠際⁠に届⁠く⁠か⁠。",
+      title: "おすすめの投稿時間：いつ出すか、何が実際に届くか。",
       description:
         "リーチとエンゲージメントに関する 11 チャート。タイミングの問い、投稿の品質マップ、そしてアカウントが伸びているのかどうか。",
       panelName: "threads-analytics · performance",
@@ -2943,7 +2930,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
     {
       index: "03",
       kicker: "03 / コンテンツ",
-      title: "投⁠稿⁠分⁠析⁠：何⁠を⁠、ど⁠れ⁠く⁠ら⁠い⁠、ど⁠の⁠頻⁠度⁠で⁠。",
+      title: "投稿分析：何を、どれくらい、どの頻度で。",
       description:
         "コンテンツそのものに関する 13 チャート — 形式、長さ、キーワード、投稿のリズム、そして会話を生んだ投稿。",
       panelName: "threads-analytics · content",
@@ -3012,7 +2999,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
     {
       index: "04",
       kicker: "04 / オーディエンス",
-      title: "フ⁠ォ⁠ロ⁠ワ⁠ー⁠分⁠析⁠：そ⁠の⁠向⁠こ⁠う⁠にい⁠る⁠の⁠は誰⁠か⁠。",
+      title: "フォロワー分析：その向こうにいるのは誰か。",
       description:
         "フォロワーの履歴は API が遡って返してくれないため、デプロイした日から 1 日 1 件ずつダッシュボードが記録します。",
       panelName: "threads-analytics · audience",
@@ -3041,7 +3028,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
     {
       index: "05",
       kicker: "05 / 投稿",
-      title: "そ⁠し⁠て⁠、1 本⁠ず⁠つ読⁠む⁠。",
+      title: "そして、1 本ずつ読む。",
       description: "集計はいつか特定の 1 投稿を指します。投稿ページは、それを読みに行く場所です。",
       panelName: "threads-analytics · posts",
       badge: "4 つの機能",
@@ -3063,7 +3050,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
   method: {
     index: "06",
     kicker: "06 / 考え方",
-    title: "こ⁠の⁠数⁠値⁠を信⁠頼⁠で⁠き⁠る理⁠由⁠。",
+    title: "この数値を信頼できる理由。",
     description:
       "分析は見栄えよく作るのが簡単です。ダッシュボードを正直に保っているのは、次の 4 つのルールです。",
     railMeta: "4 つのルール",
@@ -3091,7 +3078,7 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
     ],
   },
   cta: {
-    title: "こ⁠れ⁠ら⁠す⁠べ⁠て⁠を自⁠分⁠のア⁠カ⁠ウ⁠ン⁠ト⁠に向⁠け⁠る⁠。",
+    title: "これらすべてを自分のアカウントに向ける。",
     description:
       "ダッシュボードをデプロイして Threads アカウントを接続しましょう。投稿のグラフは最初の同期から表示され、フォロワーやオーディエンスのグラフはその日から少しずつ蓄積されます。",
     primary: "ダッシュボードをデプロイ",
@@ -3102,9 +3089,9 @@ const analyticsGuideJa: AnalyticsGuideCopy = {
 
 const desktopGuideEn: DesktopGuideCopy = {
   metadata: {
-    title: "Threads Analytics for Mac: Free Desktop App, No Server Needed",
+    title: "Threads Analytics for Mac: Free Desktop App",
     description:
-      "Download the free Threads Analytics desktop app for Mac. Your posts and follower history stay in a local database: no hosting, no PostgreSQL, no password to set.",
+      "Download the free Threads Analytics app for Mac. Posts and follower history stay in a local database, with no hosting or PostgreSQL to configure.",
   },
   hero: {
     kicker: "DESKTOP / MACOS",
@@ -3330,10 +3317,8 @@ const desktopGuideZh: DesktopGuideCopy = {
   },
   hero: {
     kicker: "桌面版 / MACOS",
-    // \u2060 word joiners pin the break points: line one only breaks after
-    // Threads and before 搬進, line two only between 不用, 再架 and 伺服器.
-    lineOne: "Threads 數⁠據⁠分⁠析搬⁠進 Mac⁠，",
-    lineTwo: "不⁠用再⁠架伺⁠服⁠器⁠。",
+    lineOne: "Threads 數據分析搬進 Mac，",
+    lineTwo: "不用再架伺服器。",
     description:
       "下載 App、貼上 Threads Access Token，完整的 Dashboard 就在你的 Mac 上執行。貼文與追蹤人數紀錄存在本機的 SQLite 資料庫 — 不用付主機費、不用 PostgreSQL，也不用設定密碼。",
     primaryCta: "下載 Mac 版",
@@ -3356,7 +3341,7 @@ const desktopGuideZh: DesktopGuideCopy = {
   },
   preview: {
     kicker: "01 / 同一套 DASHBOARD",
-    title: "網⁠頁⁠版⁠的每⁠張⁠圖⁠表⁠，都⁠在原⁠生⁠視⁠窗⁠裡⁠。",
+    title: "網頁版的每張圖表，都在原生視窗裡。",
     description:
       "桌面版跑的是和網頁版同一套 Dashboard — 31 種分析、貼文列表、抽獎工具和 MCP 伺服器都在 — 只是改由一個只有你的 Mac 連得到的本機伺服器提供。",
     imageAlt: "在 macOS App 視窗中執行的 Threads Analytics 總覽儀表板",
@@ -3386,7 +3371,7 @@ const desktopGuideZh: DesktopGuideCopy = {
   },
   compare: {
     kicker: "02 / MAC 還是伺服器",
-    title: "挑⁠一⁠個最⁠適⁠合⁠你⁠的版⁠本⁠。",
+    title: "挑一個最適合你的版本。",
     description:
       "兩者都是同一套開源 Dashboard，差別在於它跑在哪裡 — 以及這對同步、存取方式和費用代表什麼。",
     aspectLabel: "比較項目",
@@ -3411,7 +3396,7 @@ const desktopGuideZh: DesktopGuideCopy = {
   },
   install: {
     kicker: "03 / 安裝",
-    title: "下⁠載⁠、拖⁠曳⁠、打⁠開⁠。",
+    title: "下載、拖曳、打開。",
     description: "不用安裝程式，也不用開終端機。App 以 ZIP 檔發佈在本專案的 GitHub Releases 頁面。",
     steps: [
       {
@@ -3455,7 +3440,7 @@ const desktopGuideZh: DesktopGuideCopy = {
   },
   firstLaunch: {
     kicker: "04 / 首次開啟",
-    title: "每⁠個⁠新⁠版⁠本⁠，只⁠要允⁠許⁠一⁠次⁠。",
+    title: "每個新版本，只要允許一次。",
     description:
       "標示為 Preview 的版本還沒經過 Apple 公證，macOS 會在每個版本第一次啟動時阻擋，並顯示無法驗證 App 的訊息。確認檔案來自本專案的 GitHub Releases 後，允許它一次：",
     paths: [
@@ -3485,7 +3470,7 @@ const desktopGuideZh: DesktopGuideCopy = {
   },
   care: {
     kicker: "05 / 更新與資料",
-    title: "更⁠新 App⁠，資⁠料不⁠會⁠動⁠。",
+    title: "更新 App，資料不會動。",
     description:
       "App 儲存的所有資料都放在 Mac 上的同一個資料夾，和 App 本身分開 — 所以更新只需要取代 App。",
     panelBadge: "在這台 MAC",
@@ -3524,7 +3509,7 @@ const desktopGuideZh: DesktopGuideCopy = {
     ],
   },
   cta: {
-    title: "把⁠你⁠的 Threads 紀⁠錄⁠，放⁠進 Mac⁠。",
+    title: "把你的 Threads 紀錄，放進 Mac。",
     description: "下載 App、貼上 Token，分析數據就開始在本機累積。想要全天候執行？改部署網頁版。",
     primary: "下載 Mac 版",
     secondary: "部署網頁版",
@@ -3540,10 +3525,8 @@ const desktopGuideJa: DesktopGuideCopy = {
   },
   hero: {
     kicker: "デスクトップ / MACOS",
-    // \u2060 word joiners pin the break points: line one only breaks after
-    // Threads and before Macで; line two never breaks.
-    lineOne: "Threads 分⁠析⁠をMac⁠で⁠、",
-    lineTwo: "サ⁠ー⁠バ⁠ー⁠な⁠し⁠で⁠。",
+    lineOne: "Threads 分析をMacで、",
+    lineTwo: "サーバーなしで。",
     description:
       "アプリをダウンロードして Threads アクセストークンを貼り付ければ、ダッシュボード一式が Mac 上で動きます。投稿とフォロワー推移はローカルの SQLite データベースに保存 — ホスティング費用も PostgreSQL も、パスワード設定も不要です。",
     primaryCta: "Mac 版をダウンロード",
@@ -3566,7 +3549,7 @@ const desktopGuideJa: DesktopGuideCopy = {
   },
   preview: {
     kicker: "01 / 同じダッシュボード",
-    title: "Web 版⁠のす⁠べ⁠て⁠のグ⁠ラ⁠フ⁠を⁠、ネ⁠イ⁠テ⁠ィ⁠ブウ⁠ィ⁠ン⁠ド⁠ウ⁠で⁠。",
+    title: "Web 版のすべてのグラフを、ネイティブウィンドウで。",
     description:
       "デスクトップ版は Web 版と同じダッシュボード — 31 種類の分析、投稿一覧、抽選ツール、MCP サーバー — を、この Mac からしかアクセスできないローカルサーバーで動かします。",
     imageAlt: "macOS アプリのウィンドウで動く Threads Analytics の概要ダッシュボード",
@@ -3596,7 +3579,7 @@ const desktopGuideJa: DesktopGuideCopy = {
   },
   compare: {
     kicker: "02 / MAC とサーバー",
-    title: "自⁠分⁠の使⁠い⁠方⁠に合⁠う⁠方⁠を選⁠ぶ⁠。",
+    title: "自分の使い方に合う方を選ぶ。",
     description:
       "どちらも同じオープンソースのダッシュボードです。違いはどこで動くか — そしてそれが同期、アクセス、費用にどう影響するかです。",
     aspectLabel: "比較項目",
@@ -3625,7 +3608,7 @@ const desktopGuideJa: DesktopGuideCopy = {
   },
   install: {
     kicker: "03 / インストール",
-    title: "ダ⁠ウ⁠ン⁠ロ⁠ー⁠ド⁠し⁠て⁠、ド⁠ラ⁠ッ⁠グ⁠し⁠て⁠、開⁠く⁠だ⁠け⁠。",
+    title: "ダウンロードして、ドラッグして、開くだけ。",
     description:
       "インストーラーもターミナルも不要。アプリはこのプロジェクトの GitHub Releases に ZIP で公開されています。",
     steps: [
@@ -3670,7 +3653,7 @@ const desktopGuideJa: DesktopGuideCopy = {
   },
   firstLaunch: {
     kicker: "04 / 初回起動",
-    title: "新⁠し⁠いバ⁠ー⁠ジ⁠ョ⁠ン⁠は⁠、一⁠度⁠だ⁠け許⁠可⁠す⁠る⁠。",
+    title: "新しいバージョンは、一度だけ許可する。",
     description:
       "Preview と表示されたリリースはまだ Apple の公証を受けていないため、macOS は各バージョンの初回起動をブロックし、App を検証できない旨を表示します。このプロジェクトの GitHub Releases から入手したことを確認してから、一度だけ許可してください：",
     paths: [
@@ -3700,7 +3683,7 @@ const desktopGuideJa: DesktopGuideCopy = {
   },
   care: {
     kicker: "05 / アップデートとデータ",
-    title: "ア⁠ッ⁠プ⁠デ⁠ー⁠ト⁠し⁠て⁠も⁠、デ⁠ー⁠タ⁠はそ⁠の⁠ま⁠ま⁠。",
+    title: "アップデートしても、データはそのまま。",
     description:
       "アプリが保存するデータはすべて Mac 内の 1 つのフォルダにあり、アプリ本体とは別です — アップデートはアプリを置き換えるだけ。",
     panelBadge: "この MAC 内",
@@ -3739,7 +3722,7 @@ const desktopGuideJa: DesktopGuideCopy = {
     ],
   },
   cta: {
-    title: "Threads の履⁠歴⁠を⁠、自⁠分⁠の Mac に⁠。",
+    title: "Threads の履歴を、自分の Mac に。",
     description:
       "アプリをダウンロードしてトークンを貼り付ければ、分析データがローカルに蓄積され始めます。24 時間動かしたいなら、Web 版をデプロイしましょう。",
     primary: "Mac 版をダウンロード",
@@ -3751,7 +3734,7 @@ const desktopGuideJa: DesktopGuideCopy = {
 export const dictionaries = {
   en: {
     metadata: {
-      title: "Threads Analytics: Free, Open-Source Analytics Tool for Threads",
+      title: "Free Threads Analytics Tool: Open-Source Dashboard",
       description:
         "Free, open-source Threads analytics tool you host yourself. Find your best posting time, content format, post length, and keywords from your own post data.",
     },
@@ -3760,9 +3743,12 @@ export const dictionaries = {
       brandTag: "",
       // Menu triggers; they double as the footer column headings.
       features: "Features",
-      deploy: "Deploy",
+      getStarted: "Get started",
       guides: "Guides",
       github: "GitHub",
+      beta: "Beta",
+      // Sub-section label above the hosted options in the Get started menu.
+      selfHostSection: "Self-host",
       // Menu entries: the label, plus one line shown under it in the desktop
       // dropdowns. Keep descriptions short enough for a single line.
       demo: { label: "Live demo", description: "Try the dashboard with sample data" },
@@ -3786,7 +3772,7 @@ export const dictionaries = {
       description:
         "Free, open-source Threads analytics. Your own post history shows the best time to post, which formats and lengths work, and how your followers grow.",
       primaryCta: "Try the live analysis",
-      secondaryCta: "View on GitHub",
+      secondaryCta: "Download for Mac",
       note: "31 analyses · Multi-account · Automatic sync",
     },
     proof: [
@@ -3975,10 +3961,10 @@ export const dictionaries = {
       note: "Stackable conditions · No third-party login · No extra fees",
     },
     deploy: {
-      kicker: "07 / OWN THE STACK",
-      title: "Self-host your Threads analytics dashboard in minutes.",
+      kicker: "07 / GET STARTED",
+      title: "Run Threads Analytics on your Mac, or host it yourself.",
       description:
-        "Use a one-click template or run the container yourself. The official website stays separate; the deployable image contains only the analytics product.",
+        "The Mac app needs no server, database, or password. Want the dashboard online for every device? Use a one-click template or run the container yourself.",
       railway: {
         eyebrow: "ONE-CLICK",
         title: "Deploy on Railway",
@@ -4010,13 +3996,19 @@ export const dictionaries = {
         action: "Self-host guide",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
-      desktop: { text: "Rather not run a server?", action: "Get the Mac app" },
+      desktop: {
+        eyebrow: "NO SERVER · BETA",
+        title: "Mac app",
+        body: "Download the app, paste your Threads access token, and the full dashboard runs on your Mac. Your data stays in a local database: no hosting bill, no PostgreSQL, no password.",
+        action: "Download for Mac",
+        note: "macOS 11+ · Apple silicon",
+      },
     },
     zeaburAgentDeploy: {
       metadata: {
-        title: "Self-Host Threads Analytics on Zeabur: One Prompt with Zeabur Agent",
+        title: "Self-Host Threads Analytics on Zeabur with AI",
         description:
-          "Self-host Threads Analytics on Zeabur: one prompt and Zeabur's AI agent sets up PostgreSQL, encryption keys, the app password, and a public URL. No manual setup.",
+          "Self-host Threads Analytics on Zeabur with one prompt. Its AI agent configures PostgreSQL, encryption keys, an app password, and a public URL.",
       },
       hero: {
         kicker: "DEPLOY / ZEABUR AGENT",
@@ -4109,7 +4101,7 @@ export const dictionaries = {
     },
     railwayAgentDeploy: {
       metadata: {
-        title: "Self-Host Threads Analytics on Railway with Your Coding Agent",
+        title: "Self-Host Threads Analytics on Railway with AI",
         description:
           "Self-host Threads Analytics on Railway: two prompts and your coding agent (Claude Code, Codex, or any) set up PostgreSQL, migrations, and a public URL.",
       },
@@ -4368,9 +4360,11 @@ export const dictionaries = {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
       brandTag: "Threads 數據分析工具",
       features: "功能",
-      deploy: "部署",
+      getStarted: "開始使用",
       guides: "指南",
       github: "GitHub",
+      beta: "Beta",
+      selfHostSection: "自架",
       demo: { label: "互動展示", description: "用範例數據直接試玩儀表板" },
       analytics: { label: "分析功能", description: "31 種分析，全用你的貼文數據" },
       mcp: { label: "MCP 伺服器", description: "讓 Claude、Cursor 直接查你的數據" },
@@ -4384,14 +4378,12 @@ export const dictionaries = {
     },
     hero: {
       eyebrow: "開源 · 自架 · 為 THREADS 打造",
-      // \u2060 word joiners pin the break points: line one only breaks
-      // around Threads, line two only between 什麼樣的 and 貼文.
-      lineOne: "免⁠費⁠開⁠源⁠的 Threads 數⁠據⁠分⁠析⁠工⁠具⁠，",
-      lineTwo: "看⁠懂⁠什⁠麼⁠樣⁠的貼⁠文⁠會⁠有⁠成⁠效⁠。",
+      lineOne: "免費開源的 Threads 數據分析工具，",
+      lineTwo: "看懂什麼樣的貼文會有成效。",
       description:
         "免費開源的脆（Threads）數據分析工具：從你的貼文紀錄找出最佳發文時間、有效的形式與長度，還有粉絲成長的來源。",
       primaryCta: "操作分析 Demo",
-      secondaryCta: "前往 GitHub",
+      secondaryCta: "下載 Mac 版",
       note: "31 種分析 · 多帳號 · 自動同步",
     },
     proof: [
@@ -4414,7 +4406,7 @@ export const dictionaries = {
     },
     demo: {
       kicker: "01 / 互動分析",
-      title: "換⁠一⁠個⁠問⁠題⁠，看⁠見不⁠同⁠模⁠式⁠。",
+      title: "換一個問題，看見不同模式。",
       description:
         "切換貼文形式與時間區間，範例貼文、觸及曲線和建議會一起更新，就像探索你自己的 Threads 帳號。",
       formatLabel: "貼文形式",
@@ -4471,7 +4463,7 @@ export const dictionaries = {
     },
     story: {
       kicker: "02 / 為什麼做",
-      title: "因⁠為⁠想⁠看⁠的⁠答⁠案⁠，原⁠本⁠不⁠存⁠在⁠。",
+      title: "因為想看的答案，原本不存在。",
       description:
         "多數分析工具只停在總數。Threads Analytics 從更實際的問題開始：什麼類型的貼文適合我？我又該在什麼時間發佈？",
       quote: "用了幾個 Threads 分析工具後，總覺得少了自己想看的分析，所以乾脆自己做了一個。",
@@ -4480,7 +4472,7 @@ export const dictionaries = {
     },
     features: {
       kicker: "03 / 從數據到決策",
-      title: "不⁠只⁠是堆⁠滿⁠總⁠數⁠的儀⁠表⁠板⁠。",
+      title: "不只是堆滿總數的儀表板。",
       description: "每一個視圖都用來回答發文決策，而不是再多報告一個數字。",
       cta: "看完整的 31 個分析",
       formatLengthVisual: {
@@ -4541,7 +4533,7 @@ export const dictionaries = {
     },
     product: {
       kicker: "04 / 看見完整全貌",
-      title: "3⁠1 種 T⁠h⁠r⁠e⁠a⁠d⁠s 數⁠據⁠分⁠析⁠，一⁠套發⁠文⁠系⁠統⁠。",
+      title: "31 種 Threads 數據分析，一套發文系統。",
       description:
         "從帳號健康度一路看到單篇診斷，不必離開儀表板。總覽、成效、內容、受眾與貼文共用同一份資料來源。",
       labels: ["總覽", "成效分析", "內容分析", "受眾分析", "貼文"],
@@ -4561,7 +4553,7 @@ export const dictionaries = {
     },
     mcpHome: {
       kicker: "05 / 內建 MCP 伺服器",
-      title: "用⁠一⁠句⁠話⁠，問⁠你⁠自⁠己⁠的數⁠據⁠。",
+      title: "用一句話，問你自己的數據。",
       description:
         "每個部署都內建唯讀 MCP 伺服器。用 OAuth 連接 Claude、Codex 或 Cursor，不需要 API Key，Agent 就能讀取貼文、分析與追蹤者紀錄，直接回覆報告與下一步建議。",
       cta: "查看 MCP 連接教學",
@@ -4569,17 +4561,17 @@ export const dictionaries = {
     },
     giveawayHome: {
       kicker: "06 / 內建抽獎功能",
-      title: "開⁠獎不⁠用⁠離⁠開你⁠的 D⁠a⁠s⁠h⁠b⁠o⁠a⁠r⁠d⁠。",
+      title: "開獎不用離開你的 Dashboard。",
       description:
         "選好貼文，套用你公告過的規則 — 關鍵字、標記朋友、截止時間、同帳號只算一次 — 直接在自己的儀表板開獎。不用到別人的網站登入 Threads 帳號，也不用為了抽獎功能額外付費。",
       cta: "看抽獎怎麼運作",
       note: "條件可疊加 · 不用第三方登入 · 不用額外付費",
     },
     deploy: {
-      kicker: "07 / 掌握自己的環境",
-      title: "幾⁠分⁠鐘⁠，自⁠架⁠好你⁠的 T⁠h⁠r⁠e⁠a⁠d⁠s 分⁠析⁠儀⁠表⁠板⁠。",
+      kicker: "07 / 開始使用",
+      title: "在 Mac 上直接用，或自架 Threads 分析儀表板。",
       description:
-        "使用一鍵模板，或自己執行 Container。官方網站完全獨立，可部署的 Image 只包含分析產品。",
+        "Mac 版 App 不用架伺服器、不用資料庫，也不用設密碼。想讓每台裝置都能打開儀表板？用一鍵模板部署，或自己執行 Container。",
       railway: {
         eyebrow: "一鍵部署",
         title: "部署到 Railway",
@@ -4611,7 +4603,13 @@ export const dictionaries = {
         action: "自架部署教學",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
-      desktop: { text: "不想架伺服器？", action: "下載 Mac 版 App" },
+      desktop: {
+        eyebrow: "免架伺服器 · BETA",
+        title: "Mac 版 App",
+        body: "下載 App、貼上 Threads Access Token，完整的儀表板就在你的 Mac 上執行。資料存在本機資料庫，不用主機費、不用 PostgreSQL，也不用設密碼。",
+        action: "下載 Mac 版",
+        note: "macOS 11 以上 · Apple Silicon",
+      },
     },
     zeaburAgentDeploy: {
       metadata: {
@@ -4622,8 +4620,7 @@ export const dictionaries = {
       hero: {
         kicker: "部署 / ZEABUR AGENT",
         lineOne: "一段 Prompt，",
-        // ⁠ (word joiner) 防止 text-wrap: balance 從「交給」中間斷行。
-        lineTwo: "剩下的交⁠給 Agent。",
+        lineTwo: "剩下的交給 Agent。",
         description:
           "Zeabur Agent 會讀取模板、建立 PostgreSQL、產生加密金鑰、詢問密碼，最後回傳可登入的網址。你只要複製貼上。",
         copyCta: "複製 Agent Prompt",
@@ -4641,7 +4638,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 三個步驟",
-        title: "從 P⁠r⁠o⁠m⁠p⁠t 到⁠儀⁠表⁠板⁠，只⁠要⁠三⁠步⁠。",
+        title: "從 Prompt 到儀表板，只要三步。",
         description:
           "沒有 YAML、沒有環境變數、不用自己建資料庫。設定交給 Agent，你只需要決定一件事：登入密碼。",
         items: [
@@ -4664,7 +4661,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 實際看一次",
-        title: "整⁠段⁠對⁠話⁠，長⁠這⁠個⁠樣⁠子⁠。",
+        title: "整段對話，長這個樣子。",
         description:
           "重播一次真實的 Zeabur Agent 部署過程：你會看到的訊息、選項和結果，和自己操作時一模一樣。",
         windowTitle: "ZEABUR AGENT",
@@ -4690,7 +4687,7 @@ export const dictionaries = {
         disclaimer: "模擬重播 · 實際流程相同",
       },
       cta: {
-        title: "換⁠你部⁠署⁠一⁠次⁠了⁠。",
+        title: "換你部署一次了。",
         description: "複製 Prompt、開啟 Zeabur Agent，幾分鐘後就有自己的儀表板。",
         primary: "開啟 Zeabur Agent",
         secondary: "回到所有部署方式",
@@ -4699,14 +4696,14 @@ export const dictionaries = {
     },
     railwayAgentDeploy: {
       metadata: {
-        title: "自架 Threads 分析工具到 Railway：用 Claude Code、Codex 等 Coding Agent 部署",
+        title: "Railway 自架 Threads 分析工具：Coding Agent 部署教學",
         description:
           "在 Railway 自架 Threads Analytics：兩段 Prompt，讓 Claude Code、Codex 等 Coding Agent 完成 PostgreSQL、資料庫遷移、登入密碼與公開網址。",
       },
       hero: {
         kicker: "部署 / RAILWAY AGENT",
         lineOne: "兩段 Prompt，",
-        lineTwo: "剩下的交⁠給你的 Agent。",
+        lineTwo: "剩下的交給你的 Agent。",
         description:
           "第一段 Prompt 把 Railway 工具裝進你的 Coding Agent，第二段交出模板：建立 PostgreSQL、執行遷移、詢問密碼、產生公開網址。",
         copyCta: "複製安裝 Prompt",
@@ -4727,7 +4724,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 三個步驟",
-        title: "從⁠兩⁠段 P⁠r⁠o⁠m⁠p⁠t 到⁠上⁠線⁠的儀⁠表⁠板⁠。",
+        title: "從兩段 Prompt 到上線的儀表板。",
         description:
           "沒有 YAML、沒有環境變數、不用點部署後台。你的 Agent 會操作 Railway CLI，你只需要決定一件事：登入密碼。",
         items: [
@@ -4750,7 +4747,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 實際看一次",
-        title: "整⁠段⁠對⁠話⁠，長⁠這⁠個⁠樣⁠子⁠。",
+        title: "整段對話，長這個樣子。",
         description:
           "重播一次用 Codex 完成的真實部署——裝好 Railway 工具後，在 Claude Code 或任何 Agent 裡流程都一樣。",
         windowTitle: "YOUR CODING AGENT",
@@ -4779,7 +4776,7 @@ export const dictionaries = {
         disclaimer: "模擬重播 · 實際流程相同",
       },
       cta: {
-        title: "換⁠你⁠的 A⁠g⁠e⁠n⁠t 上⁠場⁠了⁠。",
+        title: "換你的 Agent 上場了。",
         description: "複製安裝 Prompt、打開你的 Coding Agent，兩段 Prompt 後就有自己的儀表板。",
         primary: "查看 Railway for Agents",
         secondary: "回到所有部署方式",
@@ -4795,7 +4792,7 @@ export const dictionaries = {
       hero: {
         kicker: "部署 / VERCEL AGENT",
         lineOne: "一段 Prompt，",
-        lineTwo: "剩下交⁠給 Vercel MCP。",
+        lineTwo: "剩下交給 Vercel MCP。",
         description:
           "一段 Prompt 就是完整部署手冊：Agent 用 Vercel MCP 執行每個步驟，只在設定 Neon 與機密變數時等你登入，最後驗證正式部署。",
         copyCta: "複製 Agent Prompt",
@@ -4816,7 +4813,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 三個步驟",
-        title: "一⁠段 P⁠r⁠o⁠m⁠p⁠t⁠、一⁠次⁠登⁠入⁠、一⁠組⁠密⁠碼⁠。",
+        title: "一段 Prompt、一次登入、一組密碼。",
         description:
           "Prompt 已寫好整份部署規格——工具邊界、Neon 設定、機密處理與驗證流程。Agent 照著執行，你只需要出場兩次。",
         items: [
@@ -4839,7 +4836,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 實際看一次",
-        title: "整⁠段⁠對⁠話⁠，長⁠這⁠個⁠樣⁠子⁠。",
+        title: "整段對話，長這個樣子。",
         description:
           "重播一次在 Claude Code 完成的真實部署——部署操作全部走 Vercel MCP，瀏覽器只用來設定 Neon 與 Sensitive 變數，改動儀表板前都會先暫停等你確認。",
         windowTitle: "YOUR CODING AGENT",
@@ -4899,7 +4896,7 @@ export const dictionaries = {
         disclaimer: "模擬重播 · 濃縮自真實部署",
       },
       cta: {
-        title: "換⁠你⁠的 A⁠g⁠e⁠n⁠t 上⁠場⁠了⁠。",
+        title: "換你的 Agent 上場了。",
         description: "複製 Prompt、確認 Vercel MCP 已連接，儀表板就會自己部署完成。",
         primary: "查看 Vercel MCP 文件",
         secondary: "回到所有部署方式",
@@ -4913,7 +4910,7 @@ export const dictionaries = {
     desktopGuide: desktopGuideZh,
     finalCta: {
       kicker: "讀懂自己的訊號",
-      title: "下⁠一⁠篇更⁠好⁠的⁠貼⁠文⁠，其⁠實⁠已⁠經藏⁠在歷⁠史⁠紀⁠錄⁠裡⁠。",
+      title: "下一篇更好的貼文，其實已經藏在歷史紀錄裡。",
       description: "自架 Threads Analytics，把舊貼文變成下一次發文的判斷依據。",
       primary: "部署分析儀表板",
       secondary: "在 GitHub 加星",
@@ -4930,8 +4927,7 @@ export const dictionaries = {
   },
   ja: {
     metadata: {
-      title:
-        "Threads 分析ツール：無料・オープンソースのセルフホスト型ダッシュボード | Threads Analytics",
+      title: "無料の Threads 分析ツール：セルフホスト型ダッシュボード",
       description:
         "Threads Analytics は無料・オープンソースのセルフホスト型 Threads 分析ツール。最適な投稿時間、コンテンツ形式、文章量、キーワード、フォロワー推移を自分のデータから分析。セルフホストが必要で、ホスティングとデータベースの費用は別途かかります。",
     },
@@ -4939,9 +4935,11 @@ export const dictionaries = {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
       brandTag: "Threads 分析ツール",
       features: "機能",
-      deploy: "デプロイ",
+      getStarted: "はじめる",
       guides: "ガイド",
       github: "GitHub",
+      beta: "ベータ",
+      selfHostSection: "セルフホスト",
       demo: { label: "ライブデモ", description: "サンプルデータでダッシュボードを試す" },
       analytics: { label: "分析機能", description: "自分の投稿から 31 種類の分析" },
       mcp: { label: "MCP サーバー", description: "Claude や Cursor からデータに質問" },
@@ -4967,14 +4965,12 @@ export const dictionaries = {
     },
     hero: {
       eyebrow: "オープンソース · セルフホスト · THREADS 専用",
-      // \u2060 word joiners pin the break points: line one only breaks
-      // around Threads, line two only between 投稿を and 勘で.
-      lineOne: "無⁠料⁠のThreads分⁠析⁠ツ⁠ー⁠ル⁠で⁠、",
-      lineTwo: "伸⁠び⁠る⁠投⁠稿⁠を勘⁠で⁠決⁠め⁠な⁠い⁠。",
+      lineOne: "無料のThreads分析ツールで、",
+      lineTwo: "伸びる投稿を勘で決めない。",
       description:
         "無料・オープンソースのスレッズ（Threads）分析ツール。自分の投稿履歴から、おすすめの投稿時間、効く形式と長さ、フォロワーの伸びを読み取れます。",
       primaryCta: "分析デモを試す",
-      secondaryCta: "GitHubを見る",
+      secondaryCta: "Mac 版をダウンロード",
       note: "31種類の分析 · 複数アカウント · 自動同期",
     },
     proof: [
@@ -4997,7 +4993,7 @@ export const dictionaries = {
     },
     demo: {
       kicker: "01 / ライブ分析",
-      title: "問⁠い⁠を⁠変⁠え⁠る⁠と⁠、パ⁠タ⁠ー⁠ン⁠が動⁠く⁠。",
+      title: "問いを変えると、パターンが動く。",
       description:
         "投稿形式と期間を切り替えると、サンプル投稿、リーチ曲線、提案が同時に更新されます。自分のアカウントを探索する感覚を試せます。",
       formatLabel: "投稿形式",
@@ -5056,7 +5052,7 @@ export const dictionaries = {
     },
     story: {
       kicker: "02 / つくった理由",
-      title: "欲⁠し⁠い⁠答⁠え⁠が⁠、ま⁠だな⁠か⁠っ⁠た⁠か⁠ら⁠。",
+      title: "欲しい答えが、まだなかったから。",
       description:
         "多くの分析ツールは合計値で止まります。Threads Analyticsは、もっと実用的な問いから始まりました。自分にはどんな投稿が合い、いつ公開すべきなのか。",
       quote:
@@ -5066,7 +5062,7 @@ export const dictionaries = {
     },
     features: {
       kicker: "03 / データから判断へ",
-      title: "合⁠計⁠値⁠を並⁠べ⁠る⁠だ⁠け⁠のダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ドで⁠は⁠あ⁠り⁠ま⁠せ⁠ん⁠。",
+      title: "合計値を並べるだけのダッシュボードではありません。",
       description: "すべてのビューは、投稿についての判断に答えるために設計されています。",
       cta: "31 種類すべてを見る",
       formatLengthVisual: {
@@ -5127,7 +5123,7 @@ export const dictionaries = {
     },
     product: {
       kicker: "04 / 全体像",
-      title: "3⁠1⁠種⁠類⁠のT⁠h⁠r⁠e⁠a⁠d⁠s⁠分⁠析⁠を⁠、一⁠つ⁠の投⁠稿⁠シ⁠ス⁠テ⁠ム⁠に⁠。",
+      title: "31種類のThreads分析を、一つの投稿システムに。",
       description:
         "アカウント全体の状態から投稿単位の診断まで、ダッシュボード内で移動できます。概要、パフォーマンス、コンテンツ、オーディエンス、投稿は同じデータを共有します。",
       labels: ["概要", "パフォーマンス", "コンテンツ", "オーディエンス", "投稿"],
@@ -5147,7 +5143,7 @@ export const dictionaries = {
     },
     mcpHome: {
       kicker: "05 / 内蔵 MCP サーバー",
-      title: "自⁠分⁠の⁠デ⁠ー⁠タ⁠に⁠、そ⁠の⁠ま⁠ま質⁠問⁠。",
+      title: "自分のデータに、そのまま質問。",
       description:
         "すべてのデプロイに読み取り専用の MCP サーバーを内蔵。Claude、Codex、Cursor を OAuth で接続すれば、API キーなしでエージェントが投稿・分析・フォロワー履歴を読み取り、レポートと次の一手を返します。",
       cta: "MCP ガイドを見る",
@@ -5155,17 +5151,17 @@ export const dictionaries = {
     },
     giveawayHome: {
       kicker: "06 / 抽選機能を標準搭載",
-      title: "ダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ド⁠を離⁠れ⁠ず⁠に当⁠選⁠者⁠を決⁠め⁠る⁠。",
+      title: "ダッシュボードを離れずに当選者を決める。",
       description:
         "投稿を選び、告知したルール — キーワード、友達のタグ付け、締切、1 アカウント 1 口 — を適用して、自分のダッシュボードで抽選。他社サイトで Threads アカウントにログインする必要も、抽選機能のために課金する必要もありません。",
       cta: "抽選の仕組みを見る",
       note: "条件の重ねがけ · 第三者ログイン不要 · 追加課金なし",
     },
     deploy: {
-      kicker: "07 / 自分のスタックで",
-      title: "数⁠分⁠で⁠、自⁠分⁠のT⁠h⁠r⁠e⁠a⁠d⁠s⁠分⁠析ダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ド⁠をセ⁠ル⁠フ⁠ホ⁠ス⁠ト⁠。",
+      kicker: "07 / はじめる",
+      title: "Threads分析をMacで使うか、セルフホストするか。",
       description:
-        "ワンクリックテンプレート、または自分でコンテナを実行できます。公式サイトは独立し、配布imageには分析プロダクトだけが含まれます。",
+        "Mac アプリならサーバーもデータベースもパスワードも不要。どの端末からでもダッシュボードを開きたいなら、ワンクリックテンプレートか、自分でコンテナを実行できます。",
       railway: {
         eyebrow: "ワンクリック",
         title: "Railwayへデプロイ",
@@ -5197,7 +5193,13 @@ export const dictionaries = {
         action: "セルフホストガイド",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
-      desktop: { text: "サーバーを立てたくないなら", action: "Mac アプリを入手" },
+      desktop: {
+        eyebrow: "サーバー不要 · ベータ",
+        title: "Mac アプリ",
+        body: "アプリをダウンロードして Threads アクセストークンを貼り付ければ、ダッシュボード一式が Mac 上で動きます。データはローカルのデータベースに保存。ホスティング費用も PostgreSQL もパスワードも不要です。",
+        action: "Mac 版をダウンロード",
+        note: "macOS 11 以降 · Apple Silicon",
+      },
     },
     zeaburAgentDeploy: {
       metadata: {
@@ -5207,8 +5209,8 @@ export const dictionaries = {
       },
       hero: {
         kicker: "デプロイ / ZEABUR AGENT",
-        lineOne: "プ⁠ロ⁠ン⁠プ⁠トは1つ。",
-        lineTwo: "残りはエ⁠ー⁠ジ⁠ェ⁠ン⁠トが。",
+        lineOne: "プロンプトは1つ。",
+        lineTwo: "残りはエージェントが。",
         description:
           "Zeabur Agent がテンプレートを読み、PostgreSQL と暗号化キーを用意し、パスワードを確認して公開 URL を返します。あなたはコピーして貼るだけ。",
         copyCta: "エージェント用プロンプトをコピー",
@@ -5226,7 +5228,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 3ステップ",
-        title: "プ⁠ロ⁠ン⁠プ⁠トからダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ドま⁠で、3ス⁠テ⁠ッ⁠プ。",
+        title: "プロンプトからダッシュボードまで、3ステップ。",
         description:
           "YAMLも環境変数もデータベース設定も不要。設定はエージェントに任せて、あなたが決めるのはパスワードだけです。",
         items: [
@@ -5249,7 +5251,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 実際の流れ",
-        title: "会⁠話⁠は⁠、こ⁠ん⁠な⁠ふ⁠う⁠に進⁠み⁠ま⁠す⁠。",
+        title: "会話は、こんなふうに進みます。",
         description:
           "実際のZeabur Agentデプロイのリプレイです。あなたのチャットでも同じメッセージ、同じ選択肢、同じ結果が表示されます。",
         windowTitle: "ZEABUR AGENT",
@@ -5283,7 +5285,7 @@ export const dictionaries = {
         disclaimer: "シミュレーションによる再現 · 実際の流れと同じです",
       },
       cta: {
-        title: "次⁠は⁠、あ⁠な⁠た⁠の⁠番⁠で⁠す⁠。",
+        title: "次は、あなたの番です。",
         description:
           "プロンプトをコピーしてZeabur Agentを開けば、数分でダッシュボードが手に入ります。",
         primary: "Zeabur Agentを開く",
@@ -5299,8 +5301,8 @@ export const dictionaries = {
       },
       hero: {
         kicker: "デプロイ / RAILWAY AGENT",
-        lineOne: "プ⁠ロ⁠ン⁠プ⁠トは2つ。",
-        lineTwo: "残りは自分のエ⁠ー⁠ジ⁠ェ⁠ン⁠トが。",
+        lineOne: "プロンプトは2つ。",
+        lineTwo: "残りは自分のエージェントが。",
         description:
           "最初のプロンプトで Railway のツールをエージェントに導入。次のプロンプトでテンプレートを渡せば、PostgreSQL、マイグレーション、パスワード、公開 URL まで自動です。",
         copyCta: "インストール用プロンプトをコピー",
@@ -5321,7 +5323,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 3ステップ",
-        title: "2つのプ⁠ロ⁠ン⁠プ⁠トから、稼働中のダ⁠ッ⁠シ⁠ュ⁠ボ⁠ー⁠ドへ。",
+        title: "2つのプロンプトから、稼働中のダッシュボードへ。",
         description:
           "YAMLも環境変数もダッシュボード操作も不要。エージェントがRailway CLIを操作し、あなたが決めるのはパスワードだけです。",
         items: [
@@ -5344,7 +5346,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 実際の流れ",
-        title: "会⁠話⁠は⁠、こ⁠ん⁠な⁠ふ⁠う⁠に進⁠み⁠ま⁠す⁠。",
+        title: "会話は、こんなふうに進みます。",
         description:
           "Codexで実行した実際のデプロイのリプレイです。Railwayツールをインストールすれば、Claude Codeでもほかのエージェントでも同じ流れになります。",
         windowTitle: "YOUR CODING AGENT",
@@ -5379,7 +5381,7 @@ export const dictionaries = {
         disclaimer: "シミュレーションによる再現 · 実際の流れと同じです",
       },
       cta: {
-        title: "次⁠は⁠、あ⁠な⁠た⁠のエ⁠ー⁠ジ⁠ェ⁠ン⁠ト⁠の番⁠で⁠す⁠。",
+        title: "次は、あなたのエージェントの番です。",
         description:
           "インストール用プロンプトをコピーしてエージェントを開けば、プロンプト2つでダッシュボードが手に入ります。",
         primary: "Railway for Agentsを見る",
@@ -5395,7 +5397,7 @@ export const dictionaries = {
       },
       hero: {
         kicker: "デプロイ / VERCEL AGENT",
-        lineOne: "プ⁠ロ⁠ン⁠プ⁠トは1つ。",
+        lineOne: "プロンプトは1つ。",
         lineTwo: "残りはVercel MCPが。",
         description:
           "プロンプト 1 つが手順書。エージェントが Vercel MCP で各ステップを実行し、Neon と機密変数の設定時だけサインインを待ち、本番デプロイを検証します。",
@@ -5417,7 +5419,7 @@ export const dictionaries = {
       },
       steps: {
         kicker: "01 / 3ステップ",
-        title: "プ⁠ロ⁠ン⁠プ⁠ト1つ、サ⁠イ⁠ン⁠イ⁠ン1回、パ⁠ス⁠ワ⁠ー⁠ド1つ。",
+        title: "プロンプト1つ、サインイン1回、パスワード1つ。",
         description:
           "プロンプトにはデプロイ仕様のすべてが含まれています。ツールの境界、Neonの設定、シークレットの扱い、検証手順。エージェントがそれに従い、あなたの出番は2回だけです。",
         items: [
@@ -5440,7 +5442,7 @@ export const dictionaries = {
       },
       demo: {
         kicker: "02 / 実際の流れ",
-        title: "会⁠話⁠は⁠、こ⁠ん⁠な⁠ふ⁠う⁠に進⁠み⁠ま⁠す⁠。",
+        title: "会話は、こんなふうに進みます。",
         description:
           "Claude Codeで実行した実際のデプロイのリプレイです。デプロイ操作はすべてVercel MCP、ブラウザはNeonと機密変数の設定のみに使い、ダッシュボードを変更する前には必ず一時停止します。",
         windowTitle: "YOUR CODING AGENT",
@@ -5501,7 +5503,7 @@ export const dictionaries = {
         disclaimer: "シミュレーションによる再現 · 実際の実行を凝縮",
       },
       cta: {
-        title: "次⁠は⁠、あ⁠な⁠た⁠のエ⁠ー⁠ジ⁠ェ⁠ン⁠ト⁠の番⁠で⁠す⁠。",
+        title: "次は、あなたのエージェントの番です。",
         description:
           "プロンプトをコピーし、Vercel MCPの接続を確認すれば、ダッシュボードは自動ででき上がります。",
         primary: "Vercel MCPのドキュメントを見る",
@@ -5516,7 +5518,7 @@ export const dictionaries = {
     desktopGuide: desktopGuideJa,
     finalCta: {
       kicker: "自分のシグナルを読む",
-      title: "次⁠の⁠良⁠い⁠投⁠稿⁠は⁠、す⁠で⁠に履⁠歴⁠の⁠中⁠にあ⁠り⁠ま⁠す⁠。",
+      title: "次の良い投稿は、すでに履歴の中にあります。",
       description: "Threads Analyticsをセルフホストし、過去の投稿を次の判断材料に変えましょう。",
       primary: "ダッシュボードをデプロイ",
       secondary: "GitHubでスター",

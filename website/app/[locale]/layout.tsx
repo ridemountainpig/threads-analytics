@@ -15,8 +15,6 @@ const inter = Inter({
   variable: "--font-inter",
 });
 
-export const dynamicParams = false;
-
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,

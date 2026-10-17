@@ -41,9 +41,9 @@ export const selfHost: Record<Locale, SelfHostCopy> = {
     menuDescription: "Docker, env vars, sync and updates",
     navTitle: "Self-host with Docker",
     metadata: {
-      title: "Self-Host Threads Analytics with Docker: Setup, Auto-Sync and Updates",
+      title: "Self-Host Threads Analytics with Docker",
       description:
-        "Self-host Threads Analytics with Docker, from source or on Vercel: the environment variables to set, how to keep posts syncing automatically, and how to update.",
+        "Self-host Threads Analytics with Docker, source code, or Vercel. Configure environment variables, automatic post syncing, and safe updates.",
     },
     hero: {
       kicker: "DEPLOY / SELF-HOST",
@@ -74,15 +74,15 @@ export const selfHost: Record<Locale, SelfHostCopy> = {
     },
     hero: {
       kicker: "部署 / 自架",
-      lineOne: "自⁠架 T⁠h⁠r⁠e⁠a⁠d⁠s A⁠n⁠a⁠l⁠y⁠t⁠i⁠c⁠s⁠：",
-      lineTwo: "D⁠o⁠c⁠k⁠e⁠r 與原⁠始⁠碼部⁠署⁠教⁠學",
+      lineOne: "自架 Threads Analytics：",
+      lineTwo: "Docker 與原始碼部署教學",
       description:
         "手動部署需要的東西都在這裡：一個 PostgreSQL 資料庫、三個必填的環境變數、讓貼文持續同步的方法，以及不會遺失資料的更新方式。",
     },
     tocTitle: "本頁內容",
     updatedLabel: "更新於",
     cta: {
-      title: "部⁠署⁠好⁠了⁠？接⁠著⁠連⁠接 T⁠h⁠r⁠e⁠a⁠d⁠s 帳⁠號⁠。",
+      title: "部署好了？接著連接 Threads 帳號。",
       description:
         "用 APP_PASSWORD 登入後，到設定頁貼上 Threads Access Token。Token 生成教學用 18 個步驟帶你拿到它。",
       primary: "取得 Access Token",
@@ -101,15 +101,15 @@ export const selfHost: Record<Locale, SelfHostCopy> = {
     },
     hero: {
       kicker: "デプロイ / セルフホスト",
-      lineOne: "T⁠h⁠r⁠e⁠a⁠d⁠s A⁠n⁠a⁠l⁠y⁠t⁠i⁠c⁠s を",
-      lineTwo: "D⁠o⁠c⁠k⁠e⁠r でセ⁠ル⁠フ⁠ホ⁠ス⁠ト",
+      lineOne: "Threads Analytics を",
+      lineTwo: "Docker でセルフホスト",
       description:
         "手動デプロイに必要なものをまとめました。PostgreSQL データベース、必須の環境変数 3 つ、投稿を同期し続ける方法、データを失わない更新手順です。",
     },
     tocTitle: "このページの内容",
     updatedLabel: "更新日",
     cta: {
-      title: "デ⁠プ⁠ロ⁠イ⁠で⁠き⁠た⁠ら⁠、T⁠h⁠r⁠e⁠a⁠d⁠s ア⁠カ⁠ウ⁠ン⁠ト⁠を連⁠携⁠。",
+      title: "デプロイできたら、Threads アカウントを連携。",
       description:
         "APP_PASSWORD でログインし、設定画面で Threads アクセストークンを貼り付けます。取得方法はトークンガイドの 18 ステップで解説しています。",
       primary: "アクセストークンを取得",
