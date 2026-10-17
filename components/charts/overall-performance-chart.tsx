@@ -44,7 +44,7 @@ import {
 // One blue family: the post share is the deep fill, the rest a light tint under the same line.
 const SPLIT_POST_COLOR = chartColors.views;
 const SPLIT_OTHER_COLOR = chartColors.views;
-const SPLIT_OTHER_LEGEND = `color-mix(in oklch, ${chartColors.views} 60%, var(--background))`;
+const SPLIT_OTHER_LEGEND = `color-mix(in oklch, ${chartColors.views} 60%, var(--card))`;
 
 interface DataPoint {
   date: string;

@@ -3,6 +3,26 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { cn } from "@/lib/utils";
 
+// A resize, rotation or late web font can change whether a text overflows. One
+// observer and one font listener serve every instance; the inbox renders one per reply.
+const measures = new Map<Element, () => void>();
+let resizeObserver: ResizeObserver | undefined;
+const measureAll = () => measures.forEach((measure) => measure());
+
+function watchOverflow(el: Element, measure: () => void) {
+  resizeObserver ??= new ResizeObserver((entries) => {
+    for (const entry of entries) measures.get(entry.target)?.();
+  });
+  if (measures.size === 0) document.fonts.addEventListener("loadingdone", measureAll);
+  measures.set(el, measure);
+  resizeObserver.observe(el);
+  return () => {
+    resizeObserver?.unobserve(el);
+    measures.delete(el);
+    if (measures.size === 0) document.fonts.removeEventListener("loadingdone", measureAll);
+  };
+}
+
 export default function ExpandableText({
   text,
   className,
@@ -18,7 +38,10 @@ export default function ExpandableText({
 
   useLayoutEffect(() => {
     const el = ref.current;
-    if (el && !open) setClamped(el.scrollHeight > el.clientHeight + 1);
+    if (!el || open) return;
+    const measure = () => setClamped(el.scrollHeight > el.clientHeight + 1);
+    measure();
+    return watchOverflow(el, measure);
   }, [text, open]);
 
   return (

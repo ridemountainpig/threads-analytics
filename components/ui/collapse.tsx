@@ -1,13 +1,14 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import { cn } from "@/lib/utils";
 
 // Shared expand/collapse: conditional sections (inline forms, banners) grow
 // and shrink instead of hard-mounting, so surrounding content glides rather
 // than jumps. Children mount when opening (autoFocus still fires) and unmount
-// once the exit transition has finished. Reduced motion snaps straight to the
-// target state — the transition is disabled, not slowed.
+// once the exit transition has finished; until then the last open content
+// stays on screen, so callers can clear their state at once. Reduced motion
+// snaps straight to the target state — the transition is disabled, not slowed.
 const EXIT_MS = 220;
 
 export function Collapse({
@@ -22,6 +23,11 @@ export function Collapse({
   const [mounted, setMounted] = useState(open);
   const [expanded, setExpanded] = useState(open);
   const exitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const openChildren = useRef(children);
+
+  useLayoutEffect(() => {
+    if (open) openChildren.current = children;
+  });
 
   useEffect(() => {
     if (exitTimer.current) {
@@ -55,7 +61,7 @@ export function Collapse({
         className,
       )}
     >
-      <div className="min-h-0 overflow-hidden">{children}</div>
+      <div className="min-h-0 overflow-hidden">{open ? children : openChildren.current}</div>
     </div>
   );
 }

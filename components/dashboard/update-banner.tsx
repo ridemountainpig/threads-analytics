@@ -72,7 +72,7 @@ export default function UpdateBanner({
           type="button"
           aria-label={labels.dismiss}
           onClick={dismiss}
-          className="text-muted-foreground hover:bg-muted hover:text-foreground inline-flex size-6 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+          className="text-muted-foreground hover:bg-muted hover:text-foreground relative inline-flex size-6 shrink-0 items-center justify-center rounded-full transition-[background-color,color,scale] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100 max-md:after:absolute max-md:after:-inset-2"
         >
           <X className="size-4" />
         </button>

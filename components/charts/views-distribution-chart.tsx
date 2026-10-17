@@ -61,7 +61,7 @@ export default function ViewsDistributionChart({
             <p className="mt-0.5 text-xl leading-6 font-semibold tracking-[-0.01em] tabular-nums">
               {milestone.percentage}%
             </p>
-            <p className="text-muted-foreground/80 mt-0.5 text-[11px] leading-4 tabular-nums">
+            <p className="text-muted-foreground mt-0.5 text-[11px] leading-4 tabular-nums">
               {milestone.count.toLocaleString(locale)} / {data.totalPosts.toLocaleString(locale)}
             </p>
           </div>

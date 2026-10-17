@@ -1,6 +1,7 @@
 import { ExternalLink } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import PostGrowthChart, { type PostGrowthChartLabels } from "@/components/charts/post-growth-chart";
+import { chartPalette } from "@/components/charts/chart-style";
 import { VsTypicalBadge } from "@/components/dashboard/post-pace";
 import { formatAge, type AgeLabels } from "@/lib/post-growth";
 import type { TodayPost } from "@/lib/today-data";
@@ -46,6 +47,7 @@ export interface TodayPostsLabels {
   viewOnThreads: string;
   threadBadge: string;
   noText: string;
+  vsTypical: string;
 }
 
 const titleClass = "text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase";
@@ -170,7 +172,9 @@ function PostCard({
               {labels.threadBadge.replace("{count}", String(post.parts.length + 1))}
             </span>
           )}
-          {pace?.vsTypical != null && <VsTypicalBadge vsTypical={pace.vsTypical} />}
+          {pace?.vsTypical != null && (
+            <VsTypicalBadge vsTypical={pace.vsTypical} label={labels.vsTypical} />
+          )}
           {post.permalink && (
             <a
               href={post.permalink}
@@ -230,11 +234,11 @@ function PostCard({
               <div className="relative mt-2">
                 <div className="bg-muted h-1.5 overflow-hidden rounded-full">
                   <div
-                    className={cn(
-                      "h-full rounded-full",
-                      ofMedian >= 100 ? "bg-green-600" : "bg-tint",
-                    )}
-                    style={{ width: `${(ofMedian / scale) * 100}%` }}
+                    className={cn("h-full rounded-full", ofMedian >= 100 && "bg-green-600")}
+                    style={{
+                      width: `${(ofMedian / scale) * 100}%`,
+                      backgroundColor: ofMedian >= 100 ? undefined : chartPalette.slate,
+                    }}
                   />
                 </div>
                 <span

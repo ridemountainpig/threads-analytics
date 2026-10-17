@@ -1,12 +1,18 @@
 "use client";
 
-import { useState } from "react";
+import {
+  useOptimistic,
+  useState,
+  useSyncExternalStore,
+  useTransition,
+  type ReactNode,
+} from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Collapse } from "@/components/ui/collapse";
 import { cn } from "@/lib/utils";
 
 const PRESETS = ["7", "30", "90", "180", "365", "all"] as const;
-type PresetOption = (typeof PRESETS)[number];
+export type PresetOption = (typeof PRESETS)[number];
 
 const PRESET_LABELS: Record<PresetOption, string> = {
   "7": "7d",
@@ -19,6 +25,8 @@ const PRESET_LABELS: Record<PresetOption, string> = {
 
 interface TimeRangePickerProps {
   locale?: string;
+  /** The zone the server reads range dates in, so "today" means the same day there. */
+  timeZone: string;
   labels?: {
     all: string;
     custom: string;
@@ -44,8 +52,45 @@ function deleteCookie(name: string) {
   document.cookie = `${name}=; path=/; max-age=0; SameSite=Lax`;
 }
 
+// The live location rather than useSearchParams alone, which can be empty on first paint.
+function currentParams(searchParams: URLSearchParams): URLSearchParams {
+  if (typeof window !== "undefined" && window.location.search.length > 1) {
+    return new URLSearchParams(window.location.search);
+  }
+  return new URLSearchParams(searchParams.toString());
+}
+
+function presetHref(pathname: string, searchParams: URLSearchParams, value: PresetOption) {
+  const params = currentParams(searchParams);
+  params.set("range", value);
+  params.delete("from");
+  params.delete("to");
+  params.delete("page");
+  return `${pathname}?${params.toString()}`;
+}
+
+function rememberPreset(value: PresetOption) {
+  setCookie("ta_range", value);
+  deleteCookie("ta_range_from");
+  deleteCookie("ta_range_to");
+}
+
+const subscribeNever = () => () => {};
+
+function todayKey(timeZone: string) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date());
+}
+
+const pendingCue = "animate-pulse motion-reduce:animate-none";
+
 export default function TimeRangePicker({
   locale,
+  timeZone,
   labels,
   defaultRange,
   defaultFrom,
@@ -54,40 +99,37 @@ export default function TimeRangePicker({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
 
   const urlHasCustom = searchParams.has("from") && searchParams.has("to");
   const urlHasRange = searchParams.has("range");
   const hasCustom = urlHasCustom || (!urlHasRange && !!(defaultFrom && defaultTo));
   const currentRange = hasCustom ? "custom" : (searchParams.get("range") ?? defaultRange ?? "90");
+  // The pressed chip lights up at once and stays lit while the server renders the new range.
+  const [selectedRange, setSelectedRange] = useOptimistic(currentRange);
 
   const [showCustom, setShowCustom] = useState(hasCustom);
   const [fromVal, setFromVal] = useState(searchParams.get("from") ?? defaultFrom ?? "");
   const [toVal, setToVal] = useState(searchParams.get("to") ?? defaultTo ?? "");
+  // Client clock only; left off during hydration since the server's clock can differ.
+  const getToday = () => todayKey(timeZone);
+  const today = useSyncExternalStore(subscribeNever, getToday, () => null) ?? undefined;
   const dateInputLang = locale?.startsWith("zh") ? "zh-TW" : "en-CA";
-
-  function currentParams(): URLSearchParams {
-    if (typeof window !== "undefined" && window.location.search.length > 1) {
-      return new URLSearchParams(window.location.search);
-    }
-    return new URLSearchParams(searchParams.toString());
-  }
+  const canApply = !!fromVal && !!toVal && fromVal <= toVal;
 
   function setPreset(value: PresetOption) {
-    const params = currentParams();
-    params.set("range", value);
-    params.delete("from");
-    params.delete("to");
-    params.delete("page");
-    setCookie("ta_range", value);
-    deleteCookie("ta_range_from");
-    deleteCookie("ta_range_to");
-    router.push(`${pathname}?${params.toString()}`);
+    const href = presetHref(pathname, searchParams, value);
+    rememberPreset(value);
     setShowCustom(false);
+    startTransition(() => {
+      setSelectedRange(value);
+      router.push(href);
+    });
   }
 
   function applyCustom() {
-    if (!fromVal || !toVal) return;
-    const params = currentParams();
+    if (!canApply) return;
+    const params = currentParams(searchParams);
     params.set("from", fromVal);
     params.set("to", toVal);
     params.delete("range");
@@ -95,14 +137,22 @@ export default function TimeRangePicker({
     setCookie("ta_range_from", fromVal);
     setCookie("ta_range_to", toVal);
     deleteCookie("ta_range");
-    router.push(`${pathname}?${params.toString()}`);
+    startTransition(() => {
+      setSelectedRange("custom");
+      router.push(`${pathname}?${params.toString()}`);
+    });
   }
+
+  const dateInputClass =
+    "bg-muted/70 focus-visible:ring-ring/40 h-7 min-w-32 rounded-full px-3 text-xs tabular-nums transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none pointer-coarse:h-8";
+  const chipClass =
+    "inline-flex h-7 shrink-0 items-center rounded-full px-3 text-xs whitespace-nowrap transition-[background-color,color,scale] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 pointer-coarse:h-8";
 
   // The two modes swap via paired collapses, so the row morphs between the
   // preset chips and the custom-date fields instead of hard-cutting.
   // Below sm the rows bleed into the page's 16px gutter so chips scroll to the screen edge.
   return (
-    <div className="-mx-4 flex flex-col sm:mx-0 lg:items-end">
+    <div className="-mx-4 flex flex-col sm:mx-0 lg:items-end" aria-busy={isPending || undefined}>
       <Collapse open={showCustom} className="w-full">
         <div className="flex flex-wrap items-center gap-2 px-4 py-0.5 sm:px-0 lg:justify-end">
           <input
@@ -110,8 +160,9 @@ export default function TimeRangePicker({
             lang={dateInputLang}
             aria-label={labels?.fromDate ?? "Start date"}
             value={fromVal}
+            max={toVal || today}
             onChange={(e) => setFromVal(e.target.value)}
-            className="bg-muted/70 focus-visible:ring-ring/40 h-7 min-w-32 rounded-full px-3 text-xs tabular-nums transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none"
+            className={dateInputClass}
           />
           <span className="text-muted-foreground text-xs">–</span>
           <input
@@ -119,20 +170,26 @@ export default function TimeRangePicker({
             lang={dateInputLang}
             aria-label={labels?.toDate ?? "End date"}
             value={toVal}
+            min={fromVal || undefined}
+            max={today}
             onChange={(e) => setToVal(e.target.value)}
-            className="bg-muted/70 focus-visible:ring-ring/40 h-7 min-w-32 rounded-full px-3 text-xs tabular-nums transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none"
+            className={dateInputClass}
           />
           <button
             type="button"
             onClick={applyCustom}
-            className="bg-primary text-primary-foreground h-7 rounded-full px-3 text-xs font-medium transition-[background-color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+            disabled={!canApply}
+            className={cn(
+              "bg-primary text-primary-foreground h-7 rounded-full px-3 text-xs font-medium transition-[background-color,scale,opacity] duration-150 active:scale-[0.96] disabled:opacity-40 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100 pointer-coarse:h-8",
+              isPending && selectedRange === "custom" && pendingCue,
+            )}
           >
             {labels?.apply ?? "Apply"}
           </button>
           <button
             type="button"
             onClick={() => setShowCustom(false)}
-            className="text-muted-foreground hover:text-foreground hover:bg-muted/70 h-7 rounded-full px-3 text-xs transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100"
+            className="text-muted-foreground hover:text-foreground hover:bg-muted/70 h-7 rounded-full px-3 text-xs transition-[background-color,color,scale] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 pointer-coarse:h-8"
           >
             {labels?.cancel ?? "Cancel"}
           </button>
@@ -145,11 +202,13 @@ export default function TimeRangePicker({
               key={opt}
               type="button"
               onClick={() => setPreset(opt)}
+              aria-pressed={selectedRange === opt}
               className={cn(
-                "inline-flex h-7 shrink-0 items-center rounded-full px-3 text-xs whitespace-nowrap transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
-                currentRange === opt
+                chipClass,
+                selectedRange === opt
                   ? "bg-primary text-primary-foreground font-medium"
                   : "bg-muted/70 text-foreground/70 hover:text-foreground",
+                isPending && selectedRange === opt && pendingCue,
               )}
             >
               {opt === "all"
@@ -164,11 +223,13 @@ export default function TimeRangePicker({
           <button
             type="button"
             onClick={() => setShowCustom(true)}
+            aria-pressed={selectedRange === "custom"}
             className={cn(
-              "inline-flex h-7 shrink-0 items-center rounded-full px-3 text-xs whitespace-nowrap transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
-              currentRange === "custom"
+              chipClass,
+              selectedRange === "custom"
                 ? "bg-primary text-primary-foreground font-medium"
                 : "bg-muted/70 text-muted-foreground hover:text-foreground",
+              isPending && selectedRange === "custom" && pendingCue,
             )}
           >
             {labels?.custom ?? "Custom"}
@@ -176,5 +237,36 @@ export default function TimeRangePicker({
         </div>
       </Collapse>
     </div>
+  );
+}
+
+// Same as tapping that preset's chip, cookie included, so other pages follow.
+export function RangePresetButton({
+  range,
+  children,
+  className,
+}: {
+  range: PresetOption;
+  children: ReactNode;
+  className?: string;
+}) {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+  const [isPending, startTransition] = useTransition();
+
+  return (
+    <button
+      type="button"
+      aria-busy={isPending || undefined}
+      onClick={() => {
+        const href = presetHref(pathname, searchParams, range);
+        rememberPreset(range);
+        startTransition(() => router.push(href));
+      }}
+      className={cn(className, isPending && pendingCue)}
+    >
+      {children}
+    </button>
   );
 }

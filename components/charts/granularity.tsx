@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import { formatShortDate } from "./chart-style";
 import { SegmentedControl } from "./segmented-control";
+import { useStoredChoice } from "./use-stored-choice";
 
 import { bucketStart, defaultGranularity, type Granularity } from "@/lib/granularity";
 
@@ -116,41 +117,20 @@ export function formatBucketTooltipLabel(
 
 const STORAGE_PREFIX = "chart-granularity:";
 
-function isGranularity(value: string | null): value is Granularity {
-  return value === "day" || value === "week" || value === "month";
+function parseGranularity(value: string | null): Granularity | null {
+  return value === "day" || value === "week" || value === "month" ? value : null;
 }
 
 // Granularity defaults from the data's span; an explicit pick is stored per
-// chart (storageKey) so it survives reloads, independently for each chart.
-// Charts without a stored pick keep following the span-based default. The
-// stored value is read after mount so server and client render the same
-// initial markup. The toggle only appears once aggregation has an effect;
-// while it is hidden the span-based default wins so short ranges always
-// render daily.
-export function useGranularity(dates: string[], timeZone: string, storageKey?: string) {
+// chart (storageKey) so it survives reloads and carries into the expanded
+// view, independently for each chart. Charts without a stored pick keep
+// following the span-based default. The toggle only appears once aggregation
+// has an effect; while it is hidden the span-based default wins so short
+// ranges always render daily.
+export function useGranularity(dates: string[], timeZone: string, storageKey: string) {
   const span = useMemo(() => calendarSpanDays(dates, timeZone), [dates, timeZone]);
   const preferred = defaultGranularity(span);
-  const [choice, setChoice] = useState<Granularity | null>(null);
-
-  useEffect(() => {
-    if (!storageKey) return;
-    try {
-      const stored = window.localStorage.getItem(STORAGE_PREFIX + storageKey);
-      if (isGranularity(stored)) setChoice(stored);
-    } catch {
-      // localStorage unavailable (e.g. blocked storage) — keep the default.
-    }
-  }, [storageKey]);
-
-  const setGranularity = (next: Granularity) => {
-    setChoice(next);
-    if (!storageKey) return;
-    try {
-      window.localStorage.setItem(STORAGE_PREFIX + storageKey, next);
-    } catch {
-      // Persisting is best-effort; the in-session choice still applies.
-    }
-  };
+  const [choice, setGranularity] = useStoredChoice(STORAGE_PREFIX + storageKey, parseGranularity);
 
   const showToggle = span > 92;
   return { granularity: showToggle && choice ? choice : preferred, setGranularity, showToggle };

@@ -2,11 +2,12 @@
 
 import { useState, useTransition } from "react";
 import Link from "next/link";
-import { usePathname } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import { RefreshCw, ArrowRight, TriangleAlert } from "lucide-react";
 import { syncDataAction } from "@/actions/sync";
 import { cn, normalizeIntlSpaces } from "@/lib/utils";
 import { isDesktopApp } from "@/lib/runtime-target";
+import { STALE_SYNC_DAYS } from "@/lib/stale-sync";
 import { toast } from "sonner";
 
 const INTERVAL_LABELS: Record<string, string> = {
@@ -14,8 +15,6 @@ const INTERVAL_LABELS: Record<string, string> = {
   "360": "every 6 hours",
   "1440": "daily",
 };
-
-const STALE_AFTER_DAYS = 7;
 
 export interface SyncButtonProps {
   lastSyncedAt?: string | null;
@@ -66,7 +65,7 @@ function getStaleness(
   const staleDays = lastSyncedAt
     ? Math.floor((Date.now() - new Date(lastSyncedAt).getTime()) / 86400000)
     : 0;
-  const isStale = staleDays >= STALE_AFTER_DAYS && Boolean(copy.staleNotice);
+  const isStale = staleDays >= STALE_SYNC_DAYS && Boolean(copy.staleNotice);
   // On desktop the scheduler only runs while the app is open, so a stale sync
   // means "you were away", not a broken deployment.
   const staleHintAuto = isDesktopApp
@@ -79,6 +78,48 @@ function getStaleness(
 // The popover's settings CTA is pointless when we're already on the settings page.
 function useOnSettingsPage() {
   return usePathname()?.startsWith("/dashboard/settings") ?? false;
+}
+
+export type SyncNowLabels = Pick<
+  SyncLabels,
+  "tokenExpired" | "failed" | "synced" | "inProgress" | "goToSettings" | "repliesPermissionMissing"
+>;
+
+// Every manual Sync control runs the sync and reports its outcome the same way.
+export function useSyncNow(labels: SyncNowLabels) {
+  const [pending, startTransition] = useTransition();
+  const onSettingsPage = useOnSettingsPage();
+  const router = useRouter();
+
+  function sync() {
+    startTransition(async () => {
+      const result = await syncDataAction();
+      if (result.error === "token_expired") {
+        toast.error(
+          labels.tokenExpired,
+          labels.goToSettings && !onSettingsPage
+            ? {
+                action: {
+                  label: labels.goToSettings,
+                  onClick: () => router.push("/dashboard/settings"),
+                },
+              }
+            : undefined,
+        );
+      } else if (result.error === "sync_in_progress") {
+        toast.info(labels.inProgress ?? "A sync is already in progress. Please wait.");
+      } else if (result.error) {
+        toast.error(`${labels.failed} ${result.error}`);
+      } else {
+        toast.success(labels.synced.replace("{count}", String(result.postsCount)));
+        if (result.repliesPermissionMissing && labels.repliesPermissionMissing) {
+          toast.info(labels.repliesPermissionMissing);
+        }
+      }
+    });
+  }
+
+  return { pending, sync };
 }
 
 export function LastSynced({
@@ -146,7 +187,6 @@ export default function SyncButton({
   dateLocale,
   compact = false,
 }: SyncButtonProps) {
-  const [pending, startTransition] = useTransition();
   const [staleOpen, setStaleOpen] = useState(false);
   const onSettingsPage = useOnSettingsPage();
   const copy = labels ?? {
@@ -159,24 +199,7 @@ export default function SyncButton({
     synced: "Synced {count} posts",
     intervalInline: INTERVAL_LABELS,
   };
-
-  function handleSync() {
-    startTransition(async () => {
-      const result = await syncDataAction();
-      if (result.error === "token_expired") {
-        toast.error(copy.tokenExpired);
-      } else if (result.error === "sync_in_progress") {
-        toast.info(copy.inProgress ?? "A sync is already in progress. Please wait.");
-      } else if (result.error) {
-        toast.error(`${copy.failed} ${result.error}`);
-      } else {
-        toast.success(copy.synced.replace("{count}", String(result.postsCount)));
-        if (result.repliesPermissionMissing && copy.repliesPermissionMissing) {
-          toast.info(copy.repliesPermissionMissing);
-        }
-      }
-    });
-  }
+  const { pending, sync: handleSync } = useSyncNow(copy);
 
   const { staleDays, isStale, staleHint } = getStaleness(lastSyncedAt, syncInterval, copy);
 
@@ -198,7 +221,7 @@ export default function SyncButton({
             type="button"
             onClick={handleSync}
             disabled={pending}
-            className="bg-tint/12 text-tint hover:bg-tint/18 inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,color,transform] duration-150 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
+            className="bg-tint/12 text-tint hover:bg-tint/18 inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,color,scale] duration-150 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100 max-md:h-8"
           >
             <RefreshCw
               className={`size-3.5 ${pending ? "animate-spin motion-reduce:animate-none" : ""}`}

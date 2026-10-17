@@ -106,9 +106,9 @@ export const lineCursor = {
   strokeWidth: 1,
 };
 
-// Active dots get a background-colored ring so they lift off the line.
+// Active dots get a card-colored ring so they lift off the line.
 export function activeDot(color: string) {
-  return { r: 4, fill: color, stroke: "var(--background)", strokeWidth: 2 };
+  return { r: 4, fill: color, stroke: "var(--card)", strokeWidth: 2 };
 }
 
 export const barRadius: [number, number, number, number] = [4, 4, 0, 0];

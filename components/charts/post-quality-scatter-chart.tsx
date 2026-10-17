@@ -47,14 +47,12 @@ interface Props {
     replyRate: string;
     shareRate: string;
     shares: string;
-    dotSizeShares?: string;
     textLength?: string;
     viewsMultiplier?: string;
     quadrantBreakout?: string;
     quadrantConversation?: string;
     quadrantBroadcast?: string;
     quadrantUnderperforming?: string;
-    quadrantGroup?: string;
     mediaTypes?: Record<string, string>;
     noData?: string;
     noText?: string;
@@ -134,12 +132,7 @@ export default function PostQualityScatterChart({ data, thresholds, labels }: Pr
 
   return (
     <>
-      <AxisHint
-        x={copy.views}
-        y={copy.engagementRate}
-        size={copy.dotSizeShares ?? copy.shares}
-        color={copy.quadrantGroup ?? "Quadrant"}
-      />
+      <AxisHint x={copy.views} y={copy.engagementRate} />
       <ChartLegend
         className="mb-2"
         items={[

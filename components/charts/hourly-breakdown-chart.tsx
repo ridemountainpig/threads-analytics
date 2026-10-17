@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   BarChart,
   Bar,
@@ -24,8 +24,15 @@ import {
   gridProps,
 } from "./chart-style";
 import { ChartTooltip, useChartMotion } from "./chart-chrome";
+import { useStoredChoice } from "./use-stored-choice";
 
 const DAY_LABELS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+const DAY_STORAGE_KEY = "hourly-breakdown-day";
+
+// "all", or a weekday index with 0 = Sunday.
+function parseDayChoice(value: string | null) {
+  return value === "all" || (value !== null && /^[0-6]$/.test(value)) ? value : null;
+}
 
 interface HourlyBreakdownChartProps {
   heatmap: Array<{
@@ -99,7 +106,7 @@ function DayChip({
       type="button"
       onClick={onClick}
       className={cn(
-        "inline-flex h-6 items-center rounded-full px-2.5 text-[11px] transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+        "inline-flex h-6 items-center rounded-full px-2.5 text-[11px] transition-[background-color,color,scale] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 pointer-coarse:h-8",
         selected
           ? "bg-primary text-primary-foreground font-medium"
           : "bg-muted/70 text-foreground/70 hover:text-foreground",
@@ -116,7 +123,8 @@ export default function HourlyBreakdownChart({
   dateLocale,
   labels,
 }: HourlyBreakdownChartProps) {
-  const [selectedDay, setSelectedDay] = useState<number | null>(null);
+  const [dayChoice, setDayChoice] = useStoredChoice(DAY_STORAGE_KEY, parseDayChoice);
+  const selectedDay = dayChoice === null || dayChoice === "all" ? null : Number(dayChoice);
   const motion = useChartMotion();
   const copy = labels ?? {
     allDays: "All days",
@@ -173,11 +181,11 @@ export default function HourlyBreakdownChart({
     <div className="space-y-3">
       <AxisHint x={copy.hour ?? "Hour"} y={medianViewsLabel} />
       <div className="flex flex-wrap gap-1.5">
-        <DayChip selected={selectedDay === null} onClick={() => setSelectedDay(null)}>
+        <DayChip selected={selectedDay === null} onClick={() => setDayChoice("all")}>
           {copy.allDays}
         </DayChip>
         {copy.days.map((label, i) => (
-          <DayChip key={i} selected={selectedDay === i} onClick={() => setSelectedDay(i)}>
+          <DayChip key={i} selected={selectedDay === i} onClick={() => setDayChoice(String(i))}>
             {label}
           </DayChip>
         ))}

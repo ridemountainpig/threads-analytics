@@ -17,6 +17,7 @@ import {
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
+import ThemeSwitcher from "@/components/dashboard/theme-switcher";
 import AccountSwitcher from "@/components/dashboard/account-switcher";
 import { useUpdateStatus } from "@/components/dashboard/use-update-status";
 import {
@@ -42,7 +43,10 @@ const tabItems = navItems.slice(0, 4);
 const moreItems = navItems.slice(4);
 
 const tabClassName =
-  "flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] leading-3 tracking-[0.01em] outline-none transition-[color,transform] duration-150 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100";
+  "flex min-w-0 flex-col items-center gap-1 rounded-lg px-1 py-1.5 text-[10px] leading-3 tracking-[0.01em] outline-none transition-[color,scale] duration-150 active:scale-95 motion-reduce:transition-none motion-reduce:active:scale-100";
+
+const footerButtonClassName =
+  "focus-visible:ring-ring/50 text-muted-foreground hover:text-foreground hover:bg-accent/50 data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground flex size-8 items-center justify-center rounded-lg outline-none transition-[background-color,color,box-shadow,scale] duration-150 focus-visible:ring-3 active:scale-[0.94] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100 pointer-coarse:size-10";
 
 const isWithin = (pathname: string, href: string) =>
   pathname === href || pathname.startsWith(href + "/");
@@ -70,6 +74,7 @@ interface SidebarProps {
     signOut: string;
     switchAccount: string;
   };
+  appearanceLabels: { title: string; system: string; light: string; dark: string };
 }
 
 export default function Sidebar({
@@ -78,6 +83,7 @@ export default function Sidebar({
   appName,
   version,
   labels,
+  appearanceLabels,
   showSignOut = true,
 }: SidebarProps) {
   const pathname = usePathname();
@@ -103,7 +109,7 @@ export default function Sidebar({
             )
           )}
         </div>
-        <LanguageSwitcher locale={locale} compact />
+        <LanguageSwitcher locale={locale} />
       </header>
 
       {/* Desktop sidebar: the darker sidebar material separates structure from content */}
@@ -127,7 +133,7 @@ export default function Sidebar({
               key={href}
               href={href}
               className={cn(
-                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,color,transform] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100",
+                "flex items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,color,scale] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100",
                 isWithin(pathname, href)
                   ? "bg-accent text-accent-foreground font-medium"
                   : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
@@ -139,42 +145,55 @@ export default function Sidebar({
           ))}
         </nav>
 
-        <div className="border-border/60 space-y-2 border-t p-2">
-          <LanguageSwitcher locale={locale} />
+        <div className="border-border/60 space-y-0.5 border-t p-2">
           {showSignOut && (
             <form action={logoutAction}>
               <button
                 type="submit"
-                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,color,transform] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
+                className="text-muted-foreground hover:text-foreground hover:bg-accent/50 flex w-full items-center gap-2.5 rounded-lg px-3 py-2 text-sm transition-[background-color,color,scale] duration-150 active:scale-[0.98] motion-reduce:transition-none motion-reduce:active:scale-100"
               >
                 <LogOut className="size-4 shrink-0" />
                 {labels.signOut}
               </button>
             </form>
           )}
-          {versionLink && (
-            <a
-              href={versionLink.url}
-              target="_blank"
-              rel="noreferrer"
-              className="group text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 flex items-center gap-2.5 rounded-lg px-3 py-1.5 transition-[background-color,color] duration-150 motion-reduce:transition-none"
-            >
-              <span className="flex size-4 shrink-0 items-center justify-center">
-                <Tag className="size-3.5" />
-              </span>
-              <span className="truncate font-mono text-[11px] tracking-[0.02em]">
-                {versionLink.label}
-              </span>
-              <ArrowUpRight className="size-3 shrink-0 -translate-x-0.5 opacity-0 transition-[opacity,transform] duration-150 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:translate-x-0 motion-reduce:transition-[opacity]" />
-            </a>
-          )}
+          <div className="flex items-center gap-1">
+            {versionLink && (
+              <a
+                href={versionLink.url}
+                target="_blank"
+                rel="noreferrer"
+                className="group text-muted-foreground/70 hover:text-foreground hover:bg-accent/50 flex min-w-0 items-center gap-2.5 rounded-lg px-3 py-1.5 transition-[background-color,color] duration-150 motion-reduce:transition-none"
+              >
+                <span className="flex size-4 shrink-0 items-center justify-center">
+                  <Tag className="size-3.5" />
+                </span>
+                <span className="truncate font-mono text-[11px] tracking-[0.02em]">
+                  {versionLink.label}
+                </span>
+                <ArrowUpRight className="size-3 shrink-0 -translate-x-0.5 opacity-0 transition-[opacity,translate] duration-150 group-hover:translate-x-0 group-hover:opacity-100 motion-reduce:translate-x-0 motion-reduce:transition-[opacity]" />
+              </a>
+            )}
+            <div className="ml-auto flex shrink-0 items-center gap-0.5">
+              <ThemeSwitcher labels={appearanceLabels} className={footerButtonClassName} />
+              <LanguageSwitcher
+                locale={locale}
+                side="top"
+                iconOnly
+                className={footerButtonClassName}
+              />
+            </div>
+          </div>
         </div>
       </aside>
 
       {/* Mobile tab bar: iOS grammar — the active tab is tinted, not boxed;
           translucent material with safe-area padding for the home indicator.
           Destinations only: sign-out lives at the end of Settings. */}
-      <nav className="bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden">
+      <nav
+        data-tab-bar
+        className="bg-background/80 border-border/60 reduce-transparency:bg-background reduce-transparency:backdrop-blur-none more-contrast:border-border fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t px-2 pt-1.5 pb-[calc(0.375rem+env(safe-area-inset-bottom))] backdrop-blur-xl md:hidden"
+      >
         {tabItems.map(({ href, labelKey, icon: Icon }) => {
           const active = isWithin(pathname, href);
           return (

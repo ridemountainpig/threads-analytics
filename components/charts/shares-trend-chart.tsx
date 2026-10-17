@@ -1,5 +1,6 @@
 "use client";
 
+import type { ReactNode } from "react";
 import {
   BarChart,
   Bar,
@@ -45,6 +46,8 @@ interface SharesTrendChartProps {
     granularityMonth?: string;
     partialBucket?: string;
   };
+  /** Offered under the empty state, e.g. a sync button. */
+  emptyAction?: ReactNode;
 }
 
 export default function SharesTrendChart({
@@ -52,6 +55,7 @@ export default function SharesTrendChart({
   dateLocale,
   timeZone,
   labels,
+  emptyAction,
 }: SharesTrendChartProps) {
   const locale = dateLocale ?? "en-US";
   const motion = useChartMotion();
@@ -74,7 +78,7 @@ export default function SharesTrendChart({
   );
 
   if (!data.some((point) => point.shares > 0)) {
-    return <ChartEmptyState label={copy.empty} height={160} />;
+    return <ChartEmptyState label={copy.empty} height={160} action={emptyAction} />;
   }
 
   const series = (

@@ -42,6 +42,13 @@ test("a custom range runs from the first to the last millisecond of its days", (
   });
 });
 
+test("a custom range with its ends reversed covers the same days", () => {
+  assert.deepEqual(
+    getTimeRange({ from: "2026-10-07", to: "2026-10-01" }, "Asia/Taipei"),
+    getTimeRange({ from: "2026-10-01", to: "2026-10-07" }, "Asia/Taipei"),
+  );
+});
+
 test("day boundaries hold on the days clocks change", () => {
   const changes = [
     ["America/Los_Angeles", "2026-03-08", 23],
