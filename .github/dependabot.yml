@@ -9,6 +9,11 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    # @types/node tracks the Node major in .nvmrc and the Dockerfile, not the newest release.
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     open-pull-requests-limit: 10
     commit-message:
       prefix: "chore(deps)"
@@ -25,6 +30,10 @@ updates:
         update-types:
           - "minor"
           - "patch"
+    ignore:
+      - dependency-name: "@types/node"
+        update-types:
+          - "version-update:semver-major"
     open-pull-requests-limit: 5
     commit-message:
       prefix: "chore(website)"
