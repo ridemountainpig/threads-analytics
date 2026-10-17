@@ -5,7 +5,7 @@ import { formatShortDate } from "./chart-style";
 import { SegmentedControl } from "./segmented-control";
 import { useStoredChoice } from "./use-stored-choice";
 
-import { bucketStart, defaultGranularity, type Granularity } from "@/lib/granularity";
+import { bucketStart, defaultGranularity, toDateKey, type Granularity } from "@/lib/granularity";
 
 export { bucketStart, defaultGranularity, type Granularity };
 
@@ -13,12 +13,7 @@ export { bucketStart, defaultGranularity, type Granularity };
 // YYYY-MM-DD calendar dates already resolved in the analytics time zone.
 export function toCalendarDate(value: string, timeZone: string): string {
   if (/^\d{4}-\d{2}-\d{2}$/.test(value)) return value;
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date(value));
+  return toDateKey(new Date(value), timeZone);
 }
 
 function utcDate(dateKey: string): Date {

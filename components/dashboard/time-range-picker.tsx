@@ -9,6 +9,7 @@ import {
 } from "react";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import { Collapse } from "@/components/ui/collapse";
+import { toDateKey } from "@/lib/granularity";
 import { cn } from "@/lib/utils";
 
 const PRESETS = ["7", "30", "90", "180", "365", "all"] as const;
@@ -77,15 +78,6 @@ function rememberPreset(value: PresetOption) {
 
 const subscribeNever = () => () => {};
 
-function todayKey(timeZone: string) {
-  return new Intl.DateTimeFormat("en-CA", {
-    timeZone,
-    year: "numeric",
-    month: "2-digit",
-    day: "2-digit",
-  }).format(new Date());
-}
-
 const pendingCue = "animate-pulse motion-reduce:animate-none";
 
 export default function TimeRangePicker({
@@ -112,7 +104,7 @@ export default function TimeRangePicker({
   const [fromVal, setFromVal] = useState(searchParams.get("from") ?? defaultFrom ?? "");
   const [toVal, setToVal] = useState(searchParams.get("to") ?? defaultTo ?? "");
   // Client clock only; left off during hydration since the server's clock can differ.
-  const getToday = () => todayKey(timeZone);
+  const getToday = () => toDateKey(new Date(), timeZone);
   const today = useSyncExternalStore(subscribeNever, getToday, () => null) ?? undefined;
   const dateInputLang = locale?.startsWith("zh") ? "zh-TW" : "en-CA";
   const canApply = !!fromVal && !!toVal && fromVal <= toVal;

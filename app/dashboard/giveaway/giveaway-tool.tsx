@@ -769,7 +769,7 @@ export default function GiveawayTool({
                   placeholder={labels.prizeNamePlaceholder}
                   className="min-w-0 flex-1"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") addPrize();
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) addPrize();
                   }}
                 />
                 <Input
@@ -782,7 +782,7 @@ export default function GiveawayTool({
                   aria-describedby={prizeQtyInvalid ? prizeQtyHintId : undefined}
                   className="w-20 tabular-nums"
                   onKeyDown={(e) => {
-                    if (e.key === "Enter") addPrize();
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) addPrize();
                   }}
                 />
                 <Button
