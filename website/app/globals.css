@@ -562,6 +562,24 @@ summary:focus-visible {
   transition: background-color 140ms ease;
 }
 
+/* Declared before :hover and the current-page rule so both still win. */
+.nav-menu-popover a.nav-menu-featured {
+  background: linear-gradient(115deg, #f1e7ff 0%, #fbf3fb 60%, var(--paper-strong) 100%);
+}
+
+/* Divider plus a small heading where a sub-section starts, in the same
+   voice as the mobile menu's group labels. */
+.nav-menu-section {
+  margin: 6px 6px 0;
+  padding: 10px 2px 4px;
+  border-top: 1px solid var(--rule);
+  color: rgba(25, 17, 33, 0.42);
+  font-size: 10.5px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
 .nav-menu-popover a:hover {
   background: color-mix(in srgb, var(--accent-soft) 45%, transparent);
 }
@@ -623,6 +641,34 @@ summary:focus-visible {
   background: var(--paper-strong);
 }
 
+/* Solid accent chip, matching the header's Mac app button. */
+.nav-menu-icon-featured {
+  background: var(--accent-strong);
+  color: white;
+}
+
+.nav-menu-popover a:hover .nav-menu-icon-featured,
+.nav-menu-popover a[aria-current="page"] .nav-menu-icon-featured {
+  background: var(--accent);
+}
+
+.menu-badge {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 2px 6px;
+  border: 1px solid rgba(124, 61, 219, 0.3);
+  border-radius: 999px;
+  background: var(--paper-strong);
+  color: var(--accent-strong);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.3;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
 /* Matches .button-ghost:hover — the "star on GitHub" pink. */
 .site-footer a:hover {
   color: #ffd8ea;
@@ -653,6 +699,7 @@ summary:focus-visible {
   font-size: 12px;
   font-weight: 580;
   list-style: none;
+  white-space: nowrap;
   transition:
     color 160ms ease,
     background-color 160ms ease,
@@ -824,6 +871,19 @@ summary:focus-visible {
   text-transform: uppercase;
 }
 
+/* Inset rule, so a sub-section reads as part of its group rather than a new
+   group. */
+.mobile-menu-section {
+  margin: 2px 12px 0;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--rule);
+  color: rgba(25, 17, 33, 0.42);
+  font-size: 10px;
+  font-weight: 650;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
 .mobile-menu-popover a[aria-current="page"] {
   background: #f1eaf8;
   color: var(--ink);
@@ -909,6 +969,104 @@ summary:focus-visible {
 
 .header-github:active {
   transform: translateY(0) scale(0.98);
+}
+
+.header-mac {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  padding: 0 6px 0 13px;
+  border-radius: 999px;
+  background: var(--accent-strong);
+  color: white;
+  font-size: 12px;
+  font-weight: 620;
+  white-space: nowrap;
+  transition:
+    transform 160ms ease,
+    background-color 160ms ease,
+    box-shadow 160ms ease;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .header-mac:hover {
+    transform: translateY(-1px);
+    background: var(--accent);
+    box-shadow: 0 8px 20px rgba(124, 61, 219, 0.3);
+  }
+}
+
+.header-mac:active {
+  transform: translateY(0) scale(0.98);
+}
+
+.header-mac-icon {
+  display: block;
+  width: 15px;
+  height: 15px;
+  flex: 0 0 auto;
+}
+
+.header-mac-beta {
+  padding: 3px 7px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.2);
+  font-family: var(--mono);
+  font-size: 9px;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-transform: uppercase;
+}
+
+/* As the header narrows, the GitHub button and the brand tag give way before
+   the Mac app button, which only drops to its icon where the nav is tightest
+   and on phones. The smallest phones drop the GitHub button (the footer still
+   links it) so the brand keeps its full width. */
+@media (max-width: 1180px) {
+  .header-github span {
+    display: none;
+  }
+
+  .header-github {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 1100px) {
+  .brand-tag {
+    display: none;
+  }
+}
+
+@media (min-width: 781px) and (max-width: 1000px), (max-width: 540px) {
+  .header-mac {
+    width: 40px;
+    min-height: 40px;
+    padding: 0;
+    justify-content: center;
+  }
+
+  .header-mac-label,
+  .header-mac-beta {
+    display: none;
+  }
+}
+
+@media (max-width: 399px) {
+  .header-actions {
+    gap: 6px;
+  }
+}
+
+@media (max-width: 374px) {
+  .header-github {
+    display: none;
+  }
 }
 
 .github-icon {
@@ -4678,8 +4836,9 @@ a.deploy-card:active {
   }
 }
 
-/* Four cards: the three provider cards share the top row and the Docker code
-   card stretches underneath, where the pull command has room to breathe. */
+/* The Mac app card spans the top row, the three provider cards share the next
+   one, and the Docker code card stretches underneath, where the pull command
+   has room to breathe. */
 .deploy-card-code {
   grid-column: 1 / -1;
   min-height: 250px;
@@ -5219,14 +5378,15 @@ a.deploy-card-code:hover .deploy-package-link {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  /* Two columns fit the four cards as a clean 2×2, so Docker rejoins the grid. */
+  /* Two columns fit the four hosted cards as a clean 2×2 under the Mac card,
+     so Docker rejoins the grid. */
   .deploy-card-code {
     grid-column: auto;
     min-height: 260px;
   }
 
   /* The nav no longer fits this band at full size (widest labels in
-     zh-TW/ja), so tighten it and collapse the GitHub button to icon-only. */
+     zh-TW/ja), so tighten it. */
   .desktop-nav {
     gap: 0;
     font-size: 12.5px;
@@ -5234,21 +5394,6 @@ a.deploy-card-code:hover .deploy-package-link {
 
   .nav-menu summary {
     padding: 0 10px;
-  }
-
-  .brand-tag {
-    display: none;
-  }
-
-  .header-github span {
-    display: none;
-  }
-
-  .header-github {
-    width: 40px;
-    min-height: 40px;
-    padding: 0;
-    justify-content: center;
   }
 
   /* The link columns get too narrow for the longest labels beside the brand
@@ -6267,21 +6412,23 @@ a.deploy-card-code:hover .deploy-package-link {
   flex: 0 0 auto;
 }
 
-/* Vercel card: same action style, but the whole card is the link — no tab
-   switch above it, so the action anchors itself to the bottom and the hover
-   effect follows the card instead of the (non-interactive) action span. */
+/* Vercel and Mac cards: same action style, but the whole card is the link —
+   no tab switch above it, so the action anchors itself to the bottom and the
+   hover effect follows the card instead of the (non-interactive) action span. */
 .deploy-card-vercel .deploy-tab-action {
   margin-top: auto;
   padding-top: 30px;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  a.deploy-card-vercel:hover .deploy-tab-action-text::after {
+  a.deploy-card-vercel:hover .deploy-tab-action-text::after,
+  a.deploy-card-desktop:hover .deploy-tab-action-text::after {
     transform: scaleX(1);
   }
 }
 
-a.deploy-card-vercel:hover .deploy-tab-action-chip {
+a.deploy-card-vercel:hover .deploy-tab-action-chip,
+a.deploy-card-desktop:hover .deploy-tab-action-chip {
   border-color: #f3abd3;
   background: #f3abd3;
   color: white;
@@ -11300,42 +11447,49 @@ button.mcp-mock-btn:active {
   }
 }
 
-/* ---------- Desktop app (/desktop + homepage deploy link) ---------- */
+/* ---------- Desktop app (/desktop + homepage deploy card) ---------- */
 
-/* Homepage: the no-server alternative, one quiet line under the deploy cards. */
-.deploy-desktop-link {
+/* Homepage: the Mac app leads the deploy grid as a full-width card, tinted so
+   it reads as the default path before the hosted options. */
+.deploy-card-desktop {
+  grid-column: 1 / -1;
+  min-height: 0;
+  border-color: rgba(124, 61, 219, 0.38);
+  background: linear-gradient(115deg, #f1e7ff 0%, #fbf3fb 46%, var(--paper-strong) 100%);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  a.deploy-card-desktop:hover {
+    background: linear-gradient(115deg, #ecdeff 0%, #faeef9 46%, var(--paper-strong) 100%);
+  }
+}
+
+.deploy-card-desktop > strong {
+  margin-top: 34px;
+}
+
+.deploy-card-desktop > p {
+  max-width: 640px;
+}
+
+.deploy-brand-mark-desktop {
+  padding: 10px 10px 11px;
+}
+
+.deploy-desktop-action-row {
   display: flex;
   flex-wrap: wrap;
-  gap: 4px 10px;
   align-items: center;
-  justify-content: center;
-  margin: 34px 0 0;
+  gap: 8px 18px;
+  margin-top: auto;
+  padding-top: 26px;
+}
+
+.deploy-desktop-note {
   color: var(--ink-soft);
-  font-size: 14.5px;
-}
-
-.deploy-desktop-link a {
-  display: inline-flex;
-  gap: 6px;
-  align-items: center;
-  color: var(--accent-strong);
-  font-weight: 600;
-  text-decoration: underline;
-  text-decoration-color: transparent;
-  text-underline-offset: 4px;
-  transition:
-    gap 180ms var(--ease-out),
-    text-decoration-color 180ms ease;
-}
-
-.deploy-desktop-link a:hover {
-  gap: 9px;
-  text-decoration-color: currentColor;
-}
-
-.deploy-desktop-link svg {
-  width: 15px;
-  height: 15px;
+  font-family: var(--mono);
+  font-size: 11px;
+  letter-spacing: 0.02em;
 }
 
 /* Hero download card: app identity, requirements, then the asset to pick. */
@@ -11820,6 +11974,7 @@ button.mcp-mock-btn:active {
   .site-footer a,
   .button,
   .header-github,
+  .header-mac,
   .language-menu summary,
   .language-popover a,
   .nav-menu summary,

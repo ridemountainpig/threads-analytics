@@ -3743,9 +3743,12 @@ export const dictionaries = {
       brandTag: "",
       // Menu triggers; they double as the footer column headings.
       features: "Features",
-      deploy: "Deploy",
+      getStarted: "Get started",
       guides: "Guides",
       github: "GitHub",
+      beta: "Beta",
+      // Sub-section label above the hosted options in the Get started menu.
+      selfHostSection: "Self-host",
       // Menu entries: the label, plus one line shown under it in the desktop
       // dropdowns. Keep descriptions short enough for a single line.
       demo: { label: "Live demo", description: "Try the dashboard with sample data" },
@@ -3769,7 +3772,7 @@ export const dictionaries = {
       description:
         "Free, open-source Threads analytics. Your own post history shows the best time to post, which formats and lengths work, and how your followers grow.",
       primaryCta: "Try the live analysis",
-      secondaryCta: "View on GitHub",
+      secondaryCta: "Download for Mac",
       note: "31 analyses · Multi-account · Automatic sync",
     },
     proof: [
@@ -3958,10 +3961,10 @@ export const dictionaries = {
       note: "Stackable conditions · No third-party login · No extra fees",
     },
     deploy: {
-      kicker: "07 / OWN THE STACK",
-      title: "Self-host your Threads analytics dashboard in minutes.",
+      kicker: "07 / GET STARTED",
+      title: "Run Threads Analytics on your Mac, or host it yourself.",
       description:
-        "Use a one-click template or run the container yourself. The official website stays separate; the deployable image contains only the analytics product.",
+        "The Mac app needs no server, database, or password. Want the dashboard online for every device? Use a one-click template or run the container yourself.",
       railway: {
         eyebrow: "ONE-CLICK",
         title: "Deploy on Railway",
@@ -3993,7 +3996,13 @@ export const dictionaries = {
         action: "Self-host guide",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
-      desktop: { text: "Rather not run a server?", action: "Get the Mac app" },
+      desktop: {
+        eyebrow: "NO SERVER · BETA",
+        title: "Mac app",
+        body: "Download the app, paste your Threads access token, and the full dashboard runs on your Mac. Your data stays in a local database: no hosting bill, no PostgreSQL, no password.",
+        action: "Download for Mac",
+        note: "macOS 11+ · Apple silicon",
+      },
     },
     zeaburAgentDeploy: {
       metadata: {
@@ -4351,9 +4360,11 @@ export const dictionaries = {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
       brandTag: "Threads 數據分析工具",
       features: "功能",
-      deploy: "部署",
+      getStarted: "開始使用",
       guides: "指南",
       github: "GitHub",
+      beta: "Beta",
+      selfHostSection: "自架",
       demo: { label: "互動展示", description: "用範例數據直接試玩儀表板" },
       analytics: { label: "分析功能", description: "31 種分析，全用你的貼文數據" },
       mcp: { label: "MCP 伺服器", description: "讓 Claude、Cursor 直接查你的數據" },
@@ -4372,7 +4383,7 @@ export const dictionaries = {
       description:
         "免費開源的脆（Threads）數據分析工具：從你的貼文紀錄找出最佳發文時間、有效的形式與長度，還有粉絲成長的來源。",
       primaryCta: "操作分析 Demo",
-      secondaryCta: "前往 GitHub",
+      secondaryCta: "下載 Mac 版",
       note: "31 種分析 · 多帳號 · 自動同步",
     },
     proof: [
@@ -4557,10 +4568,10 @@ export const dictionaries = {
       note: "條件可疊加 · 不用第三方登入 · 不用額外付費",
     },
     deploy: {
-      kicker: "07 / 掌握自己的環境",
-      title: "幾分鐘，自架好你的 Threads 分析儀表板。",
+      kicker: "07 / 開始使用",
+      title: "在 Mac 上直接用，或自架 Threads 分析儀表板。",
       description:
-        "使用一鍵模板，或自己執行 Container。官方網站完全獨立，可部署的 Image 只包含分析產品。",
+        "Mac 版 App 不用架伺服器、不用資料庫，也不用設密碼。想讓每台裝置都能打開儀表板？用一鍵模板部署，或自己執行 Container。",
       railway: {
         eyebrow: "一鍵部署",
         title: "部署到 Railway",
@@ -4592,7 +4603,13 @@ export const dictionaries = {
         action: "自架部署教學",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
-      desktop: { text: "不想架伺服器？", action: "下載 Mac 版 App" },
+      desktop: {
+        eyebrow: "免架伺服器 · BETA",
+        title: "Mac 版 App",
+        body: "下載 App、貼上 Threads Access Token，完整的儀表板就在你的 Mac 上執行。資料存在本機資料庫，不用主機費、不用 PostgreSQL，也不用設密碼。",
+        action: "下載 Mac 版",
+        note: "macOS 11 以上 · Apple Silicon",
+      },
     },
     zeaburAgentDeploy: {
       metadata: {
@@ -4918,9 +4935,11 @@ export const dictionaries = {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
       brandTag: "Threads 分析ツール",
       features: "機能",
-      deploy: "デプロイ",
+      getStarted: "はじめる",
       guides: "ガイド",
       github: "GitHub",
+      beta: "ベータ",
+      selfHostSection: "セルフホスト",
       demo: { label: "ライブデモ", description: "サンプルデータでダッシュボードを試す" },
       analytics: { label: "分析機能", description: "自分の投稿から 31 種類の分析" },
       mcp: { label: "MCP サーバー", description: "Claude や Cursor からデータに質問" },
@@ -4951,7 +4970,7 @@ export const dictionaries = {
       description:
         "無料・オープンソースのスレッズ（Threads）分析ツール。自分の投稿履歴から、おすすめの投稿時間、効く形式と長さ、フォロワーの伸びを読み取れます。",
       primaryCta: "分析デモを試す",
-      secondaryCta: "GitHubを見る",
+      secondaryCta: "Mac 版をダウンロード",
       note: "31種類の分析 · 複数アカウント · 自動同期",
     },
     proof: [
@@ -5139,10 +5158,10 @@ export const dictionaries = {
       note: "条件の重ねがけ · 第三者ログイン不要 · 追加課金なし",
     },
     deploy: {
-      kicker: "07 / 自分のスタックで",
-      title: "数分で、自分のThreads分析ダッシュボードをセルフホスト。",
+      kicker: "07 / はじめる",
+      title: "Threads分析をMacで使うか、セルフホストするか。",
       description:
-        "ワンクリックテンプレート、または自分でコンテナを実行できます。公式サイトは独立し、配布imageには分析プロダクトだけが含まれます。",
+        "Mac アプリならサーバーもデータベースもパスワードも不要。どの端末からでもダッシュボードを開きたいなら、ワンクリックテンプレートか、自分でコンテナを実行できます。",
       railway: {
         eyebrow: "ワンクリック",
         title: "Railwayへデプロイ",
@@ -5174,7 +5193,13 @@ export const dictionaries = {
         action: "セルフホストガイド",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
-      desktop: { text: "サーバーを立てたくないなら", action: "Mac アプリを入手" },
+      desktop: {
+        eyebrow: "サーバー不要 · ベータ",
+        title: "Mac アプリ",
+        body: "アプリをダウンロードして Threads アクセストークンを貼り付ければ、ダッシュボード一式が Mac 上で動きます。データはローカルのデータベースに保存。ホスティング費用も PostgreSQL もパスワードも不要です。",
+        action: "Mac 版をダウンロード",
+        note: "macOS 11 以降 · Apple Silicon",
+      },
     },
     zeaburAgentDeploy: {
       metadata: {

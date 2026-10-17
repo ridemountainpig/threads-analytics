@@ -1,6 +1,6 @@
 "use client";
 
-import { useRef } from "react";
+import { Fragment, useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Menu } from "lucide-react";
@@ -12,7 +12,7 @@ import { useDetailsDismiss } from "@/components/use-details-dismiss";
 export type MobileMenuGroup = {
   id: string;
   label: string;
-  items: { href: string; label: string; page: boolean }[];
+  items: { href: string; label: string; page: boolean; badge?: string; section?: string }[];
 };
 
 // Groups come in as plain props so this client component does not pull the
@@ -35,22 +35,35 @@ export function MobileMenu({ groups }: { groups: MobileMenuGroup[] }) {
         {groups.map((group) => (
           <div key={group.id} className="mobile-menu-group">
             <span className="mobile-menu-label">{group.label}</span>
-            {group.items.map((item) =>
-              item.page ? (
-                <Link
-                  key={item.href}
-                  href={item.href}
-                  aria-current={item.href === pathname ? "page" : undefined}
-                  onClick={close}
-                >
+            {group.items.map((item) => {
+              const content = (
+                <>
                   {item.label}
-                </Link>
-              ) : (
-                <a key={item.href} href={item.href} onClick={close}>
-                  {item.label}
-                </a>
-              ),
-            )}
+                  {item.badge ? <span className="menu-badge">{item.badge}</span> : null}
+                </>
+              );
+
+              return (
+                <Fragment key={item.href}>
+                  {item.section ? (
+                    <span className="mobile-menu-section">{item.section}</span>
+                  ) : null}
+                  {item.page ? (
+                    <Link
+                      href={item.href}
+                      aria-current={item.href === pathname ? "page" : undefined}
+                      onClick={close}
+                    >
+                      {content}
+                    </Link>
+                  ) : (
+                    <a href={item.href} onClick={close}>
+                      {content}
+                    </a>
+                  )}
+                </Fragment>
+              );
+            })}
           </div>
         ))}
       </nav>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, type ReactNode } from "react";
+import { Fragment, useEffect, useRef, type ReactNode } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { ChevronDown } from "lucide-react";
@@ -19,6 +19,12 @@ export type NavMenuItem = {
   brandIcon?: boolean;
   /** Route rather than an in-page anchor, so it prefetches through <Link>. */
   page?: boolean;
+  /** Short tag after the label, such as Beta. */
+  badge?: string;
+  /** Tinted row with a solid icon, for the item the menu leads with. */
+  featured?: boolean;
+  /** Label for a sub-section that starts at this item. */
+  section?: string;
 };
 
 // One primary-nav group — same <details> popover as the language menu, but
@@ -74,30 +80,41 @@ export function NavMenu({ label, items }: { label: string; items: NavMenuItem[] 
       </summary>
       <div className="nav-menu-popover">
         {items.map((item) => {
+          const iconClass = item.featured
+            ? "nav-menu-icon nav-menu-icon-featured"
+            : item.brandIcon
+              ? "nav-menu-icon nav-menu-icon-brand"
+              : "nav-menu-icon";
           const content = (
             <>
-              <span
-                className={item.brandIcon ? "nav-menu-icon nav-menu-icon-brand" : "nav-menu-icon"}
-                aria-hidden="true"
-              >
+              <span className={iconClass} aria-hidden="true">
                 {item.icon}
               </span>
               <span className="nav-menu-text">
-                <span className="nav-menu-label">{item.label}</span>
+                <span className="nav-menu-label">
+                  {item.label}
+                  {item.badge ? <span className="menu-badge">{item.badge}</span> : null}
+                </span>
                 <span className="nav-menu-description">{item.description}</span>
               </span>
             </>
           );
           const current = item.href === currentHref ? "page" : undefined;
+          const className = item.featured ? "nav-menu-featured" : undefined;
 
-          return item.page ? (
-            <Link key={item.href} href={item.href} aria-current={current} onClick={close}>
-              {content}
-            </Link>
-          ) : (
-            <a key={item.href} href={item.href} onClick={close}>
-              {content}
-            </a>
+          return (
+            <Fragment key={item.href}>
+              {item.section ? <span className="nav-menu-section">{item.section}</span> : null}
+              {item.page ? (
+                <Link href={item.href} aria-current={current} className={className} onClick={close}>
+                  {content}
+                </Link>
+              ) : (
+                <a href={item.href} className={className} onClick={close}>
+                  {content}
+                </a>
+              )}
+            </Fragment>
           );
         })}
       </div>

@@ -28,10 +28,16 @@ export type SiteNavItem = {
   icon: SiteNavIcon;
   /** Route rather than an in-page anchor on the home page. */
   page: boolean;
+  /** Short tag after the label, such as Beta. */
+  badge?: string;
+  /** Tinted row that leads its dropdown. */
+  featured?: boolean;
+  /** Starts a labelled sub-section in the dropdown and mobile menu. */
+  section?: string;
 };
 
 export type SiteNavGroup = {
-  id: "features" | "deploy" | "guides";
+  id: "features" | "get-started" | "guides";
   label: string;
   items: SiteNavItem[];
 };
@@ -66,11 +72,14 @@ export function getSiteNav(locale: Locale): SiteNavGroup[] {
       ],
     },
     {
-      id: "deploy",
-      label: nav.deploy,
+      id: "get-started",
+      label: nav.getStarted,
       items: [
-        entry(nav.deployOptions, `${home}#deploy`, "deploy"),
-        entry(nav.railwayAgent, `${home}/deploy/railway-agent`, "railway"),
+        { ...entry(nav.desktop, `${home}/desktop`, "desktop"), badge: nav.beta, featured: true },
+        {
+          ...entry(nav.railwayAgent, `${home}/deploy/railway-agent`, "railway"),
+          section: nav.selfHostSection,
+        },
         entry(nav.zeaburAgent, `${home}/deploy/zeabur-agent`, "zeabur"),
         entry(nav.vercelAgent, `${home}/deploy/vercel-agent`, "vercel"),
         entry(
@@ -79,7 +88,7 @@ export function getSiteNav(locale: Locale): SiteNavGroup[] {
           "self-host",
           selfHost[locale].navTitle,
         ),
-        entry(nav.desktop, `${home}/desktop`, "desktop"),
+        entry(nav.deployOptions, `${home}#deploy`, "deploy"),
       ],
     },
     {
