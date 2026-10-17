@@ -46,6 +46,8 @@ import {
 } from "@/lib/analytics";
 import { StatCard } from "@/components/dashboard/stat-card";
 import PageHeader from "@/components/dashboard/page-header";
+import SyncButton, { type SyncButtonProps } from "@/components/dashboard/sync-button";
+import { RangePresetButton } from "@/components/dashboard/time-range-picker";
 import HourlyBreakdownChart from "@/components/charts/hourly-breakdown-chart";
 import EngagementRateChart from "@/components/charts/engagement-rate-chart";
 import ContentTypeChart from "@/components/charts/content-type-chart";
@@ -101,6 +103,7 @@ import { FirstSyncNotice } from "@/components/dashboard/first-sync-notice";
 import { ExternalLink } from "lucide-react";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
+import { normalizeIntlSpaces } from "@/lib/utils";
 
 interface PageProps {
   searchParams: Promise<{
@@ -116,6 +119,9 @@ interface PageProps {
 
 /** How many of the most recent snapshots the comparison spans by default. */
 const DEFAULT_COMPARISON_SPAN = 90;
+
+/** A keyword makes the list once it appears in this many posts. */
+const KEYWORD_MIN_POSTS = 3;
 
 /** Snapshot dates are calendar dates stored at UTC midnight — format them as such. */
 function formatSnapshotDate(date: Date, dateLocale: string) {
@@ -194,7 +200,11 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     accessToken = decryptToken(account.accessToken);
   } catch {
     return (
-      <div className="text-muted-foreground p-8">{t.common.accountCredentialsUnavailable}</div>
+      <TokenExpiredNotice
+        message={t.common.credentialsUnavailable}
+        help={t.common.tokenExpiredHelp}
+        settingsLabel={t.common.settings}
+      />
     );
   }
   const emptyUserInsights: UserInsights = {
@@ -418,7 +428,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   const contentFormatLengthMatrix = computeContentFormatLengthMatrix(posts);
   const sharesTrend = computeSharesTrend(posts, tz, dateRange);
   const engagementBreakdownPie = computeEngagementBreakdownPie(posts);
-  const keywordAnalysis = computeKeywordAnalysis(posts);
+  const keywordAnalysis = computeKeywordAnalysis(posts, KEYWORD_MIN_POSTS);
   const optimalFrequency = computeOptimalFrequency(posts, tz, dateRange);
   const contentTypeTimeSlot = computeContentTypeTimeSlot(posts, tz);
   const postingStreak = computePostingStreak(posts, tz);
@@ -442,9 +452,11 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   // Distinguishes the three reasons demographics can be missing: no snapshot at
   // all, a snapshot from a profile under the API's threshold, or a snapshot
   // whose demographics fetch hasn't landed yet.
+  const demographicsBelowThreshold =
+    !!latestSnapshot && latestSnapshot.followersCount < DEMOGRAPHICS_MIN_FOLLOWERS;
   const demographicsEmptyMessage = !latestSnapshot
     ? t.analytics.followerEmpty
-    : latestSnapshot.followersCount < DEMOGRAPHICS_MIN_FOLLOWERS
+    : demographicsBelowThreshold
       ? t.analytics.demographicsEmpty
       : t.analytics.demographicsPending;
   const demographicSlices = DEMOGRAPHIC_BREAKDOWNS.reduce(
@@ -490,6 +502,69 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
   // Shares only exist per post, so the rate divides by the same posts' views.
   const shareRate = dbTotalViews > 0 ? ((totalShares / dbTotalViews) * 100).toFixed(2) : "0.00";
 
+  const syncProps: SyncButtonProps = {
+    lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString(),
+    syncInterval,
+    timeZone: tz,
+    labels: t.sync,
+    dateLocale,
+  };
+  const syncButton = <SyncButton {...syncProps} compact />;
+
+  // An empty range gets one notice per tab, offering ranges that do hold posts.
+  const latestPostAt = allPostTimestamps[allPostTimestamps.length - 1]?.timestamp;
+  const isCustomRange = Boolean(from && to);
+  // "All" starts at a placeholder date, so its empty state names no dates.
+  const isAllTime = !isCustomRange && range === "all";
+  const offerNinetyDays =
+    !!latestPostAt &&
+    latestPostAt >= getTimeRange("90", tz).since &&
+    (isCustomRange || range === "7" || range === "30");
+  const widerRanges = [
+    ...(offerNinetyDays ? [{ range: "90" as const, label: t.analytics.showLast90Days }] : []),
+    ...(latestPostAt && !isAllTime
+      ? [{ range: "all" as const, label: t.analytics.showAllTime }]
+      : []),
+  ];
+  const formatRangeDay = (date: Date) =>
+    normalizeIntlSpaces(
+      new Intl.DateTimeFormat(dateLocale, {
+        timeZone: tz,
+        year: "numeric",
+        month: "short",
+        day: "numeric",
+      }).format(date),
+    );
+  const noPostsNotice =
+    posts.length === 0 ? (
+      <div className="bg-card ring-foreground/10 flex flex-wrap items-center justify-between gap-x-4 gap-y-2.5 rounded-xl px-4 py-3 ring-1">
+        <p className="text-sm">
+          {isAllTime
+            ? t.analytics.noPostsYet
+            : t.analytics.noPostsInRange
+                .replace("{from}", formatRangeDay(since))
+                .replace("{to}", formatRangeDay(until))}
+        </p>
+        {widerRanges.length > 0 && (
+          <div className="flex flex-wrap gap-2">
+            {widerRanges.map((option, index) => (
+              <RangePresetButton
+                key={option.range}
+                range={option.range}
+                className={
+                  index === 0
+                    ? "bg-tint/12 text-tint hover:bg-tint/18 inline-flex h-7 items-center rounded-full px-3 text-xs font-medium transition-[background-color,scale] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 pointer-coarse:h-8"
+                    : "bg-muted/70 text-foreground/70 hover:text-foreground inline-flex h-7 items-center rounded-full px-3 text-xs transition-[background-color,color,scale] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100 pointer-coarse:h-8"
+                }
+              >
+                {option.label}
+              </RangePresetButton>
+            ))}
+          </div>
+        )}
+      </div>
+    ) : null;
+
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <PageHeader
@@ -497,18 +572,13 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
         subtitle={t.analytics.subtitle}
         range={{
           locale,
+          timeZone: tz,
           labels: t.timeRange,
           defaultRange: range,
           defaultFrom: from,
           defaultTo: to,
         }}
-        sync={{
-          lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString(),
-          syncInterval,
-          timeZone: tz,
-          labels: t.sync,
-          dateLocale,
-        }}
+        sync={syncProps}
       />
 
       {postCapReached && (
@@ -536,6 +606,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
 
         {/* ── PERFORMANCE TAB ── */}
         <TabsContent value="performance" className="mt-4 space-y-4">
+          {noPostsNotice}
           <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
             <StatCard title={t.analytics.totalViews} value={totalViews} />
             <StatCard title={t.analytics.avgViewsDay} value={avgViewsPerDay} />
@@ -700,65 +771,30 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
 
         {/* ── CONTENT TAB ── */}
         <TabsContent value="content" className="mt-4 space-y-4">
-          <div className="grid grid-cols-2 gap-3 md:grid-cols-4 xl:grid-cols-6">
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
-                  {t.analytics.postingConsistency}
-                </p>
-                <p className="mt-1 text-2xl font-semibold">{consistency.percentage}%</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">
-                  {consistency.weeksWithPosts} {t.common.of} {consistency.totalWeeks}{" "}
-                  {t.analytics.weeks}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
-                  {t.analytics.shareRate}
-                </p>
-                <p className="mt-1 text-2xl font-semibold">{shareRate}%</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">
-                  {totalShares.toLocaleString()} {t.common.shares}
-                </p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
-                  {t.analytics.quoteRatio}
-                </p>
-                <p className="mt-1 text-2xl font-semibold">{quoteToRepostRatio}%</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">{t.analytics.quoteRatioSub}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
-                  {t.analytics.totalPosts}
-                </p>
-                <p className="mt-1 text-2xl font-semibold">{posts.length.toLocaleString()}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
-                  {t.analytics.longestStreak}
-                </p>
-                <p className="mt-1 text-2xl font-semibold">{postingStreak.longestStreak}</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">{t.analytics.days}</p>
-              </CardContent>
-            </Card>
-            <Card>
-              <CardContent className="p-4">
-                <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
-                  {t.analytics.currentStreak}
-                </p>
-                <p className="mt-1 text-2xl font-semibold">{postingStreak.currentStreak}</p>
-                <p className="text-muted-foreground mt-0.5 text-xs">{t.analytics.daysPosted}</p>
-              </CardContent>
-            </Card>
+          {noPostsNotice}
+          <div className="grid grid-cols-2 gap-3 lg:grid-cols-5">
+            <StatCard
+              className="col-span-2 lg:col-span-1"
+              title={t.analytics.postingConsistency}
+              value={`${consistency.percentage}%`}
+              sub={`${consistency.weeksWithPosts} ${t.common.of} ${consistency.totalWeeks} ${t.analytics.weeks}`}
+            />
+            <StatCard
+              title={t.analytics.quoteRatio}
+              value={`${quoteToRepostRatio}%`}
+              sub={t.analytics.quoteRatioSub}
+            />
+            <StatCard title={t.analytics.totalPosts} value={posts.length} />
+            <StatCard
+              title={t.analytics.longestStreak}
+              value={postingStreak.longestStreak}
+              sub={t.analytics.days}
+            />
+            <StatCard
+              title={t.analytics.currentStreak}
+              value={postingStreak.currentStreak}
+              sub={t.analytics.daysPosted}
+            />
           </div>
 
           {/* Posting calendar */}
@@ -819,6 +855,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 granularityMonth: t.chart.granularityMonth,
                 partialBucket: t.chart.partialBucket,
               }}
+              emptyAction={syncButton}
             />
           </ChartCard>
 
@@ -837,6 +874,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                 keyword: t.chart.keyword,
                 viewsUnit: t.chart.viewsUnit,
                 noData: t.chart.noData,
+                empty: t.analytics.keywordEmpty.replace("{count}", String(KEYWORD_MIN_POSTS)),
               }}
             />
           </ChartCard>
@@ -934,7 +972,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                           href={post.permalink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground shrink-0"
+                          aria-label={t.postsPage.viewOnThreads}
+                          title={t.postsPage.viewOnThreads}
+                          className="text-tint hover:bg-muted -m-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-[background-color,scale] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
                         >
                           <ExternalLink className="size-3.5" />
                         </a>
@@ -983,7 +1023,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                           href={post.permalink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground shrink-0"
+                          aria-label={t.postsPage.viewOnThreads}
+                          title={t.postsPage.viewOnThreads}
+                          className="text-tint hover:bg-muted -m-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-[background-color,scale] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
                         >
                           <ExternalLink className="size-3.5" />
                         </a>
@@ -1032,7 +1074,9 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
                           href={post.permalink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="text-muted-foreground hover:text-foreground shrink-0"
+                          aria-label={t.postsPage.viewOnThreads}
+                          title={t.postsPage.viewOnThreads}
+                          className="text-tint hover:bg-muted -m-1.5 inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-[background-color,scale] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
                         >
                           <ExternalLink className="size-3.5" />
                         </a>
@@ -1070,6 +1114,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
 
         {/* ── AUDIENCE TAB ── */}
         <TabsContent value="audience" className="mt-4 space-y-4">
+          {noPostsNotice}
           {followerGrowth ? (
             <>
               <div className="grid grid-cols-2 gap-3 md:grid-cols-4">
@@ -1231,7 +1276,11 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
               subtitle={t.analytics.demographicsSub}
               labels={cardLabels}
             >
-              <ChartEmptyState label={demographicsEmptyMessage} height={140} />
+              <ChartEmptyState
+                label={demographicsEmptyMessage}
+                height={140}
+                action={demographicsBelowThreshold ? undefined : syncButton}
+              />
             </ChartCard>
           )}
         </TabsContent>

@@ -2,13 +2,17 @@ import { cn } from "@/lib/utils";
 
 export function VsTypicalBadge({
   vsTypical,
+  label,
   className,
 }: {
   vsTypical: number;
+  /** What the multiple compares against, e.g. "vs. a typical post at the same age". */
+  label?: string;
   className?: string;
 }) {
   return (
     <span
+      title={label ? `${vsTypical}x ${label}` : undefined}
       className={cn(
         "inline-flex shrink-0 items-center gap-0.5 rounded-full px-1.5 py-0.5 text-xs font-medium tabular-nums",
         vsTypical >= 1
@@ -26,7 +30,7 @@ export function VsTypicalBadge({
       >
         <path d="M4 0.5 L7.5 6.5 L0.5 6.5 Z" fill="currentColor" />
       </svg>
-      {vsTypical}x
+      {vsTypical}x{label && <span className="sr-only"> {label}</span>}
     </span>
   );
 }

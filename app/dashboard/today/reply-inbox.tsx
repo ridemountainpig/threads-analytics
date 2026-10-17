@@ -1,10 +1,13 @@
 "use client";
 
-import { useMemo, useState } from "react";
-import { ExternalLink } from "lucide-react";
+import { useMemo, useState, useTransition } from "react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowRight, ExternalLink, RotateCw } from "lucide-react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { InboxReply } from "@/lib/today-replies";
 import { cn, normalizeIntlSpaces } from "@/lib/utils";
+import ExpandableText from "./expandable-text";
 
 type Filter = "awaiting" | "all" | "answered";
 
@@ -24,6 +27,10 @@ export interface ReplyInboxLabels {
   noAnswered: string;
   repliesPartial: string;
   noText: string;
+  showMore: string;
+  showLess: string;
+  openSettings: string;
+  tryAgain: string;
 }
 
 export type ReplyInboxProps =
@@ -39,7 +46,12 @@ export type ReplyInboxProps =
       locale: string;
       timeZone: string;
     }
-  | { status: "unavailable"; message: string; labels: ReplyInboxLabels };
+  | {
+      status: "unavailable";
+      reason: "missing_permission" | "token_expired" | "failed";
+      message: string;
+      labels: ReplyInboxLabels;
+    };
 
 function excerpt(text: string, max = 24) {
   const flat = text.replace(/\s+/g, " ").trim();
@@ -61,8 +73,19 @@ export default function ReplyInbox(props: ReplyInboxProps) {
     return (
       <Card>
         {header}
-        <CardContent>
+        <CardContent className="space-y-2">
           <p className="text-muted-foreground text-sm">{props.message}</p>
+          {props.reason === "failed" ? (
+            <RetryButton label={labels.tryAgain} />
+          ) : (
+            <Link
+              href="/dashboard/settings"
+              className="text-tint -my-2.5 inline-flex min-h-11 items-center gap-1 text-sm font-medium transition-opacity duration-150 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
+            >
+              {labels.openSettings}
+              <ArrowRight aria-hidden className="size-3.5" />
+            </Link>
+          )}
         </CardContent>
       </Card>
     );
@@ -75,6 +98,25 @@ export default function ReplyInbox(props: ReplyInboxProps) {
         <InboxList {...props} />
       </CardContent>
     </Card>
+  );
+}
+
+function RetryButton({ label }: { label: string }) {
+  const router = useRouter();
+  const [pending, startTransition] = useTransition();
+  return (
+    <button
+      type="button"
+      onClick={() => startTransition(() => router.refresh())}
+      disabled={pending}
+      className="bg-tint/12 text-tint hover:bg-tint/18 relative inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,color,scale] duration-150 after:absolute after:inset-x-0 after:-inset-y-2 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
+    >
+      <RotateCw
+        aria-hidden
+        className={cn("size-3.5", pending && "animate-spin motion-reduce:animate-none")}
+      />
+      {label}
+    </button>
   );
 }
 
@@ -124,7 +166,7 @@ function InboxList({
               onClick={() => setFilter(value)}
               className={cn(
                 // The ::after strip stretches the 32px chip to a 44px tap target.
-                "relative inline-flex h-8 items-center rounded-full px-3 text-xs whitespace-nowrap tabular-nums transition-[background-color,color,transform] duration-150 after:absolute after:inset-x-0 after:-inset-y-1.5 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+                "relative inline-flex h-8 items-center rounded-full px-3 text-xs whitespace-nowrap tabular-nums transition-[background-color,color,scale] duration-150 after:absolute after:inset-x-0 after:-inset-y-1.5 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
                 filter === value
                   ? "bg-primary text-primary-foreground font-medium"
                   : "bg-muted/70 text-foreground/70 hover:text-foreground",
@@ -143,7 +185,13 @@ function InboxList({
               <div className="flex items-baseline justify-between gap-3">
                 <span className="flex min-w-0 items-center gap-1.5 text-sm font-medium">
                   {filter === "all" && reply.status === "awaiting" && (
-                    <span aria-hidden className="bg-foreground/60 size-1.5 shrink-0 rounded-full" />
+                    <>
+                      <span
+                        aria-hidden
+                        className="bg-foreground/60 size-1.5 shrink-0 rounded-full"
+                      />
+                      <span className="sr-only">{labels.filterAwaiting}</span>
+                    </>
                   )}
                   <span className="truncate">
                     {reply.username ? `@${reply.username}` : labels.privateProfile}
@@ -153,9 +201,11 @@ function InboxList({
                   {normalizeIntlSpaces(timeFormat.format(new Date(reply.timestamp)))}
                 </span>
               </div>
-              <p className="mt-0.5 line-clamp-4 text-sm break-words whitespace-pre-line">
-                {reply.text}
-              </p>
+              <ExpandableText
+                text={reply.text}
+                className="mt-0.5 text-sm"
+                labels={{ more: labels.showMore, less: labels.showLess }}
+              />
               <div className="mt-1 flex items-center justify-between gap-3">
                 <p className="text-muted-foreground min-w-0 truncate text-xs">
                   {labels.onPost.replace("{text}", excerpt(reply.postText) || labels.noText)}

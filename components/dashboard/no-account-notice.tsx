@@ -16,7 +16,7 @@ export function NoAccountNotice({ message, help, settingsLabel }: NoAccountNotic
   const heading = message.replace(/[。．.!！]+\s*$/, "");
 
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
+    <div className="flex min-h-[calc(100dvh-5rem)] flex-col items-center justify-center gap-6 p-8 text-center md:min-h-dvh">
       <div className="relative size-14">
         <div className="bg-muted absolute inset-0 rotate-6 rounded-2xl" />
         <div className="ring-border bg-card absolute inset-0 flex items-center justify-center rounded-2xl ring-1">

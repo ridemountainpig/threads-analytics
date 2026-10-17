@@ -13,12 +13,13 @@ function getLocaleFromCookie() {
 
 export default function DashboardError({
   error,
-  reset,
+  retry,
 }: {
   error: Error & { digest?: string };
-  reset: () => void;
+  retry: () => void;
 }) {
   const t = dictionaries[getLocaleFromCookie()].common;
+  const [beforeDigest, afterDigest] = t.errorDigest.split("{digest}");
   return (
     <div className="flex min-h-screen flex-col items-center justify-center gap-6 p-8 text-center">
       <div className="relative size-14">
@@ -29,11 +30,22 @@ export default function DashboardError({
       </div>
       <div className="space-y-1.5">
         <h2 className="font-heading text-lg font-medium">{t.errorTitle}</h2>
-        <p className="text-muted-foreground mx-auto max-w-xs text-sm text-balance">
-          {error.message}
-        </p>
+        <p className="text-muted-foreground mx-auto max-w-xs text-sm text-balance">{t.errorHelp}</p>
+        {/* In production the message is a generic English sentence. */}
+        {process.env.NODE_ENV === "development" && (
+          <p className="text-muted-foreground mx-auto max-w-sm font-mono text-xs break-words">
+            {error.message}
+          </p>
+        )}
+        {error.digest && (
+          <p className="text-muted-foreground pt-1 text-xs">
+            {beforeDigest}
+            <span className="font-mono select-all">{error.digest}</span>
+            {afterDigest}
+          </p>
+        )}
       </div>
-      <Button size="lg" className="rounded-full" onClick={reset}>
+      <Button size="lg" className="rounded-full" onClick={() => retry()}>
         <RefreshCw className="mr-1.5 size-4" />
         {t.tryAgain}
       </Button>

@@ -24,7 +24,7 @@ function transformGuideUrl(url: string) {
 // negative tracking on the larger headings. Body color is inherited rather
 // than set per-element so the callout can quiet everything inside it.
 const markdownComponents: Components = {
-  h1: ({ children }) => <h1 className="text-2xl font-semibold tracking-[-0.01em]">{children}</h1>,
+  h1: ({ children }) => <h1 className="text-2xl font-bold tracking-[-0.02em]">{children}</h1>,
   h2: ({ children }) => (
     <h2 className="mt-10 text-lg font-semibold tracking-[-0.01em]">{children}</h2>
   ),
@@ -85,7 +85,7 @@ export default async function TokenGuidePage() {
           keep it optically aligned with the content column. */}
       <Link
         href="/dashboard/settings"
-        className="text-muted-foreground hover:text-foreground hover:bg-muted/70 -mx-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-[background-color,color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+        className="text-muted-foreground hover:text-foreground hover:bg-muted/70 -mx-2.5 inline-flex items-center gap-1.5 rounded-full px-2.5 py-1.5 text-sm transition-[background-color,color,scale] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <ArrowLeft className="size-3.5" />
         {t.settingsPage.backToSettings}

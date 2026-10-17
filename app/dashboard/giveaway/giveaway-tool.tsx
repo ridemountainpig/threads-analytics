@@ -5,6 +5,7 @@ import { Copy, ExternalLink, Loader2, Search, Ticket, Trophy, X } from "lucide-r
 import { toast } from "sonner";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
+import { Collapse } from "@/components/ui/collapse";
 import {
   Card,
   CardAction,
@@ -92,6 +93,11 @@ function zonedDateTimeToUtc(local: string, timeZone: string): Date | null {
   return new Date(asUtc - (zoned - asUtc));
 }
 
+function parseAtLeastOne(value: string): number | null {
+  const n = Number.parseInt(value, 10);
+  return Number.isSafeInteger(n) && n >= 1 ? n : null;
+}
+
 function secureShuffle<T>(items: T[]): T[] {
   const arr = [...items];
   const rand = new Uint32Array(arr.length);
@@ -173,7 +179,7 @@ function ExcludeUserPicker({
           onFocus={() => setOpen(true)}
           placeholder={placeholder}
           disabled={disabled}
-          className="h-7 w-full text-xs"
+          className="h-8 w-full md:h-7"
           role="combobox"
           aria-expanded={open}
           aria-controls={listboxId}
@@ -306,8 +312,14 @@ export default function GiveawayTool({
   const [entrySearch, setEntrySearch] = useState("");
   const entrySearchRef = useRef<HTMLInputElement>(null);
 
+  const hintId = useId();
+  const mentionsHintId = `${hintId}-mentions`;
+  const prizeQtyHintId = `${hintId}-prize-qty`;
+  const drawBlockerId = `${hintId}-draw`;
+
   const [results, setResults] = useState<PrizeResult[] | null>(null);
-  const [redrawConfirmOpen, setRedrawConfirmOpen] = useState(false);
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmKind, setConfirmKind] = useState<"redraw" | "reload">("redraw");
   const [drawnAt, setDrawnAt] = useState<Date | null>(null);
   const [drawShortfall, setDrawShortfall] = useState<number | null>(null);
   const [drawStats, setDrawStats] = useState<{ pool: number; won: number } | null>(null);
@@ -365,7 +377,8 @@ export default function GiveawayTool({
     }
 
     if (mentionsOn) {
-      const min = Math.max(1, Number.parseInt(mentionsCount, 10) || 1);
+      // Draw stays blocked while the field is invalid; 1 only keeps the preview count steady.
+      const min = parseAtLeastOne(mentionsCount) ?? 1;
       list = list.filter((r) => (r.text.match(MENTION_RE) ?? []).length >= min);
     }
 
@@ -409,7 +422,31 @@ export default function GiveawayTool({
       )
     : eligible;
 
-  const totalPrizeCount = prizes.reduce((sum, p) => sum + p.count, 0);
+  const pendingPrizeName = prizeName.trim();
+  const prizeQty = parseAtLeastOne(prizeCount);
+  const prizeQtyInvalid = prizeQty === null;
+  const mentionsInvalid = mentionsOn && parseAtLeastOne(mentionsCount) === null;
+  // A typed but unadded prize joins the draw, as if Add had been pressed.
+  const drawPrizeCount =
+    prizes.reduce((sum, p) => sum + p.count, 0) + (pendingPrizeName && prizeQty ? prizeQty : 0);
+  const drawBlocker = !replies
+    ? labels.drawNeedsReplies
+    : mentionsInvalid || (pendingPrizeName && prizeQtyInvalid)
+      ? labels.drawFixFields
+      : drawPrizeCount === 0
+        ? labels.drawNeedsPrize
+        : eligible.length === 0
+          ? labels.entriesEmpty
+          : null;
+  const canDraw = drawBlocker === null;
+
+  const isSameLoadedPost = Boolean(replies && loadedPost?.id === postId);
+  const loadLabel = isSameLoadedPost ? labels.reload : labels.loadReplies;
+
+  function openConfirm(kind: "redraw" | "reload") {
+    setConfirmKind(kind);
+    setConfirmOpen(true);
+  }
 
   async function loadReplies() {
     if (!postId || loading) return;
@@ -437,22 +474,23 @@ export default function GiveawayTool({
     }
   }
 
-  function addPrize() {
-    const name = prizeName.trim();
-    const count = Math.max(1, Number.parseInt(prizeCount, 10) || 1);
-    if (!name) return;
-    setPrizes((prev) => [...prev, { id: nextPrizeId, name, count }]);
+  function addPrize(): Prize[] {
+    if (!pendingPrizeName || prizeQty === null) return prizes;
+    const next = [...prizes, { id: nextPrizeId, name: pendingPrizeName, count: prizeQty }];
+    setPrizes(next);
     setNextPrizeId((id) => id + 1);
     setPrizeName("");
     setPrizeCount("1");
+    return next;
   }
 
   const resultsRef = useRef<HTMLDivElement>(null);
 
-  function draw() {
+  function draw(prizeList: Prize[]) {
     const pool = secureShuffle(eligible);
-    const drawn: PrizeResult[] = prizes.map((p) => ({ prizeName: p.name, winners: [] }));
-    const counts = prizes.map((p) => p.count);
+    const drawn: PrizeResult[] = prizeList.map((p) => ({ prizeName: p.name, winners: [] }));
+    const counts = prizeList.map((p) => p.count);
+    const totalPrizeCount = counts.reduce((sum, c) => sum + c, 0);
     const won = new Set<string>();
     let slot = 0;
     for (const entry of pool) {
@@ -498,7 +536,6 @@ export default function GiveawayTool({
     }
   }
 
-  const canDraw = Boolean(replies && eligible.length > 0 && prizes.length > 0);
   const uniqueAccounts = replies ? new Set(replies.map((r) => r.username.toLowerCase())).size : 0;
 
   const revealOffsets: number[] = [];
@@ -518,8 +555,8 @@ export default function GiveawayTool({
           <CardAction>
             <span
               className={cn(
-                "flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
-                eligible.length > 0 ? "bg-tint/10 text-tint" : "bg-muted text-muted-foreground",
+                "bg-muted flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-semibold tabular-nums",
+                eligible.length > 0 ? "text-foreground" : "text-muted-foreground",
               )}
               title={labels.eligibleEntries}
             >
@@ -571,13 +608,15 @@ export default function GiveawayTool({
                 </SelectContent>
               </Select>
               <Button
-                onClick={loadReplies}
+                onClick={() => (results ? openConfirm("reload") : loadReplies())}
                 disabled={!postId || loading}
                 variant="secondary"
-                className="w-full sm:w-auto"
+                className="w-full rounded-full sm:w-auto"
               >
-                {loading && <Loader2 className="size-3.5 animate-spin" />}
-                {loading ? labels.loadingReplies : replies ? labels.reload : labels.loadReplies}
+                {loading && (
+                  <Loader2 className="size-3.5 animate-spin motion-reduce:animate-none" />
+                )}
+                {loading ? labels.loadingReplies : loadLabel}
               </Button>
             </div>
             {replies && (
@@ -634,7 +673,7 @@ export default function GiveawayTool({
                       onClick={() => setExcludedUsers((prev) => prev.filter((x) => x !== u))}
                       disabled={!excludeOn}
                       aria-label={`@${u} ×`}
-                      className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 -my-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full disabled:pointer-events-none"
+                      className="text-muted-foreground hover:text-foreground hover:bg-foreground/10 relative -my-0.5 inline-flex size-5 shrink-0 items-center justify-center rounded-full after:absolute after:-inset-1.5 disabled:pointer-events-none"
                     >
                       <X className="size-3" />
                     </button>
@@ -654,7 +693,7 @@ export default function GiveawayTool({
                 onChange={(e) => setKeywordText(e.target.value)}
                 placeholder={labels.keywordPlaceholder}
                 disabled={!keywordOn}
-                className="h-7 flex-1 basis-40 text-xs"
+                className="h-8 flex-1 basis-40 md:h-7"
               />
             </ConditionRow>
             <ConditionRow
@@ -669,8 +708,15 @@ export default function GiveawayTool({
                 onChange={(e) => setMentionsCount(e.target.value)}
                 placeholder={labels.mentionsPlaceholder}
                 disabled={!mentionsOn}
-                className="h-7 w-20 text-xs tabular-nums"
+                aria-invalid={mentionsInvalid || undefined}
+                aria-describedby={mentionsInvalid ? mentionsHintId : undefined}
+                className="h-8 w-20 tabular-nums md:h-7"
               />
+              {mentionsInvalid && (
+                <span id={mentionsHintId} className="text-destructive text-xs">
+                  {labels.minOneHint}
+                </span>
+              )}
             </ConditionRow>
             <ConditionRow checked={beforeOn} onChange={setBeforeOn} label={labels.beforeTime}>
               <Input
@@ -678,7 +724,7 @@ export default function GiveawayTool({
                 value={beforeText}
                 onChange={(e) => setBeforeText(e.target.value)}
                 disabled={!beforeOn}
-                className="h-7 flex-1 basis-44 text-xs tabular-nums"
+                className="h-8 flex-1 basis-44 tabular-nums md:h-7"
               />
             </ConditionRow>
             <p className="text-muted-foreground text-xs leading-relaxed">
@@ -706,7 +752,7 @@ export default function GiveawayTool({
                       size="icon-xs"
                       aria-label={labels.removePrize}
                       title={labels.removePrize}
-                      className="text-muted-foreground hover:text-destructive shrink-0"
+                      className="text-muted-foreground hover:text-destructive relative shrink-0 after:absolute after:-inset-1.5"
                       onClick={() => setPrizes((prev) => prev.filter((x) => x.id !== p.id))}
                     >
                       <X />
@@ -715,70 +761,98 @@ export default function GiveawayTool({
                 ))}
               </ul>
             )}
-            <div className="flex items-center gap-2">
-              <Input
-                value={prizeName}
-                onChange={(e) => setPrizeName(e.target.value)}
-                placeholder={labels.prizeNamePlaceholder}
-                className="min-w-0 flex-1"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addPrize();
-                }}
-              />
-              <Input
-                type="number"
-                min={1}
-                value={prizeCount}
-                onChange={(e) => setPrizeCount(e.target.value)}
-                placeholder={labels.prizeCountPlaceholder}
-                className="w-20 tabular-nums"
-                onKeyDown={(e) => {
-                  if (e.key === "Enter") addPrize();
-                }}
-              />
-              <Button variant="secondary" onClick={addPrize} disabled={!prizeName.trim()}>
-                {labels.addPrize}
-              </Button>
+            <div>
+              <div className="flex items-center gap-2">
+                <Input
+                  value={prizeName}
+                  onChange={(e) => setPrizeName(e.target.value)}
+                  placeholder={labels.prizeNamePlaceholder}
+                  className="min-w-0 flex-1"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) addPrize();
+                  }}
+                />
+                <Input
+                  type="number"
+                  min={1}
+                  value={prizeCount}
+                  onChange={(e) => setPrizeCount(e.target.value)}
+                  placeholder={labels.prizeCountPlaceholder}
+                  aria-invalid={prizeQtyInvalid || undefined}
+                  aria-describedby={prizeQtyInvalid ? prizeQtyHintId : undefined}
+                  className="w-20 tabular-nums"
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" && !e.nativeEvent.isComposing) addPrize();
+                  }}
+                />
+                <Button
+                  variant="secondary"
+                  className="rounded-full"
+                  onClick={addPrize}
+                  disabled={!pendingPrizeName || prizeQtyInvalid}
+                >
+                  {labels.addPrize}
+                </Button>
+              </div>
+              <Collapse open={prizeQtyInvalid}>
+                <p id={prizeQtyHintId} className="text-destructive pt-1.5 text-xs">
+                  {labels.minOneHint}
+                </p>
+              </Collapse>
             </div>
           </div>
 
-          <Button
-            className="w-full"
-            size="lg"
-            onClick={() => (results ? setRedrawConfirmOpen(true) : draw())}
-            disabled={!canDraw}
-          >
-            {results ? labels.redraw : labels.draw}
-            {totalPrizeCount > 0 && (
-              <span className="text-primary-foreground/60 tabular-nums">{totalPrizeCount}</span>
-            )}
-          </Button>
+          <div>
+            <Button
+              className="w-full rounded-full"
+              size="lg"
+              onClick={() => (results ? openConfirm("redraw") : draw(addPrize()))}
+              disabled={!canDraw}
+              aria-describedby={drawBlocker ? drawBlockerId : undefined}
+            >
+              {results ? labels.redraw : labels.draw}
+              {drawPrizeCount > 0 && (
+                <span className="text-primary-foreground/60 tabular-nums">{drawPrizeCount}</span>
+              )}
+            </Button>
+            <Collapse open={drawBlocker !== null}>
+              <p id={drawBlockerId} className="text-muted-foreground pt-2 text-center text-xs">
+                {drawBlocker}
+              </p>
+            </Collapse>
+          </div>
 
-          {/* Redrawing discards results that can't be reproduced; focus lands on Cancel. */}
-          <Dialog open={redrawConfirmOpen} onOpenChange={setRedrawConfirmOpen}>
+          {/* Both discard results that can't be reproduced; focus lands on Cancel. */}
+          <Dialog open={confirmOpen} onOpenChange={setConfirmOpen}>
             <DialogContent showCloseButton={false} className="max-w-sm">
               <DialogHeader>
-                <DialogTitle>{labels.redrawConfirmTitle}</DialogTitle>
-                <DialogDescription>{labels.redrawConfirmBody}</DialogDescription>
+                <DialogTitle>
+                  {confirmKind === "redraw" ? labels.redrawConfirmTitle : labels.reloadConfirmTitle}
+                </DialogTitle>
+                <DialogDescription>
+                  {confirmKind === "redraw" ? labels.redrawConfirmBody : labels.reloadConfirmBody}
+                </DialogDescription>
               </DialogHeader>
               <div className="flex justify-end gap-2">
                 <Button
                   type="button"
                   variant="ghost"
                   className="rounded-full"
-                  onClick={() => setRedrawConfirmOpen(false)}
+                  onClick={() => setConfirmOpen(false)}
                 >
                   {labels.cancel}
                 </Button>
                 <Button
                   type="button"
+                  variant="destructive"
                   className="rounded-full"
                   onClick={() => {
-                    setRedrawConfirmOpen(false);
-                    draw();
+                    setConfirmOpen(false);
+                    if (confirmKind === "redraw") draw(addPrize());
+                    else void loadReplies();
                   }}
                 >
-                  {labels.redraw}
+                  {confirmKind === "redraw" ? labels.redraw : loadLabel}
                 </Button>
               </div>
             </DialogContent>
@@ -786,86 +860,93 @@ export default function GiveawayTool({
         </CardContent>
       </Card>
 
-      <div className="flex min-w-0 flex-col gap-4 lg:col-span-3">
-        {results && (
-          <Card
-            ref={resultsRef}
-            className="animate-in fade-in-0 slide-in-from-bottom-2 fill-mode-both scroll-mt-16 duration-300 motion-reduce:animate-none"
-          >
-            <CardHeader className="border-b">
-              <CardTitle>{labels.results}</CardTitle>
-              {drawnAt && (
-                <CardDescription className="text-xs tabular-nums">
-                  {drawStats &&
-                    `${labels.drawSummary
-                      .replace("{won}", String(drawStats.won))
-                      .replace("{pool}", String(drawStats.pool))} · `}
-                  {labels.drawnAt.replace("{time}", dateTimeFmt.format(drawnAt))}
-                </CardDescription>
-              )}
-              <CardAction>
-                <Button variant="outline" size="xs" onClick={copyResults}>
-                  <Copy className="size-3" />
-                  {labels.copyResults}
-                </Button>
-              </CardAction>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-5">
-                {drawShortfall !== null && (
-                  <p className="bg-muted/70 text-muted-foreground rounded-lg px-3 py-2 text-xs">
-                    {labels.notEnoughEntries.replace("{count}", String(drawShortfall))}
-                  </p>
-                )}
-                {results.map((r, idx) => (
-                  <div key={idx} className="space-y-2">
-                    <h3 className="flex items-center gap-1.5 text-sm font-semibold">
-                      <Trophy className="text-tint size-4" />
-                      {r.prizeName}
-                      <span className="text-muted-foreground font-normal tabular-nums">
-                        × {r.winners.length}
-                      </span>
-                    </h3>
-                    <ul className="space-y-2">
-                      {r.winners.map((w, i) => (
-                        <li
-                          key={`${drawnAt?.getTime()}-${w.id}`}
-                          style={{
-                            animationDelay: `${Math.min(((revealOffsets[idx] as number) + i) * 45, 450)}ms`,
-                          }}
-                          className="bg-muted/40 animate-in fade-in slide-in-from-bottom-2 fill-mode-both rounded-lg px-3 py-2 duration-300 motion-reduce:animate-none"
-                        >
-                          <div className="flex items-center justify-between gap-2">
-                            <a
-                              href={w.permalink || `https://www.threads.net/@${w.username}`}
-                              target="_blank"
-                              rel="noreferrer"
-                              className="flex min-w-0 items-center gap-1.5 text-sm font-medium hover:underline"
+      {/* Padding, not gap, so results grow in from nothing; 1px insets keep the ring unclipped. */}
+      <div ref={resultsRef} className="flex min-w-0 scroll-mt-16 flex-col lg:col-span-3">
+        <Collapse open={results !== null} className="-mx-px -mt-px">
+          {results && (
+            <div className="px-px pt-px pb-4">
+              <Card>
+                <CardHeader className="border-b">
+                  <CardTitle>{labels.results}</CardTitle>
+                  {drawnAt && (
+                    <CardDescription className="text-xs tabular-nums">
+                      {drawStats &&
+                        `${labels.drawSummary
+                          .replace("{won}", String(drawStats.won))
+                          .replace("{pool}", String(drawStats.pool))} · `}
+                      {labels.drawnAt.replace("{time}", dateTimeFmt.format(drawnAt))}
+                    </CardDescription>
+                  )}
+                  <CardAction>
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="rounded-full"
+                      onClick={copyResults}
+                    >
+                      <Copy />
+                      {labels.copyResults}
+                    </Button>
+                  </CardAction>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-5">
+                    {drawShortfall !== null && (
+                      <p className="bg-muted/70 text-muted-foreground rounded-lg px-3 py-2 text-xs">
+                        {labels.notEnoughEntries.replace("{count}", String(drawShortfall))}
+                      </p>
+                    )}
+                    {results.map((r, idx) => (
+                      <div key={idx} className="space-y-2">
+                        <h3 className="flex items-center gap-1.5 text-sm font-semibold">
+                          <Trophy className="text-muted-foreground size-4" />
+                          {r.prizeName}
+                          <span className="text-muted-foreground font-normal tabular-nums">
+                            × {r.winners.length}
+                          </span>
+                        </h3>
+                        <ul className="space-y-2">
+                          {r.winners.map((w, i) => (
+                            <li
+                              key={`${drawnAt?.getTime()}-${w.id}`}
+                              style={{
+                                animationDelay: `${Math.min(((revealOffsets[idx] as number) + i) * 45, 450)}ms`,
+                              }}
+                              className="bg-muted/40 animate-in fade-in slide-in-from-bottom-2 fill-mode-both rounded-lg px-3 py-2 duration-300 motion-reduce:animate-none"
                             >
-                              <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                                {i + 1}
-                              </span>
-                              <span className="truncate">@{w.username}</span>
-                              <ExternalLink className="text-muted-foreground size-3 shrink-0" />
-                            </a>
-                            <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
-                              {dateTimeFmt.format(new Date(w.timestamp))}
-                            </span>
-                          </div>
-                          {w.text && (
-                            <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
-                              {w.text}
-                            </p>
-                          )}
-                        </li>
-                      ))}
-                    </ul>
+                              <div className="flex items-center justify-between gap-2">
+                                <a
+                                  href={w.permalink || `https://www.threads.net/@${w.username}`}
+                                  target="_blank"
+                                  rel="noreferrer"
+                                  className="flex min-w-0 items-center gap-1.5 text-sm font-medium transition-opacity duration-100 hover:underline active:opacity-60 motion-reduce:transition-none"
+                                >
+                                  <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                                    {i + 1}
+                                  </span>
+                                  <span className="truncate">@{w.username}</span>
+                                  <ExternalLink className="text-muted-foreground size-3 shrink-0" />
+                                </a>
+                                <span className="text-muted-foreground shrink-0 text-xs tabular-nums">
+                                  {dateTimeFmt.format(new Date(w.timestamp))}
+                                </span>
+                              </div>
+                              {w.text && (
+                                <p className="text-muted-foreground mt-1 line-clamp-2 text-xs leading-relaxed">
+                                  {w.text}
+                                </p>
+                              )}
+                            </li>
+                          ))}
+                        </ul>
+                      </div>
+                    ))}
                   </div>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </Collapse>
 
         {replies && loadedPost ? (
           <Card>
@@ -877,7 +958,7 @@ export default function GiveawayTool({
                 href={loadedPost.permalink || undefined}
                 target="_blank"
                 rel="noreferrer"
-                className="group block space-y-1"
+                className="group block space-y-1 transition-opacity duration-100 active:opacity-60 motion-reduce:transition-none"
               >
                 <p className="line-clamp-3 text-sm leading-relaxed group-hover:underline">
                   {loadedPost.text.trim() ? loadedPost.text : loadedPost.id}
@@ -908,7 +989,7 @@ export default function GiveawayTool({
                   <p className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
                     {labels.eligibleEntries}
                   </p>
-                  <p className="text-tint mt-0.5 text-2xl font-semibold tracking-[-0.01em] tabular-nums">
+                  <p className="mt-0.5 text-2xl font-semibold tracking-[-0.01em] tabular-nums">
                     {eligible.length}
                   </p>
                 </div>
@@ -920,18 +1001,18 @@ export default function GiveawayTool({
             <CardContent className="flex flex-1 flex-col items-center justify-center gap-2 py-16">
               <Trophy className="text-muted-foreground/40 size-6" />
               <p className="text-muted-foreground text-sm">{labels.noResults}</p>
-              <p className="text-muted-foreground/70 text-xs">{labels.emptyHint}</p>
+              <p className="text-muted-foreground text-xs">{labels.emptyHint}</p>
             </CardContent>
           </Card>
         )}
 
         {replies && (
-          <Card className="lg:flex-1">
+          <Card className="mt-4 lg:flex-1">
             <CardHeader className="border-b">
               <CardTitle>{labels.entriesTitle}</CardTitle>
               <CardAction>
                 <span className="text-muted-foreground text-xs tabular-nums">
-                  <span className="text-tint font-semibold">{eligible.length}</span> /{" "}
+                  <span className="text-foreground font-semibold">{eligible.length}</span> /{" "}
                   {replies.length}
                 </span>
               </CardAction>
@@ -951,7 +1032,7 @@ export default function GiveawayTool({
                       value={entrySearch}
                       onChange={(e) => setEntrySearch(e.target.value)}
                       placeholder={labels.entriesSearchPlaceholder}
-                      className="bg-muted/70 placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-full py-1.5 pr-9 pl-9 text-sm transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none [&::-webkit-search-cancel-button]:hidden"
+                      className="bg-muted/70 placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-full py-1.5 pr-9 pl-9 text-base transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none sm:text-sm [&::-webkit-search-cancel-button]:hidden"
                     />
                     {entrySearch.length > 0 && (
                       <button
@@ -961,7 +1042,7 @@ export default function GiveawayTool({
                           setEntrySearch("");
                           entrySearchRef.current?.focus();
                         }}
-                        className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+                        className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,scale,translate] duration-150 after:absolute after:-inset-1.5 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
                       >
                         <X className="size-3.5" />
                       </button>
@@ -983,7 +1064,7 @@ export default function GiveawayTool({
                               href={r.permalink || `https://www.threads.net/@${r.username}`}
                               target="_blank"
                               rel="noreferrer"
-                              className="max-w-40 shrink-0 truncate font-medium hover:underline"
+                              className="max-w-40 shrink-0 truncate font-medium transition-opacity duration-100 hover:underline active:opacity-60 motion-reduce:transition-none"
                             >
                               @{r.username}
                             </a>

@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useTransition } from "react";
+import { useRef, useState, useTransition, type FormEvent } from "react";
 import Link from "next/link";
 import { Trash2, CheckCircle2, RefreshCw, Plus, AlertTriangle, KeyRound } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -21,6 +21,7 @@ import {
   updateTokenAction,
 } from "@/actions/accounts";
 import { syncAccountAction } from "@/actions/sync";
+import { cn } from "@/lib/utils";
 import { toast } from "sonner";
 
 interface Account {
@@ -85,19 +86,23 @@ function formatShortDate(date: string, dateLocale: string, timeZone: string) {
   }).format(new Date(date));
 }
 
-function TokenExpiryBadge({
-  expiresAt,
-  labels,
-  now,
-}: {
-  expiresAt: string;
-  labels: Pick<AccountManagerLabels, "tokenExpiresIn" | "tokenExpiresToday" | "tokenExpiredLabel">;
-  now: string;
-}) {
-  const daysLeft = Math.ceil(
+function getDaysLeft(expiresAt: string, now: string) {
+  return Math.ceil(
     (new Date(expiresAt).getTime() - new Date(now).getTime()) / (1000 * 60 * 60 * 24),
   );
+}
 
+function TokenExpiryBadge({
+  daysLeft,
+  labels,
+  expanded,
+  onClick,
+}: {
+  daysLeft: number;
+  labels: Pick<AccountManagerLabels, "tokenExpiresIn" | "tokenExpiresToday" | "tokenExpiredLabel">;
+  expanded: boolean;
+  onClick: () => void;
+}) {
   if (daysLeft > 30) return null;
 
   const isExpired = daysLeft <= 0;
@@ -110,16 +115,20 @@ function TokenExpiryBadge({
   else text = labels.tokenExpiresIn.replace("{days}", String(daysLeft));
 
   return (
-    <span
-      className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium ${
-        isExpired || isCritical
-          ? "bg-destructive/10 text-destructive"
-          : "bg-amber-50 text-amber-700 dark:bg-amber-950/30 dark:text-amber-400"
-      }`}
+    <button
+      type="button"
+      onClick={onClick}
+      aria-expanded={expanded}
+      className={cn(
+        "focus-visible:ring-ring/50 inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] leading-4 font-medium transition-[background-color,scale] duration-150 outline-none focus-visible:ring-2 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+        isCritical
+          ? "bg-destructive/10 text-destructive hover:bg-destructive/15"
+          : "bg-amber-50 text-amber-700 hover:bg-amber-100 dark:bg-amber-950/30 dark:text-amber-400 dark:hover:bg-amber-950/50",
+      )}
     >
       <AlertTriangle className="size-3 shrink-0" />
       {text}
-    </span>
+    </button>
   );
 }
 
@@ -144,12 +153,27 @@ export default function AccountManager({
   // than the browser's confirm(), keeping the destructive step on-brand and
   // its focus handling accessible.
   const [removeTarget, setRemoveTarget] = useState<Account | null>(null);
-  const [pending, startTransition] = useTransition();
+  const [switchingId, setSwitchingId] = useState<string | null>(null);
+  const [addError, setAddError] = useState<string | null>(null);
+  const [updateError, setUpdateError] = useState<string | null>(null);
+  // One transition per action, so only the pressed control shows progress.
+  const [switching, startSwitch] = useTransition();
+  const [updating, startUpdate] = useTransition();
+  const [adding, startAdd] = useTransition();
+  const [removing, startRemove] = useTransition();
+  const addInputRef = useRef<HTMLInputElement>(null);
+  const updateInputRef = useRef<HTMLInputElement>(null);
+
+  function toggleUpdateForm(accountId: string) {
+    setUpdatingId(updatingId === accountId ? null : accountId);
+    setUpdateError(null);
+    setShowAddForm(false);
+  }
 
   function confirmRemove() {
     const target = removeTarget;
     if (!target) return;
-    startTransition(async () => {
+    startRemove(async () => {
       try {
         await deleteAccountAction(target.id);
         toast.success(labels.removed.replace("{username}", target.username));
@@ -162,7 +186,8 @@ export default function AccountManager({
   }
 
   function handleSwitch(id: string, username: string) {
-    startTransition(async () => {
+    setSwitchingId(id);
+    startSwitch(async () => {
       try {
         const result = await switchAccountAction(id);
         if (result.shouldSync) startFirstSync(id, username);
@@ -172,11 +197,17 @@ export default function AccountManager({
     });
   }
 
-  function handleUpdateToken(accountId: string, formData: FormData) {
-    startTransition(async () => {
+  // onSubmit, not a form action: an action would clear a rejected token.
+  function handleUpdateToken(accountId: string, event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const formData = new FormData(event.currentTarget);
+    setUpdateError(null);
+    startUpdate(async () => {
       const result = await updateTokenAction(accountId, formData);
       if (result.error) {
-        toast.error(result.error);
+        setUpdateError(result.error);
+        updateInputRef.current?.focus();
+        updateInputRef.current?.select();
       } else {
         toast.success(labels.tokenUpdated.replace("{username}", result.username ?? ""));
         setUpdatingId(null);
@@ -206,14 +237,21 @@ export default function AccountManager({
       .catch(() => toast.dismiss(toastId));
   }
 
-  async function handleAdd(formData: FormData) {
-    startTransition(async () => {
+  function handleAdd(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+    setAddError(null);
+    startAdd(async () => {
       const result = await addAccountAction(formData);
       if (result.error) {
-        toast.error(result.error);
+        setAddError(result.error);
+        addInputRef.current?.focus();
+        addInputRef.current?.select();
       } else {
         toast.success(labels.connected.replace("{username}", result.username ?? ""));
         setShowAddForm(false);
+        form.reset();
         if (result.shouldSync && result.accountId) {
           startFirstSync(result.accountId, result.username ?? "");
         }
@@ -225,136 +263,182 @@ export default function AccountManager({
     <div className="space-y-4">
       {accounts.length > 0 && (
         <div className="space-y-3">
-          {accounts.map((account) => (
-            <div key={account.id} className="bg-muted/40 w-full rounded-xl">
-              <div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3">
-                <div className="flex min-w-0 items-center gap-3">
-                  {account.isActive && <CheckCircle2 className="size-4 shrink-0 text-green-600" />}
-                  <div className="min-w-0">
-                    <div className="flex flex-wrap items-center gap-2">
-                      <p className="text-sm font-medium">@{account.username}</p>
-                      <TokenExpiryBadge expiresAt={account.expiresAt} labels={labels} now={now} />
-                    </div>
-                    {/* One wrapping metadata row instead of stacked lines —
+          {accounts.map((account) => {
+            const daysLeft = getDaysLeft(account.expiresAt, now);
+            const isUpdating = updatingId === account.id;
+            const rowSwitching = switching && switchingId === account.id;
+            const rowUpdating = updating && isUpdating;
+            const rowError = isUpdating ? updateError : null;
+            const inputId = `accessToken-${account.id}`;
+            return (
+              <div key={account.id} className="bg-muted/40 w-full rounded-xl">
+                <div className="flex min-h-16 items-center justify-between gap-4 px-4 py-3">
+                  <div className="flex min-w-0 items-center gap-3">
+                    {account.isActive && (
+                      <CheckCircle2 className="size-4 shrink-0 text-green-600" />
+                    )}
+                    <div className="min-w-0">
+                      <div className="flex flex-wrap items-center gap-2">
+                        <p className="text-sm font-medium">@{account.username}</p>
+                        <TokenExpiryBadge
+                          daysLeft={daysLeft}
+                          labels={labels}
+                          expanded={isUpdating}
+                          onClick={() => toggleUpdateForm(account.id)}
+                        />
+                      </div>
+                      {/* One wrapping metadata row instead of stacked lines —
                         sync and token facts sit side by side when there's
                         room and only break apart on narrow screens. */}
-                    <div className="text-muted-foreground flex flex-wrap gap-x-3 text-xs">
-                      {account.lastSyncedAt && (
-                        <span>
-                          {labels.lastSynced}{" "}
-                          {formatDate(account.lastSyncedAt, dateLocale ?? "en-US", timeZone)}
-                        </span>
-                      )}
-                      <span>
-                        {labels.tokenValidUntil.replace(
-                          "{date}",
-                          formatDate(account.expiresAt, dateLocale ?? "en-US", timeZone),
+                      <div className="text-muted-foreground flex flex-wrap gap-x-3 text-xs">
+                        {account.lastSyncedAt && (
+                          <span>
+                            {labels.lastSynced}{" "}
+                            {formatDate(account.lastSyncedAt, dateLocale ?? "en-US", timeZone)}
+                          </span>
                         )}
-                        {account.tokenRefreshedAt &&
-                          ` · ${labels.tokenAutoRefreshed.replace(
+                        <span>
+                          {labels.tokenValidUntil.replace(
                             "{date}",
-                            formatShortDate(
-                              account.tokenRefreshedAt,
-                              dateLocale ?? "en-US",
-                              timeZone,
-                            ),
-                          )}`}
-                      </span>
+                            formatDate(account.expiresAt, dateLocale ?? "en-US", timeZone),
+                          )}
+                          {account.tokenRefreshedAt &&
+                            ` · ${labels.tokenAutoRefreshed.replace(
+                              "{date}",
+                              formatShortDate(
+                                account.tokenRefreshedAt,
+                                dateLocale ?? "en-US",
+                                timeZone,
+                              ),
+                            )}`}
+                        </span>
+                      </div>
                     </div>
                   </div>
-                </div>
-                {/* Row controls follow the dashboard capsule grammar: gray
+                  {/* Row controls follow the dashboard capsule grammar: gray
                     capsule for the secondary action, round ghost icon wells. */}
-                <div className="flex shrink-0 items-center gap-2">
-                  {!account.isActive && (
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => handleSwitch(account.id, account.username)}
-                      disabled={pending}
-                    >
-                      {labels.switch}
-                    </Button>
-                  )}
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground size-8 rounded-full"
-                    title={labels.updateToken}
-                    onClick={() => {
-                      setUpdatingId(updatingId === account.id ? null : account.id);
-                      setShowAddForm(false);
-                    }}
-                    disabled={pending}
-                  >
-                    <KeyRound className="size-3.5" />
-                  </Button>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    className="text-muted-foreground hover:text-destructive size-8 rounded-full"
-                    title={labels.remove}
-                    onClick={() => setRemoveTarget(account)}
-                    disabled={pending}
-                  >
-                    <Trash2 className="size-3.5" />
-                  </Button>
-                </div>
-              </div>
-              <Collapse open={updatingId === account.id}>
-                <form
-                  action={(formData) => handleUpdateToken(account.id, formData)}
-                  className="space-y-3 border-t px-4 py-3"
-                >
-                  <div className="space-y-1.5">
-                    <Label htmlFor={`accessToken-${account.id}`} className="text-sm">
-                      {labels.accessTokenLabel}
-                    </Label>
-                    <Input
-                      id={`accessToken-${account.id}`}
-                      name="accessToken"
-                      type="password"
-                      placeholder={labels.accessTokenPlaceholder}
-                      autoFocus
-                      disabled={pending}
-                    />
-                    <p className="text-muted-foreground text-xs">
-                      {labels.tokenHelp}{" "}
-                      <Link
-                        href="/dashboard/settings/token-guide"
-                        className="text-tint underline underline-offset-2 hover:opacity-80"
+                  <div className="flex shrink-0 items-center gap-2">
+                    {!account.isActive && (
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => handleSwitch(account.id, account.username)}
+                        disabled={switching}
                       >
-                        {labels.tokenGuideLink}
-                      </Link>
-                    </p>
-                  </div>
-                  <div className="flex gap-2">
-                    <Button type="submit" size="sm" className="rounded-full" disabled={pending}>
-                      {pending ? (
-                        <>
-                          <RefreshCw className="mr-1.5 size-3 animate-spin" />
-                          {labels.verifying}
-                        </>
-                      ) : (
-                        labels.updateToken
-                      )}
-                    </Button>
+                        {rowSwitching && (
+                          <RefreshCw className="mr-1.5 size-3 animate-spin motion-reduce:animate-none" />
+                        )}
+                        {labels.switch}
+                      </Button>
+                    )}
+                    {daysLeft <= 7 ? (
+                      <button
+                        type="button"
+                        aria-expanded={isUpdating}
+                        onClick={() => toggleUpdateForm(account.id)}
+                        disabled={rowUpdating}
+                        className="bg-tint/12 text-tint hover:bg-tint/18 focus-visible:ring-ring/50 inline-flex h-8 items-center rounded-full px-3 text-xs font-medium transition-[background-color,scale] duration-150 outline-none focus-visible:ring-3 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
+                      >
+                        {labels.updateToken}
+                      </button>
+                    ) : (
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        className="text-muted-foreground size-8 rounded-full"
+                        title={labels.updateToken}
+                        aria-label={labels.updateToken}
+                        aria-expanded={isUpdating}
+                        onClick={() => toggleUpdateForm(account.id)}
+                        disabled={rowUpdating}
+                      >
+                        <KeyRound className="size-3.5" />
+                      </Button>
+                    )}
                     <Button
-                      type="button"
                       variant="ghost"
-                      size="sm"
-                      className="rounded-full"
-                      onClick={() => setUpdatingId(null)}
-                      disabled={pending}
+                      size="icon"
+                      className="text-muted-foreground hover:text-destructive size-8 rounded-full"
+                      title={labels.remove}
+                      aria-label={labels.remove}
+                      onClick={() => setRemoveTarget(account)}
+                      disabled={rowSwitching || rowUpdating}
                     >
-                      {labels.cancel}
+                      <Trash2 className="size-3.5" />
                     </Button>
                   </div>
-                </form>
-              </Collapse>
-            </div>
-          ))}
+                </div>
+                <Collapse open={isUpdating}>
+                  <form
+                    onSubmit={(event) => handleUpdateToken(account.id, event)}
+                    className="space-y-3 border-t px-4 py-3"
+                  >
+                    <div className="space-y-1.5">
+                      <Label htmlFor={inputId} className="text-sm">
+                        {labels.accessTokenLabel}
+                      </Label>
+                      <Input
+                        ref={isUpdating ? updateInputRef : undefined}
+                        id={inputId}
+                        name="accessToken"
+                        type="password"
+                        placeholder={labels.accessTokenPlaceholder}
+                        autoFocus
+                        readOnly={rowUpdating}
+                        aria-invalid={Boolean(rowError)}
+                        aria-describedby={
+                          rowError ? `${inputId}-error ${inputId}-help` : `${inputId}-help`
+                        }
+                        onChange={() => rowError && setUpdateError(null)}
+                      />
+                      {rowError && (
+                        <p id={`${inputId}-error`} className="text-destructive text-xs">
+                          {rowError}
+                        </p>
+                      )}
+                      <p id={`${inputId}-help`} className="text-muted-foreground text-xs">
+                        {labels.tokenHelp}{" "}
+                        <Link
+                          href="/dashboard/settings/token-guide"
+                          className="text-tint underline underline-offset-2 hover:opacity-80"
+                        >
+                          {labels.tokenGuideLink}
+                        </Link>
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      <Button
+                        type="submit"
+                        size="sm"
+                        className="rounded-full"
+                        disabled={rowUpdating}
+                      >
+                        {rowUpdating ? (
+                          <>
+                            <RefreshCw className="mr-1.5 size-3 animate-spin motion-reduce:animate-none" />
+                            {labels.verifying}
+                          </>
+                        ) : (
+                          labels.updateToken
+                        )}
+                      </Button>
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        className="rounded-full"
+                        onClick={() => toggleUpdateForm(account.id)}
+                        disabled={rowUpdating}
+                      >
+                        {labels.cancel}
+                      </Button>
+                    </div>
+                  </form>
+                </Collapse>
+              </div>
+            );
+          })}
         </div>
       )}
 
@@ -368,29 +452,41 @@ export default function AccountManager({
             type="button"
             onClick={() => {
               setShowAddForm(true);
+              setAddError(null);
               setUpdatingId(null);
             }}
-            className="bg-muted/40 hover:bg-muted/70 focus-visible:ring-ring/50 flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-[background-color,transform] duration-150 outline-none focus-visible:ring-3 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+            className="bg-muted/40 hover:bg-muted/70 focus-visible:ring-ring/50 flex w-full items-center gap-3 rounded-xl px-4 py-3.5 text-sm font-medium transition-[background-color,scale] duration-150 outline-none focus-visible:ring-3 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
           >
             <Plus className="text-muted-foreground size-4 shrink-0" />
             {labels.addAccount}
           </button>
         )}
         <Collapse open={showAddForm}>
-          <form action={handleAdd} className="bg-muted/40 w-full space-y-3 rounded-xl p-4">
+          <form onSubmit={handleAdd} className="bg-muted/40 w-full space-y-3 rounded-xl p-4">
             <div className="space-y-1.5">
               <Label htmlFor="accessToken" className="text-sm">
                 {labels.accessTokenLabel}
               </Label>
               <Input
+                ref={addInputRef}
                 id="accessToken"
                 name="accessToken"
                 type="password"
                 placeholder={labels.accessTokenPlaceholder}
                 autoFocus
-                disabled={pending}
+                readOnly={adding}
+                aria-invalid={Boolean(addError)}
+                aria-describedby={
+                  addError ? "accessToken-error accessToken-help" : "accessToken-help"
+                }
+                onChange={() => addError && setAddError(null)}
               />
-              <p className="text-muted-foreground text-xs">
+              {addError && (
+                <p id="accessToken-error" className="text-destructive text-xs">
+                  {addError}
+                </p>
+              )}
+              <p id="accessToken-help" className="text-muted-foreground text-xs">
                 {labels.tokenHelp}{" "}
                 <Link
                   href="/dashboard/settings/token-guide"
@@ -401,10 +497,10 @@ export default function AccountManager({
               </p>
             </div>
             <div className="flex gap-2">
-              <Button type="submit" size="sm" className="rounded-full" disabled={pending}>
-                {pending ? (
+              <Button type="submit" size="sm" className="rounded-full" disabled={adding}>
+                {adding ? (
                   <>
-                    <RefreshCw className="mr-1.5 size-3 animate-spin" />
+                    <RefreshCw className="mr-1.5 size-3 animate-spin motion-reduce:animate-none" />
                     {labels.verifying}
                   </>
                 ) : (
@@ -416,8 +512,11 @@ export default function AccountManager({
                 variant="ghost"
                 size="sm"
                 className="rounded-full"
-                onClick={() => setShowAddForm(false)}
-                disabled={pending}
+                onClick={() => {
+                  setShowAddForm(false);
+                  setAddError(null);
+                }}
+                disabled={adding}
               >
                 {labels.cancel}
               </Button>
@@ -428,7 +527,10 @@ export default function AccountManager({
 
       {/* Destructive confirmation: focus lands on Cancel, the destructive
           action is styled as such and never the default. */}
-      <Dialog open={removeTarget !== null} onOpenChange={(open) => !open && setRemoveTarget(null)}>
+      <Dialog
+        open={removeTarget !== null}
+        onOpenChange={(open) => !open && !removing && setRemoveTarget(null)}
+      >
         <DialogContent showCloseButton={false} className="max-w-sm">
           <DialogHeader>
             <DialogTitle>
@@ -442,7 +544,7 @@ export default function AccountManager({
               variant="ghost"
               className="rounded-full"
               onClick={() => setRemoveTarget(null)}
-              disabled={pending}
+              disabled={removing}
             >
               {labels.cancel}
             </Button>
@@ -451,16 +553,12 @@ export default function AccountManager({
               variant="destructive"
               className="rounded-full"
               onClick={confirmRemove}
-              disabled={pending}
+              disabled={removing}
             >
-              {pending ? (
-                <>
-                  <RefreshCw className="mr-1.5 size-3.5 animate-spin" />
-                  {labels.remove}
-                </>
-              ) : (
-                labels.remove
+              {removing && (
+                <RefreshCw className="mr-1.5 size-3.5 animate-spin motion-reduce:animate-none" />
               )}
+              {labels.remove}
             </Button>
           </div>
         </DialogContent>

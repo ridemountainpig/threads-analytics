@@ -1,11 +1,9 @@
 "use client";
 
-import { useState } from "react";
-import { createPortal } from "react-dom";
-import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
 import { chartPalette } from "./chart-style";
 import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
+import { CellTooltip, useCellTooltip } from "./cell-tooltip";
 import { expandPostingCalendarSeries } from "@/lib/posting-calendar-expand";
 
 interface DataPoint {
@@ -56,24 +54,20 @@ function utcNoonFromYmd(ymd: string): Date {
 }
 
 export default function PostingCalendarChart({ data, dateLocale, selectedYear, labels }: Props) {
-  const [tooltip, setTooltip] = useState<{
-    date: string;
-    count: number;
-    x: number;
-    y: number;
-  } | null>(null);
   const copy = labels ?? {
     less: "Less",
     more: "More",
     days: DAY_LABELS,
     noData: "No data",
   };
+  const calendarData = data.length ? expandPostingCalendarSeries(data, selectedYear) : [];
+  const { tip, cellProps, onGridKeyDown } = useCellTooltip<DataPoint>(
+    calendarData.map((point) => point.date),
+  );
+  const postsLabel = copy.posts ?? "Posts";
+  const formatDay = (date: string) =>
+    utcNoonFromYmd(date).toLocaleDateString(dateLocale, { timeZone: "UTC" });
 
-  if (!data.length) {
-    return <ChartEmptyState label={copy.noData ?? "No data"} height={120} />;
-  }
-
-  const calendarData = expandPostingCalendarSeries(data, selectedYear);
   if (!calendarData.length) {
     return <ChartEmptyState label={copy.noData ?? "No data"} height={120} />;
   }
@@ -107,11 +101,7 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
 
   return (
     <div className="relative w-full pb-1 select-none">
-      <AxisHint
-        columns={copy.date ?? "Date"}
-        rows={copy.weekday ?? "Weekday"}
-        color={copy.posts ?? "Posts"}
-      />
+      <AxisHint x={copy.date ?? "Date"} y={copy.weekday ?? "Weekday"} />
 
       <div className="mb-1 grid gap-[3px]" style={{ gridTemplateColumns }}>
         <div />
@@ -120,7 +110,7 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
           return (
             <div key={wi} className="min-w-0 text-center">
               {label && (
-                <span className="text-muted-foreground text-[9px] tracking-[0.02em]">
+                <span className="text-muted-foreground text-[10px] tracking-[0.01em] whitespace-nowrap">
                   {label.label}
                 </span>
               )}
@@ -129,12 +119,12 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
         })}
       </div>
 
-      <div className="grid gap-[3px]" style={{ gridTemplateColumns }}>
+      <div className="grid gap-[3px]" style={{ gridTemplateColumns }} onKeyDown={onGridKeyDown}>
         <div className="flex flex-col gap-[3px]">
           {copy.days.map((d, i) => (
             <div
               key={d}
-              className="text-muted-foreground flex h-[12px] items-center justify-end pr-1 text-[9px]"
+              className="text-muted-foreground flex h-[12px] items-center justify-end pr-1 text-[10px] leading-none"
             >
               {i % 2 === 1 ? d.slice(0, 1) : ""}
             </div>
@@ -147,21 +137,16 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
               if (!cell) return <div key={di} className="h-[12px] w-full rounded-[3px]" />;
               const intensity = getIntensity(cell.count, max);
               return (
-                <div
+                <button
                   key={di}
-                  className={cn(
-                    "h-[12px] w-full min-w-[8px] rounded-[3px] transition-opacity duration-150 hover:opacity-75 motion-reduce:transition-none",
-                  )}
+                  {...cellProps(cell, {
+                    key: cell.date,
+                    row: di,
+                    col: wi,
+                    label: `${formatDay(cell.date)}: ${cell.count} ${postsLabel}`,
+                  })}
+                  className="focus-visible:ring-foreground block h-[12px] w-full min-w-[8px] rounded-[3px] transition-opacity duration-150 outline-none hover:opacity-75 focus-visible:ring-2 focus-visible:ring-inset motion-reduce:transition-none"
                   style={{ backgroundColor: INTENSITY_BG[intensity] }}
-                  onMouseEnter={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setTooltip({ ...cell, x: rect.left + rect.width / 2, y: rect.top });
-                  }}
-                  onMouseMove={(e) => {
-                    const rect = e.currentTarget.getBoundingClientRect();
-                    setTooltip({ ...cell, x: rect.left + rect.width / 2, y: rect.top });
-                  }}
-                  onMouseLeave={() => setTooltip(null)}
                 />
               );
             })}
@@ -169,29 +154,22 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
         ))}
       </div>
 
-      {tooltip &&
-        createPortal(
-          <div
-            className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+8px)]"
-            style={{ left: tooltip.x, top: tooltip.y }}
-          >
-            <ChartTooltip
-              rows={[
-                {
-                  label: utcNoonFromYmd(tooltip.date).toLocaleDateString(dateLocale, {
-                    timeZone: "UTC",
-                  }),
-                  value: `${tooltip.count} ${copy.posts ?? "Posts"}`,
-                  color: chartPalette.blue,
-                },
-              ]}
-            />
-          </div>,
-          document.body,
-        )}
+      {tip && (
+        <CellTooltip anchor={tip.anchor}>
+          <ChartTooltip
+            rows={[
+              {
+                label: formatDay(tip.data.date),
+                value: `${tip.data.count} ${postsLabel}`,
+                color: chartPalette.blue,
+              },
+            ]}
+          />
+        </CellTooltip>
+      )}
 
       <div className="mt-2.5 flex items-center justify-end gap-1">
-        <span className="text-muted-foreground/80 text-[9px]">{copy.less}</span>
+        <span className="text-muted-foreground text-[10px]">{copy.less}</span>
         {[0, 1, 2, 3, 4].map((i) => (
           <div
             key={i}
@@ -199,7 +177,7 @@ export default function PostingCalendarChart({ data, dateLocale, selectedYear, l
             style={{ backgroundColor: INTENSITY_BG[i] }}
           />
         ))}
-        <span className="text-muted-foreground/80 text-[9px]">{copy.more}</span>
+        <span className="text-muted-foreground text-[10px]">{copy.more}</span>
       </div>
     </div>
   );

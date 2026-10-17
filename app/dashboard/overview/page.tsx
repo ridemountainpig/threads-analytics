@@ -42,16 +42,10 @@ import Link from "next/link";
 import { ChevronRight, ExternalLink } from "lucide-react";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
+import { hourLabeler } from "@/lib/hour-label";
 
 interface PageProps {
   searchParams: Promise<{ range?: string; from?: string; to?: string }>;
-}
-
-function formatHour(h: number) {
-  if (h === 0) return "12 AM";
-  if (h < 12) return `${h} AM`;
-  if (h === 12) return "12 PM";
-  return `${h - 12} PM`;
 }
 
 function formatDate(date: string, dateLocale: string, timeZone: string) {
@@ -81,6 +75,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const { range, from, to } = resolved;
   const { since, until } = getTimeRange({ range, from, to }, tz);
   const dateLocale = dateLocales[locale];
+  const hourLabel = hourLabeler(dateLocale);
 
   if (!account) {
     return (
@@ -124,7 +119,11 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     accessToken = decryptToken(account.accessToken);
   } catch {
     return (
-      <div className="text-muted-foreground p-8">{t.common.accountCredentialsUnavailable}</div>
+      <TokenExpiredNotice
+        message={t.common.credentialsUnavailable}
+        help={t.common.tokenExpiredHelp}
+        settingsLabel={t.common.settings}
+      />
     );
   }
   const emptyUserInsights: UserInsights = {
@@ -422,10 +421,6 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     until,
     tz,
   );
-  const trendLikes = spark((p) => p.likes);
-  const trendReplies = spark((p) => p.replies);
-  const trendRepostsQuotes = spark((p) => p.reposts + p.quotes);
-  const trendShares = spark((p) => p.shares);
   const trendEngRate = ratioSeries(
     spark((p) => p.likes + p.replies + p.reposts + p.quotes),
     spark((p) => p.views),
@@ -438,6 +433,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
         subtitle={t.overview.subtitle}
         range={{
           locale,
+          timeZone: tz,
           labels: t.timeRange,
           defaultRange: range,
           defaultFrom: from,
@@ -473,7 +469,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
             postsLabel: t.common.posts,
             href: `/dashboard/analytics?tab=performance${rangeQuery}`,
             slots: topHourDetails.map((point) => ({
-              label: formatHour(point.hour),
+              label: hourLabel(point.hour),
               postCount: point.postCount,
               confidence: point.confidence,
               confidenceLabel: getConfidenceLabel(point.confidence, t.chart.confidenceLevels),
@@ -514,28 +510,28 @@ export default async function OverviewPage({ searchParams }: PageProps) {
         />
         <StatCard
           title={t.overview.likes}
-          trend={trendLikes}
+          size="sm"
           value={totalLikes}
           delta={deltaLikes}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.replies}
-          trend={trendReplies}
+          size="sm"
           value={totalReplies}
           delta={deltaReplies}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.repostsQuotes}
-          trend={trendRepostsQuotes}
+          size="sm"
           value={totalReposts + totalQuotes}
           delta={deltaRepostsQuotes}
           deltaLabel={t.overview.vsPrev}
         />
         <StatCard
           title={t.overview.shares}
-          trend={trendShares}
+          size="sm"
           value={totalShares}
           delta={deltaShares}
           deltaLabel={t.overview.vsPrev}
@@ -545,7 +541,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
       {postsToday > 0 && (
         <Link
           href="/dashboard/today"
-          className="bg-card ring-foreground/10 hover:bg-muted/40 group flex items-center gap-3 rounded-xl px-4 py-3 ring-1 transition-[background-color,transform] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+          className="bg-card ring-foreground/10 hover:bg-muted/40 group flex items-center gap-3 rounded-xl px-4 py-3 ring-1 transition-[background-color,scale] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
         >
           <span className="min-w-0 flex-1 text-sm">
             {postsToday === 1
@@ -599,7 +595,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
                     <span className="text-muted-foreground text-sm">
                       {post.views.toLocaleString()} {t.common.views}
                     </span>
-                    <span className="text-tint text-sm font-medium">
+                    <span className="text-foreground text-sm font-medium">
                       {post.multiplier}x {t.overview.median}
                     </span>
                     <span className="text-muted-foreground text-sm">
@@ -612,7 +608,9 @@ export default async function OverviewPage({ searchParams }: PageProps) {
                     href={post.permalink}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="text-muted-foreground hover:text-foreground shrink-0"
+                    aria-label={t.postsPage.viewOnThreads}
+                    title={t.postsPage.viewOnThreads}
+                    className="text-tint -m-3.5 shrink-0 p-3.5 transition-opacity duration-150 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
                   >
                     <ExternalLink className="size-3.5" />
                   </a>

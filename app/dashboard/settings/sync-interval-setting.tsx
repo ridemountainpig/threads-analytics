@@ -16,6 +16,15 @@ const OPTIONS: { value: string; label: string }[] = [
   { value: "1440", label: "Daily" },
 ];
 
+const isPreset = (value: string) => PRESET_VALUES.includes(value as (typeof PRESET_VALUES)[number]);
+
+function isValidMinutes(value: string) {
+  const normalized = value.trim();
+  if (!/^\d+$/.test(normalized)) return false;
+  const minutes = Number.parseInt(normalized, 10);
+  return Number.isSafeInteger(minutes) && minutes >= 1 && minutes <= 10080;
+}
+
 interface Props {
   currentInterval: string;
   labels?: {
@@ -32,10 +41,17 @@ interface Props {
 
 export default function SyncIntervalSetting({ currentInterval, labels }: Props) {
   const [pending, startTransition] = useTransition();
-  const isPreset = PRESET_VALUES.includes(currentInterval as (typeof PRESET_VALUES)[number]);
-  const [selected, setSelected] = useState(isPreset ? currentInterval : CUSTOM_VALUE);
-  const [customMinutes, setCustomMinutes] = useState(isPreset ? "15" : currentInterval);
+  const [selected, setSelected] = useState(
+    isPreset(currentInterval) ? currentInterval : CUSTOM_VALUE,
+  );
+  const [customMinutes, setCustomMinutes] = useState(
+    isPreset(currentInterval) ? "15" : currentInterval,
+  );
   const [savedInterval, setSavedInterval] = useState(currentInterval);
+  const [saveError, setSaveError] = useState<{
+    source: "preset" | "custom";
+    message: string;
+  } | null>(null);
 
   const copy = labels ?? {
     intervals: Object.fromEntries(OPTIONS.map((opt) => [opt.value, opt.label])),
@@ -53,35 +69,44 @@ export default function SyncIntervalSetting({ currentInterval, labels }: Props) 
     return copy.intervals[savedInterval] ?? `${savedInterval} ${copy.minutes}`;
   }, [copy.intervals, copy.minutes, savedInterval]);
 
-  function saveInterval(value: string) {
-    if (!value) return;
-    const normalized = value.trim();
-    if (!/^\d+$/.test(normalized)) {
-      toast.error(copy.invalidInterval);
-      return;
-    }
+  const savedChip = isPreset(savedInterval) ? savedInterval : CUSTOM_VALUE;
+  // While a custom value is being typed, the saved choice keeps its fill and
+  // Custom only shows as pending until Apply succeeds.
+  const filledChip = selected === CUSTOM_VALUE ? savedChip : selected;
+  const customPending = selected === CUSTOM_VALUE && savedChip !== CUSTOM_VALUE;
+  const customValid = isValidMinutes(customMinutes);
+  const presetError = saveError?.source === "preset" ? saveError.message : null;
+  const customError =
+    saveError?.source === "custom"
+      ? saveError.message
+      : !customValid && customMinutes.trim() !== ""
+        ? copy.invalidInterval
+        : null;
 
-    const minutes = Number.parseInt(normalized, 10);
-    if (!Number.isSafeInteger(minutes) || (minutes !== 0 && (minutes < 1 || minutes > 10080))) {
-      toast.error(copy.invalidInterval);
-      return;
-    }
-
+  function saveInterval(value: string, source: "preset" | "custom", onError?: () => void) {
+    setSaveError(null);
     startTransition(async () => {
-      const result = await updateSyncIntervalAction(String(minutes));
+      const result = await updateSyncIntervalAction(value);
       if (result.error) {
-        toast.error(result.error);
+        setSaveError({ source, message: result.error });
+        onError?.();
       } else {
-        setSavedInterval(String(minutes));
+        setSavedInterval(value);
         toast.success(copy.intervalUpdated);
       }
     });
   }
 
-  function handleSelect(value: string | null) {
-    if (!value) return;
+  function handleSelect(value: string) {
+    setSaveError(null);
     setSelected(value);
-    if (value !== CUSTOM_VALUE) saveInterval(value);
+    if (value === CUSTOM_VALUE || value === savedInterval) return;
+    saveInterval(value, "preset", () => setSelected(savedChip));
+  }
+
+  function applyCustom() {
+    if (pending || !customValid) return;
+    saveInterval(String(Number.parseInt(customMinutes.trim(), 10)), "custom");
   }
 
   // Presets laid out as capsule chips — every choice visible at a glance,
@@ -98,11 +123,14 @@ export default function SyncIntervalSetting({ currentInterval, labels }: Props) 
             type="button"
             onClick={() => handleSelect(value)}
             disabled={pending}
+            aria-pressed={filledChip === value}
             className={cn(
-              "inline-flex h-7 items-center rounded-full px-3 text-xs transition-[background-color,color,transform] duration-150 active:scale-[0.96] disabled:opacity-60 motion-reduce:transition-none motion-reduce:active:scale-100",
-              selected === value
+              "inline-flex h-7 items-center rounded-full px-3 text-xs transition-[background-color,color,box-shadow,scale] duration-150 active:scale-[0.96] disabled:opacity-60 motion-reduce:transition-none motion-reduce:active:scale-100 max-md:h-8",
+              filledChip === value
                 ? "bg-primary text-primary-foreground font-medium"
-                : "bg-muted/70 text-foreground/70 hover:text-foreground",
+                : value === CUSTOM_VALUE && customPending
+                  ? "ring-foreground/20 bg-muted/70 text-foreground font-medium ring-1"
+                  : "bg-muted/70 text-foreground/70 hover:text-foreground",
             )}
           >
             {value === CUSTOM_VALUE ? copy.customInterval : (copy.intervals[value] ?? value)}
@@ -110,39 +138,57 @@ export default function SyncIntervalSetting({ currentInterval, labels }: Props) 
         ))}
       </div>
 
+      {presetError && (
+        <p role="alert" className="text-destructive mt-2 text-xs">
+          {presetError}
+        </p>
+      )}
+
       {/* Custom minutes: the same recessed-capsule field + filled Apply pair
           as the time-range picker's custom dates, so "type a value, apply it"
           looks identical everywhere. */}
       <Collapse open={selected === CUSTOM_VALUE}>
-        <div className="flex max-w-xs items-center gap-2 pt-3 pb-0.5">
-          <div className="relative min-w-0 flex-1">
-            <input
-              type="number"
-              min={1}
-              max={10080}
-              step={1}
-              inputMode="numeric"
-              value={customMinutes}
-              onChange={(event) => setCustomMinutes(event.target.value)}
-              onKeyDown={(event) => {
-                if (event.key === "Enter") saveInterval(customMinutes);
-              }}
-              disabled={pending}
-              aria-label={copy.customInterval}
-              className="bg-muted/70 focus-visible:ring-ring/40 h-7 w-full [appearance:textfield] rounded-full py-1 pr-16 pl-3 text-xs tabular-nums transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 disabled:opacity-60 motion-reduce:transition-none [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
-            />
-            <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs">
-              {copy.minutes}
-            </span>
+        <div className="max-w-xs space-y-1.5 pt-3 pb-0.5">
+          <div className="flex items-center gap-2">
+            <div className="relative min-w-0 flex-1">
+              <input
+                type="number"
+                min={1}
+                max={10080}
+                step={1}
+                inputMode="numeric"
+                value={customMinutes}
+                onChange={(event) => {
+                  setCustomMinutes(event.target.value);
+                  setSaveError(null);
+                }}
+                onKeyDown={(event) => {
+                  if (event.key === "Enter") applyCustom();
+                }}
+                readOnly={pending}
+                aria-label={copy.customInterval}
+                aria-invalid={Boolean(customError)}
+                aria-describedby={customError ? "custom-interval-error" : undefined}
+                className="bg-muted/70 focus-visible:ring-ring/40 aria-invalid:ring-destructive/50 h-7 w-full [appearance:textfield] rounded-full py-1 pr-16 pl-3 text-xs tabular-nums transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 aria-invalid:ring-1 motion-reduce:transition-none max-md:h-8 [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+              />
+              <span className="text-muted-foreground pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 text-xs">
+                {copy.minutes}
+              </span>
+            </div>
+            <button
+              type="button"
+              onClick={applyCustom}
+              disabled={pending || !customValid}
+              className="bg-primary text-primary-foreground h-7 shrink-0 rounded-full px-3 text-xs font-medium transition-[background-color,opacity,scale] duration-150 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100 max-md:h-8"
+            >
+              {copy.apply}
+            </button>
           </div>
-          <button
-            type="button"
-            onClick={() => saveInterval(customMinutes)}
-            disabled={pending}
-            className="bg-primary text-primary-foreground h-7 shrink-0 rounded-full px-3 text-xs font-medium transition-[background-color,transform] duration-150 active:scale-[0.96] disabled:opacity-60 disabled:active:scale-100 motion-reduce:transition-none motion-reduce:active:scale-100"
-          >
-            {copy.apply}
-          </button>
+          {customError && (
+            <p id="custom-interval-error" className="text-destructive text-xs">
+              {customError}
+            </p>
+          )}
         </div>
       </Collapse>
 

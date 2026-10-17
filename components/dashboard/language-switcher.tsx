@@ -14,10 +14,17 @@ import {
 
 interface LanguageSwitcherProps {
   locale: Locale;
-  compact?: boolean;
+  side?: "top" | "bottom";
+  iconOnly?: boolean;
+  className?: string;
 }
 
-export default function LanguageSwitcher({ locale, compact }: LanguageSwitcherProps) {
+export default function LanguageSwitcher({
+  locale,
+  side = "bottom",
+  iconOnly,
+  className,
+}: LanguageSwitcherProps) {
   const [pending, startTransition] = useTransition();
 
   function setLocale(nextLocale: Locale) {
@@ -33,26 +40,25 @@ export default function LanguageSwitcher({ locale, compact }: LanguageSwitcherPr
     <DropdownMenu>
       <DropdownMenuTrigger
         aria-label="Language"
+        title={iconOnly ? localeNames[locale] : undefined}
         disabled={pending}
         className={cn(
-          "flex items-center transition-[background-color,color,transform] duration-150 outline-none focus:outline-none active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100",
-          compact
-            ? "bg-muted/70 hover:bg-muted data-[popup-open]:bg-muted h-7 min-w-20 gap-1.5 rounded-full px-3 text-xs font-medium"
-            : "text-muted-foreground hover:text-foreground hover:bg-accent/50 data-[popup-open]:bg-accent data-[popup-open]:text-accent-foreground w-full gap-2.5 rounded-lg px-3 py-2 text-sm",
+          !iconOnly &&
+            "focus-visible:ring-ring/50 bg-muted/70 hover:bg-muted data-[popup-open]:bg-muted flex h-7 min-w-20 items-center gap-1.5 rounded-full px-3 text-xs font-medium transition-[background-color,color,box-shadow,scale] duration-150 outline-none focus-visible:ring-3 active:scale-[0.97] disabled:opacity-50 motion-reduce:transition-none motion-reduce:active:scale-100 max-md:h-8",
+          className,
         )}
       >
-        <Languages
-          className={cn("shrink-0", compact ? "text-muted-foreground size-3.5" : "size-4")}
-        />
-        <span className="min-w-0 flex-1 truncate text-left">{localeNames[locale]}</span>
-        <ChevronDown
-          className={cn(
-            "shrink-0 opacity-50 transition-transform duration-200 in-data-[popup-open]:rotate-180 motion-reduce:transition-none",
-            compact ? "text-muted-foreground size-3.5" : "size-4",
-          )}
-        />
+        {iconOnly ? (
+          <Languages className="size-4" />
+        ) : (
+          <>
+            <Languages className="text-muted-foreground size-3.5 shrink-0" />
+            <span className="min-w-0 flex-1 truncate text-left">{localeNames[locale]}</span>
+            <ChevronDown className="text-muted-foreground size-3.5 shrink-0 opacity-50 transition-transform duration-200 in-data-[popup-open]:rotate-180 motion-reduce:transition-none" />
+          </>
+        )}
       </DropdownMenuTrigger>
-      <DropdownMenuContent align={compact ? "end" : "start"} className="min-w-40">
+      <DropdownMenuContent side={side} align="end" className="min-w-40">
         {locales.map((item) => (
           <DropdownMenuItem
             key={item}

@@ -6,7 +6,6 @@ import { buildRetentionBenchmark } from "@/lib/thread-part-kind";
 import { getTimeRange } from "@/lib/time-range";
 import { resolveRangeParams } from "@/lib/time-range-server";
 import { getActiveAccount, getSyncIntervalCached } from "@/lib/dashboard-data";
-import Link from "next/link";
 import PageHeader from "@/components/dashboard/page-header";
 import ExportCsvButton from "@/components/dashboard/export-csv-button";
 import PostList from "./post-list";
@@ -275,6 +274,7 @@ export default async function PostsPage({ searchParams }: PageProps) {
         subtitle={`${totalPosts} ${t.common.posts}`}
         range={{
           locale,
+          timeZone: tz,
           labels: t.timeRange,
           defaultRange: range,
           defaultFrom: from,
@@ -313,39 +313,14 @@ export default async function PostsPage({ searchParams }: PageProps) {
         currentType={mediaFilter}
         availableTypes={availableTypes}
         pagination={
-          totalPosts > POSTS_PER_PAGE && (
-            <div className="flex items-center justify-between gap-3">
-              {currentPage > 1 ? (
-                <Link
-                  href={pageHref(currentPage - 1)}
-                  className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-                >
-                  {t.postsPage.previousPage}
-                </Link>
-              ) : (
-                <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
-                  {t.postsPage.previousPage}
-                </span>
-              )}
-              <span className="text-muted-foreground text-sm tabular-nums">
-                {t.postsPage.pageStatus
-                  .replace("{page}", String(currentPage))
-                  .replace("{total}", String(pageCount))}
-              </span>
-              {currentPage < pageCount ? (
-                <Link
-                  href={pageHref(currentPage + 1)}
-                  className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,transform] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
-                >
-                  {t.postsPage.nextPage}
-                </Link>
-              ) : (
-                <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
-                  {t.postsPage.nextPage}
-                </span>
-              )}
-            </div>
-          )
+          totalPosts > POSTS_PER_PAGE
+            ? {
+                page: currentPage,
+                pageCount,
+                prevHref: currentPage > 1 ? pageHref(currentPage - 1) : null,
+                nextHref: currentPage < pageCount ? pageHref(currentPage + 1) : null,
+              }
+            : undefined
         }
         labels={t.postsPage}
         dateLocale={dateLocale}

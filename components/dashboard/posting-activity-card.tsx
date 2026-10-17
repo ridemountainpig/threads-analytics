@@ -58,7 +58,7 @@ export default function PostingActivityCard({
         <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
           {title}
         </CardTitle>
-        <CardDescription className="text-muted-foreground/80 text-xs">{subtitle}</CardDescription>
+        <CardDescription className="text-xs">{subtitle}</CardDescription>
         <CardAction>
           <Select
             value={activeYear}
