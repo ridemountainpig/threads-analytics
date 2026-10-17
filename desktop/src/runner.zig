@@ -38,11 +38,16 @@ pub const RunOptions = struct {
     fn appInfo(self: RunOptions, buffers: *StateBuffers) native_sdk.AppInfo {
         var info: native_sdk.AppInfo = .{
             .app_name = self.app_name,
+            // The updater compares this against the feed's version.
+            .version = manifestStringField("version"),
             .has_web_content = manifestHasWebContent(),
             .declares_tray = manifestDeclaresTrayCapability(),
             .window_title = self.window_title,
             .bundle_id = self.bundle_id,
             .icon_path = self.icon_path,
+            .update_feed_url = manifestUpdateString("feed_url"),
+            .update_public_key = manifestUpdateString("public_key"),
+            .update_check_on_start = manifestUpdateCheckOnStart(),
         };
         const windows = manifestWindowOptions(buffers);
         if (windows.len > 0) {
@@ -88,6 +93,23 @@ pub const RunOptions = struct {
         return self.menus orelse storage.fromManifest();
     }
 };
+
+fn manifestStringField(comptime field: []const u8) []const u8 {
+    if (comptime !@hasField(@TypeOf(app_manifest), field)) return "";
+    return @field(app_manifest, field);
+}
+
+fn manifestUpdateString(comptime field: []const u8) []const u8 {
+    if (comptime !@hasField(@TypeOf(app_manifest), "updates")) return "";
+    if (comptime !@hasField(@TypeOf(app_manifest.updates), field)) return "";
+    return @field(app_manifest.updates, field);
+}
+
+fn manifestUpdateCheckOnStart() bool {
+    if (comptime !@hasField(@TypeOf(app_manifest), "updates")) return false;
+    if (comptime !@hasField(@TypeOf(app_manifest.updates), "check_on_start")) return false;
+    return app_manifest.updates.check_on_start;
+}
 
 const CommandStorage = struct {
     commands: [native_sdk.app_manifest.max_commands]native_sdk.Command = undefined,

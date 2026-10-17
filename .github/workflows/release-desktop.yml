@@ -1,41 +1,56 @@
 name: Release Desktop (macOS)
 
 # Manually triggered. Builds the Apple silicon app on a macOS runner, signs
-# it with a Developer ID, notarizes and staples it, zips it, and publishes a
-# GitHub Release tagged v<version> at the commit the workflow was dispatched
-# from. Only dispatches from main publish.
+# it with a Developer ID, notarizes and staples it, and zips it. A second job
+# signs the update feed for that ZIP and publishes both in a GitHub Release
+# tagged v<version> at the commit the workflow was dispatched from. Only
+# dispatches from main publish.
 #
-# Signing and notarization read these secrets from the desktop-release
-# environment:
+# Both jobs read secrets from the desktop-release environment. Signing and
+# notarization (package-macos):
 #   MACOS_CERTIFICATE_P12       base64 of the Developer ID Application .p12
 #   MACOS_CERTIFICATE_PASSWORD  password of that .p12
 #   MACOS_SIGNING_IDENTITY      e.g. "Developer ID Application: Name (TEAMID)"
 #   APPLE_API_KEY_P8            App Store Connect API team key (.p8 contents)
 #   APPLE_API_KEY_ID            its Key ID
 #   APPLE_API_ISSUER_ID         its Issuer ID
+# The update feed (publish):
+#   NATIVE_UPDATE_PRIVATE_KEY   base64 of the key file `native update keygen`
+#                               writes; its public key is updates.public_key
+#                               in desktop/app.json
 #
-# desktop/app.json only accepts a plain X.Y.Z version (Native SDK manifest
-# schema), so pre-release suffixes live in the tag and asset name only:
-#   version input  → 0.1.0-beta.1
-#   app.json       → 0.1.0            (must match the X.Y.Z prefix)
-#   tag            → v0.1.0-beta.1
-#   asset          → Threads-Analytics-0.1.0-beta.1-macos-arm64.zip
+# Installed apps update from the feed of the release GitHub marks as Latest
+# (updates.feed_url in desktop/app.json), and the Native SDK updater only
+# compares plain X.Y.Z versions. So every release gets a version of its own,
+# matching desktop/app.json and package.json:
+#   version input  → 0.1.0
+#   tag            → v0.1.0
+#   assets         → Threads-Analytics-0.1.0-macos-arm64.zip (+ .sha256),
+#                    native-update.json
+# A preview is the same kind of release with the pre-release box checked:
+# installed apps skip it until it is published, or later edited, with the box
+# unchecked and "Set as the latest release" checked.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, e.g. 0.1.0-beta.1. The X.Y.Z prefix must match desktop/app.json and package.json."
+        description: "Release version, a plain X.Y.Z such as 0.1.0. Must match desktop/app.json and package.json."
         required: true
         type: string
       prerelease:
-        description: "Mark the GitHub Release as a pre-release. Versions with a suffix (-beta.1, -rc.1) are always pre-releases and only prompt installed betas to update. A plain version marked pre-release prompts no installed app until the box is unchecked."
+        description: "Mark the GitHub Release as a pre-release. Installed apps are only offered it once the box is unchecked (edit the release to roll it out)."
         required: false
         type: boolean
         default: true
+      update_notes:
+        description: "Optional plain-text summary shown in the app's update dialog, e.g. Faster sync and a new growth chart."
+        required: false
+        type: string
+        default: ""
 
 permissions:
-  contents: write
+  contents: read
 
 concurrency:
   group: release-desktop
@@ -46,8 +61,8 @@ env:
   # GitHub rewrites spaces in release asset names, so the ZIP keeps a hyphen.
   ASSET_PREFIX: Threads-Analytics
 
-# Actions are pinned to commit SHAs because this job can push tags and
-# publish releases (contents: write).
+# Actions are pinned to commit SHAs because these jobs hold signing secrets
+# and publish releases (contents: write).
 jobs:
   package-macos:
     # Older runners' `security import` can reject a .p12 exported by newer
@@ -55,6 +70,12 @@ jobs:
     runs-on: macos-15
     # Holds the signing secrets; restrict its deployment branches to main.
     environment: desktop-release
+    outputs:
+      version: ${{ steps.release.outputs.version }}
+      tag: ${{ steps.release.outputs.tag }}
+      asset: ${{ steps.release.outputs.asset }}
+      prerelease: ${{ steps.release.outputs.prerelease }}
+      sha256: ${{ steps.zip.outputs.sha256 }}
     steps:
       - name: Require the main branch
         if: github.ref != 'refs/heads/main'
@@ -73,29 +94,37 @@ jobs:
         id: release
         env:
           VERSION: ${{ inputs.version }}
-          PRERELEASE_INPUT: ${{ inputs.prerelease }}
+          PRERELEASE: ${{ inputs.prerelease }}
+          UPDATE_NOTES: ${{ inputs.update_notes }}
         run: |
           set -euo pipefail
 
-          # Must stay within what parseReleaseVersion (lib/release-version.ts)
-          # accepts, or installed apps cannot compare against the release: no
-          # leading zeros in X.Y.Z and no empty dot-separated suffix parts.
-          version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)(-[0-9A-Za-z]+(\.[0-9A-Za-z]+)*)?$'
+          # The updater only compares plain X.Y.Z, and parseReleaseVersion
+          # (lib/release-version.ts) rejects leading zeros.
+          version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
           if [[ ! "$VERSION" =~ $version_pattern ]]; then
-            echo "::error::Version '$VERSION' must look like X.Y.Z or X.Y.Z-suffix (e.g. 0.1.0-beta.1), with no leading zeros and no empty suffix parts"
+            echo "::error::Version '$VERSION' must be a plain X.Y.Z with no leading zeros (e.g. 0.1.0). Mark a preview with the pre-release box instead of a suffix"
             exit 1
           fi
 
-          base="${VERSION%%-*}"
           manifest_version="$(node -p "require('./desktop/app.json').version")"
           package_version="$(node -p "require('./package.json').version")"
 
-          if [[ "$manifest_version" != "$base" ]]; then
-            echo "::error::desktop/app.json version is '$manifest_version' but the release version prefix is '$base'"
+          if [[ "$manifest_version" != "$VERSION" ]]; then
+            echo "::error::desktop/app.json version is '$manifest_version' but the release version is '$VERSION'"
             exit 1
           fi
-          if [[ "$package_version" != "$base" ]]; then
-            echo "::error::package.json version is '$package_version' but the release version prefix is '$base'"
+          if [[ "$package_version" != "$VERSION" ]]; then
+            echo "::error::package.json version is '$package_version' but the release version is '$VERSION'"
+            exit 1
+          fi
+          if ! node -e "const u = require('./desktop/app.json').updates; process.exit(u?.feed_url && u?.public_key ? 0 : 1)"; then
+            echo "::error::desktop/app.json needs updates.feed_url and updates.public_key"
+            exit 1
+          fi
+          # The update dialog's limit, checked before the build instead of after.
+          if (( $(printf '%s' "$UPDATE_NOTES" | wc -c) > 16384 )); then
+            echo "::error::update_notes must be at most 16 KB"
             exit 1
           fi
 
@@ -105,23 +134,18 @@ jobs:
             exit 1
           fi
 
-          prerelease="$PRERELEASE_INPUT"
-          if [[ "$VERSION" == *-* ]]; then
-            prerelease="true"
-          fi
-
           {
             echo "version=$VERSION"
             echo "tag=$tag"
             echo "asset=${ASSET_PREFIX}-${VERSION}-macos-arm64.zip"
-            echo "prerelease=$prerelease"
+            echo "prerelease=$PRERELEASE"
           } >> "$GITHUB_OUTPUT"
 
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
 
       - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -243,6 +267,7 @@ jobs:
           xcrun stapler staple "${APP_NAME}.app"
 
       - name: Zip app bundle
+        id: zip
         working-directory: desktop/zig-out/package
         env:
           ASSET: ${{ steps.release.outputs.asset }}
@@ -251,16 +276,38 @@ jobs:
           ditto -c -k --keepParent "${APP_NAME}.app" "$RUNNER_TEMP/$ASSET"
           (cd "$RUNNER_TEMP" && shasum -a 256 "$ASSET" > "$ASSET.sha256")
           cat "$RUNNER_TEMP/$ASSET.sha256"
+          echo "sha256=$(cut -d ' ' -f 1 "$RUNNER_TEMP/$ASSET.sha256")" >> "$GITHUB_OUTPUT"
 
       - name: Verify zipped bundle
         env:
           ASSET: ${{ steps.release.outputs.asset }}
+          VERSION: ${{ steps.release.outputs.version }}
         run: |
           set -euo pipefail
           extract="$RUNNER_TEMP/verify"
           rm -rf "$extract" && mkdir -p "$extract"
           ditto -x -k "$RUNNER_TEMP/$ASSET" "$extract"
           app="$extract/${APP_NAME}.app"
+          # What the in-app updater insists on before it replaces anything: the
+          # ZIP holds only the app, with the manifest's bundle id, the version
+          # the feed names, and code for this target.
+          if [[ "$(ls -A "$extract")" != "${APP_NAME}.app" ]]; then
+            echo "::error::The ZIP must hold only ${APP_NAME}.app"
+            ls -A "$extract"
+            exit 1
+          fi
+          plist="$app/Contents/Info.plist"
+          bundle_id="$(plutil -extract CFBundleIdentifier raw "$plist")"
+          bundle_version="$(plutil -extract CFBundleVersion raw "$plist")"
+          if [[ "$bundle_id" != "$(node -p "require('./desktop/app.json').id")" || "$bundle_version" != "$VERSION" ]]; then
+            echo "::error::Bundle is $bundle_id $bundle_version, expected the desktop/app.json id at $VERSION"
+            exit 1
+          fi
+          archs="$(lipo -archs "$app/Contents/MacOS/threads-analytics-desktop")"
+          if [[ "$archs" != "arm64" ]]; then
+            echo "::error::Expected an arm64 executable, found: $archs"
+            exit 1
+          fi
           test -x "$app/Contents/MacOS/threads-analytics-desktop"
           test -x "$app/Contents/Resources/dist/runtime/node"
           test -f "$app/Contents/Resources/dist/server/server.js"
@@ -279,21 +326,106 @@ jobs:
           # and checks it serves (migrations, SQLite, loopback Host guard).
           node desktop/scripts/smoke-test-app.mjs "$app"
 
-      - name: Write release notes
+      # The publish job signs and releases exactly these bytes; it compares
+      # them against this job's sha256 output first.
+      - name: Upload release build
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: desktop-release
+          path: |
+            ${{ runner.temp }}/${{ steps.release.outputs.asset }}
+            ${{ runner.temp }}/${{ steps.release.outputs.asset }}.sha256
+          retention-days: 1
+          if-no-files-found: error
+
+      - name: Remove signing material
+        if: always()
+        run: |
+          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
+          rm -f "$RUNNER_TEMP/signing.p12" "$RUNNER_TEMP/AuthKey.p8"
+
+  # Signs the update feed and publishes the release on a fresh runner that
+  # installs no dependencies and runs none of the app's code, so the update
+  # key (which lets a feed reach every installed app) never shares a machine
+  # with that code, and only this job gets the write-scoped token.
+  publish:
+    needs: package-macos
+    runs-on: ubuntu-latest
+    environment: desktop-release
+    permissions:
+      contents: write
+    env:
+      VERSION: ${{ needs.package-macos.outputs.version }}
+      TAG: ${{ needs.package-macos.outputs.tag }}
+      ASSET: ${{ needs.package-macos.outputs.asset }}
+      PRERELEASE: ${{ needs.package-macos.outputs.prerelease }}
+    steps:
+      # Only for desktop/app.json and the signing script, which uses Node
+      # built-ins alone.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
+      - name: Download release build
+        uses: actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333 # v8.0.2
+        with:
+          name: desktop-release
+          path: ${{ runner.temp }}/release
+
+      - name: Check release build checksum
+        working-directory: ${{ runner.temp }}/release
         env:
-          VERSION: ${{ steps.release.outputs.version }}
-          ASSET: ${{ steps.release.outputs.asset }}
-          PRERELEASE: ${{ steps.release.outputs.prerelease }}
+          EXPECTED_SHA256: ${{ needs.package-macos.outputs.sha256 }}
         run: |
           set -euo pipefail
-          sha="$(cut -d ' ' -f 1 "$RUNNER_TEMP/$ASSET.sha256")"
+          sha256sum -c "$ASSET.sha256"
+          if [[ "$(cut -d ' ' -f 1 "$ASSET.sha256")" != "$EXPECTED_SHA256" ]]; then
+            echo "::error::The downloaded build is not the one package-macos verified"
+            exit 1
+          fi
+
+      # The feed pins the ZIP's URL, size, and SHA-256 under the update key.
+      # Installed apps read it from the Latest release (updates.feed_url in
+      # desktop/app.json), so a pre-release reaches no one until it is
+      # published with the pre-release box unchecked.
+      - name: Sign update feed
+        env:
+          NATIVE_UPDATE_PRIVATE_KEY: ${{ secrets.NATIVE_UPDATE_PRIVATE_KEY }}
+          UPDATE_NOTES: ${{ inputs.update_notes }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$NATIVE_UPDATE_PRIVATE_KEY" ]]; then
+            echo "::error::The NATIVE_UPDATE_PRIVATE_KEY secret is required"
+            exit 1
+          fi
+          # --notes=… so notes starting with "-" are not read as an option.
+          node desktop/scripts/sign-update-feed.mjs \
+            --archive "$RUNNER_TEMP/release/$ASSET" \
+            --url "https://github.com/${GITHUB_REPOSITORY}/releases/download/${TAG}/${ASSET}" \
+            --output "$RUNNER_TEMP/release/native-update.json" \
+            "--notes=$UPDATE_NOTES"
+
+      - name: Write release notes
+        env:
+          UPDATE_NOTES: ${{ inputs.update_notes }}
+        run: |
+          set -euo pipefail
+          sha="$(cut -d ' ' -f 1 "$RUNNER_TEMP/release/$ASSET.sha256")"
           label="Release"
           if [[ "$PRERELEASE" == "true" ]]; then label="Preview"; fi
+          whats_new=""
+          if [[ -n "$UPDATE_NOTES" ]]; then whats_new="$UPDATE_NOTES"$'\n\n'; fi
 
           cat > "$RUNNER_TEMP/notes.md" <<NOTES
           ## Threads Analytics Desktop $VERSION ($label)
 
-          macOS, Apple silicon (arm64) only. Signed with a Developer ID and notarized by Apple. See the install guide for how to install it and how to update an existing installation:
+          ${whats_new}macOS, Apple silicon (arm64) only. Signed with a Developer ID and notarized by Apple. Installed copies that offer **Install** in their update notice update themselves; see the install guide for a first install or a manual update:
 
           - [Install guide (English)](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/desktop/docs/install-macos.md)
           - [安裝說明（繁體中文）](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/desktop/docs/install-macos-zh.md)
@@ -301,11 +433,13 @@ jobs:
 
           Only download the app from this project's GitHub Releases.
 
-          ### Asset
+          ### Assets
 
           | File | SHA-256 |
           | --- | --- |
           | \`$ASSET\` | \`$sha\` |
+
+          \`native-update.json\` is the signed update feed installed apps read.
 
           Built from ${GITHUB_SHA}.
           NOTES
@@ -313,26 +447,18 @@ jobs:
       - name: Create GitHub Release
         env:
           GH_TOKEN: ${{ github.token }}
-          VERSION: ${{ steps.release.outputs.version }}
-          TAG: ${{ steps.release.outputs.tag }}
-          ASSET: ${{ steps.release.outputs.asset }}
-          PRERELEASE: ${{ steps.release.outputs.prerelease }}
         run: |
           set -euo pipefail
           args=(
             "$TAG"
+            --repo "$GITHUB_REPOSITORY"
             --target "$GITHUB_SHA"
             --title "Threads Analytics Desktop $VERSION"
             --notes-file "$RUNNER_TEMP/notes.md"
           )
           if [[ "$PRERELEASE" == "true" ]]; then args+=(--prerelease); fi
           gh release create "${args[@]}" \
-            "$RUNNER_TEMP/$ASSET" \
-            "$RUNNER_TEMP/$ASSET.sha256"
+            "$RUNNER_TEMP/release/$ASSET" \
+            "$RUNNER_TEMP/release/$ASSET.sha256" \
+            "$RUNNER_TEMP/release/native-update.json"
           echo "Published https://github.com/${GITHUB_REPOSITORY}/releases/tag/${TAG}"
-
-      - name: Remove signing material
-        if: always()
-        run: |
-          security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
-          rm -f "$RUNNER_TEMP/signing.p12" "$RUNNER_TEMP/AuthKey.p8"

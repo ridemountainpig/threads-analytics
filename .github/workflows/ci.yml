@@ -83,7 +83,7 @@ jobs:
         uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -160,7 +160,7 @@ jobs:
         uses: pnpm/action-setup@v6
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -273,7 +273,7 @@ jobs:
           package_json_file: website/package.json
 
       - name: Set up Node.js
-        uses: actions/setup-node@v7
+        uses: actions/setup-node@v7.1.0
         with:
           node-version-file: .nvmrc
           cache: pnpm
@@ -292,3 +292,24 @@ jobs:
           SITE_URL: https://threads-analytics.app
           NEXT_TELEMETRY_DISABLED: "1"
         run: pnpm build
+
+      - name: SEO smoke test
+        env:
+          SITE_URL: https://threads-analytics.app
+          NEXT_TELEMETRY_DISABLED: "1"
+        run: |
+          server_log="$RUNNER_TEMP/threads-analytics-website.log"
+          pnpm start > "$server_log" 2>&1 &
+          server_pid=$!
+          cleanup() {
+            status=$?
+            trap - EXIT
+            kill "$server_pid" 2>/dev/null || true
+            wait "$server_pid" 2>/dev/null || true
+            if [ "$status" -ne 0 ]; then
+              cat "$server_log" || true
+            fi
+            exit "$status"
+          }
+          trap cleanup EXIT
+          pnpm seo:check -- http://127.0.0.1:3000

@@ -6,7 +6,6 @@ import {
   Clock,
   Eye,
   KeyRound,
-  Laptop,
   MousePointerClick,
   Plug,
   Rocket,
@@ -14,7 +13,7 @@ import {
   Ticket,
   TrendingDown,
 } from "lucide-react";
-import { FaGithub } from "react-icons/fa6";
+import { FaApple, FaGithub } from "react-icons/fa6";
 import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
 import { LanguageMenu } from "@/components/language-menu";
 import { MobileMenu } from "@/components/mobile-menu";
@@ -33,7 +32,7 @@ const navIcons: Record<SiteNavIcon, ReactNode> = {
   zeabur: <Zeabur />,
   vercel: <Vercel />,
   "self-host": <Server strokeWidth={2} />,
-  desktop: <Laptop strokeWidth={2} />,
+  desktop: <FaApple />,
   token: <KeyRound strokeWidth={2} />,
   "threads-insights": <Eye strokeWidth={2} />,
   "best-time-to-post": <Clock strokeWidth={2} />,
@@ -73,6 +72,9 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
                 icon: navIcons[item.icon],
                 brandIcon: brandIcons.has(item.icon),
                 page: item.page,
+                badge: item.badge,
+                featured: item.featured,
+                section: item.section,
               }))}
             />
           ))}
@@ -84,11 +86,26 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
             <FaGithub className="github-icon" aria-hidden="true" />
             <span>{copy.github}</span>
           </a>
+          <Link
+            href={`/${locale}/desktop`}
+            className="header-mac"
+            aria-label={`${copy.desktop.label} (${copy.beta})`}
+          >
+            <FaApple className="header-mac-icon" aria-hidden="true" />
+            <span className="header-mac-label">{copy.desktop.label}</span>
+            <span className="header-mac-beta">{copy.beta}</span>
+          </Link>
           <MobileMenu
             groups={groups.map((group) => ({
               id: group.id,
               label: group.label,
-              items: group.items.map(({ href, label, page }) => ({ href, label, page })),
+              items: group.items.map(({ href, label, page, badge, section }) => ({
+                href,
+                label,
+                page,
+                badge,
+                section,
+              })),
             }))}
           />
         </div>

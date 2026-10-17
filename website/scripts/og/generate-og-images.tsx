@@ -123,10 +123,9 @@ const arrowGlyph = (
   </svg>
 );
 
-// The dictionaries embed U+2060 word joiners as a text-wrap hint for the DOM,
-// but satori's fallback CJK fonts render them as a visible gap — strip them
-// and control the headline break explicitly via \n + pre-line instead.
-const stripWordJoiners = (text: string) => text.replace(/⁠/g, "");
+// Defensively strip U+2060 from pasted copy. Headline wrapping is controlled
+// explicitly via \n + pre-line instead of invisible formatting characters.
+const stripWordJoiners = (text: string) => text.replace(/\u2060/g, "");
 
 // Headlines are sized for two Latin lines; a CJK line runs about twice as
 // wide per glyph, so shrink the font until the longest line fits the box.
@@ -201,7 +200,8 @@ function renderOpenGraphImage({
       >
         {/* Same brand icon the site header uses; the PNG carries its own
             rounded dark background, so no wrapper box. */}
-        <img src={brandIconSrc} width={36} height={36} />
+        {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders raw image elements. */}
+        <img alt="" src={brandIconSrc} width={36} height={36} />
         Threads Analytics
         {brandLabel ? (
           <span

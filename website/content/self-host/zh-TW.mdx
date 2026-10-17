@@ -2,13 +2,13 @@ Threads Analytics 是一個搭配 PostgreSQL 資料庫的 Next.js 應用程式�
 
 不想自己動手設定的話，Railway、Zeabur 和 Vercel 都有[一鍵範本與 Agent 部署 Prompt](/#deploy)，可以幫你全部處理好。
 
-## 事⁠前⁠準⁠備
+## 事前準備
 
 - **PostgreSQL 資料庫。**代管服務或架在自己伺服器上的都可以，應用程式只需要它的連線字串。
 - **執行應用程式的地方。**能跑 Docker 映像檔（amd64 或 arm64）的伺服器、Vercel，或任何裝了 Node.js 22.12+ 或 24+ 的機器。
 - **Threads Access Token。**部署完成後再到儀表板貼上，產生方式請看 [Token 生成教學](/token-guide)。
 
-## 環⁠境⁠變⁠數
+## 環境變數
 
 不論用哪種方式執行都要設定這些變數：Docker 寫在 env 檔、Vercel 設在專案設定，從原始碼執行則寫在 `.env.local`。
 
@@ -57,7 +57,7 @@ docker run -d --name threads-analytics --restart unless-stopped \
   -p 3000:3000 --env-file .env.local threads-analytics
 ```
 
-## 從原⁠始⁠碼執⁠行
+## 從原始碼執行
 
 需要 Node.js 22.12+ 或 24+，以及 pnpm。
 
@@ -89,7 +89,7 @@ Vercel 無法讓程序在請求之間持續執行，所以內建的同步排程�
 
 Hobby 方案的 Cron Job 一天最多只能跑一次，所以請維持每天一次的排程；付費方案則可以配合你在設定頁選的同步間隔，跑得更頻繁。
 
-## 讓貼⁠文持⁠續同⁠步
+## 讓貼文持續同步
 
 選好同步間隔之前，自動同步都是關閉的。部署完成後，到儀表板的**設定 → 自動同步**選擇頻率：每小時、每 6 小時、每天，或自訂分鐘數。每次同步都會處理所有已連接的帳號，不只是目前檢視的那一個。
 
@@ -105,7 +105,7 @@ curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://analytics.example.com/
 
 呼叫得比同步間隔更頻繁也沒關係，還沒到時間的帳號會直接略過。
 
-## 更⁠新版⁠本
+## 更新版本
 
 新版本會以新的 Docker 映像檔發佈，資料庫 migration 也會在啟動時自動執行，所以更新只需要取得新的映像檔或程式碼。貼文、洞察資料和帳號都會留在資料庫裡。
 
@@ -123,7 +123,7 @@ docker run -d --name threads-analytics --restart unless-stopped \
 - **Railway 或 Zeabur：**在平台的控制台重新部署服務。Zeabur 是打開 `threads-analytics` 服務並點擊 **Redeploy**。
 - **Vercel：**重新部署專案。
 
-## 部⁠署完⁠成⁠後
+## 部署完成後
 
 1. 打開應用程式，用 `APP_PASSWORD` 登入。
 2. 到**設定 → 新增 Threads 帳號**貼上 Access Token。第一次同步會立刻開始，可能需要幾分鐘。

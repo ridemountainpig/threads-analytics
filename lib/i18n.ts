@@ -73,6 +73,7 @@ export const dictionaries = {
     updateBanner: {
       newVersionAvailable: "A new version of Threads Analytics is available.",
       howToUpdate: "See how to update",
+      install: "Install {version}",
       download: "Download {version}",
       dismiss: "Dismiss",
     },
@@ -776,6 +777,7 @@ export const dictionaries = {
     updateBanner: {
       newVersionAvailable: "Threads Analytics 有新版本可以更新。",
       howToUpdate: "查看更新方式",
+      install: "安裝 {version}",
       download: "下載 {version}",
       dismiss: "關閉",
     },
@@ -1455,6 +1457,7 @@ export const dictionaries = {
     updateBanner: {
       newVersionAvailable: "Threads Analytics の新しいバージョンが利用可能です。",
       howToUpdate: "更新方法を見る",
+      install: "{version} をインストール",
       download: "{version} をダウンロード",
       dismiss: "閉じる",
     },

@@ -18,7 +18,7 @@ The desktop app supports macOS 11 or later on Macs with Apple silicon (M1 or lat
 - **Local database** — data is stored in SQLite on your Mac; no PostgreSQL or server setup is needed.
 - **No password** — there is no `APP_PASSWORD` sign-in and no sign-out action.
 - **Built-in auto-sync** — the sync scheduler is always enabled; `SYNC_SCHEDULER_ENABLED` does not need to be set.
-- **Manual updates** — the app shows a notice when a new release is available, but you download and install it yourself.
+- **In-app updates** — the app shows a notice when a new release is available and installs it in place, after checking its signature.
 
 ## Development
 

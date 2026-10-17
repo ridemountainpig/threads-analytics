@@ -6,13 +6,18 @@
   "version": "0.1.0",
   "icons": ["assets/icon.png"],
   "platforms": ["macos"],
-  "permissions": ["dialog"],
+  "permissions": ["dialog", "command"],
   "capabilities": ["webview", "dialog"],
   "bridge": {
     "commands": [
       {
         "name": "native-sdk.dialog.saveFile",
         "permissions": ["dialog"],
+        "origins": ["http://127.0.0.1:43127"]
+      },
+      {
+        "name": "native-sdk.command.invoke",
+        "permissions": ["command"],
         "origins": ["http://127.0.0.1:43127"]
       }
     ]
@@ -42,6 +47,10 @@
         ]
       }
     }
+  },
+  "updates": {
+    "feed_url": "https://github.com/ridemountainpig/threads-analytics/releases/latest/download/native-update.json",
+    "public_key": "BESQ7QLy68BqL7+ZY30w6nQz/EfzEac4gZM6nqirHAo="
   },
   "web_engine": "system",
   "cef": {
