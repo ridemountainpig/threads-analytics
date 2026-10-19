@@ -48,3 +48,29 @@ test("a date past the end of its month is refused, not read as the next month's"
     assert.equal(body.total, 0, until);
   }
 });
+
+test("diagnose_reach_drop needs both ends of a custom comparison period", async () => {
+  rowsOf("threadsAccount").push({ id: "1789", username: "someone", isActive: true });
+  const { isError, body } = await callTool("diagnose_reach_drop", {
+    since: "2026-09-01",
+    until: "2026-09-30",
+    compare_since: "2026-08-01",
+  });
+  assert.equal(isError, true);
+  assert.deepEqual(body, { error: "Provide both compare_since and compare_until, or neither." });
+});
+
+test("diagnose_reach_drop refuses a comparison period that overlaps the diagnosed one", async () => {
+  rowsOf("threadsAccount").push({ id: "1789", username: "someone", isActive: true });
+  const { isError, body } = await callTool("diagnose_reach_drop", {
+    since: "2026-09-01",
+    until: "2026-09-30",
+    compare_since: "2026-09-15",
+    compare_until: "2026-10-10",
+    timezone: "Asia/Taipei",
+  });
+  assert.equal(isError, true);
+  assert.deepEqual(body, {
+    error: "The comparison period must end before the diagnosed period starts.",
+  });
+});

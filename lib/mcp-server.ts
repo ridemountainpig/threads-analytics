@@ -57,6 +57,7 @@ import {
   type PostWithInsights,
 } from "./analytics";
 import { buildMonthlyReview, MONTH_PATTERN, REVIEW_METRICS } from "./monthly-review";
+import { buildReachDropDiagnosis, DEFAULT_PERIOD_DAYS, precedingRange } from "./reach-drop";
 import {
   compareGrowth,
   GROWTH_METRICS,
@@ -133,11 +134,16 @@ function parseDate(value: string, endOfDay: boolean, tz: string): Date {
   return sameDay ? date : new Date(NaN);
 }
 
-function parseRange(since: string | undefined, until: string | undefined, tz: string) {
+function parseRange(
+  since: string | undefined,
+  until: string | undefined,
+  tz: string,
+  defaultLengthMs = DEFAULT_RANGE_MS,
+) {
   const untilDate = until ? parseDate(until, true, tz) : new Date();
   const sinceDate = since
     ? parseDate(since, false, tz)
-    : new Date(untilDate.getTime() - DEFAULT_RANGE_MS);
+    : new Date(untilDate.getTime() - defaultLengthMs);
   if (Number.isNaN(untilDate.getTime()) || Number.isNaN(sinceDate.getTime())) {
     throw new Error("Invalid date parameters");
   }
@@ -916,9 +922,7 @@ export function registerMcpServer(server: McpServer) {
           }
           comparison = parseRange(compare_since, compare_until, tz);
         } else {
-          const length = primary.until.getTime() - primary.since.getTime();
-          const compareUntil = new Date(primary.since.getTime() - 1);
-          comparison = { since: new Date(compareUntil.getTime() - length), until: compareUntil };
+          comparison = precedingRange(primary);
         }
       } catch (err) {
         return errorResult((err as Error).message);
@@ -948,6 +952,68 @@ export function registerMcpServer(server: McpServer) {
         },
         change: diffPeriodStats(primaryStats, comparisonStats),
       });
+    },
+  );
+
+  server.registerTool(
+    "diagnose_reach_drop",
+    {
+      title: "Diagnose a reach drop",
+      annotations: READ_ONLY,
+      description:
+        "Work out whether views really dropped and what changed, following the reach-drop guide on threads-analytics.app. " +
+        `Compares a period with an earlier one of the same length (default: the last ${DEFAULT_PERIOD_DAYS} whole days ending three days ago, so recent posts have settled, against the ${DEFAULT_PERIOD_DAYS} days before). ` +
+        "Returns a verdict (no_drop, fewer_posts, fewer_breakouts, lower_typical_reach, no_single_cause or insufficient_data) from posts, total, median and average views, " +
+        "comparing posts at 48 hours old where growth readings cover both periods, since lifetime views favour the older period; " +
+        "five checks (format_mix, posting_rhythm, posting_time, links_and_questions, data_and_platform), each changed, stable or not_enough_data, with its numbers; " +
+        "the top and bottom posts of each period, for judging topic shifts the numbers can't show; and dataQuality notes. " +
+        "Views count only for posts at least 72 hours old at their last sync. With only since, the period runs to now; with only until, it is the 28 days up to it.",
+      inputSchema: z.object({
+        account: accountArg,
+        since: dateArg("Start of the period to diagnose (inclusive)"),
+        until: dateArg("End of the period to diagnose (inclusive)"),
+        compare_since: dateArg("Start of the comparison period (inclusive)"),
+        compare_until: dateArg("End of the comparison period (inclusive)"),
+        timezone: z
+          .string()
+          .optional()
+          .describe(
+            "IANA timezone for dates without a time, day boundaries and posting hours (default: the server's configured analytics timezone)",
+          ),
+      }),
+    },
+    async ({ account: accountRef, since, until, compare_since, compare_until, timezone }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
+      let diagnosed;
+      let comparison;
+      try {
+        if (since || until) {
+          // One millisecond short, so a period ending at a day's end starts at a day's start.
+          diagnosed = parseRange(since, until, tz, DEFAULT_PERIOD_DAYS * 24 * 60 * 60 * 1000 - 1);
+        }
+        if (compare_since || compare_until) {
+          if (!compare_since || !compare_until) {
+            return errorResult("Provide both compare_since and compare_until, or neither.");
+          }
+          comparison = parseRange(compare_since, compare_until, tz);
+        }
+      } catch (err) {
+        return errorResult((err as Error).message);
+      }
+
+      const result = await buildReachDropDiagnosis({
+        account: resolved.account,
+        timezone: tz,
+        diagnosed,
+        comparison,
+      });
+      if ("error" in result) return errorResult(result.error);
+      return jsonResult(result.diagnosis);
     },
   );
 
@@ -1211,5 +1277,35 @@ export function registerMcpServer(server: McpServer) {
           `If you can write files, save the whole review to threads-reviews/<reviewed month>.md; otherwise tell me to keep that JSON and pass it as previous_experiments next month.`,
       );
     },
+  );
+
+  server.registerPrompt(
+    "reach-drop",
+    {
+      title: "Reach drop diagnosis",
+      description:
+        "Check whether views really dropped, which changes explain it, and one change to test.",
+      argsSchema: z.object({
+        period: z
+          .string()
+          .optional()
+          .describe(
+            "Period to diagnose, e.g. 'the last 2 weeks' or '2026-09-01 to 2026-09-30' (default: the last four whole weeks, ending three days ago)",
+          ),
+        account: promptAccountArg,
+      }),
+    },
+    ({ period, account }) =>
+      promptText(
+        accountLine(account) +
+          `My Threads views seem to have dropped. Diagnose ${period ? `this period: ${period}` : "the last four weeks"}.\n\n` +
+          `Call diagnose_reach_drop${period ? ", passing the period as since and until" : ""}, then:\n` +
+          `1. Say whether the drop is real, using posts, total, median and average views and the verdict. If the verdict is no_drop or fewer_posts, say plainly that reach per post held.\n` +
+          `2. Go through each check marked changed, citing its numbers; cover the stable ones in a line.\n` +
+          `3. Read the top and bottom example posts in full with get_post to judge whether topics shifted, which the numbers can't show.\n` +
+          `4. Call out anything in dataQuality.notes that limits the conclusions. If data_and_platform is changed, or no check explains the drop, suggest checking the account status in Threads settings and Threads' announcements.\n` +
+          `5. Recommend one change to test for at least two weeks, as { metric, direction, target?, label } with metric one of: ${REVIEW_METRICS.join(", ")}, so get_monthly_review can score it later.\n\n` +
+          `Don't suggest deleting low-view posts: it resets nothing and loses data for later comparisons.`,
+      ),
   );
 }

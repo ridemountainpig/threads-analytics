@@ -58,7 +58,7 @@ export interface ReviewExperiment {
 
 export const MONTH_PATTERN = /^\d{4}-(0[1-9]|1[0-2])$/;
 // A post's reach mostly lands in its first few days; younger ones are still growing.
-const MATURE_AGE_MS = 72 * 60 * 60 * 1000;
+export const MATURE_AGE_MS = 72 * 60 * 60 * 1000;
 const FLAT_THRESHOLD_PCT = 5;
 const PREVIEW_LENGTH = 120;
 const MS_PER_DAY = 24 * 60 * 60 * 1000;

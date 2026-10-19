@@ -200,7 +200,7 @@ function getDayOfWeek(date: Date, tz: string): number {
   return new Date(Date.UTC(year, month - 1, day)).getUTCDay();
 }
 
-function getHour(date: Date, tz: string): number {
+export function getHour(date: Date, tz: string): number {
   return getLocalDateTimeParts(date, tz).hour;
 }
 
@@ -1833,8 +1833,8 @@ export interface TextFeatureComparisonPoint {
   withoutFeature: TextFeatureStats;
 }
 
-const hasLink = (text: string) => /https?:\/\//i.test(text);
-const hasQuestion = (text: string) => text.includes("?") || text.includes("？");
+export const hasLink = (text: string) => /https?:\/\//i.test(text);
+export const hasQuestion = (text: string) => text.includes("?") || text.includes("？");
 
 export function computeTextFeatureComparison(
   posts: PostWithInsights[],
