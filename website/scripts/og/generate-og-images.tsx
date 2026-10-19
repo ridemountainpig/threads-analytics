@@ -244,7 +244,7 @@ const variants: OgVariant[] = [
         brandLabel: brandLabels[locale],
         headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
-        footerLeft: <span>31 ANALYSES · SELF-HOSTED</span>,
+        footerLeft: <span>31 ANALYSES · MAC APP OR SELF-HOSTED</span>,
         footerRight: (
           <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             OPEN SOURCE

@@ -888,7 +888,11 @@ a.agent-step-card:hover {
   text-wrap: balance;
 }
 
-.agent-cta-inner > p:not(.guide-finish-expiry) {
+.agent-cta-inner > .section-kicker {
+  margin-bottom: 16px;
+}
+
+.agent-cta-inner > p:not(.guide-finish-expiry, .section-kicker) {
   max-width: 52ch;
   margin: 16px 0 0;
   color: var(--color-text-soft);
