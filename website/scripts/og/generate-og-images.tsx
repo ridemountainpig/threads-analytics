@@ -15,96 +15,11 @@ import { join } from "node:path";
 import type { ReactElement } from "react";
 import { ImageResponse } from "next/og";
 import { Railway, Vercel, Zeabur } from "../../components/deployment-logos";
-import { brandCurvePath } from "../../lib/brand-curve";
 import { getGuide, guideHub, guideSlugs } from "../../lib/guides";
 import { getDictionary, locales, type Locale } from "../../lib/i18n";
 import { selfHost } from "../../lib/self-host";
 
 const size = { width: 1200, height: 630 };
-
-const openGraphCurve = (
-  <svg
-    aria-hidden="true"
-    width="690"
-    height="580"
-    viewBox="0 0 760 640"
-    style={{ position: "absolute", top: 18, right: -96, opacity: 0.64 }}
-  >
-    <defs>
-      <linearGradient
-        id="og-curve-color"
-        x1="36"
-        y1="513"
-        x2="720"
-        y2="235"
-        gradientUnits="userSpaceOnUse"
-      >
-        <stop offset="0" stopColor="#ffb18a" />
-        <stop offset="0.28" stopColor="#f58bc4" />
-        <stop offset="0.66" stopColor="#ce67e5" />
-        <stop offset="1" stopColor="#a45ff0" />
-      </linearGradient>
-      <linearGradient
-        id="og-curve-shine"
-        x1="36"
-        y1="513"
-        x2="720"
-        y2="235"
-        gradientUnits="userSpaceOnUse"
-      >
-        <stop offset="0" stopColor="#fff4e8" stopOpacity="0.94" />
-        <stop offset="0.5" stopColor="#ffe7f5" stopOpacity="0.76" />
-        <stop offset="1" stopColor="#f6eaff" stopOpacity="0.58" />
-      </linearGradient>
-      <filter id="og-curve-glow" x="-30%" y="-30%" width="160%" height="160%">
-        <feGaussianBlur stdDeviation="20" />
-      </filter>
-      <filter id="og-curve-soften" x="-15%" y="-15%" width="130%" height="130%">
-        <feGaussianBlur stdDeviation="2.4" />
-      </filter>
-    </defs>
-
-    <path
-      d={brandCurvePath}
-      fill="none"
-      stroke="url(#og-curve-color)"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="58"
-      filter="url(#og-curve-glow)"
-      opacity="0.42"
-    />
-    <path
-      d={brandCurvePath}
-      fill="none"
-      stroke="url(#og-curve-color)"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="32"
-      opacity="0.38"
-    />
-    <path
-      d={brandCurvePath}
-      fill="none"
-      stroke="url(#og-curve-shine)"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="18"
-      filter="url(#og-curve-soften)"
-      opacity="0.3"
-    />
-    <path
-      d={brandCurvePath}
-      fill="none"
-      stroke="url(#og-curve-shine)"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth="4"
-      transform="translate(-3 -4)"
-      opacity="0.58"
-    />
-  </svg>
-);
 
 const arrowGlyph = (
   <svg
@@ -131,20 +46,18 @@ const stripWordJoiners = (text: string) => text.replace(/\u2060/g, "");
 // wide per glyph, so shrink the font until the longest line fits the box.
 const HEADLINE_MAX_WIDTH = 1010;
 const HEADLINE_FONT_SIZE = 74;
-function headlineFontSize(headline: string) {
+function headlineFontSize(lines: [string, string]) {
   const widest = Math.max(
-    ...stripWordJoiners(headline)
-      .split("\n")
-      .map((line) =>
-        [...line].reduce((units, ch) => {
-          if (ch === " " || ch === "\u00a0") return units + 0.28;
-          if (/[0-9]/.test(ch)) return units + 0.58;
-          if (/[A-Z]/.test(ch)) return units + 0.68;
-          if (/[a-z]/.test(ch)) return units + 0.52;
-          if (/[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(ch)) return units + 0.96;
-          return units + 0.5;
-        }, 0),
-      ),
+    ...lines.map(stripWordJoiners).map((line) =>
+      [...line].reduce((units, ch) => {
+        if (ch === " " || ch === "\u00a0") return units + 0.28;
+        if (/[0-9]/.test(ch)) return units + 0.58;
+        if (/[A-Z]/.test(ch)) return units + 0.68;
+        if (/[a-z]/.test(ch)) return units + 0.52;
+        if (/[\u3000-\u9fff\uf900-\ufaff\uff00-\uffef]/.test(ch)) return units + 0.96;
+        return units + 0.5;
+      }, 0),
+    ),
   );
   return Math.min(HEADLINE_FONT_SIZE, Math.floor(HEADLINE_MAX_WIDTH / widest));
 }
@@ -157,6 +70,15 @@ const brandLabels: Record<Locale, string> = {
   ja: "Threads 分析ツール",
 };
 
+// Same palette as the site in light mode (app/styles/tokens.css).
+const colors = {
+  bg: "#ffffff",
+  text: "#0a0a0a",
+  textSoft: "#424242",
+  muted: "#6b6b6b",
+  rule: "#e4e4e4",
+} as const;
+
 function renderOpenGraphImage({
   brandIconSrc,
   brandLabel,
@@ -167,7 +89,7 @@ function renderOpenGraphImage({
 }: {
   brandIconSrc: string;
   brandLabel: string;
-  headline: string;
+  headline: [string, string];
   description: string;
   footerLeft: ReactElement | string;
   footerRight: ReactElement | string;
@@ -178,76 +100,68 @@ function renderOpenGraphImage({
         width: "100%",
         height: "100%",
         display: "flex",
-        position: "relative",
-        overflow: "hidden",
-        background: "#f9f6ff",
-        color: "#191121",
+        flexDirection: "column",
+        padding: "56px 72px 52px",
+        background: colors.bg,
+        color: colors.text,
         fontFamily: "sans-serif",
       }}
     >
-      {openGraphCurve}
       <div
         style={{
           display: "flex",
-          position: "absolute",
-          top: 64,
-          left: 72,
           alignItems: "center",
-          gap: 18,
-          fontSize: 28,
-          fontWeight: 700,
+          justifyContent: "space-between",
+          paddingBottom: 28,
+          borderBottom: `1px solid ${colors.rule}`,
         }}
       >
-        {/* Same brand icon the site header uses; the PNG carries its own
-            rounded dark background, so no wrapper box. */}
-        {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders raw image elements. */}
-        <img alt="" src={brandIconSrc} width={36} height={36} />
-        Threads Analytics
-        {brandLabel ? (
-          <span
-            style={{
-              display: "flex",
-              alignItems: "center",
-              marginLeft: 6,
-              padding: "7px 16px",
-              border: "1px solid rgba(25, 17, 33, 0.14)",
-              borderRadius: 999,
-              background: "rgba(255, 255, 255, 0.55)",
-              color: "#5b5566",
-              fontSize: 18,
-              fontWeight: 600,
-              letterSpacing: "0.01em",
-            }}
-          >
-            {brandLabel}
-          </span>
-        ) : null}
+        <div style={{ display: "flex", alignItems: "center", gap: 16, fontSize: 26 }}>
+          {/* Same brand icon the site header uses; the PNG carries its own
+              rounded dark background, so no wrapper box. */}
+          {/* eslint-disable-next-line @next/next/no-img-element -- Satori renders raw image elements. */}
+          <img alt="" src={brandIconSrc} width={34} height={34} />
+          Threads Analytics
+          {brandLabel ? (
+            <span
+              style={{
+                display: "flex",
+                alignItems: "center",
+                marginLeft: 4,
+                padding: "6px 14px",
+                border: `1px solid ${colors.rule}`,
+                borderRadius: 999,
+                color: colors.muted,
+                fontSize: 17,
+              }}
+            >
+              {brandLabel}
+            </span>
+          ) : null}
+        </div>
+        <div style={{ display: "flex", fontSize: 18, color: colors.muted }}>{footerRight}</div>
       </div>
       <div
         style={{
           display: "flex",
-          position: "absolute",
-          top: 190,
-          left: 72,
+          flexDirection: "column",
+          marginTop: 56,
           maxWidth: HEADLINE_MAX_WIDTH,
           fontSize: headlineFontSize(headline),
-          lineHeight: 1.02,
-          letterSpacing: "-0.05em",
-          fontWeight: 650,
-          whiteSpace: "pre-line",
+          lineHeight: 1.06,
+          letterSpacing: "-0.04em",
         }}
       >
-        {stripWordJoiners(headline)}
+        <span>{stripWordJoiners(headline[0])}</span>
+        <span style={{ color: colors.muted }}>{stripWordJoiners(headline[1])}</span>
       </div>
       <div
         style={{
           display: "flex",
-          position: "absolute",
-          top: 390,
-          left: 72,
-          maxWidth: 820,
+          marginTop: 28,
+          maxWidth: 900,
           fontSize: 24,
-          color: "#66635e",
+          color: colors.textSoft,
           lineHeight: 1.45,
         }}
       >
@@ -256,18 +170,15 @@ function renderOpenGraphImage({
       <div
         style={{
           display: "flex",
-          position: "absolute",
-          right: 72,
-          bottom: 64,
-          left: 72,
-          alignItems: "center",
-          justifyContent: "space-between",
-          fontSize: 19,
-          color: "#77736d",
+          marginTop: "auto",
+          paddingTop: 22,
+          borderTop: `1px solid ${colors.rule}`,
+          fontSize: 18,
+          letterSpacing: "0.04em",
+          color: colors.muted,
         }}
       >
         {footerLeft}
-        {footerRight}
       </div>
     </div>,
     size,
@@ -288,11 +199,11 @@ const guideVariants: OgVariant[] = guideSlugs.map((slug) => ({
     return renderOpenGraphImage({
       brandIconSrc,
       brandLabel: brandLabels[locale],
-      headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+      headline: [copy.hero.lineOne, copy.hero.lineTwo],
       description: copy.metadata.description,
       footerLeft: <span>{copy.hero.kicker}</span>,
       footerRight: (
-        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
           GUIDE
           {arrowGlyph}
         </span>
@@ -308,11 +219,11 @@ const guideHubVariant: OgVariant = {
     return renderOpenGraphImage({
       brandIconSrc,
       brandLabel: brandLabels[locale],
-      headline: `${copy.lineOne}\n${copy.lineTwo}`,
+      headline: [copy.lineOne, copy.lineTwo],
       description: copy.metadata.description,
       footerLeft: <span>{copy.kicker}</span>,
       footerRight: (
-        <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+        <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
           GUIDE
           {arrowGlyph}
         </span>
@@ -331,11 +242,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>31 ANALYSES · SELF-HOSTED</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             OPEN SOURCE
             {arrowGlyph}
           </span>
@@ -350,11 +261,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 12, color: "#191121" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 12, color: colors.text }}>
             <Railway width={26} height={26} />
             Railway
           </span>
@@ -369,11 +280,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 12, color: "#191121" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 12, color: colors.text }}>
             <Zeabur width={30} height={23} />
             Zeabur
           </span>
@@ -388,11 +299,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             18 STEPS
             {arrowGlyph}
           </span>
@@ -407,11 +318,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             MCP SERVER
             {arrowGlyph}
           </span>
@@ -426,11 +337,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             31 ANALYSES
             {arrowGlyph}
           </span>
@@ -445,11 +356,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             FAIR DRAW
             {arrowGlyph}
           </span>
@@ -464,11 +375,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
-        footerLeft: <span>{copy.hero.kicker}</span>,
+        footerLeft: <span>{copy.hero.note}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             MAC APP
             {arrowGlyph}
           </span>
@@ -483,11 +394,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 12, color: "#191121" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 12, color: colors.text }}>
             <Vercel width={26} height={23} />
             Vercel
           </span>
@@ -502,11 +413,11 @@ const variants: OgVariant[] = [
       return renderOpenGraphImage({
         brandIconSrc,
         brandLabel: brandLabels[locale],
-        headline: `${copy.hero.lineOne}\n${copy.hero.lineTwo}`,
+        headline: [copy.hero.lineOne, copy.hero.lineTwo],
         description: copy.metadata.description,
         footerLeft: <span>{copy.hero.kicker}</span>,
         footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 6, color: "#9253e8" }}>
+          <span style={{ display: "flex", alignItems: "center", gap: 6, color: colors.muted }}>
             DOCKER
             {arrowGlyph}
           </span>

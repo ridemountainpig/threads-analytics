@@ -1,0 +1,114 @@
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: calc(var(--header-height) + 24px);
+  /* Press feedback is custom (:active scales); the platform flash on top
+     of it reads as two competing responses. */
+  -webkit-tap-highlight-color: transparent;
+}
+
+body {
+  margin: 0;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--sans);
+  font-size: 1rem;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+button,
+a {
+  font: inherit;
+}
+
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+button {
+  color: inherit;
+}
+
+a:focus-visible,
+button:focus-visible,
+summary:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 3px;
+}
+
+::selection {
+  background: color-mix(in srgb, var(--color-accent-fill) 22%, transparent);
+  color: var(--color-text);
+}
+
+.site-shell {
+  width: min(calc(100% - 48px), var(--site-width));
+  margin-inline: auto;
+}
+
+/* Visually hidden but exposed to assistive technology. */
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  margin: -1px;
+  padding: 0;
+  border: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.not-found-page {
+  display: grid;
+  min-height: 100svh;
+  place-items: center;
+  padding: 48px 24px;
+}
+
+.not-found-card {
+  width: min(100%, 560px);
+  text-align: center;
+}
+
+.not-found-code {
+  margin: 0 0 16px;
+  color: var(--color-accent);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+}
+
+.not-found-card h1 {
+  margin: 0;
+  font-size: clamp(2.5rem, 8vw, 4rem);
+  font-weight: 500;
+  letter-spacing: var(--tracking-display);
+  line-height: 1.02;
+  text-wrap: balance;
+}
+
+.not-found-card > p:not(.not-found-code) {
+  margin: 20px auto 0;
+  color: var(--color-text-soft);
+  line-height: 1.6;
+}
+
+.not-found-actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 10px;
+  margin-top: 32px;
+}
+
+@media (max-width: 780px) {
+  .site-shell {
+    width: min(calc(100% - 32px), var(--site-width));
+  }
+}

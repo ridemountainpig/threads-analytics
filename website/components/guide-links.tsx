@@ -1,5 +1,6 @@
 import { ArrowRight } from "lucide-react";
 import Link from "next/link";
+import { SectionHead } from "@/components/section-head";
 import { getGuide, guideSlugs, guideUi, type GuideSlug } from "@/lib/guides";
 import type { Locale } from "@/lib/locales";
 
@@ -41,11 +42,13 @@ export function GuideLinks({ locale, exclude }: { locale: Locale; exclude?: Guid
   return (
     <section className="guide-overview-section" aria-labelledby="guide-links-title">
       <div className="site-shell">
-        <div className="section-heading">
-          <p className="section-kicker">{ui.relatedKicker}</p>
-          <h2 id="guide-links-title">{ui.relatedTitle}</h2>
-          <p className="section-description">{ui.relatedDescription}</p>
-        </div>
+        <SectionHead
+          variant="numbered"
+          kicker={ui.relatedKicker}
+          title={ui.relatedTitle}
+          description={ui.relatedDescription}
+          id="guide-links-title"
+        />
         <GuideCards locale={locale} exclude={exclude} />
         <Link href={`/${locale}/guides`} className="guide-links-all">
           {ui.allGuides}

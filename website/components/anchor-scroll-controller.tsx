@@ -2,7 +2,7 @@
 
 import { useEffect } from "react";
 
-// Keep in sync with `scroll-padding-top` in app/globals.css — the gap left
+// Keep in sync with `scroll-padding-top` in app/styles/base.css — the gap left
 // above an in-page anchor so it clears the sticky header.
 const HEADER_OFFSET = 84;
 

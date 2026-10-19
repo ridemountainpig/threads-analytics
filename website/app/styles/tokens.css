@@ -1,0 +1,136 @@
+/* Neutral surfaces with ink as the primary; purple is the one accent, kept
+   for kickers, prompts and the highlighted data point. Dark mode is the
+   `.dark` class the theme bootstrap puts on <html>. */
+:root {
+  color-scheme: light;
+
+  /* Browser chrome reads these through lib/theme.ts themeColors. */
+  --color-bg: #ffffff;
+  --color-panel: #ffffff;
+  /* Sunken surfaces: the stage behind cards, wells inside them. */
+  --color-panel-hi: #f7f7f7;
+  /* Interactive fills: hover states, control tracks, small chips. */
+  --color-fill: #f4f4f5;
+  --color-popover: #ffffff;
+  --color-segment: #ffffff;
+  --color-rule: #e4e4e4;
+  --color-rule-soft: #eeeeee;
+  --color-rule-strong: #d1d1d1;
+  --color-text: #0a0a0a;
+  --color-text-soft: #424242;
+  --color-muted: #6b6b6b;
+  --color-dim: #a3a3a3;
+  /* Text-safe on white (5.9:1); the fill is for bars, dots and marks. */
+  --color-accent: #7c3ddb;
+  --color-accent-fill: #9e5bef;
+  --color-accent-tint: color-mix(in srgb, var(--color-accent-fill) 12%, transparent);
+  --color-success: #118659;
+  --color-danger: #d23c3c;
+
+  --shadow-edge: 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 1px 0 rgb(0 0 0 / 0.025);
+  --shadow-floating: 0 1px 2px rgb(0 0 0 / 0.04), 0 8px 24px -8px rgb(0 0 0 / 0.1);
+  --shadow-lift:
+    0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -12px rgb(0 0 0 / 0.12),
+    0 32px 64px -24px rgb(0 0 0 / 0.14);
+  --shadow-window:
+    0 0 0 0.5px rgb(0 0 0 / 0.08), 0 1px 2px rgb(0 0 0 / 0.04), 0 12px 32px -12px rgb(0 0 0 / 0.12);
+
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --site-width: 1200px;
+  --header-height: 60px;
+
+  --sans:
+    var(--font-geist, "Geist"), "PingFang TC", "Hiragino Sans", "Noto Sans TC", "Noto Sans JP",
+    -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  --mono:
+    var(--font-geist-mono, "Geist Mono"), ui-monospace, "SFMono-Regular", Menlo, Consolas, monospace;
+
+  --tracking-display: -0.04em;
+  --tracking-title: -0.03em;
+  --tracking-tight: -0.01em;
+  /* Multiplies every positive caption tracking; 0 for CJK, where it only
+     spreads characters apart. */
+  --tracking-caps: 1;
+
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --ease-bounce: cubic-bezier(0.34, 1.56, 0.64, 1);
+}
+
+/* Geist has no CJK glyphs, so each locale names its own fallback right
+   after it, ahead of the system UI font (Japanese kanji must not pick up
+   Traditional Chinese forms). */
+:root:lang(zh-TW) {
+  --sans:
+    var(--font-geist, "Geist"), "PingFang TC", "Noto Sans TC", "Microsoft JhengHei", -apple-system,
+    BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+:root:lang(ja) {
+  --sans:
+    var(--font-geist, "Geist"), "Hiragino Sans", "Hiragino Kaku Gothic ProN", "Noto Sans JP",
+    "Yu Gothic", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+
+/* Tight Latin tracking crushes CJK headlines. */
+:root:lang(zh-TW),
+:root:lang(ja) {
+  --tracking-display: -0.01em;
+  --tracking-title: 0em;
+  --tracking-caps: 0;
+}
+
+/* Apple's dark system colours, as in the dashboard: a black base and
+   surfaces that lighten as they rise (card, then popover), because shadows
+   vanish against black. Separators, fills and secondary text are the system
+   values, so muted text holds 4.5:1 up to the popover. */
+html.dark {
+  color-scheme: dark;
+
+  --color-bg: #000000;
+  --color-panel: #1c1c1e;
+  --color-panel-hi: #111113;
+  --color-fill: rgb(120 120 128 / 0.24);
+  --color-popover: #2c2c2e;
+  --color-segment: #636366;
+  --color-rule: rgb(84 84 88 / 0.6);
+  --color-rule-soft: rgb(84 84 88 / 0.36);
+  --color-rule-strong: rgb(120 120 128 / 0.6);
+  --color-text: #f5f5f7;
+  --color-text-soft: #d1d1d6;
+  --color-muted: #98989f;
+  --color-dim: #636366;
+  --color-accent: #b98cf5;
+  --color-accent-fill: #a66ff2;
+  --color-success: #57bc8a;
+  --color-danger: #ff6961;
+
+  --shadow-edge: 0 0 0 0.5px rgb(0 0 0 / 0.3);
+  --shadow-floating: 0 1px 2px rgb(0 0 0 / 0.3), 0 8px 24px -8px rgb(0 0 0 / 0.5);
+  --shadow-lift: 0 1px 2px rgb(0 0 0 / 0.4), 0 24px 64px -24px rgb(0 0 0 / 0.7);
+  --shadow-window: 0 0 0 0.5px rgb(255 255 255 / 0.1), 0 12px 32px -12px rgb(0 0 0 / 0.8);
+}
+
+/* Increased contrast: separators that read as lines, secondary text a step
+   closer to primary, decorative grey usable as text. */
+@media (prefers-contrast: more) {
+  :root {
+    --color-rule: #8e8e93;
+    --color-rule-soft: #b5b5ba;
+    --color-rule-strong: #636366;
+    --color-text-soft: #1f1f1f;
+    --color-muted: #424242;
+    --color-dim: #6b6b6b;
+  }
+
+  html.dark {
+    --color-rule: rgb(255 255 255 / 0.45);
+    --color-rule-soft: rgb(255 255 255 / 0.3);
+    --color-rule-strong: rgb(255 255 255 / 0.6);
+    --color-text-soft: #ebebf0;
+    --color-muted: #c7c7cc;
+    --color-dim: #98989f;
+  }
+}

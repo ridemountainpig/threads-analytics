@@ -4,8 +4,6 @@ import { ArrowRight, ArrowUpRight, Plug, ShieldCheck } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
 import { RiOpenaiFill } from "react-icons/ri";
 import { SiClaude, SiClaudecode, SiCursor } from "react-icons/si";
-import { ClosingCurves } from "@/components/closing-curves";
-import { HeroCurve } from "@/components/hero-curve";
 import { JsonLd } from "@/components/json-ld";
 import { McpAgentsDemo } from "@/components/mcp-agents-demo";
 import { McpClientSwitcher } from "@/components/mcp-client-switcher";
@@ -13,6 +11,7 @@ import { McpChatDemo } from "@/components/mcp-chat-demo";
 import { McpConsentDemo } from "@/components/mcp-consent-demo";
 import { McpHeroCard } from "@/components/mcp-hero-card";
 import { McpTermDemo } from "@/components/mcp-term-demo";
+import { SectionHead } from "@/components/section-head";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
@@ -103,9 +102,7 @@ export default async function McpGuidePage({ params }: { params: Promise<{ local
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>
-        <section className="agent-hero-section" data-motion-pause>
-          <div className="hero-grid-bg" aria-hidden="true" />
-          <HeroCurve />
+        <section className="agent-hero-section">
           <div className="site-shell agent-hero-grid">
             <div className="agent-hero-copy">
               <p className="section-kicker">
@@ -181,11 +178,12 @@ export default async function McpGuidePage({ params }: { params: Promise<{ local
         <section className="agent-steps-section">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.capabilities.kicker}</p>
-                <h2>{copy.capabilities.title}</h2>
-                <p className="section-description">{copy.capabilities.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.capabilities.kicker}
+                title={copy.capabilities.title}
+                description={copy.capabilities.description}
+              />
             </div>
             <div className="mcp-tools-panel" data-reveal="scale" data-reveal-delay="1">
               <div className="mcp-tools-head">
@@ -208,11 +206,12 @@ export default async function McpGuidePage({ params }: { params: Promise<{ local
         <section className="agent-steps-section" id="connect">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.connect.kicker}</p>
-                <h2>{copy.connect.title}</h2>
-                <p className="section-description">{copy.connect.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.connect.kicker}
+                title={copy.connect.title}
+                description={copy.connect.description}
+              />
             </div>
             <ol className="mcp-steps-strip" data-reveal="stagger" data-reveal-delay="1">
               {copy.connect.steps.map((step) => (
@@ -322,11 +321,12 @@ export default async function McpGuidePage({ params }: { params: Promise<{ local
         <section className="agent-steps-section">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.usage.kicker}</p>
-                <h2>{copy.usage.title}</h2>
-                <p className="section-description">{copy.usage.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.usage.kicker}
+                title={copy.usage.title}
+                description={copy.usage.description}
+              />
             </div>
             <McpChatDemo
               label={copy.usage.examplesLabel}
@@ -353,12 +353,11 @@ export default async function McpGuidePage({ params }: { params: Promise<{ local
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
             <div className="agent-cta guide-finish">
-              <ClosingCurves />
               <div className="agent-cta-inner">
                 <h2>{copy.cta.title}</h2>
                 <p>{copy.cta.description}</p>
                 <div className="hero-actions">
-                  <a href="#connect" className="button button-light">
+                  <a href="#connect" className="button button-primary">
                     {copy.cta.primary}
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </a>
@@ -366,9 +365,9 @@ export default async function McpGuidePage({ params }: { params: Promise<{ local
                     href={`${siteConfig.github}#mcp-server`}
                     target="_blank"
                     rel="noreferrer"
-                    className="button button-ghost"
+                    className="button button-secondary"
                   >
-                    <FaGithub className="github-icon" aria-hidden="true" />
+                    <FaGithub aria-hidden="true" />
                     {copy.cta.secondary}
                   </a>
                 </div>

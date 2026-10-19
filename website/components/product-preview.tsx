@@ -95,6 +95,7 @@ export function ProductPreview({ copy }: { copy: Dictionary["product"] }) {
               {previewBars.map((height, index) => (
                 <i
                   key={`${height}-${index}`}
+                  className={height === Math.max(...previewBars) ? "is-peak" : undefined}
                   style={
                     {
                       "--preview-bar-height": `${height}%`,
@@ -107,11 +108,6 @@ export function ProductPreview({ copy }: { copy: Dictionary["product"] }) {
             <div className="product-preview-trend">
               <svg viewBox="0 0 720 180" preserveAspectRatio="none">
                 <defs>
-                  <linearGradient id="product-preview-line" x1="0" y1="0" x2="1" y2="0">
-                    <stop offset="0" stopColor="#9e5bef" />
-                    <stop offset="0.52" stopColor="#ec7dbc" />
-                    <stop offset="1" stopColor="#ffb18a" />
-                  </linearGradient>
                   <clipPath id="product-preview-line-reveal">
                     <rect
                       className="product-preview-line-clip"
@@ -124,8 +120,8 @@ export function ProductPreview({ copy }: { copy: Dictionary["product"] }) {
                 </defs>
                 <path
                   d="M8 142 C58 137 84 112 132 118 S205 99 249 106 S326 67 375 78 S449 87 493 55 S580 68 620 42 S682 34 712 24"
+                  className="product-preview-line"
                   fill="none"
-                  stroke="url(#product-preview-line)"
                   strokeLinecap="round"
                   strokeLinejoin="round"
                   strokeWidth="3"

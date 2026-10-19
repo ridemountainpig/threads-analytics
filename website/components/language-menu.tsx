@@ -3,11 +3,12 @@
 import { useRef } from "react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
-import { Check, ChevronDown, Languages } from "lucide-react";
+import { Check, Languages } from "lucide-react";
 import { useDetailsDismiss } from "@/components/use-details-dismiss";
 import { isLocale, localeNames, locales, type Locale } from "@/lib/i18n";
 
-export function LanguageMenu({ locale }: { locale: Locale }) {
+/** One glyph like the theme menu; the current language lives in its label. */
+export function LanguageMenu({ locale, label }: { locale: Locale; label: string }) {
   const menuRef = useRef<HTMLDetailsElement>(null);
   useDetailsDismiss(menuRef);
   const pathname = usePathname() ?? `/${locale}`;
@@ -15,13 +16,12 @@ export function LanguageMenu({ locale }: { locale: Locale }) {
   const pathAfterLocale = isLocale(firstSegment)
     ? pathname.slice(firstSegment.length + 1)
     : pathname;
+  const triggerLabel = `${label}: ${localeNames[locale]}`;
 
   return (
     <details className="language-menu" ref={menuRef}>
-      <summary aria-label="Change language">
-        <Languages className="language-icon" aria-hidden="true" strokeWidth={1.9} />
-        <span className="language-label">{localeNames[locale]}</span>
-        <ChevronDown className="language-chevron" aria-hidden="true" strokeWidth={2} />
+      <summary aria-label={triggerLabel} title={triggerLabel}>
+        <Languages className="language-icon" aria-hidden="true" strokeWidth={1.8} />
       </summary>
       <div className="language-popover">
         {locales.map((item) => (
@@ -34,10 +34,8 @@ export function LanguageMenu({ locale }: { locale: Locale }) {
               event.currentTarget.closest("details")?.removeAttribute("open");
             }}
           >
+            <Check className="language-check" aria-hidden="true" strokeWidth={2.2} />
             {localeNames[item]}
-            {item === locale ? (
-              <Check className="language-current" aria-hidden="true" strokeWidth={2.2} />
-            ) : null}
           </Link>
         ))}
       </div>

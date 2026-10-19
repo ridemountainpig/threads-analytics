@@ -19,7 +19,7 @@ export type NavMenuItem = {
   brandIcon?: boolean;
   /** Route rather than an in-page anchor, so it prefetches through <Link>. */
   page?: boolean;
-  /** Short tag after the label, such as Beta. */
+  /** Short tag after the label, such as "New". */
   badge?: string;
   /** Tinted row with a solid icon, for the item the menu leads with. */
   featured?: boolean;

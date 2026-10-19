@@ -6,7 +6,8 @@ import {
   type GuideCopy,
   type GuideSlug,
 } from "@/lib/guides";
-import type { Dictionary, Locale, TokenGuideCopy } from "@/lib/i18n";
+import { gettingStarted } from "@/lib/getting-started";
+import type { DesktopGuideCopy, Dictionary, Locale, TokenGuideCopy } from "@/lib/i18n";
 import { locales } from "@/lib/locales";
 import { selfHost, selfHostMeta } from "@/lib/self-host";
 import { siteConfig } from "@/lib/site";
@@ -47,7 +48,7 @@ export function getStructuredData(locale: Locale, copy: Dictionary) {
         url: localizedUrl,
         name: siteConfig.name,
         description: copy.metadata.description,
-        image: `${siteConfig.url}/media/dashboard.png`,
+        image: `${siteConfig.url}/media/mac-app-light.webp`,
         applicationCategory: "BusinessApplication",
         applicationSubCategory: "Social media analytics",
         operatingSystem: "Any",
@@ -65,6 +66,16 @@ export function getStructuredData(locale: Locale, copy: Dictionary) {
           url: siteConfig.creator,
         },
         sameAs: siteConfig.github,
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${localizedUrl}#faq`,
+        inLanguage: locale,
+        mainEntity: gettingStarted[locale].items.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: { "@type": "Answer", text: item.answer },
+        })),
       },
     ],
   };
@@ -125,15 +136,16 @@ export function getDeployPageStructuredData({
  */
 export function getDesktopPageStructuredData({
   locale,
-  title,
-  description,
+  copy,
+  image,
 }: {
   locale: Locale;
-  title: string;
-  description: string;
+  copy: DesktopGuideCopy;
+  image: string;
 }) {
   const path = "/desktop";
   const pageUrl = `${siteConfig.url}/${locale}${path}`;
+  const { title, description } = copy.metadata;
 
   return {
     "@context": "https://schema.org",
@@ -145,7 +157,7 @@ export function getDesktopPageStructuredData({
         url: pageUrl,
         name: `${siteConfig.name} for Mac`,
         description,
-        image: `${siteConfig.url}/media/dashboard.png`,
+        image: `${siteConfig.url}${image}`,
         applicationCategory: "BusinessApplication",
         applicationSubCategory: "Social media analytics",
         operatingSystem: "macOS 11 or later",
@@ -165,6 +177,27 @@ export function getDesktopPageStructuredData({
           url: siteConfig.creator,
         },
         sameAs: siteConfig.github,
+      },
+      {
+        "@type": "FAQPage",
+        "@id": `${pageUrl}#faq`,
+        inLanguage: locale,
+        // The page shows the folder path or issues link under these answers;
+        // the schema text has to carry them itself.
+        mainEntity: copy.faq.items.map((item) => ({
+          "@type": "Question",
+          name: item.question,
+          acceptedAnswer: {
+            "@type": "Answer",
+            text: [
+              stripEmphasis(item.answer),
+              item.extra === "folder" ? siteConfig.desktopDataFolder : null,
+              item.extra === "issues" ? `${siteConfig.github}/issues` : null,
+            ]
+              .filter(Boolean)
+              .join("\n\n"),
+          },
+        })),
       },
     ],
   };

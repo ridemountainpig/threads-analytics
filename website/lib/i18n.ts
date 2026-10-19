@@ -296,6 +296,16 @@ export type DesktopPerkIcon = "database" | "lock" | "sync" | "bell";
 
 export type DesktopGuideCopy = {
   metadata: { title: string; description: string };
+  /** The sticky product bar under the site header. */
+  localNav: {
+    title: string;
+    label: string;
+    overview: string;
+    compare: string;
+    install: string;
+    faq: string;
+    download: string;
+  };
   hero: {
     kicker: string;
     lineOne: string;
@@ -304,30 +314,18 @@ export type DesktopGuideCopy = {
     primaryCta: string;
     secondaryCta: string;
     note: string;
-    hint: string;
-    /** Download card on the hero side: requirements plus the asset to pick. */
-    card: {
-      platform: string;
-      badge: string;
-      requirementsLabel: string;
-      requirements: string[];
-      assetLabel: string;
-      note: string;
-    };
+    imageAlt: string;
   };
-  preview: {
+  highlights: {
     kicker: string;
     title: string;
     description: string;
-    imageAlt: string;
-    status: string;
     perks: { icon: DesktopPerkIcon; title: string; body: string }[];
   };
   compare: {
     kicker: string;
     title: string;
     description: string;
-    aspectLabel: string;
     desktopLabel: string;
     webLabel: string;
     rows: { aspect: string; desktop: string; web: string }[];
@@ -338,28 +336,25 @@ export type DesktopGuideCopy = {
     kicker: string;
     title: string;
     description: string;
-    /** Step bodies may mark UI labels as `**label**`. */
+    /** Step bodies and FAQ answers may mark UI labels as `**label**`. */
     steps: { index: string; title: string; body: string }[];
     setupTitle: string;
     setupDescription: string;
     setupSteps: { index: string; title: string; body: string }[];
     tokenNote: string;
     tokenCta: string;
+    requirementsTitle: string;
+    requirements: string[];
+    assetLabel: string;
+    intelNote: string;
+    hint: string;
   };
-  firstLaunch: {
+  faq: {
     kicker: string;
     title: string;
-    description: string;
-    paths: { label: string; title: string; steps: string[] }[];
-    warning: string;
+    /** `extra` appends the data folder path or the GitHub issues link. */
+    items: { question: string; answer: string; extra?: "folder" | "issues" }[];
     issuesCta: string;
-  };
-  care: {
-    kicker: string;
-    title: string;
-    description: string;
-    panelBadge: string;
-    items: { tag: string; title: string; body: string }[];
     guideCta: string;
   };
   cta: {
@@ -3093,8 +3088,17 @@ const desktopGuideEn: DesktopGuideCopy = {
     description:
       "Download the free Threads Analytics app for Mac. Posts and follower history stay in a local database, with no hosting or PostgreSQL to configure.",
   },
+  localNav: {
+    title: "Threads Analytics for Mac",
+    label: "Mac app",
+    overview: "Overview",
+    compare: "Compare",
+    install: "Install",
+    faq: "FAQ",
+    download: "Download",
+  },
   hero: {
-    kicker: "DESKTOP / MACOS",
+    kicker: "Threads Analytics for Mac",
     lineOne: "Threads analytics on your Mac,",
     lineTwo: "no server to run.",
     description:
@@ -3102,57 +3106,41 @@ const desktopGuideEn: DesktopGuideCopy = {
     primaryCta: "Download for Mac",
     secondaryCta: "How to install",
     note: "macOS 11+ · Apple silicon · Free and open source",
-    hint: "Only download the app from this project's GitHub Releases.",
-    card: {
-      platform: "macOS desktop app",
-      badge: "APPLE SILICON",
-      requirementsLabel: "SYSTEM REQUIREMENTS",
-      requirements: [
-        "macOS 11 Big Sur or later",
-        "A Mac with Apple silicon (M1 or later)",
-        "A Threads access token",
-        "No Node.js, pnpm, or PostgreSQL to install",
-      ],
-      assetLabel: "ON GITHUB RELEASES, DOWNLOAD",
-      note: "Intel Macs aren't supported yet.",
-    },
+    imageAlt: "The Threads Analytics overview dashboard running in the Mac app",
   },
-  preview: {
-    kicker: "01 / THE SAME DASHBOARD",
+  highlights: {
+    kicker: "Get to know the app",
     title: "Every chart from the web version, in a native window.",
     description:
       "The desktop app runs the same dashboard as the hosted version — all 31 analyses, the posts table, the giveaway picker, and the MCP server — on a local server only your Mac can reach.",
-    imageAlt: "The Threads Analytics overview dashboard running in the macOS app window",
-    status: "LOCAL",
     perks: [
       {
         icon: "database",
-        title: "Local database",
+        title: "A local database.",
         body: "Everything syncs into a SQLite file on your Mac. No PostgreSQL to provision and no database bill.",
       },
       {
         icon: "lock",
-        title: "No password",
+        title: "No password.",
         body: "There's no APP_PASSWORD sign-in. The dashboard only listens on your own machine, so the login screen goes away.",
       },
       {
         icon: "sync",
-        title: "Auto-sync built in",
+        title: "Auto-sync, built in.",
         body: "The scheduler ships switched on: pick an interval in Settings and the app syncs in the background while it's open and your Mac is awake.",
       },
       {
         icon: "bell",
-        title: "Update notices",
-        body: "The app checks GitHub Releases and shows a banner when a new build is out. You decide when to install it.",
+        title: "Updates itself.",
+        body: "When a new release is out, a notice appears at the top of the dashboard. Select Install and the app replaces itself and relaunches — your data stays put.",
       },
     ],
   },
   compare: {
-    kicker: "02 / MAC OR SERVER",
+    kicker: "Mac or server",
     title: "Pick the version that fits how you work.",
     description:
       "Both run the same open-source dashboard. The difference is where it lives — and what that means for syncing, access, and cost.",
-    aspectLabel: "Compare",
     desktopLabel: "Mac app",
     webLabel: "Self-hosted web",
     rows: [
@@ -3177,7 +3165,7 @@ const desktopGuideEn: DesktopGuideCopy = {
       },
       {
         aspect: "Updates",
-        desktop: "Download each new release",
+        desktop: "Install from inside the app",
         web: "Pull the new image or redeploy",
       },
     ],
@@ -3185,10 +3173,10 @@ const desktopGuideEn: DesktopGuideCopy = {
     noteCta: "See deploy options",
   },
   install: {
-    kicker: "03 / INSTALL",
+    kicker: "Install",
     title: "Download, drag, open.",
     description:
-      "No installer and no Terminal. The app is published as a ZIP on the project's GitHub Releases page.",
+      "No installer and no Terminal. The app is a ZIP on the project's GitHub Releases page, and current releases are signed with a Developer ID and notarized by Apple.",
     steps: [
       {
         index: "01",
@@ -3208,7 +3196,7 @@ const desktopGuideEn: DesktopGuideCopy = {
       {
         index: "04",
         title: "Open the app",
-        body: "Launch it from Applications. The first launch of each new version needs one extra confirmation — see the next section.",
+        body: "Launch it from Applications. The first time, macOS asks whether to open an app downloaded from the internet — select **Open**.",
       },
     ],
     setupTitle: "Then connect your account",
@@ -3228,76 +3216,66 @@ const desktopGuideEn: DesktopGuideCopy = {
     ],
     tokenNote: "No access token yet? The token guide walks you through generating one in 18 steps.",
     tokenCta: "Read the token guide",
-  },
-  firstLaunch: {
-    kicker: "04 / FIRST LAUNCH",
-    title: "Allow each new version once.",
-    description:
-      "Releases marked Preview aren't notarized by Apple yet, so macOS blocks the first launch of each version with a message that it can't verify the app. After confirming the download came from this project's GitHub Releases, allow it once:",
-    paths: [
-      {
-        label: "MACOS 15 SEQUOIA OR LATER",
-        title: "Allow it in Privacy & Security",
-        steps: [
-          "Open **Threads Analytics** from Applications once, then close the warning.",
-          "Open **System Settings** → **Privacy & Security**.",
-          "In the **Security** section, find the message about Threads Analytics and select **Open Anyway**.",
-          "Confirm with your password or Touch ID, then select **Open**.",
-        ],
-      },
-      {
-        label: "MACOS 14 SONOMA OR EARLIER",
-        title: "Open it from the context menu",
-        steps: [
-          "In Applications, Control-click **Threads Analytics**.",
-          "Select **Open**.",
-          "Select **Open** again in the confirmation dialog.",
-        ],
-      },
+    requirementsTitle: "System requirements",
+    requirements: [
+      "macOS 11 Big Sur or later",
+      "A Mac with Apple silicon (M1 or later)",
+      "A Threads access token",
+      "No Node.js, pnpm, or PostgreSQL to install",
     ],
-    warning:
-      "Repeat this after every update. Never run Terminal commands from an unknown source to switch off Gatekeeper — if the app still won't open, report your macOS version and a screenshot of the error.",
-    issuesCta: "Open a GitHub issue",
+    assetLabel: "On GitHub Releases, download",
+    intelNote: "Intel Macs aren't supported yet.",
+    hint: "Only download the app from this project's GitHub Releases.",
   },
-  care: {
-    kicker: "05 / UPDATES & DATA",
-    title: "Updates never touch your data.",
-    description:
-      "Everything the app stores lives in one folder on your Mac, separate from the app itself — so an update is just a matter of replacing the app.",
-    panelBadge: "ON THIS MAC",
-    guideCta: "Read the full install guide",
+  faq: {
+    kicker: "Help",
+    title: "Questions? Answers.",
     items: [
       {
-        tag: "update",
-        title: "Updating the app",
-        body: "A banner appears when a newer release is out, and Settings → About shows your version. Quit the app, download the new ZIP, and replace the copy in Applications — no need to sync again.",
+        question: "What does macOS ask the first time I open it?",
+        answer:
+          "Current releases are signed with a Developer ID and notarized by Apple. The first time you open a newly downloaded version, macOS asks whether to open an app downloaded from the internet. Select **Open** — that's the only confirmation.",
       },
       {
-        tag: "data",
-        title: "Where your data lives",
-        body: "The SQLite database and the key that encrypts your access token sit in this folder. Keep them together: without the key, the stored tokens can't be read.",
+        question: "macOS says it can't verify the app. What should I do?",
+        answer:
+          "That copy was published before releases were notarized, or it didn't come from this project's GitHub Releases. Move it to the Trash and download the latest release. Never run Terminal commands from an unknown source to switch off Gatekeeper — if the warning persists, report your macOS version and a screenshot of the error.",
+        extra: "issues",
       },
       {
-        tag: "token",
-        title: "Keeping your token alive",
-        body: "Each sync renews your Threads access token once fewer than 30 days remain. Open the app at least once a month with auto-sync on so it doesn't lapse.",
+        question: "How do I update the app?",
+        answer:
+          "When a new release is out, a notice appears at the top of the dashboard. Select **Install** there or in **Settings** → **About**, or choose **Threads Analytics** → **Check for Updates…** in the menu bar, then **Install Update**. The app downloads the new version, checks it's signed by this project, then replaces itself and relaunches — so keep it in a folder you can write to, such as Applications. If the notice offers **Download** instead (early builds without in-app updates), quit the app, download the new ZIP and replace the copy in Applications.",
       },
       {
-        tag: "uninstall",
-        title: "Uninstalling",
-        body: "Quit the app and move it to the Trash. To also erase accounts and synced data, delete this folder — that can't be undone.",
+        question: "Where does the app keep my data?",
+        answer:
+          "The SQLite database and the key that encrypts your access token sit in one folder, separate from the app, so updates never touch them and there's nothing to sync again. Keep the two together: without the key, the stored tokens can't be read.",
+        extra: "folder",
       },
       {
-        tag: "mcp",
-        title: "Connecting an agent",
-        body: "The MCP server runs at http://127.0.0.1:43127/api/mcp, so agents on the same Mac, like Claude Code, can read your data. Cloud connectors can't reach it.",
+        question: "Will my access token expire?",
+        answer:
+          "Each sync renews your Threads access token once fewer than 30 days remain. Open the app at least once a month with auto-sync on so it doesn't lapse.",
       },
       {
-        tag: "intel",
-        title: "Intel Macs",
-        body: "Not supported yet. Releases are built for Apple silicon only.",
+        question: "How do I uninstall it?",
+        answer:
+          "Quit the app and move it to the Trash. To also erase accounts and synced data, delete the folder below — that can't be undone.",
+        extra: "folder",
+      },
+      {
+        question: "Can an AI agent read my data?",
+        answer:
+          "Yes, from the same Mac. The MCP server runs at http://127.0.0.1:43127/api/mcp, so agents like Claude Code can query your analytics. Cloud connectors can't reach it.",
+      },
+      {
+        question: "Does it run on Intel Macs?",
+        answer: "Not yet. Releases are built for Apple silicon only.",
       },
     ],
+    issuesCta: "Open a GitHub issue",
+    guideCta: "Read the full install guide",
   },
   cta: {
     title: "Put your Threads history on your Mac.",
@@ -3315,41 +3293,35 @@ const desktopGuideZh: DesktopGuideCopy = {
     description:
       "免費下載 Threads Analytics macOS 桌面版。貼文與追蹤人數紀錄都存在你 Mac 上的本機資料庫，不用租主機、不用 PostgreSQL，也不用設定登入密碼。",
   },
+  localNav: {
+    title: "Threads Analytics Mac 版",
+    label: "Mac 版",
+    overview: "概覽",
+    compare: "比較",
+    install: "安裝",
+    faq: "常見問題",
+    download: "下載",
+  },
   hero: {
-    kicker: "桌面版 / MACOS",
-    lineOne: "Threads 數據分析搬進 Mac，",
+    kicker: "Threads Analytics Mac 版",
+    lineOne: "Threads 數據分析搬進 Mac，",
     lineTwo: "不用再架伺服器。",
     description:
       "下載 App、貼上 Threads Access Token，完整的 Dashboard 就在你的 Mac 上執行。貼文與追蹤人數紀錄存在本機的 SQLite 資料庫 — 不用付主機費、不用 PostgreSQL，也不用設定密碼。",
     primaryCta: "下載 Mac 版",
     secondaryCta: "看安裝步驟",
     note: "macOS 11 以上 · Apple Silicon · 免費開源",
-    hint: "請只從本專案的 GitHub Releases 下載 App。",
-    card: {
-      platform: "macOS 桌面版",
-      badge: "APPLE SILICON",
-      requirementsLabel: "系統需求",
-      requirements: [
-        "macOS 11 Big Sur 或更新版本",
-        "配備 Apple Silicon 的 Mac（M1 或更新晶片）",
-        "一組 Threads Access Token",
-        "不需要另外安裝 Node.js、pnpm 或 PostgreSQL",
-      ],
-      assetLabel: "在 GITHUB RELEASES 下載",
-      note: "目前不支援 Intel Mac。",
-    },
+    imageAlt: "在 Mac 版 App 中執行的 Threads Analytics 總覽儀表板",
   },
-  preview: {
-    kicker: "01 / 同一套 DASHBOARD",
+  highlights: {
+    kicker: "認識 Mac 版",
     title: "網頁版的每張圖表，都在原生視窗裡。",
     description:
       "桌面版跑的是和網頁版同一套 Dashboard — 31 種分析、貼文列表、抽獎工具和 MCP 伺服器都在 — 只是改由一個只有你的 Mac 連得到的本機伺服器提供。",
-    imageAlt: "在 macOS App 視窗中執行的 Threads Analytics 總覽儀表板",
-    status: "LOCAL",
     perks: [
       {
         icon: "database",
-        title: "本機資料庫",
+        title: "資料存在本機",
         body: "所有資料都同步進你 Mac 上的 SQLite 檔案。不用另外開 PostgreSQL，也沒有資料庫帳單。",
       },
       {
@@ -3364,17 +3336,16 @@ const desktopGuideZh: DesktopGuideCopy = {
       },
       {
         icon: "bell",
-        title: "新版通知",
-        body: "App 會檢查 GitHub Releases，有新版本時在 Dashboard 頂端顯示提示，什麼時候更新由你決定。",
+        title: "自己會更新",
+        body: "有新版本時，Dashboard 頂端會出現提示。選擇「安裝」，App 就會取代自己並重新開啟 — 資料都還在。",
       },
     ],
   },
   compare: {
-    kicker: "02 / MAC 還是伺服器",
+    kicker: "Mac 還是伺服器",
     title: "挑一個最適合你的版本。",
     description:
       "兩者都是同一套開源 Dashboard，差別在於它跑在哪裡 — 以及這對同步、存取方式和費用代表什麼。",
-    aspectLabel: "比較項目",
     desktopLabel: "Mac 版 App",
     webLabel: "自架網頁版",
     rows: [
@@ -3389,15 +3360,16 @@ const desktopGuideZh: DesktopGuideCopy = {
         desktop: "同一台 Mac 上的 Agent，例如 Claude Code",
         web: "任何用戶端，包含 Claude 的自訂連接器",
       },
-      { aspect: "更新方式", desktop: "下載每個新版本", web: "拉取新映像檔或重新部署" },
+      { aspect: "更新方式", desktop: "在 App 內直接安裝", web: "拉取新映像檔或重新部署" },
     ],
     note: "同步和每日追蹤人數紀錄只會在 App 開著、Mac 沒有睡眠時執行：關閉視窗就會結束 App，Mac 睡眠時同步也會暫停，喚醒後才繼續。整天都沒執行 App 的日子不會有追蹤人數，之後也無法從 Threads 補抓 — 需要全天候追蹤的話，請部署網頁版。",
     noteCta: "看部署方式",
   },
   install: {
-    kicker: "03 / 安裝",
+    kicker: "安裝",
     title: "下載、拖曳、打開。",
-    description: "不用安裝程式，也不用開終端機。App 以 ZIP 檔發佈在本專案的 GitHub Releases 頁面。",
+    description:
+      "不用安裝程式，也不用開終端機。App 以 ZIP 檔發佈在本專案的 GitHub Releases，目前的版本都以 Developer ID 簽署、經過 Apple 公證。",
     steps: [
       {
         index: "01",
@@ -3417,7 +3389,7 @@ const desktopGuideZh: DesktopGuideCopy = {
       {
         index: "04",
         title: "打開 App",
-        body: "從「應用程式」開啟。每個新版本第一次開啟時需要多確認一次 — 請看下一段。",
+        body: "從「應用程式」開啟。第一次開啟時，macOS 會詢問是否要打開這個從網路下載的 App，選擇 **打開** 即可。",
       },
     ],
     setupTitle: "接著連接你的帳號",
@@ -3437,79 +3409,69 @@ const desktopGuideZh: DesktopGuideCopy = {
     ],
     tokenNote: "還沒有 Access Token？Token 生成教學用 18 個步驟帶你完成。",
     tokenCta: "看 Token 生成教學",
-  },
-  firstLaunch: {
-    kicker: "04 / 首次開啟",
-    title: "每個新版本，只要允許一次。",
-    description:
-      "標示為 Preview 的版本還沒經過 Apple 公證，macOS 會在每個版本第一次啟動時阻擋，並顯示無法驗證 App 的訊息。確認檔案來自本專案的 GitHub Releases 後，允許它一次：",
-    paths: [
-      {
-        label: "MACOS 15 SEQUOIA 或更新版本",
-        title: "在「隱私權與安全性」允許",
-        steps: [
-          "從「應用程式」開啟一次 **Threads Analytics**，然後關閉警告視窗。",
-          "開啟 **系統設定** → **隱私權與安全性**。",
-          "在 **安全性** 區塊找到 Threads Analytics 被阻擋的訊息，選擇 **仍要打開**。",
-          "輸入密碼或使用 Touch ID 確認，再選擇 **打開**。",
-        ],
-      },
-      {
-        label: "MACOS 14 SONOMA 或更早版本",
-        title: "從快速選單打開",
-        steps: [
-          "在「應用程式」資料夾中，按住 Control 鍵並點擊 **Threads Analytics**。",
-          "選擇 **打開**。",
-          "在確認視窗中再選擇一次 **打開**。",
-        ],
-      },
+    requirementsTitle: "系統需求",
+    requirements: [
+      "macOS 11 Big Sur 或更新版本",
+      "配備 Apple Silicon 的 Mac（M1 或更新晶片）",
+      "一組 Threads Access Token",
+      "不需要另外安裝 Node.js、pnpm 或 PostgreSQL",
     ],
-    warning:
-      "每次更新後都要再做一次。不要執行來源不明的終端指令來停用 Gatekeeper — 如果還是打不開，請回報 macOS 版本與錯誤畫面。",
-    issuesCta: "到 GitHub Issues 回報",
+    assetLabel: "在 GitHub Releases 下載",
+    intelNote: "目前不支援 Intel Mac。",
+    hint: "請只從本專案的 GitHub Releases 下載 App。",
   },
-  care: {
-    kicker: "05 / 更新與資料",
-    title: "更新 App，資料不會動。",
-    description:
-      "App 儲存的所有資料都放在 Mac 上的同一個資料夾，和 App 本身分開 — 所以更新只需要取代 App。",
-    panelBadge: "在這台 MAC",
-    guideCta: "看完整安裝指南",
+  faq: {
+    kicker: "說明",
+    title: "有疑問？這裡有解答。",
     items: [
       {
-        tag: "update",
-        title: "更新 App",
-        body: "有新版本時 Dashboard 會顯示提示，「設定」→「關於」也能看到目前版本。結束 App、下載新的 ZIP、取代「應用程式」裡的舊版即可，不用重新同步。",
+        question: "第一次打開時，macOS 會問什麼？",
+        answer:
+          "目前的發行版本都以 Developer ID 簽署並經過 Apple 公證。第一次開啟新下載的版本時，macOS 會詢問是否要打開這個從網路下載的 App，選擇 **打開** 即可，只需要確認這一次。",
       },
       {
-        tag: "data",
-        title: "資料存在哪裡",
-        body: "SQLite 資料庫和加密 Access Token 用的金鑰都在這個資料夾。兩者要放在一起：少了金鑰，已儲存的 Token 就無法讀取。",
+        question: "macOS 顯示無法驗證這個 App，該怎麼辦？",
+        answer:
+          "代表這份檔案來自公證之前發佈的版本，或不是從本專案的 GitHub Releases 下載。請將它移到垃圾桶，再下載最新版本。不要執行來源不明的終端指令來停用 Gatekeeper — 如果仍出現警告，請回報 macOS 版本與錯誤畫面。",
+        extra: "issues",
       },
       {
-        tag: "token",
-        title: "讓 Token 保持有效",
-        body: "每次同步時，只要 Access Token 剩不到 30 天就會自動延長。開著自動同步、每個月至少打開 App 一次，就能避免 Token 過期。",
+        question: "要怎麼更新 App？",
+        answer:
+          "有新版本時，Dashboard 頂端會出現提示。在提示或 **設定** → **關於** 選擇 **安裝**，或從選單列選擇 **Threads Analytics** → **Check for Updates…**，再選擇 **Install Update**。App 會下載新版、確認它是由本專案簽署，接著取代自己並重新開啟 — 所以請把它放在你有寫入權限的資料夾，例如「應用程式」。如果提示顯示的是 **下載** 而不是 **安裝**（沒有 App 內更新的早期版本），請結束 App、下載新的 ZIP，再取代「應用程式」裡的舊版。",
       },
       {
-        tag: "uninstall",
-        title: "解除安裝",
-        body: "結束 App 並移到垃圾桶。若也要刪除帳號設定與已同步資料，請刪除這個資料夾 — 此操作無法復原。",
+        question: "App 把我的資料存在哪裡？",
+        answer:
+          "SQLite 資料庫和加密 Access Token 用的金鑰都在同一個資料夾，和 App 本身分開，所以更新不會動到它們，也不用重新同步。兩者要放在一起：少了金鑰，已儲存的 Token 就無法讀取。",
+        extra: "folder",
       },
       {
-        tag: "mcp",
-        title: "連接 Agent",
-        body: "MCP 伺服器位於 http://127.0.0.1:43127/api/mcp，同一台 Mac 上的 Agent（例如 Claude Code）可以讀取你的數據；雲端連接器則連不到。",
+        question: "Access Token 會過期嗎？",
+        answer:
+          "每次同步時，只要 Access Token 剩不到 30 天就會自動延長。開著自動同步、每個月至少打開 App 一次，就能避免 Token 過期。",
       },
       {
-        tag: "intel",
-        title: "Intel Mac",
-        body: "目前不支援，Release 僅提供 Apple Silicon 版本。",
+        question: "要怎麼解除安裝？",
+        answer:
+          "結束 App 並移到垃圾桶。若也要刪除帳號設定與已同步資料，請刪除下方的資料夾 — 此操作無法復原。",
+        extra: "folder",
+      },
+      {
+        question: "AI Agent 可以讀取我的數據嗎？",
+        answer:
+          "可以，只要在同一台 Mac 上。MCP 伺服器位於 http://127.0.0.1:43127/api/mcp，Claude Code 等 Agent 都能查詢你的分析數據；雲端連接器則連不到。",
+      },
+      {
+        question: "Intel Mac 可以用嗎？",
+        answer: "目前不行，Release 僅提供 Apple Silicon 版本。",
       },
     ],
+    issuesCta: "到 GitHub Issues 回報",
+    guideCta: "看完整安裝指南",
   },
   cta: {
-    title: "把你的 Threads 紀錄，放進 Mac。",
+    title: "把你的 Threads 紀錄，放進 Mac。",
     description: "下載 App、貼上 Token，分析數據就開始在本機累積。想要全天候執行？改部署網頁版。",
     primary: "下載 Mac 版",
     secondary: "部署網頁版",
@@ -3523,8 +3485,17 @@ const desktopGuideJa: DesktopGuideCopy = {
     description:
       "Threads Analytics の macOS デスクトップアプリを無料でダウンロード。投稿とフォロワー推移は Mac 内のローカルデータベースに保存。ホスティングも PostgreSQL もパスワード設定も不要です。",
   },
+  localNav: {
+    title: "Threads Analytics for Mac",
+    label: "Mac 版",
+    overview: "概要",
+    compare: "比較",
+    install: "インストール",
+    faq: "よくある質問",
+    download: "ダウンロード",
+  },
   hero: {
-    kicker: "デスクトップ / MACOS",
+    kicker: "Threads Analytics for Mac",
     lineOne: "Threads 分析をMacで、",
     lineTwo: "サーバーなしで。",
     description:
@@ -3532,28 +3503,13 @@ const desktopGuideJa: DesktopGuideCopy = {
     primaryCta: "Mac 版をダウンロード",
     secondaryCta: "インストール手順",
     note: "macOS 11 以降 · Apple Silicon · 無料・オープンソース",
-    hint: "アプリはこのプロジェクトの GitHub Releases からのみダウンロードしてください。",
-    card: {
-      platform: "macOS デスクトップアプリ",
-      badge: "APPLE SILICON",
-      requirementsLabel: "動作要件",
-      requirements: [
-        "macOS 11 Big Sur 以降",
-        "Apple Silicon 搭載 Mac（M1 以降）",
-        "Threads アクセストークン",
-        "Node.js、pnpm、PostgreSQL のインストールは不要",
-      ],
-      assetLabel: "GITHUB RELEASES でダウンロード",
-      note: "Intel Mac には現在対応していません。",
-    },
+    imageAlt: "Mac アプリで動く Threads Analytics の概要ダッシュボード",
   },
-  preview: {
-    kicker: "01 / 同じダッシュボード",
-    title: "Web 版のすべてのグラフを、ネイティブウィンドウで。",
+  highlights: {
+    kicker: "Mac 版の特長",
+    title: "Web 版のすべてのグラフを、ネイティブウィンドウで。",
     description:
       "デスクトップ版は Web 版と同じダッシュボード — 31 種類の分析、投稿一覧、抽選ツール、MCP サーバー — を、この Mac からしかアクセスできないローカルサーバーで動かします。",
-    imageAlt: "macOS アプリのウィンドウで動く Threads Analytics の概要ダッシュボード",
-    status: "LOCAL",
     perks: [
       {
         icon: "database",
@@ -3572,17 +3528,16 @@ const desktopGuideJa: DesktopGuideCopy = {
       },
       {
         icon: "bell",
-        title: "アップデート通知",
-        body: "GitHub Releases を確認し、新しいビルドがあるとダッシュボード上部に通知します。アップデートのタイミングは自分で決められます。",
+        title: "アプリ内でアップデート",
+        body: "新しいリリースが出るとダッシュボード上部に通知が表示されます。「インストール」を選ぶと、アプリが自身を置き換えて再起動します。データはそのままです。",
       },
     ],
   },
   compare: {
-    kicker: "02 / MAC とサーバー",
+    kicker: "Mac とサーバー",
     title: "自分の使い方に合う方を選ぶ。",
     description:
       "どちらも同じオープンソースのダッシュボードです。違いはどこで動くか — そしてそれが同期、アクセス、費用にどう影響するかです。",
-    aspectLabel: "比較項目",
     desktopLabel: "Mac アプリ",
     webLabel: "セルフホスト Web 版",
     rows: [
@@ -3599,7 +3554,7 @@ const desktopGuideJa: DesktopGuideCopy = {
       },
       {
         aspect: "アップデート",
-        desktop: "新しいリリースをダウンロード",
+        desktop: "アプリ内でインストール",
         web: "新しいイメージを pull、または再デプロイ",
       },
     ],
@@ -3607,10 +3562,10 @@ const desktopGuideJa: DesktopGuideCopy = {
     noteCta: "デプロイ方法を見る",
   },
   install: {
-    kicker: "03 / インストール",
+    kicker: "インストール",
     title: "ダウンロードして、ドラッグして、開くだけ。",
     description:
-      "インストーラーもターミナルも不要。アプリはこのプロジェクトの GitHub Releases に ZIP で公開されています。",
+      "インストーラーもターミナルも不要。アプリはこのプロジェクトの GitHub Releases に ZIP で公開されています。現在のリリースは Developer ID で署名され、Apple の公証を受けています。",
     steps: [
       {
         index: "01",
@@ -3630,7 +3585,7 @@ const desktopGuideJa: DesktopGuideCopy = {
       {
         index: "04",
         title: "アプリを開く",
-        body: "「アプリケーション」から起動します。新しいバージョンの初回起動だけ確認が 1 回必要です — 次のセクションを参照してください。",
+        body: "「アプリケーション」から起動します。初回は、インターネットからダウンロードした App を開くかどうか macOS が確認するので、**開く** を選択します。",
       },
     ],
     setupTitle: "続いてアカウントを接続",
@@ -3650,79 +3605,69 @@ const desktopGuideJa: DesktopGuideCopy = {
     ],
     tokenNote: "アクセストークンがまだない場合は、トークン生成ガイドが 18 ステップで案内します。",
     tokenCta: "トークン生成ガイドを見る",
-  },
-  firstLaunch: {
-    kicker: "04 / 初回起動",
-    title: "新しいバージョンは、一度だけ許可する。",
-    description:
-      "Preview と表示されたリリースはまだ Apple の公証を受けていないため、macOS は各バージョンの初回起動をブロックし、App を検証できない旨を表示します。このプロジェクトの GitHub Releases から入手したことを確認してから、一度だけ許可してください：",
-    paths: [
-      {
-        label: "MACOS 15 SEQUOIA 以降",
-        title: "「プライバシーとセキュリティ」で許可",
-        steps: [
-          "「アプリケーション」から **Threads Analytics** を一度開き、警告を閉じます。",
-          "**システム設定** → **プライバシーとセキュリティ** を開きます。",
-          "**セキュリティ** セクションで Threads Analytics のメッセージを見つけ、**このまま開く** を選択します。",
-          "パスワードまたは Touch ID で確認し、**開く** を選択します。",
-        ],
-      },
-      {
-        label: "MACOS 14 SONOMA 以前",
-        title: "コンテキストメニューから開く",
-        steps: [
-          "「アプリケーション」フォルダで、Control キーを押しながら **Threads Analytics** をクリックします。",
-          "**開く** を選択します。",
-          "確認ダイアログでもう一度 **開く** を選択します。",
-        ],
-      },
+    requirementsTitle: "動作要件",
+    requirements: [
+      "macOS 11 Big Sur 以降",
+      "Apple Silicon 搭載 Mac（M1 以降）",
+      "Threads アクセストークン",
+      "Node.js、pnpm、PostgreSQL のインストールは不要",
     ],
-    warning:
-      "アップデートのたびに繰り返してください。出所不明のターミナルコマンドで Gatekeeper を無効にしないでください — それでも開けない場合は、macOS のバージョンとエラー画面を報告してください。",
-    issuesCta: "GitHub Issues で報告",
+    assetLabel: "GitHub Releases でダウンロード",
+    intelNote: "Intel Mac には現在対応していません。",
+    hint: "アプリはこのプロジェクトの GitHub Releases からのみダウンロードしてください。",
   },
-  care: {
-    kicker: "05 / アップデートとデータ",
-    title: "アップデートしても、データはそのまま。",
-    description:
-      "アプリが保存するデータはすべて Mac 内の 1 つのフォルダにあり、アプリ本体とは別です — アップデートはアプリを置き換えるだけ。",
-    panelBadge: "この MAC 内",
-    guideCta: "インストールガイドを読む",
+  faq: {
+    kicker: "ヘルプ",
+    title: "疑問に、お答えします。",
     items: [
       {
-        tag: "update",
-        title: "アプリのアップデート",
-        body: "新しいリリースが出るとダッシュボードに通知が表示され、「設定」→「このアプリについて」でバージョンも確認できます。アプリを終了し、新しい ZIP で「アプリケーション」内の旧版を置き換えるだけ。再同期は不要です。",
+        question: "初めて開くとき、macOS は何を確認しますか？",
+        answer:
+          "現在のリリースは Developer ID で署名され、Apple の公証を受けています。ダウンロードしたバージョンを初めて開くと、インターネットからダウンロードした App を開くかどうか macOS が確認します。**開く** を選択すれば完了です。",
       },
       {
-        tag: "data",
-        title: "データの保存場所",
-        body: "SQLite データベースと、アクセストークンを暗号化するキーはこのフォルダにあります。2 つは一緒に保管してください。キーがないと保存済みのトークンは読み取れません。",
+        question: "「検証できない」と表示されたら？",
+        answer:
+          "そのファイルは公証の導入前に公開されたリリースか、このプロジェクトの GitHub Releases 以外から入手したものです。ゴミ箱に移動し、最新のリリースをダウンロードしてください。出所不明のターミナルコマンドで Gatekeeper を無効にしないでください — それでも警告が出る場合は、macOS のバージョンとエラー画面を報告してください。",
+        extra: "issues",
       },
       {
-        tag: "token",
-        title: "トークンを有効に保つ",
-        body: "同期のたびに、残り 30 日を切った Threads アクセストークンを自動で延長します。自動同期をオンにして月に一度はアプリを開けば、期限切れを防げます。",
+        question: "アプリをアップデートするには？",
+        answer:
+          "新しいリリースが出ると、ダッシュボード上部に通知が表示されます。通知または **設定** → **このアプリについて** で **インストール** を選ぶか、メニューバーの **Threads Analytics** → **Check for Updates…** を選んで **Install Update** を選択します。アプリは新しいバージョンをダウンロードし、このプロジェクトの署名を確認してから自身を置き換えて再起動します — 置き換えられるよう、「アプリケーション」など書き込み可能なフォルダに置いてください。通知に **インストール** ではなく **ダウンロード** が表示される場合（アプリ内アップデートに対応していない初期のビルド）は、アプリを終了して新しい ZIP をダウンロードし、「アプリケーション」内の旧版を置き換えてください。",
       },
       {
-        tag: "uninstall",
-        title: "アンインストール",
-        body: "アプリを終了してゴミ箱へ移動します。アカウント設定と同期済みデータも消す場合は、このフォルダを削除してください。元に戻せません。",
+        question: "データはどこに保存されますか？",
+        answer:
+          "SQLite データベースと、アクセストークンを暗号化するキーは、アプリ本体とは別の 1 つのフォルダにあります。そのためアップデートしてもデータはそのままで、再同期も不要です。2 つは一緒に保管してください。キーがないと保存済みのトークンは読み取れません。",
+        extra: "folder",
       },
       {
-        tag: "mcp",
-        title: "エージェントを接続",
-        body: "MCP サーバーは http://127.0.0.1:43127/api/mcp で動くため、同じ Mac 上のエージェント（Claude Code など）からデータを読めます。クラウドのコネクタからは接続できません。",
+        question: "アクセストークンは期限切れになりますか？",
+        answer:
+          "同期のたびに、残り 30 日を切った Threads アクセストークンを自動で延長します。自動同期をオンにして月に一度はアプリを開けば、期限切れを防げます。",
       },
       {
-        tag: "intel",
-        title: "Intel Mac",
-        body: "現在は非対応です。リリースは Apple Silicon 向けのみです。",
+        question: "アンインストールするには？",
+        answer:
+          "アプリを終了してゴミ箱へ移動します。アカウント設定と同期済みデータも消す場合は、下のフォルダを削除してください。元に戻せません。",
+        extra: "folder",
+      },
+      {
+        question: "AI エージェントからデータを読めますか？",
+        answer:
+          "同じ Mac からなら読めます。MCP サーバーは http://127.0.0.1:43127/api/mcp で動くため、Claude Code などのエージェントが分析データを参照できます。クラウドのコネクタからは接続できません。",
+      },
+      {
+        question: "Intel Mac で使えますか？",
+        answer: "現在は非対応です。リリースは Apple Silicon 向けのみです。",
       },
     ],
+    issuesCta: "GitHub Issues で報告",
+    guideCta: "インストールガイドを読む",
   },
   cta: {
-    title: "Threads の履歴を、自分の Mac に。",
+    title: "Threads の履歴を、自分の Mac に。",
     description:
       "アプリをダウンロードしてトークンを貼り付ければ、分析データがローカルに蓄積され始めます。24 時間動かしたいなら、Web 版をデプロイしましょう。",
     primary: "Mac 版をダウンロード",
@@ -3736,7 +3681,7 @@ export const dictionaries = {
     metadata: {
       title: "Free Threads Analytics Tool: Open-Source Dashboard",
       description:
-        "Free, open-source Threads analytics tool you host yourself. Find your best posting time, content format, post length, and keywords from your own post data.",
+        "Free, open-source Threads analytics for your Mac or your own server. Find your best posting time, content format, post length, and keywords from your own post data.",
     },
     nav: {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
@@ -3746,7 +3691,11 @@ export const dictionaries = {
       getStarted: "Get started",
       guides: "Guides",
       github: "GitHub",
-      beta: "Beta",
+      githubStars: "{count} stars",
+      theme: { label: "Theme", system: "System", light: "Light", dark: "Dark" },
+      language: "Language",
+      copy: "Copy",
+      copied: "Copied",
       // Sub-section label above the hosted options in the Get started menu.
       selfHostSection: "Self-host",
       // Menu entries: the label, plus one line shown under it in the desktop
@@ -3766,35 +3715,56 @@ export const dictionaries = {
       tokenGuide: { label: "Token guide", description: "A Threads access token in 18 steps" },
     },
     hero: {
-      eyebrow: "OPEN SOURCE · SELF-HOSTED · BUILT FOR THREADS",
+      announcement: "The Mac app is out",
       lineOne: "Free Threads analytics that",
       lineTwo: "shows what makes a post work.",
       description:
         "Free, open-source Threads analytics. Your own post history shows the best time to post, which formats and lengths work, and how your followers grow.",
-      primaryCta: "Try the live analysis",
       secondaryCta: "Download for Mac",
-      note: "31 analyses · Multi-account · Automatic sync",
+      agentPrompt: "Deploying with a coding agent?",
+      agentLink: "Pick a platform",
     },
     proof: [
       { value: "31", label: "Threads analytics charts" },
       { value: "3", label: "interface languages" },
-      { value: "24/7", label: "post & follower tracking" },
+      { value: "2", label: "ways to run it: Mac or server" },
       { value: "100%", label: "your infrastructure" },
     ],
-    heroDemo: {
-      label: "LIVE SIGNAL",
-      title: "Your strongest posting window",
-      window: "Tue · 20:00–22:00",
-      lift: "+42% median views",
-      chartLabel: "Views over the last 14 posts",
-      postsLabel: "Top-performing posts",
-      postsMetric: "Engagement",
-      postOne: "A build log with one surprising lesson…",
-      postTwo: "What changed after I stopped posting daily…",
-      postThree: "The tiny workflow that saved me an hour…",
+    howItWorks: {
+      kicker: "How it works",
+      title: "From token to insight in three steps.",
+      description:
+        "Get a token, choose where it runs, and your post history turns into analysis on the first sync.",
+      steps: [
+        {
+          title: "Get a Threads access token",
+          body: "Create one in Meta’s developer dashboard. The token guide walks you through all 18 steps.",
+          code: "THREADS_ACCESS_TOKEN=THAA••••••••",
+          status: "Renews on its own",
+        },
+        {
+          title: "Run it your way",
+          body: "Download the Mac app, or deploy to Railway, Zeabur, Vercel, or a server of your own.",
+          code: "",
+          status: "5 ways to run it",
+        },
+        {
+          title: "Read your own signals",
+          body: "Sync runs on its own. Your best posting window, formats, and follower growth are worked out for you.",
+          code: "Best window · Tue 20:00–22:00",
+          status: "248 posts synced",
+        },
+      ],
+      tokenLink: "Token guide",
+    },
+    builtIn: {
+      kicker: "Built in",
+      title: "Ask your data. Run your giveaway.",
+      description:
+        "Two tools that come with Threads Analytics, with no extra service to sign up for.",
     },
     demo: {
-      kicker: "01 / LIVE ANALYSIS",
+      kicker: "Live analysis",
       title: "Ask a better question. See the pattern move.",
       description:
         "Switch the post format and time range. The sample post, reach curve, and recommendation update together—just like exploring your own account.",
@@ -3853,7 +3823,7 @@ export const dictionaries = {
       disclaimer: "Illustrative demo data",
     },
     story: {
-      kicker: "02 / WHY IT EXISTS",
+      kicker: "Why it exists",
       title: "Built because the answers were missing.",
       description:
         "Most analytics tools stop at totals. Threads Analytics started with a more useful question: what kind of post works for me, and when should I publish it?",
@@ -3863,7 +3833,7 @@ export const dictionaries = {
       marker: "ORIGIN POST · 2026",
     },
     features: {
-      kicker: "03 / FROM DATA TO DECISIONS",
+      kicker: "From data to decisions",
       title: "More than a dashboard full of totals.",
       description:
         "Every view is designed to answer a publishing decision, not just report another number.",
@@ -3925,10 +3895,6 @@ export const dictionaries = {
       ],
     },
     product: {
-      kicker: "04 / THE FULL PICTURE",
-      title: "Thirty-one Threads analytics charts. One publishing system.",
-      description:
-        "Move from account health to post-level diagnosis without leaving the dashboard. Overview, performance, content, audience, and posts share one source of truth.",
       labels: ["Overview", "Performance", "Content", "Audience", "Posts"],
       preview: {
         privateLabel: "Self-hosted",
@@ -3945,7 +3911,7 @@ export const dictionaries = {
       },
     },
     mcpHome: {
-      kicker: "05 / BUILT-IN MCP SERVER",
+      kicker: "Built-in MCP server",
       title: "Ask your own data, in plain language.",
       description:
         "Every deployment ships a read-only MCP server. Connect Claude, Codex, or Cursor over OAuth — no API keys — and your agent reads posts, analytics, and follower history to answer with reports and next moves.",
@@ -3953,7 +3919,7 @@ export const dictionaries = {
       note: "Read-only · OAuth 2.1 · Revoke anytime",
     },
     giveawayHome: {
-      kicker: "06 / GIVEAWAY, BUILT IN",
+      kicker: "Giveaway, built in",
       title: "Draw winners without leaving your dashboard.",
       description:
         "Pick the post, apply the rules you announced — keyword, tagged friends, deadline, one entry per account — and draw right inside your own dashboard. No signing into your Threads account on someone else's site, and no paying for a giveaway tool.",
@@ -3961,7 +3927,7 @@ export const dictionaries = {
       note: "Stackable conditions · No third-party login · No extra fees",
     },
     deploy: {
-      kicker: "07 / GET STARTED",
+      kicker: "Get started",
       title: "Run Threads Analytics on your Mac, or host it yourself.",
       description:
         "The Mac app needs no server, database, or password. Want the dashboard online for every device? Use a one-click template or run the container yourself.",
@@ -3997,7 +3963,7 @@ export const dictionaries = {
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
       desktop: {
-        eyebrow: "NO SERVER · BETA",
+        eyebrow: "NO SERVER",
         title: "Mac app",
         body: "Download the app, paste your Threads access token, and the full dashboard runs on your Mac. Your data stays in a local database: no hosting bill, no PostgreSQL, no password.",
         action: "Download for Mac",
@@ -4331,7 +4297,6 @@ export const dictionaries = {
     analyticsGuide: analyticsGuideEn,
     desktopGuide: desktopGuideEn,
     finalCta: {
-      kicker: "READ YOUR OWN SIGNALS",
       title: "Your next better post is already in your history.",
       description:
         "Self-host Threads Analytics and turn old posts into your next publishing decision.",
@@ -4354,7 +4319,7 @@ export const dictionaries = {
     metadata: {
       title: "Threads 數據分析工具 Threads Analytics：免費開源、可自架的儀表板",
       description:
-        "Threads Analytics 是免費開源、可自架的 Threads 數據分析工具。比較發文時間、內容形式、文字長度與關鍵字，追蹤粉絲成長。需自行部署，主機與資料庫費用另計。",
+        "Threads Analytics 是免費開源的 Threads 數據分析工具，可以下載 Mac 版直接使用，也能自行部署網頁版。比較發文時間、內容形式、文字長度與關鍵字，追蹤粉絲成長。",
     },
     nav: {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
@@ -4363,7 +4328,11 @@ export const dictionaries = {
       getStarted: "開始使用",
       guides: "指南",
       github: "GitHub",
-      beta: "Beta",
+      githubStars: "{count} 顆星",
+      theme: { label: "外觀", system: "跟隨系統", light: "淺色", dark: "深色" },
+      language: "語言",
+      copy: "複製",
+      copied: "已複製",
       selfHostSection: "自架",
       demo: { label: "互動展示", description: "用範例數據直接試玩儀表板" },
       analytics: { label: "分析功能", description: "31 種分析，全用你的貼文數據" },
@@ -4377,35 +4346,54 @@ export const dictionaries = {
       tokenGuide: { label: "Token 生成教學", description: "18 個步驟拿到 Access Token" },
     },
     hero: {
-      eyebrow: "開源 · 自架 · 為 THREADS 打造",
+      announcement: "Mac 版 App 正式推出",
       lineOne: "免費開源的 Threads 數據分析工具，",
       lineTwo: "看懂什麼樣的貼文會有成效。",
       description:
         "免費開源的脆（Threads）數據分析工具：從你的貼文紀錄找出最佳發文時間、有效的形式與長度，還有粉絲成長的來源。",
-      primaryCta: "操作分析 Demo",
       secondaryCta: "下載 Mac 版",
-      note: "31 種分析 · 多帳號 · 自動同步",
+      agentPrompt: "想交給 Coding Agent 部署？",
+      agentLink: "選擇部署平台",
     },
     proof: [
       { value: "31", label: "種 Threads 數據分析" },
       { value: "3", label: "種介面語言" },
-      { value: "24/7", label: "自動同步貼文與粉絲數據" },
+      { value: "2", label: "種執行方式：Mac 版或自架" },
       { value: "100%", label: "部署在自己的環境" },
     ],
-    heroDemo: {
-      label: "即時訊號",
-      title: "你表現最好的發文時段",
-      window: "週二 · 20:00–22:00",
-      lift: "觀看中位數 +42%",
-      chartLabel: "最近 14 篇貼文觀看走勢",
-      postsLabel: "高成效貼文",
-      postsMetric: "互動率",
-      postOne: "開發紀錄裡，一個讓我意外的發現⋯",
-      postTwo: "停止每天發文後，數據發生了什麼變化⋯",
-      postThree: "這個小流程每週替我省下一小時⋯",
+    howItWorks: {
+      kicker: "使用方式",
+      title: "三個步驟，從 Token 到洞察。",
+      description: "取得 Token、選好在哪裡執行，第一次同步後，過去的貼文就會變成分析。",
+      steps: [
+        {
+          title: "取得 Threads Access Token",
+          body: "在 Meta 開發者後台建立。Token 教學會一步步帶你完成全部 18 個步驟。",
+          code: "THREADS_ACCESS_TOKEN=THAA••••••••",
+          status: "自動續期",
+        },
+        {
+          title: "選一種方式執行",
+          body: "下載 Mac 版 App，或部署到 Railway、Zeabur、Vercel，也能放在自己的伺服器。",
+          code: "",
+          status: "5 種執行方式",
+        },
+        {
+          title: "讀懂自己的數據",
+          body: "同步會自動進行，最佳發文時段、有效的形式和粉絲成長來源都直接算好。",
+          code: "最佳時段 · 週二 20:00–22:00",
+          status: "已同步 248 篇貼文",
+        },
+      ],
+      tokenLink: "Token 教學",
+    },
+    builtIn: {
+      kicker: "內建工具",
+      title: "問自己的數據，也能直接抽獎。",
+      description: "兩個 Threads Analytics 內建的工具，不用另外註冊其他服務。",
     },
     demo: {
-      kicker: "01 / 互動分析",
+      kicker: "互動分析",
       title: "換一個問題，看見不同模式。",
       description:
         "切換貼文形式與時間區間，範例貼文、觸及曲線和建議會一起更新，就像探索你自己的 Threads 帳號。",
@@ -4462,7 +4450,7 @@ export const dictionaries = {
       disclaimer: "互動區使用示意資料",
     },
     story: {
-      kicker: "02 / 為什麼做",
+      kicker: "為什麼做",
       title: "因為想看的答案，原本不存在。",
       description:
         "多數分析工具只停在總數。Threads Analytics 從更實際的問題開始：什麼類型的貼文適合我？我又該在什麼時間發佈？",
@@ -4471,7 +4459,7 @@ export const dictionaries = {
       marker: "起點貼文 · 2026",
     },
     features: {
-      kicker: "03 / 從數據到決策",
+      kicker: "從數據到決策",
       title: "不只是堆滿總數的儀表板。",
       description: "每一個視圖都用來回答發文決策，而不是再多報告一個數字。",
       cta: "看完整的 31 個分析",
@@ -4532,10 +4520,6 @@ export const dictionaries = {
       ],
     },
     product: {
-      kicker: "04 / 看見完整全貌",
-      title: "31 種 Threads 數據分析，一套發文系統。",
-      description:
-        "從帳號健康度一路看到單篇診斷，不必離開儀表板。總覽、成效、內容、受眾與貼文共用同一份資料來源。",
       labels: ["總覽", "成效分析", "內容分析", "受眾分析", "貼文"],
       preview: {
         privateLabel: "自架環境",
@@ -4552,7 +4536,7 @@ export const dictionaries = {
       },
     },
     mcpHome: {
-      kicker: "05 / 內建 MCP 伺服器",
+      kicker: "內建 MCP 伺服器",
       title: "用一句話，問你自己的數據。",
       description:
         "每個部署都內建唯讀 MCP 伺服器。用 OAuth 連接 Claude、Codex 或 Cursor，不需要 API Key，Agent 就能讀取貼文、分析與追蹤者紀錄，直接回覆報告與下一步建議。",
@@ -4560,7 +4544,7 @@ export const dictionaries = {
       note: "唯讀 · OAuth 2.1 · 隨時可撤銷",
     },
     giveawayHome: {
-      kicker: "06 / 內建抽獎功能",
+      kicker: "內建抽獎功能",
       title: "開獎不用離開你的 Dashboard。",
       description:
         "選好貼文，套用你公告過的規則 — 關鍵字、標記朋友、截止時間、同帳號只算一次 — 直接在自己的儀表板開獎。不用到別人的網站登入 Threads 帳號，也不用為了抽獎功能額外付費。",
@@ -4568,7 +4552,7 @@ export const dictionaries = {
       note: "條件可疊加 · 不用第三方登入 · 不用額外付費",
     },
     deploy: {
-      kicker: "07 / 開始使用",
+      kicker: "開始使用",
       title: "在 Mac 上直接用，或自架 Threads 分析儀表板。",
       description:
         "Mac 版 App 不用架伺服器、不用資料庫，也不用設密碼。想讓每台裝置都能打開儀表板？用一鍵模板部署，或自己執行 Container。",
@@ -4604,7 +4588,7 @@ export const dictionaries = {
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
       desktop: {
-        eyebrow: "免架伺服器 · BETA",
+        eyebrow: "免架伺服器",
         title: "Mac 版 App",
         body: "下載 App、貼上 Threads Access Token，完整的儀表板就在你的 Mac 上執行。資料存在本機資料庫，不用主機費、不用 PostgreSQL，也不用設密碼。",
         action: "下載 Mac 版",
@@ -4909,7 +4893,6 @@ export const dictionaries = {
     analyticsGuide: analyticsGuideZh,
     desktopGuide: desktopGuideZh,
     finalCta: {
-      kicker: "讀懂自己的訊號",
       title: "下一篇更好的貼文，其實已經藏在歷史紀錄裡。",
       description: "自架 Threads Analytics，把舊貼文變成下一次發文的判斷依據。",
       primary: "部署分析儀表板",
@@ -4929,7 +4912,7 @@ export const dictionaries = {
     metadata: {
       title: "無料の Threads 分析ツール：セルフホスト型ダッシュボード",
       description:
-        "Threads Analytics は無料・オープンソースのセルフホスト型 Threads 分析ツール。最適な投稿時間、コンテンツ形式、文章量、キーワード、フォロワー推移を自分のデータから分析。セルフホストが必要で、ホスティングとデータベースの費用は別途かかります。",
+        "Threads Analytics は無料・オープンソースの Threads 分析ツール。Mac アプリですぐに使うことも、Web 版をセルフホストすることもできます。最適な投稿時間、コンテンツ形式、文章量、キーワード、フォロワー推移を自分のデータから分析。",
     },
     nav: {
       // Searchable local name shown as a tag beside the wordmark; empty hides it.
@@ -4938,7 +4921,11 @@ export const dictionaries = {
       getStarted: "はじめる",
       guides: "ガイド",
       github: "GitHub",
-      beta: "ベータ",
+      githubStars: "スター {count}",
+      theme: { label: "テーマ", system: "システム", light: "ライト", dark: "ダーク" },
+      language: "言語",
+      copy: "コピー",
+      copied: "コピーしました",
       selfHostSection: "セルフホスト",
       demo: { label: "ライブデモ", description: "サンプルデータでダッシュボードを試す" },
       analytics: { label: "分析機能", description: "自分の投稿から 31 種類の分析" },
@@ -4964,35 +4951,56 @@ export const dictionaries = {
       },
     },
     hero: {
-      eyebrow: "オープンソース · セルフホスト · THREADS 専用",
+      announcement: "Mac アプリを正式リリース",
       lineOne: "無料のThreads分析ツールで、",
       lineTwo: "伸びる投稿を勘で決めない。",
       description:
         "無料・オープンソースのスレッズ（Threads）分析ツール。自分の投稿履歴から、おすすめの投稿時間、効く形式と長さ、フォロワーの伸びを読み取れます。",
-      primaryCta: "分析デモを試す",
       secondaryCta: "Mac 版をダウンロード",
-      note: "31種類の分析 · 複数アカウント · 自動同期",
+      agentPrompt: "コーディングエージェントでデプロイしますか？",
+      agentLink: "プラットフォームを選ぶ",
     },
     proof: [
       { value: "31", label: "種類のThreads投稿分析" },
       { value: "3", label: "対応言語" },
-      { value: "24/7", label: "投稿・フォロワーの自動同期" },
+      { value: "2", label: "通りの使い方：Mac かサーバー" },
       { value: "100%", label: "自分のインフラ" },
     ],
-    heroDemo: {
-      label: "ライブシグナル",
-      title: "最も成果が出る投稿時間",
-      window: "火曜日 · 20:00–22:00",
-      lift: "閲覧中央値 +42%",
-      chartLabel: "直近14投稿の閲覧推移",
-      postsLabel: "高パフォーマンス投稿",
-      postsMetric: "反応率",
-      postOne: "開発ログで見つけた、意外な学び…",
-      postTwo: "毎日投稿をやめた後に変わったこと…",
-      postThree: "毎週1時間を取り戻した小さな仕組み…",
+    howItWorks: {
+      kicker: "使い方",
+      title: "トークンからインサイトまで、3 ステップ。",
+      description:
+        "トークンを用意して、動かす場所を選ぶだけ。最初の同期で、過去の投稿が分析に変わります。",
+      steps: [
+        {
+          title: "Threads アクセストークンを取得",
+          body: "Meta の開発者ダッシュボードで作成します。トークンガイドが 18 ステップすべてを案内します。",
+          code: "THREADS_ACCESS_TOKEN=THAA••••••••",
+          status: "自動で更新",
+        },
+        {
+          title: "好きな方法で動かす",
+          body: "Mac アプリをダウンロードするか、Railway・Zeabur・Vercel・自前のサーバーにデプロイします。",
+          code: "",
+          status: "5 通りの動かし方",
+        },
+        {
+          title: "自分のシグナルを読む",
+          body: "同期は自動で進み、ベストな投稿時間帯や効く形式、フォロワーの伸びがすぐに分かります。",
+          code: "ベスト時間帯 · 火 20:00–22:00",
+          status: "248 件の投稿を同期",
+        },
+      ],
+      tokenLink: "トークンガイド",
+    },
+    builtIn: {
+      kicker: "標準搭載",
+      title: "データに質問して、抽選もそのまま。",
+      description:
+        "Threads Analytics に最初から入っている 2 つのツール。別のサービスへの登録は不要です。",
     },
     demo: {
-      kicker: "01 / ライブ分析",
+      kicker: "ライブ分析",
       title: "問いを変えると、パターンが動く。",
       description:
         "投稿形式と期間を切り替えると、サンプル投稿、リーチ曲線、提案が同時に更新されます。自分のアカウントを探索する感覚を試せます。",
@@ -5051,7 +5059,7 @@ export const dictionaries = {
       disclaimer: "デモ用のサンプルデータ",
     },
     story: {
-      kicker: "02 / つくった理由",
+      kicker: "つくった理由",
       title: "欲しい答えが、まだなかったから。",
       description:
         "多くの分析ツールは合計値で止まります。Threads Analyticsは、もっと実用的な問いから始まりました。自分にはどんな投稿が合い、いつ公開すべきなのか。",
@@ -5061,7 +5069,7 @@ export const dictionaries = {
       marker: "最初の投稿 · 2026",
     },
     features: {
-      kicker: "03 / データから判断へ",
+      kicker: "データから判断へ",
       title: "合計値を並べるだけのダッシュボードではありません。",
       description: "すべてのビューは、投稿についての判断に答えるために設計されています。",
       cta: "31 種類すべてを見る",
@@ -5122,10 +5130,6 @@ export const dictionaries = {
       ],
     },
     product: {
-      kicker: "04 / 全体像",
-      title: "31種類のThreads分析を、一つの投稿システムに。",
-      description:
-        "アカウント全体の状態から投稿単位の診断まで、ダッシュボード内で移動できます。概要、パフォーマンス、コンテンツ、オーディエンス、投稿は同じデータを共有します。",
       labels: ["概要", "パフォーマンス", "コンテンツ", "オーディエンス", "投稿"],
       preview: {
         privateLabel: "セルフホスト",
@@ -5142,7 +5146,7 @@ export const dictionaries = {
       },
     },
     mcpHome: {
-      kicker: "05 / 内蔵 MCP サーバー",
+      kicker: "内蔵 MCP サーバー",
       title: "自分のデータに、そのまま質問。",
       description:
         "すべてのデプロイに読み取り専用の MCP サーバーを内蔵。Claude、Codex、Cursor を OAuth で接続すれば、API キーなしでエージェントが投稿・分析・フォロワー履歴を読み取り、レポートと次の一手を返します。",
@@ -5150,7 +5154,7 @@ export const dictionaries = {
       note: "読み取り専用 · OAuth 2.1 · いつでも解除可能",
     },
     giveawayHome: {
-      kicker: "06 / 抽選機能を標準搭載",
+      kicker: "抽選機能を標準搭載",
       title: "ダッシュボードを離れずに当選者を決める。",
       description:
         "投稿を選び、告知したルール — キーワード、友達のタグ付け、締切、1 アカウント 1 口 — を適用して、自分のダッシュボードで抽選。他社サイトで Threads アカウントにログインする必要も、抽選機能のために課金する必要もありません。",
@@ -5158,7 +5162,7 @@ export const dictionaries = {
       note: "条件の重ねがけ · 第三者ログイン不要 · 追加課金なし",
     },
     deploy: {
-      kicker: "07 / はじめる",
+      kicker: "はじめる",
       title: "Threads分析をMacで使うか、セルフホストするか。",
       description:
         "Mac アプリならサーバーもデータベースもパスワードも不要。どの端末からでもダッシュボードを開きたいなら、ワンクリックテンプレートか、自分でコンテナを実行できます。",
@@ -5194,7 +5198,7 @@ export const dictionaries = {
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
       desktop: {
-        eyebrow: "サーバー不要 · ベータ",
+        eyebrow: "サーバー不要",
         title: "Mac アプリ",
         body: "アプリをダウンロードして Threads アクセストークンを貼り付ければ、ダッシュボード一式が Mac 上で動きます。データはローカルのデータベースに保存。ホスティング費用も PostgreSQL もパスワードも不要です。",
         action: "Mac 版をダウンロード",
@@ -5517,7 +5521,6 @@ export const dictionaries = {
     analyticsGuide: analyticsGuideJa,
     desktopGuide: desktopGuideJa,
     finalCta: {
-      kicker: "自分のシグナルを読む",
       title: "次の良い投稿は、すでに履歴の中にあります。",
       description: "Threads Analyticsをセルフホストし、過去の投稿を次の判断材料に変えましょう。",
       primary: "ダッシュボードをデプロイ",

@@ -1,0 +1,317 @@
+/* Shared building blocks: buttons, the command pill, window frames and
+   section headings. */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 18px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  font-size: 0.90625rem;
+  font-weight: 500;
+  letter-spacing: var(--tracking-tight);
+  white-space: nowrap;
+  max-width: 100%;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    border-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+/* Long labels (Japanese ones especially) wrap rather than push the page
+   wider than a phone. */
+@media (max-width: 480px) {
+  .button {
+    padding-block: 9px;
+    line-height: 1.35;
+    text-align: center;
+    text-wrap: balance;
+    white-space: normal;
+  }
+}
+
+.button svg {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+  transition: transform 160ms var(--ease-out);
+}
+
+.button:active {
+  transform: scale(0.97);
+}
+
+.button-primary {
+  background: var(--color-text);
+  color: var(--color-bg);
+}
+
+.button-primary:hover {
+  background: color-mix(in srgb, var(--color-text) 84%, var(--color-bg));
+}
+
+.button-secondary {
+  border-color: var(--color-rule);
+  background: var(--color-panel);
+  color: var(--color-text);
+}
+
+.button-secondary:hover {
+  border-color: var(--color-rule-strong);
+  background: var(--color-fill);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover svg:last-child:not(:first-child) {
+    transform: translateX(2px);
+  }
+}
+
+.command-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 42px;
+  padding: 0 5px 0 16px;
+  border: 1px solid var(--color-rule);
+  border-radius: 999px;
+  background: var(--color-panel);
+  font-family: var(--mono);
+  font-size: 0.8125rem;
+}
+
+.command-pill-prompt {
+  color: var(--color-accent);
+  user-select: none;
+}
+
+.command-pill code {
+  overflow: hidden;
+  color: var(--color-text);
+  font: inherit;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.command-pill-copy {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: none;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.command-pill-copy:hover {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.command-pill-copy:active {
+  transform: scale(0.92);
+}
+
+.command-pill-copy[data-copied] {
+  color: var(--color-success);
+}
+
+.command-pill-copy svg {
+  width: 14px;
+  height: 14px;
+  animation: icon-swap 200ms var(--ease-out);
+}
+
+@keyframes icon-swap {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+    transform: scale(0.7);
+  }
+}
+
+/* Page-load entrances: copy rises out of a blur, frames follow a beat later. */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    filter: blur(6px);
+    transform: translateY(12px);
+  }
+}
+
+@keyframes rise-in-frame {
+  from {
+    opacity: 0;
+    transform: translateY(32px) scale(0.985);
+  }
+}
+
+/* A window: mono label bar over any demo. */
+.frame {
+  overflow: hidden;
+  border-radius: var(--radius-lg);
+  background: var(--color-panel);
+  box-shadow: var(--shadow-window);
+}
+
+.frame-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  min-height: 40px;
+  padding: 0 14px;
+  border-bottom: 1px solid var(--color-rule-soft);
+}
+
+.frame-label {
+  overflow: hidden;
+  color: var(--color-muted);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.frame-actions {
+  display: flex;
+  flex: 0 0 auto;
+  align-items: center;
+  gap: 6px;
+}
+
+/* The grey stage a frame or a row of cards sits on. */
+.stage {
+  padding: clamp(16px, 3vw, 32px);
+  border-radius: 20px;
+  background: var(--color-panel-hi);
+  box-shadow: inset 0 0 0 1px var(--color-rule-soft);
+}
+
+.section-head {
+  display: grid;
+  justify-items: center;
+  gap: 14px;
+  max-width: 760px;
+  margin: 0 auto 56px;
+  text-align: center;
+}
+
+.section-head-kicker {
+  margin: 0;
+  color: var(--color-accent);
+  font-size: 0.84375rem;
+  font-weight: 500;
+}
+
+.section-head-title {
+  margin: 0;
+  font-size: clamp(2.125rem, 5vw, 3rem);
+  font-weight: 500;
+  letter-spacing: var(--tracking-title);
+  line-height: 1.08;
+  text-wrap: balance;
+}
+
+.section-head-lead {
+  max-width: 56ch;
+  margin: 2px 0 0;
+  color: var(--color-text-soft);
+  font-size: clamp(1rem, 1.6vw, 1.125rem);
+  line-height: 1.6;
+  text-wrap: pretty;
+}
+
+/* Numbered variant for tutorial pages: ruled off like a printed form. */
+.section-head-numbered {
+  grid-template-columns: minmax(0, 1fr) minmax(0, 400px);
+  align-items: end;
+  justify-items: stretch;
+  gap: 20px 64px;
+  max-width: none;
+  margin: 0 0 56px;
+  padding-top: 20px;
+  border-top: 1px solid var(--color-text);
+  text-align: left;
+}
+
+.section-head-main {
+  display: grid;
+  gap: 28px;
+}
+
+.section-head-label {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 0;
+  color: var(--color-muted);
+  font-family: var(--mono);
+  font-size: 0.75rem;
+  letter-spacing: calc(0.06em * var(--tracking-caps));
+  text-transform: uppercase;
+}
+
+.section-head-number {
+  color: var(--color-text);
+}
+
+.section-head-dash {
+  width: 24px;
+  height: 1px;
+  background: var(--color-rule-strong);
+}
+
+.section-head-numbered .section-head-title {
+  font-size: clamp(2.25rem, 5vw, 3.5rem);
+  letter-spacing: var(--tracking-display);
+  line-height: 1.04;
+}
+
+.section-head-numbered .section-head-lead {
+  margin: 0;
+  padding-bottom: 6px;
+  font-size: 1.03125rem;
+}
+
+@media (max-width: 1000px) {
+  .section-head-numbered {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
+@media (max-width: 480px) {
+  .command-pill {
+    width: 100%;
+  }
+
+  .command-pill code {
+    flex: 1;
+  }
+}
+
+@media (pointer: coarse) {
+  .command-pill-copy {
+    position: relative;
+  }
+
+  .command-pill-copy::after {
+    content: "";
+    position: absolute;
+    inset: -6px;
+  }
+}

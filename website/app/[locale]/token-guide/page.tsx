@@ -4,10 +4,9 @@ import Image from "next/image";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, Check, KeyRound, ListChecks, RefreshCw } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
-import { ClosingCurves } from "@/components/closing-curves";
 import { GuideProgress } from "@/components/guide-progress";
-import { HeroCurve } from "@/components/hero-curve";
 import { JsonLd } from "@/components/json-ld";
+import { SectionHead } from "@/components/section-head";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
@@ -78,9 +77,7 @@ export default async function TokenGuidePage({ params }: { params: Promise<{ loc
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>
-        <section className="agent-hero-section" data-motion-pause>
-          <div className="hero-grid-bg" aria-hidden="true" />
-          <HeroCurve />
+        <section className="agent-hero-section">
           <div className="site-shell agent-hero-grid">
             <div className="agent-hero-copy">
               <p className="section-kicker">
@@ -148,11 +145,12 @@ export default async function TokenGuidePage({ params }: { params: Promise<{ loc
         <section className="guide-overview-section" id="overview">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.overview.kicker}</p>
-                <h2>{copy.overview.title}</h2>
-                <p className="section-description">{copy.overview.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.overview.kicker}
+                title={copy.overview.title}
+                description={copy.overview.description}
+              />
             </div>
             <div className="guide-phase-grid" data-reveal="stagger" data-reveal-delay="1">
               {copy.phases.map((phase, i) => (
@@ -254,13 +252,12 @@ export default async function TokenGuidePage({ params }: { params: Promise<{ loc
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
             <div className="agent-cta guide-finish">
-              <ClosingCurves />
               <div className="agent-cta-inner">
                 <p className="section-kicker guide-finish-kicker">{copy.finish.kicker}</p>
                 <h2>{copy.finish.title}</h2>
                 <p>{emphasize(copy.finish.description)}</p>
                 <div className="hero-actions">
-                  <Link href={`/${locale}#deploy`} className="button button-light">
+                  <Link href={`/${locale}#deploy`} className="button button-primary">
                     {copy.finish.primary}
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>
@@ -268,9 +265,9 @@ export default async function TokenGuidePage({ params }: { params: Promise<{ loc
                     href={siteConfig.github}
                     target="_blank"
                     rel="noreferrer"
-                    className="button button-ghost"
+                    className="button button-secondary"
                   >
-                    <FaGithub className="github-icon" aria-hidden="true" />
+                    <FaGithub aria-hidden="true" />
                     {copy.finish.secondary}
                   </a>
                 </div>

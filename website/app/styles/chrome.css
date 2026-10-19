@@ -1,0 +1,839 @@
+/* Site chrome: header, its menus, the theme toggle and the footer. */
+
+.site-header {
+  position: sticky;
+  z-index: 50;
+  top: 0;
+  height: var(--header-height);
+  border-bottom: 1px solid var(--color-rule);
+  background: color-mix(in srgb, var(--color-bg) 80%, transparent);
+  -webkit-backdrop-filter: saturate(1.8) blur(14px);
+  backdrop-filter: saturate(1.8) blur(14px);
+}
+
+/* Reduced transparency: a solid bar instead of glass. */
+@media (prefers-reduced-transparency: reduce) {
+  .site-header {
+    background: var(--color-bg);
+    -webkit-backdrop-filter: none;
+    backdrop-filter: none;
+  }
+}
+
+/* The rule fades in over the first stretch of scroll, so the bar sits flush
+   on the hero and only separates once content slides under it. */
+@supports (animation-timeline: scroll()) {
+  .site-header {
+    border-bottom-color: transparent;
+    animation: header-scrolled linear both;
+    animation-timeline: scroll(root);
+    animation-range: 0 64px;
+  }
+}
+
+@keyframes header-scrolled {
+  to {
+    border-bottom-color: var(--color-rule);
+  }
+}
+
+/* Pages with their own pinned product bar: the header scrolls with the
+   page, and the bar below it carries the separating rule. */
+.site-header-scrolls {
+  position: relative;
+  border-bottom-color: transparent;
+  animation: none;
+}
+
+.header-inner {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  gap: 16px;
+  height: 100%;
+}
+
+.brand-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  width: fit-content;
+  font-size: 0.9375rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  transition: transform 160ms var(--ease-out);
+}
+
+a.brand-link:active {
+  transform: scale(0.97);
+}
+
+.brand-icon {
+  border-radius: 6px;
+}
+
+.brand-tag {
+  margin-left: 2px;
+  padding: 2px 8px;
+  border: 1px solid var(--color-rule);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-size: 0.71875rem;
+  font-weight: 500;
+  letter-spacing: 0;
+}
+
+.desktop-nav {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  color: var(--color-text-soft);
+  font-size: 0.84375rem;
+  font-weight: 500;
+}
+
+/* Each primary-nav group is the same <details> popover as the language
+   menu, with a pill trigger that reads as a nav link. */
+.nav-menu,
+.language-menu,
+.theme-menu,
+.mobile-menu {
+  position: relative;
+}
+
+.nav-menu summary,
+.language-menu summary,
+.theme-menu summary,
+.mobile-menu summary {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  color: var(--color-text-soft);
+  cursor: pointer;
+  list-style: none;
+  white-space: nowrap;
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.nav-menu summary::-webkit-details-marker,
+.language-menu summary::-webkit-details-marker,
+.theme-menu summary::-webkit-details-marker,
+.mobile-menu summary::-webkit-details-marker {
+  display: none;
+}
+
+.nav-menu summary:hover,
+.nav-menu[open] summary,
+.language-menu summary:hover,
+.language-menu[open] summary,
+.theme-menu summary:hover,
+.theme-menu[open] summary,
+.mobile-menu summary:hover,
+.mobile-menu[open] summary {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.language-menu summary:active,
+.theme-menu summary:active,
+.mobile-menu summary:active {
+  transform: scale(0.96);
+}
+
+.nav-menu summary {
+  gap: 4px;
+  min-height: 32px;
+  padding: 0 12px;
+}
+
+/* The group holding the current page reads in ink; the dropdown marks the
+   page itself. */
+.nav-menu[data-current] summary {
+  color: var(--color-text);
+}
+
+.nav-menu-chevron {
+  width: 13px;
+  height: 13px;
+  color: var(--color-muted);
+  transition: transform 220ms var(--ease-out);
+}
+
+.nav-menu[open] .nav-menu-chevron {
+  transform: rotate(180deg);
+}
+
+.nav-menu-popover,
+.language-popover,
+.theme-menu-popover,
+.mobile-menu-popover {
+  position: absolute;
+  top: calc(100% + 10px);
+  display: grid;
+  padding: 6px;
+  border-radius: 14px;
+  background: var(--color-popover);
+  box-shadow: var(--shadow-window);
+  animation: menu-in 160ms var(--ease-out) both;
+}
+
+/* Left-aligned (not centred) so the entrance keyframes own `transform`. */
+.nav-menu-popover {
+  left: -6px;
+  min-width: 300px;
+  transform-origin: top left;
+}
+
+/* Invisible bridge over the gap to the trigger: without it the pointer
+   leaves the menu on the way down and hover-close fires mid-travel. */
+.nav-menu-popover::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 10px;
+}
+
+.nav-menu-popover a {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 14px 8px 8px;
+  border-radius: 10px;
+  white-space: nowrap;
+  transition: background-color 140ms ease;
+}
+
+.nav-menu-popover a:hover,
+.nav-menu-popover a[aria-current="page"] {
+  background: var(--color-fill);
+}
+
+.nav-menu-section,
+.mobile-menu-label,
+.mobile-menu-section {
+  color: var(--color-muted);
+  font-family: var(--mono);
+  font-size: 0.65625rem;
+  font-weight: 500;
+  letter-spacing: calc(0.06em * var(--tracking-caps));
+  text-transform: uppercase;
+}
+
+/* Divider plus a small heading where a sub-section starts, in the same
+   voice as the mobile menu's group labels. */
+.nav-menu-section {
+  margin: 6px 6px 0;
+  padding: 10px 2px 4px;
+  border-top: 1px solid var(--color-rule-soft);
+}
+
+.nav-menu-text {
+  display: grid;
+  gap: 2px;
+}
+
+.nav-menu-label {
+  color: var(--color-text);
+  font-size: 0.84375rem;
+  font-weight: 500;
+  line-height: 1.3;
+}
+
+.nav-menu-description {
+  color: var(--color-muted);
+  font-size: 0.78125rem;
+  line-height: 1.35;
+}
+
+.nav-menu-icon {
+  display: inline-flex;
+  flex: 0 0 auto;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  border-radius: 9px;
+  background: var(--color-fill);
+  box-shadow: inset 0 0 0 1px var(--color-rule-soft);
+  color: var(--color-text-soft);
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.nav-menu-icon svg {
+  width: 16px;
+  height: 16px;
+}
+
+.nav-menu-popover a:hover .nav-menu-icon,
+.nav-menu-popover a[aria-current="page"] .nav-menu-icon {
+  background: var(--color-popover);
+  color: var(--color-text);
+}
+
+/* Multi-colour brand marks keep their own colours. */
+.nav-menu-icon-brand {
+  color: var(--color-text);
+}
+
+/* Solid ink chip, matching the header's Mac app button. */
+.nav-menu-icon-featured,
+.nav-menu-popover a:hover .nav-menu-icon-featured,
+.nav-menu-popover a[aria-current="page"] .nav-menu-icon-featured {
+  background: var(--color-text);
+  box-shadow: none;
+  color: var(--color-bg);
+}
+
+.menu-badge {
+  display: inline-block;
+  margin-left: 7px;
+  padding: 1px 6px;
+  border: 1px solid var(--color-rule);
+  border-radius: 999px;
+  color: var(--color-muted);
+  font-family: var(--mono);
+  font-size: 0.59375rem;
+  font-weight: 500;
+  letter-spacing: calc(0.04em * var(--tracking-caps));
+  line-height: 1.4;
+  text-transform: uppercase;
+  vertical-align: 1px;
+}
+
+.header-actions {
+  display: flex;
+  justify-self: end;
+  align-items: center;
+  gap: 6px;
+}
+
+/* An icon-only trigger shows the current mode; the glyph is picked by CSS
+   from html[data-theme], which the bootstrap sets before paint, so it never
+   flips after hydration. */
+.theme-menu summary {
+  justify-content: center;
+  width: 32px;
+  min-height: 32px;
+}
+
+.theme-menu-glyph {
+  display: none;
+  width: 16px;
+  height: 16px;
+}
+
+html:not([data-theme="light"], [data-theme="dark"]) .theme-menu-glyph[data-value="system"],
+html[data-theme="light"] .theme-menu-glyph[data-value="light"],
+html[data-theme="dark"] .theme-menu-glyph[data-value="dark"] {
+  display: block;
+}
+
+.theme-menu-popover {
+  right: 0;
+  min-width: 168px;
+  transform-origin: top right;
+}
+
+.theme-menu-popover button {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 8px 10px;
+  border: 0;
+  border-radius: 8px;
+  background: none;
+  color: var(--color-text-soft);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.84375rem;
+  line-height: 1.35;
+  text-align: left;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.theme-menu-popover button:hover,
+.theme-menu-popover button:active {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.theme-menu-check,
+.theme-menu-icon {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+}
+
+.theme-menu-check {
+  opacity: 0;
+}
+
+.theme-menu-icon {
+  color: var(--color-muted);
+}
+
+html:not([data-theme="light"], [data-theme="dark"]) .theme-menu-popover [data-value="system"],
+html[data-theme="light"] .theme-menu-popover [data-value="light"],
+html[data-theme="dark"] .theme-menu-popover [data-value="dark"] {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+html:not([data-theme="light"], [data-theme="dark"])
+  .theme-menu-popover
+  [data-value="system"]
+  .theme-menu-check,
+html[data-theme="light"] .theme-menu-popover [data-value="light"] .theme-menu-check,
+html[data-theme="dark"] .theme-menu-popover [data-value="dark"] .theme-menu-check {
+  opacity: 1;
+}
+
+/* Icon-only like the theme menu; the current language is in its label and
+   checked in the menu. */
+.language-menu summary {
+  justify-content: center;
+  width: 32px;
+  min-height: 32px;
+}
+
+.language-icon {
+  width: 16px;
+  height: 16px;
+  flex: 0 0 auto;
+}
+
+.language-popover {
+  right: 0;
+  min-width: 168px;
+  transform-origin: top right;
+}
+
+.language-popover a {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: var(--color-text-soft);
+  font-size: 0.84375rem;
+  line-height: 1.35;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.language-popover a:hover {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.language-popover a[aria-current="page"] {
+  color: var(--color-text);
+  font-weight: 500;
+}
+
+.language-check {
+  flex: 0 0 auto;
+  width: 14px;
+  height: 14px;
+  opacity: 0;
+}
+
+.language-popover a[aria-current="page"] .language-check {
+  opacity: 1;
+}
+
+.header-icon-button {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  height: 32px;
+  border-radius: 999px;
+  color: var(--color-text-soft);
+  transition:
+    color 160ms ease,
+    background-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.header-icon-button svg {
+  width: 17px;
+  height: 17px;
+}
+
+.header-icon-button:hover {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.header-icon-button:active {
+  transform: scale(0.94);
+}
+
+/* GitHub with its star count: a pill on desktop, the plain icon below. */
+.header-github {
+  display: inline-flex;
+  justify-content: center;
+  gap: 6px;
+  width: auto;
+  padding: 0 10px 0 8px;
+}
+
+.header-github-stars {
+  color: var(--color-muted);
+  font-family: var(--mono);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+@media (max-width: 1000px) {
+  .header-github {
+    width: 32px;
+    padding: 0;
+  }
+
+  .header-github-stars {
+    display: none;
+  }
+}
+
+.header-cta {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 34px;
+  margin-left: 4px;
+  padding: 0 14px;
+  border-radius: 999px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  white-space: nowrap;
+  transition:
+    background-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.header-cta:hover {
+  background: color-mix(in srgb, var(--color-text) 84%, var(--color-bg));
+}
+
+.header-cta:active {
+  transform: scale(0.97);
+}
+
+.header-cta-icon {
+  display: block;
+  width: 14px;
+  height: 14px;
+  flex: 0 0 auto;
+}
+
+/* Mobile nav: same details-popover pattern as the language menu, shown only
+   in the band where .desktop-nav is hidden. */
+.mobile-menu {
+  display: none;
+}
+
+.mobile-menu summary {
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+}
+
+.mobile-menu-icon {
+  width: 18px;
+  height: 18px;
+}
+
+/* Three groups of four outgrow a short phone screen, so the list scrolls
+   inside the popover instead of running off the bottom. */
+.mobile-menu-popover {
+  top: calc(100% + 13px);
+  right: 0;
+  width: min(280px, calc(100vw - 32px));
+  max-height: calc(100dvh - var(--header-height) - 16px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  transform-origin: top right;
+}
+
+.mobile-menu-group {
+  display: grid;
+}
+
+.mobile-menu-group + .mobile-menu-group {
+  margin-top: 4px;
+  padding-top: 4px;
+  border-top: 1px solid var(--color-rule-soft);
+}
+
+.mobile-menu-label {
+  padding: 8px 12px 4px;
+}
+
+/* Inset rule, so a sub-section reads as part of its group rather than a new
+   group. */
+.mobile-menu-section {
+  margin: 2px 12px 0;
+  padding: 8px 0 4px;
+  border-top: 1px solid var(--color-rule-soft);
+  color: var(--color-muted);
+}
+
+.mobile-menu-popover a {
+  padding: 10px 12px;
+  border-radius: 8px;
+  color: var(--color-text-soft);
+  font-size: 0.875rem;
+  font-weight: 500;
+  line-height: 1.35;
+  transition:
+    color 140ms ease,
+    background-color 140ms ease;
+}
+
+.mobile-menu-popover a:hover,
+.mobile-menu-popover a[aria-current="page"] {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+/* Exit animation for the popovers where the platform can transition
+   <details> content; elsewhere they keep the instant native close. */
+@supports selector(::details-content) {
+  .language-menu::details-content,
+  .theme-menu::details-content,
+  .mobile-menu::details-content,
+  .nav-menu::details-content {
+    opacity: 1;
+    transition:
+      opacity 120ms var(--ease-out),
+      transform 120ms var(--ease-out),
+      content-visibility 120ms allow-discrete;
+  }
+
+  .language-menu:not([open])::details-content,
+  .theme-menu:not([open])::details-content,
+  .mobile-menu:not([open])::details-content,
+  .nav-menu:not([open])::details-content {
+    opacity: 0;
+    transform: translateY(-4px);
+  }
+}
+
+@keyframes menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-4px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.site-footer {
+  padding: 64px 0 32px;
+  border-top: 1px solid var(--color-rule);
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) repeat(4, minmax(0, 1fr));
+  gap: 40px;
+  padding-bottom: 56px;
+}
+
+.footer-grid.render-deferred {
+  contain-intrinsic-size: auto 320px;
+}
+
+.footer-brand > p {
+  max-width: 320px;
+  margin: 16px 0 0;
+  color: var(--color-muted);
+  font-size: 0.875rem;
+  line-height: 1.6;
+}
+
+.footer-grid > div:not(.footer-brand) {
+  display: grid;
+  align-content: start;
+  gap: 12px;
+  font-size: 0.875rem;
+}
+
+.footer-grid > div:not(.footer-brand) strong {
+  margin-bottom: 6px;
+  color: var(--color-muted);
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: calc(0.06em * var(--tracking-caps));
+  text-transform: uppercase;
+}
+
+.site-footer a {
+  color: var(--color-text-soft);
+  transition:
+    color 160ms ease,
+    opacity 120ms ease;
+}
+
+.site-footer a:hover {
+  color: var(--color-text);
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-rule-soft);
+  color: var(--color-muted);
+  font-size: 0.8125rem;
+}
+
+/* As the header narrows, labels give way first (brand tag, language name,
+   the Mac app label); then the nav moves into the mobile menu, the theme
+   toggle follows it there, and the smallest phones drop GitHub (the footer
+   still links it). */
+@media (max-width: 1100px) {
+  .brand-tag {
+    display: none;
+  }
+}
+
+@media (max-width: 1000px) {
+  .desktop-nav {
+    gap: 0;
+    font-size: 0.8125rem;
+  }
+
+  .nav-menu summary {
+    padding: 0 9px;
+  }
+
+  .header-cta-label {
+    display: none;
+  }
+
+  .header-cta {
+    justify-content: center;
+    width: 34px;
+    padding: 0;
+  }
+
+  .footer-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: 40px 24px;
+  }
+
+  .footer-brand {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 780px) {
+  .header-inner {
+    grid-template-columns: 1fr auto;
+  }
+
+  .desktop-nav {
+    display: none;
+  }
+
+  .mobile-menu {
+    display: block;
+  }
+
+  .footer-grid {
+    grid-template-columns: 1fr 1fr;
+    gap: 40px 24px;
+  }
+
+  .footer-brand {
+    grid-column: span 2;
+  }
+}
+
+@media (max-width: 420px) {
+  .header-icon-button {
+    display: none;
+  }
+
+  .header-actions {
+    gap: 4px;
+  }
+}
+
+/* The narrowest phones keep the brand whole; the Mac app is still the
+   first entry of the Get started menu. */
+@media (max-width: 359px) {
+  .header-cta {
+    display: none;
+  }
+}
+
+@media (max-width: 480px) {
+  .footer-bottom {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 8px;
+  }
+}
+
+/* ---------- Press feedback and touch targets ---------- */
+
+.nav-menu summary:active {
+  transform: scale(0.96);
+}
+
+.nav-menu-popover a:active,
+.language-popover a:active,
+.mobile-menu-popover a:active {
+  background: var(--color-fill);
+}
+
+.site-footer a:active {
+  opacity: 0.6;
+}
+
+/* Touch screens get ~44pt targets. The extra area is invisible and only
+   reaches halfway into the gap between neighbouring header controls. */
+@media (pointer: coarse) {
+  .header-icon-button,
+  .header-cta,
+  .language-menu summary,
+  .mobile-menu summary,
+  .nav-menu summary,
+  .theme-menu summary {
+    position: relative;
+  }
+
+  .header-cta::after,
+  .header-icon-button::after,
+  .language-menu summary::after,
+  .mobile-menu summary::after,
+  .nav-menu summary::after,
+  .theme-menu summary::after {
+    content: "";
+    position: absolute;
+    inset: -5px -3px;
+  }
+}

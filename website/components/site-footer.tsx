@@ -13,14 +13,14 @@ const analyticsDocFile: Record<Locale, string> = {
 export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary["footer"] }) {
   return (
     <footer className="site-footer">
-      <div className="site-shell footer-grid render-deferred" data-reveal="stagger">
+      <div className="site-shell footer-grid render-deferred">
         <div className="footer-brand">
           <div className="brand-link">
             <Image
               src="/media/threads-analytics-icon.png"
               alt=""
-              width={28}
-              height={28}
+              width={24}
+              height={24}
               className="brand-icon"
             />
             <span>Threads Analytics</span>
@@ -55,7 +55,7 @@ export function SiteFooter({ locale, copy }: { locale: Locale; copy: Dictionary[
           </a>
         </div>
       </div>
-      <div className="site-shell footer-bottom" data-reveal="fade" data-reveal-delay="1">
+      <div className="site-shell footer-bottom">
         <span className="footer-credit">
           © {new Date().getFullYear()} Threads Analytics ·{" "}
           <a href={`${siteConfig.github}/blob/main/LICENSE`} target="_blank" rel="noreferrer">
