@@ -4,15 +4,15 @@
 
 ## 0. 結論摘要
 
-| 項目                      | 建議                                                                                                                                                                                                                                                                    |
-| ------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| 復盤由誰做                | **伺服器負責「偵測 + 準備證據」，agent 負責「判讀 + 寫結論」**。伺服器本身不跑 LLM，所以每次 sync 後用既有的成長曲線（`PostMetricSnapshot`）找出低於預期的貼文、排進待復盤佇列；agent 下次連線（或被排程叫起）時讀取證據、寫回原因。                                    |
-| 怎麼知道哪篇是 agent 寫的 | agent 生成貼文時呼叫新的 `save_post_draft` 存草稿，sync 抓到新貼文後用**字元 bigram 相似度**（中文不需斷詞）自動配對草稿 ↔ 已發佈貼文。使用者不必改變發文方式。                                                                                                         |
-| 經驗如何回饋              | 兩層儲存：單篇的 `PostRetrospective`（原始復盤）＋精煉過的 `ContentLearning`（經驗法則，可去重、有信心度與驗證次數）。生成新貼文前 agent 呼叫 `get_content_guidance` 取回精簡清單，套用後記錄在草稿上，該貼文的成績再自動回頭驗證那條經驗。                             |
-| 權限                      | MCP 目前是純唯讀（`analytics:read`）。新增 `memory:write` scope，只能寫草稿／復盤／經驗，**永遠不會寫到 Threads**。舊連線維持唯讀，重新授權後才能寫入。                                                                                                                 |
-| Skills 安裝方式           | **不要在伺服器上真的執行 `npx skills add`**（需要 `git`、需要可寫且持久的檔案系統，Docker / Vercel / desktop 三個目標都不保證有）。改做「**相容 `npx skills add` 語法與 `skills-lock.json` 格式**」的內建安裝器：直接從 GitHub 讀檔、存進資料庫，三個部署目標行為一致。 |
-| Skills 怎麼給 agent 用    | 以 MCP **tools** 為主（`list_skills` → `get_skill` → `get_skill_file`，對應 Agent Skills 的漸進式載入），再加一個 `use-skill` prompt 與 resources 給支援的 client。安裝只能在 Dashboard 由使用者操作，agent 只能讀取「已啟用」的 skill。                                |
-| 推薦 skills               | 見 [3.9](#39-推薦-skills-清單)。另外建議本 repo 自己發佈 `threads-post-writer`、`threads-post-retrospective` 兩個第一方 skill（含繁中），補上市面上缺少的 Threads 專屬與繁中寫作 skill。                                                                                |
+| 項目                      | 建議                                                                                                                                                                                                                                                                                                                                                                   |
+| ------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| 復盤由誰做                | **伺服器負責「偵測 + 準備證據」，agent 負責「判讀 + 寫結論」**。伺服器本身不跑 LLM，所以每次 sync 後用既有的成長曲線（`PostMetricSnapshot`）找出低於預期的貼文、排進待復盤佇列；agent 下次連線（或被排程叫起）時讀取證據、寫回原因。                                                                                                                                   |
+| 怎麼知道哪篇是 agent 寫的 | agent 生成貼文時呼叫新的 `save_post_draft` 存草稿，sync 抓到新貼文後用**字元 bigram 相似度**（中文不需斷詞）自動配對草稿 ↔ 已發佈貼文。使用者不必改變發文方式。                                                                                                                                                                                                        |
+| 經驗如何回饋              | 兩層儲存：單篇的 `PostRetrospective`（原始復盤）＋精煉過的 `ContentLearning`（經驗法則，可去重、有信心度與驗證次數）。生成新貼文前 agent 呼叫 `get_content_guidance` 取回精簡清單，套用後記錄在草稿上，該貼文的成績再自動回頭驗證那條經驗。                                                                                                                            |
+| 權限                      | MCP 目前是純唯讀（`analytics:read`）。新增 `memory:write` scope，只能寫草稿／復盤／經驗，**永遠不會寫到 Threads**。舊連線維持唯讀，重新授權後才能寫入。                                                                                                                                                                                                                |
+| Skills 安裝方式           | **不要在伺服器上真的執行 `npx skills add`**（需要 `git`、需要可寫且持久的檔案系統，Docker / Vercel / desktop 三個目標都不保證有）。改做「**相容 `npx skills add` 語法與 `skills-lock.json` 格式**」的內建安裝器：直接從 GitHub 讀檔、存進資料庫，三個部署目標行為一致。                                                                                                |
+| Skills 怎麼給 agent 用    | 以 MCP **tools** 為主（`list_skills` → `get_skill` → `get_skill_file`，對應 Agent Skills 的漸進式載入），再加一個 `use-skill` prompt 與 resources 給支援的 client。安裝只能在 Dashboard 由使用者操作，agent 只能讀取「已啟用」的 skill。                                                                                                                               |
+| 推薦 skills               | 預設推薦 `social`（coreyhaines31/marketingskills）、`speak-human-tw` 或 `humanizer-zh-tw`（繁中去 AI 味）、`stop-slop`、`copywriting`／`copy-editing`，全部 MIT、純文字。現有的 Threads 專屬 skill 都綁發文廠商或沒有授權，所以建議本 repo 自己發佈 `threads-post-writer`、`threads-post-retrospective` 兩個第一方 skill（含繁中）。詳見 [3.9](#39-推薦-skills-清單)。 |
 
 ---
 
@@ -193,12 +193,12 @@ model ContentLearning {
 
 **讀取（`analytics:read` 即可）**
 
-| Tool                   | 說明                                                                                                                                                           |
-| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `get_content_guidance` | 生成前呼叫一次：最多 15 條有效經驗（置頂 → 信心 → 支持減反例 → 新舊排序）、最近 5 篇復盤摘要、已啟用 skills 索引、本帳號的資料面預設（最佳時段、最佳長度區間） |
-| `list_retrospectives`  | 依狀態（pending / analyzed / all）、日期篩選                                                                                                                   |
-| `get_post_diagnostics` | 2.5 的證據包                                                                                                                                                   |
-| `list_post_drafts`     | 草稿與配對狀態                                                                                                                                                 |
+| Tool                   | 說明                                                                                                                                                                                               |
+| ---------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `get_content_guidance` | 生成前呼叫一次：最多 15 條有效經驗（置頂 → 信心 → 支持減反例 → 新舊排序）、最近 5 篇復盤摘要、已啟用 skills 索引、使用者寫的帳號定位與語氣（見 3.6）、本帳號的資料面預設（最佳時段、最佳長度區間） |
+| `list_retrospectives`  | 依狀態（pending / analyzed / all）、日期篩選                                                                                                                                                       |
+| `get_post_diagnostics` | 2.5 的證據包                                                                                                                                                                                       |
+| `list_post_drafts`     | 草稿與配對狀態                                                                                                                                                                                     |
 
 `get_account_overview` 的回應加上 `pendingRetrospectives` 數量——agent 第一個呼叫就會看到，自然會提醒使用者。
 
@@ -287,7 +287,7 @@ model ContentLearning {
 1. **相容的來源語法**：輸入框直接貼整行 `npx skills add coreyhaines31/marketingskills --skill copywriting` 也可以，解析器忽略 `-g`、`-a`、`-y`、`--copy` 這些本機專用旗標。支援 `owner/repo`、`owner/repo@skill`、`--skill a --skill b`、`https://github.com/o/r`、`https://github.com/o/r/tree/<ref>/<path>`、`#ref`。第一版**只接受 GitHub 公開 repo**，明確拒絕本機路徑、SSH、任意 URL。
 2. **抓取**（`lib/skills/github.ts`）：
    - `GET /repos/{o}/{r}` 取預設分支 → `GET /repos/{o}/{r}/git/trees/{ref}?recursive=1` 一次拿到整棵樹與 commit。
-   - 依 CLI 相同的優先目錄找 `SKILL.md`（`skills/`、`.agents/skills/`、`.claude/skills/`、根目錄…，深度上限 6）。
+   - 依 CLI 相同的探索規則找 `SKILL.md`：先看根目錄、`skills/`（含 `.curated` / `.experimental` / `.system`）、各 agent 的 `skills/` 目錄與 `.claude-plugin` manifest，淺層的 `SKILL.md` 會遮蔽更深層的；都找不到才遞迴搜尋。與 CLI 一樣預設不做 `--full-depth`。
    - 只下載被選中 skill 資料夾內的檔案（`raw.githubusercontent.com`，鎖定 commit SHA），用既有的 `createLimiter` 控制併發。
    - 限制：每個 skill ≤ 50 個檔案、單檔 ≤ 256 KB、總計 ≤ 1 MB、只收文字檔；逾時 10 秒。
    - 可選的 `GITHUB_TOKEN` 環境變數（未驗證的 GitHub API 每小時只有 60 次）。
@@ -302,7 +302,9 @@ model ContentLearning {
 ```prisma
 model Skill {
   id            String      @id @default(cuid())
-  name          String      @unique   // frontmatter 的 name，也是 MCP 裡的識別名稱
+  // MCP 裡的識別名稱，預設等於 name；同名衝突時改為 "<name>-<owner>" 或由使用者自訂
+  slug          String      @unique
+  name          String                // frontmatter 的 name
   description   String
   source        String                // "owner/repo"，與 skills-lock.json 的 source 相同
   sourceType    String                // github | custom（使用者在 UI 自己寫的）
@@ -321,6 +323,8 @@ model Skill {
   installedAt   DateTime    @default(now()) @db.Timestamptz(3)
   updatedAt     DateTime    @updatedAt @db.Timestamptz(3)
   files         SkillFile[]
+
+  @@unique([source, name])
 }
 
 model SkillFile {
@@ -335,7 +339,7 @@ model SkillFile {
 ```
 
 - 第一版 skill 為**全部帳號共用**；之後若需要不同帳號不同品牌語氣，再加 `SkillAccountSetting(skillId, accountId, enabled)`。
-- 名稱衝突（兩個 repo 有同名 skill）：預設拒絕並提示「取代現有的」。
+- 名稱衝突很常見：調查時就發現 `hook-writer`、`voice-builder`、`threads-post`、`humanizer` 在好幾個 repo 都有同名 skill，而 CLI 是以名稱安裝，會互相覆蓋。所以這裡以 `source + name` 為唯一鍵，另用 `slug` 當 MCP 名稱；衝突時讓使用者選「取代」或「並存（改 slug）」。
 
 ### 3.5 安裝、更新、移除流程
 
@@ -360,6 +364,9 @@ MCP 沒有原生的「skill」概念，而各 client 對 resources / prompts 的
 | `skill://{name}/{path}`（resource template） | 給支援 resources 的 client（例如 Claude Code 的 @ 提及）                                               |
 
 - `get_content_guidance` 與 `draft-post` prompt 會帶出 skills 索引並要求 agent 先載入相關的 skill。
+- **context 檔案的落差**：多數現成 skill 預期本機有一份脈絡檔（例如 `.agents/product-marketing.md`、`brand-style.md`、`brand-profile` skill），而且會把輸出寫成檔案。透過 MCP 使用時這些都不存在，所以：
+  - Settings 新增每個帳號的「帳號定位與語氣」文字欄位（存 `AppSettings`），由 `get_content_guidance` 一併回傳。
+  - `get_skill` 回應附上固定說明：「此 skill 提到的脈絡檔在此環境不存在，請以 get_content_guidance 的 profile 取代；不要寫入檔案，直接把草稿交給 save_post_draft」。
 - `save_post_draft.skills_used` 記錄每篇用了哪些 skill（含 `computedHash`），之後就能統計「用了 skill X 的貼文，24h vsBaseline 中位數是多少」，把兩個功能接起來，回答「這個 skill 到底有沒有幫助」。
 
 ### 3.7 UI：`/dashboard/skills`
@@ -382,9 +389,56 @@ MCP 沒有原生的「skill」概念，而各 client 對 resources / prompts 的
 
 ### 3.9 推薦 Skills 清單
 
-<!-- RECOMMENDED_SKILLS -->
+調查方式：每個候選都實際 clone repo、讀過 `SKILL.md`，並在暫存目錄用 `DISABLE_TELEMETRY=1 npx skills@1.7.2 add <repo> --list` 確認 CLI 找得到該名稱（沒有實際安裝）。GitHub 星數為 2026-10-19 讀取的數字；skills.sh 在調查環境無法連線，安裝數取自搜尋引擎快照，標「約」的僅供參考。「純文字」指只有 Markdown，沒有 scripts、網路呼叫或瀏覽器依賴——這類最適合透過 MCP 提供給遠端 agent。
 
-> 調查中：每個候選 skill 都會先確認 repo 與 SKILL.md 實際存在後再列入。
+#### 預設推薦（一鍵安裝，標示「推薦」）
+
+| Skill             | 安裝指令                                                            | 為什麼適合 Threads                                                                                        | 授權／規模          | 注意事項                                                                                                         |
+| ----------------- | ------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ------------------- | ---------------------------------------------------------------------------------------------------------------- |
+| `social`          | `npx skills add coreyhaines31/marketingskills --skill social`       | hook、內容再利用、內容日曆；`references/platform-limits.md` 有 Threads 章節（500 字、每篇一個主題標籤等） | MIT，55.5k★         | 描述沒提 Threads；會讀 `.agents/product-marketing.md`；附的工具清單含付費合作夥伴。舊名 `social-content` 已改名  |
+| `speak-human-tw`  | `npx skills add Raymondhou0917/speak-human-tw`                      | 繁中去 AI 味＋台灣用語在地化（`references/taiwan-localization.md`），社群貼文情境明列 Threads，採輕度修改 | MIT，1.1k★          | 預設會先列修改建議、等使用者回覆；無法回覆時退回「跳過確認、事後摘要」                                           |
+| `humanizer-zh-tw` | `npx skills add kevintsai1202/Humanizer-zh-TW`                      | 繁中潤飾：刪空話、重複與公式化表達，保留事實與作者聲音；同步上游 op7418/Humanizer-zh 2026-09-23 版        | MIT，900★           | 不要加 `--full-depth`，否則會一起裝到需要 Python 的 `text-watermark-cleaner-zh-tw`。與 `speak-human-tw` 擇一即可 |
+| `stop-slop`       | `npx skills add hardikpandya/stop-slop`                             | 只有 2.6 KB 的去 AI 味規則，小到每次生成都能載入                                                          | MIT，18.1k★         | 以英文為主                                                                                                       |
+| `copywriting`     | `npx skills add coreyhaines31/marketingskills --skill copywriting`  | 標題、hook 寫法與 AI 痕跡參考檔                                                                           | MIT，約 22.7 萬安裝 | 原本為 landing page 文案設計                                                                                     |
+| `copy-editing`    | `npx skills add coreyhaines31/marketingskills --skill copy-editing` | 草稿最後一輪的精簡與潤稿                                                                                  | MIT                 | 同上                                                                                                             |
+
+建議的預設組合：繁中帳號用 `social` + `speak-human-tw`（或 `humanizer-zh-tw`，擇一以免指示互相衝突）+ `copywriting`；英文帳號把繁中那個換成 `stop-slop`。
+
+#### Threads 專屬，但有廠商綁定或授權問題（列為「可選」並在 UI 顯示警示）
+
+| Skill                                                     | 安裝指令                                                                                                  | 優點                                                                                                  | 為什麼不放預設                                                                                                                                    |
+| --------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `threads-post`、`hook-writer`                             | `npx skills add social-media-skills/skills --skill threads-post hook-writer`                              | 找到最新的 Threads 演算法筆記（`references/threads-2026-reality.md`）：回覆比讚重要、互動速度決定分發 | MIT、170★，但由 WoopSocial 團隊維護，流程假設用 WoopSocial 發文，且依賴同 repo 的 `brand-profile`、`goals-and-kpis`                               |
+| `post-writer-sms`、`thread-writer-sms`、`hook-writer-sms` | `npx skills add blacktwist/social-media-skills --skill post-writer-sms thread-writer-sms hook-writer-sms` | 每個都有 Threads 段落（500 字、最多一個 hashtag、對話口吻、範例）                                     | MIT、577★，但 BlackTwist 是 Threads 排程／分析產品（與本專案定位重疊），內含「Publishing with BlackTwist」MCP 段落                                |
+| `threads-writer`                                          | `npx skills add stevenflanagan1/social-ai-team --skill threads-writer`                                    | 唯一專門的 Threads 寫手：每篇強制計算 500 字、3–7 則串文、不用 hashtag、「Threads 獎勵觀點而非技巧」  | **沒有 LICENSE 檔**（README 只寫 "use it, adapt it, build on it"）；每篇加上 Blotato 發佈標記並寫出檔案。不建議推薦，也不要複製內容進第一方 skill |
+
+#### 進階／特定需求
+
+| Skill                                                          | 安裝指令                                                                                                   | 用途                                       | 注意事項                                                                      |
+| -------------------------------------------------------------- | ---------------------------------------------------------------------------------------------------------- | ------------------------------------------ | ----------------------------------------------------------------------------- |
+| `content-strategy`、`marketing-psychology`                     | `npx skills add coreyhaines31/marketingskills --skill content-strategy marketing-psychology`               | 內容支柱、編輯日曆、行為心理學             | MIT；各約 20 KB，適合規劃而非每篇生成                                         |
+| `voice-builder`                                                | `npx skills add charlie947/social-media-skills --skill voice-builder`                                      | 透過訪談＋3–5 篇範文建立個人語氣檔         | MIT；同 repo 其他 skill 偏 LinkedIn，部分需要 Apify / Gemini                  |
+| `humanizer`                                                    | `npx skills add blader/humanizer`                                                                          | 最受歡迎的英文 humanizer（58.3k★）         | MIT；32 KB、只有英文                                                          |
+| `chinese-content-writing-guideline`、`writing-style-guideline` | `npx skills add jim60105/copilot-prompt --skill chinese-content-writing-guideline writing-style-guideline` | 繁中標點、全半形、空格、稱謂與台灣用語規範 | **GFDL-1.3**（copyleft，轉散布內容時要注意）；22★；附選用的 `scripts/lint.sh` |
+
+#### 調查過但不建議
+
+- `typefully/agent-skills`：支援 Threads，但需要 `TYPEFULLY_API_KEY` 並執行 `scripts/typefully.js`。
+- `publora/skills` 的 `threads-post`：需要 Publora MCP server。
+- `itchernetski/threads-carousel-claude-skill`：需要 Next.js app 與瀏覽器匯出。
+- `op7418/Humanizer-zh`：中文最熱門（20.1k★），但輸出簡體中文；改用上面的 kevintsai1202 繁中 fork。
+- Anthropic 的 `brand-guidelines`：只套用 Anthropic 自家品牌。
+
+#### 第一方 skill：補上缺口
+
+調查結果顯示**沒有一個 Threads 專屬 skill 同時滿足「授權清楚、不綁發文廠商、支援繁中」**。建議本 repo 自己發佈（在 `skills/` 目錄下，`npx skills add ridemountainpig/threads-analytics` 也能在本機安裝）：
+
+- `threads-post-writer`：Threads 平台規則（500 字、主題標籤、串文結構、連結放置）、hook 與回覆導向的寫法、繁中／英文／日文範例，並明確指示呼叫 `get_content_guidance` 與 `save_post_draft`。
+- `threads-post-retrospective`：2.5 的證據判讀方法（觸及 vs 共鳴四象限、從哪個時間點落後）、如何寫出有證據的原因、如何合併經驗法則。
+
+內容自行撰寫，不複製上面任何 skill 的文字（特別是沒有授權的 `threads-writer` 與 GFDL 的規範文件）。
+
+`lib/skills/recommended.ts` 每一筆記錄 `source`、`skill`、審閱過的 commit 與 `computedHash`、分類、適用語言、為什麼推薦、注意事項，UI 直接拿來顯示上面這些說明。
 
 ---
 
