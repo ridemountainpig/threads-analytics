@@ -1,7 +1,7 @@
 "use client";
 
 import { useCallback, useLayoutEffect, useState } from "react";
-import { usePathname, useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { Tabs } from "@/components/ui/tabs";
 
 export type AnalyticsTabValue = "performance" | "content" | "audience";
@@ -32,8 +32,6 @@ export default function AnalyticsTabs({
   defaultTab: AnalyticsTabValue;
   children: React.ReactNode;
 }) {
-  const router = useRouter();
-  const pathname = usePathname();
   const searchParams = useSearchParams();
   const [value, setValue] = useState<AnalyticsTabValue>(defaultTab);
 
@@ -52,9 +50,10 @@ export default function AnalyticsTabs({
       setValue(v);
       const params = paramsFromBrowser(searchParams);
       params.set("tab", v);
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      // Every panel is already rendered; Next syncs useSearchParams with the History API.
+      window.history.replaceState(null, "", `?${params.toString()}`);
     },
-    [pathname, router, searchParams],
+    [searchParams],
   );
 
   return (

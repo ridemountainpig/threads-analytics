@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import { getSyncIntervalCached, requireSession } from "@/lib/dashboard-data";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import AccountManager from "./account-manager";
+import AppearancePicker from "./appearance-picker";
 import ConnectedAgents from "./connected-agents";
 import SyncButton from "@/components/dashboard/sync-button";
 import SyncIntervalSetting from "./sync-interval-setting";
@@ -32,7 +33,7 @@ export default async function SettingsPage() {
   return (
     <div className="space-y-6 p-4 sm:p-6">
       <div>
-        <h1 className="text-2xl font-semibold">{t.settingsPage.title}</h1>
+        <h1 className="text-2xl font-bold tracking-[-0.02em]">{t.settingsPage.title}</h1>
         <p className="text-muted-foreground text-sm">{t.settingsPage.subtitle}</p>
       </div>
 
@@ -45,7 +46,7 @@ export default async function SettingsPage() {
           <CardContent className="space-y-4">
             <Link
               href="/dashboard/settings/token-guide"
-              className="bg-muted/40 hover:bg-muted/70 group flex items-center gap-3 rounded-xl px-3.5 py-3 transition-[background-color,transform] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+              className="bg-muted/40 hover:bg-muted/70 group flex items-center gap-3 rounded-xl px-3.5 py-3 transition-[background-color,scale] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               <BookOpen className="text-muted-foreground size-4 shrink-0" />
               <span className="min-w-0 flex-1 text-sm">
@@ -123,12 +124,26 @@ export default async function SettingsPage() {
 
         <Card>
           <CardHeader>
+            <CardTitle className="text-base">{t.appearance.title}</CardTitle>
+            <CardDescription>{t.appearance.subtitle}</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AppearancePicker labels={t.appearance} />
+          </CardContent>
+        </Card>
+
+        <Card>
+          <CardHeader>
             <CardTitle className="text-base">{t.mcpAgents.title}</CardTitle>
             <CardDescription>{t.mcpAgents.subtitle}</CardDescription>
           </CardHeader>
           <CardContent>
             <ConnectedAgents
-              labels={t.mcpAgents}
+              labels={{
+                ...t.mcpAgents,
+                cancel: t.settingsPage.cancel,
+                copyFailed: t.common.copyFailed,
+              }}
               locale={locale}
               dateLocale={dateLocales[locale]}
               timeZone={timeZone}
@@ -169,7 +184,7 @@ export default async function SettingsPage() {
           <form action={logoutAction} className="md:hidden">
             <button
               type="submit"
-              className="bg-card ring-foreground/10 text-destructive active:bg-muted/60 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium ring-1 transition-[background-color,transform] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+              className="bg-card ring-foreground/10 text-destructive active:bg-muted/60 flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-medium ring-1 transition-[background-color,scale] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
             >
               <LogOut className="size-4" />
               {t.nav.signOut}

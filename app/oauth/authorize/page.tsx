@@ -1,11 +1,11 @@
 import Image from "next/image";
 import { redirect } from "next/navigation";
-import { ShieldCheck, ShieldX } from "lucide-react";
+import { Globe, ShieldCheck, ShieldX } from "lucide-react";
 import { getSession } from "@/lib/auth";
 import { getDictionary } from "@/lib/i18n-server";
-import { Button } from "@/components/ui/button";
 import LanguageSwitcher from "@/components/dashboard/language-switcher";
 import { approveAuthorizationAction, denyAuthorizationAction } from "./actions";
+import ConsentButton from "./consent-button";
 import { validateAuthorizeRequest, type AuthorizeParams } from "./validate";
 
 export default async function AuthorizePage({
@@ -32,6 +32,8 @@ export default async function AuthorizePage({
 
   if (validated.status === "error_redirect") redirect(validated.url);
 
+  const [beforeDomain, afterDomain] = t.oauthConsent.redirectNotice.split("{domain}");
+
   return (
     <div className="bg-background flex min-h-screen items-center justify-center p-4">
       <div className="absolute top-4 right-4">
@@ -39,12 +41,13 @@ export default async function AuthorizePage({
       </div>
       <div className="w-full max-w-sm space-y-6 p-8">
         <div className="space-y-2 text-center">
+          {/* A drop-shadow traces the tile's alpha edge; a ring would sit on its transparent margin. */}
           <Image
             src="/threads-analytics-icon.png"
             alt="Threads Analytics icon"
             width={56}
             height={56}
-            className="mx-auto rounded-xl"
+            className="mx-auto rounded-xl dark:drop-shadow-[0_0_0.75px_rgb(255_255_255/0.6)]"
             priority
           />
           {validated.status === "invalid" ? (
@@ -76,16 +79,19 @@ export default async function AuthorizePage({
                 <ShieldX className="mt-0.5 size-4 shrink-0" />
                 <span>{t.oauthConsent.scopeNoWrite}</span>
               </p>
+              {/* Client names are self-reported at registration; the redirect
+                  domain is the one signal the owner can use to spot impostors. */}
+              <p className="text-muted-foreground flex items-start gap-2 border-t pt-3">
+                <Globe className="mt-0.5 size-4 shrink-0" />
+                <span className="min-w-0">
+                  {beforeDomain}
+                  <span className="text-foreground font-mono font-medium break-all">
+                    {new URL(validated.redirectUri).host}
+                  </span>
+                  {afterDomain}
+                </span>
+              </p>
             </div>
-
-            {/* Client names are self-reported at registration; the redirect
-                domain is the one signal the owner can use to spot impostors. */}
-            <p className="text-muted-foreground text-center text-xs">
-              {t.oauthConsent.redirectNotice.replace(
-                "{domain}",
-                new URL(validated.redirectUri).host,
-              )}
-            </p>
 
             <form className="flex gap-3">
               <input type="hidden" name="client_id" value={validated.clientId} />
@@ -93,17 +99,12 @@ export default async function AuthorizePage({
               {validated.state && <input type="hidden" name="state" value={validated.state} />}
               <input type="hidden" name="code_challenge" value={validated.codeChallenge} />
               <input type="hidden" name="scope" value={validated.scope} />
-              <Button
-                type="submit"
-                variant="outline"
-                className="flex-1"
-                formAction={denyAuthorizationAction}
-              >
+              <ConsentButton variant="outline" formAction={denyAuthorizationAction}>
                 {t.oauthConsent.deny}
-              </Button>
-              <Button type="submit" className="flex-1" formAction={approveAuthorizationAction}>
+              </ConsentButton>
+              <ConsentButton formAction={approveAuthorizationAction}>
                 {t.oauthConsent.approve}
-              </Button>
+              </ConsentButton>
             </form>
           </>
         )}

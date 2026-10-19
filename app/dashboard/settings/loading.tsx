@@ -1,4 +1,4 @@
-// Mirrors the settings layout — header, then the stacked settings cards.
+// Mirrors the settings layout — header, then the five stacked settings cards.
 export default function SettingsLoading() {
   return (
     <div className="animate-pulse space-y-6 p-4 motion-reduce:animate-none sm:p-6">
@@ -9,7 +9,8 @@ export default function SettingsLoading() {
       <div className="space-y-4">
         <div className="bg-muted h-64 rounded-xl" />
         <div className="bg-muted h-56 rounded-xl" />
-        <div className="bg-muted/70 h-40 rounded-xl" />
+        <div className="bg-muted/70 h-52 rounded-xl" />
+        <div className="bg-muted/70 h-64 rounded-xl" />
         <div className="bg-muted/70 h-40 rounded-xl" />
       </div>
     </div>

@@ -24,12 +24,13 @@ export default async function LoginPage({
       </div>
       <div className="w-full max-w-sm space-y-6 p-8">
         <div className="space-y-2 text-center">
+          {/* A drop-shadow traces the tile's alpha edge; a ring would sit on its transparent margin. */}
           <Image
             src="/threads-analytics-icon.png"
             alt="Threads Analytics icon"
             width={56}
             height={56}
-            className="mx-auto rounded-xl"
+            className="mx-auto rounded-xl dark:drop-shadow-[0_0_0.75px_rgb(255_255_255/0.6)]"
             priority
           />
           <h1 className="text-2xl font-semibold tracking-tight">{t.login.title}</h1>

@@ -39,6 +39,8 @@ interface Props {
     keyword?: string;
     viewsUnit?: string;
     noData?: string;
+    /** Says why the list is empty, e.g. the minimum number of posts a keyword needs. */
+    empty?: string;
   };
 }
 
@@ -62,7 +64,7 @@ export default function KeywordAnalysisChart({ data, labels }: Props) {
   };
 
   if (!data.length) {
-    return <ChartEmptyState label={copy.noData ?? "No data"} height={220} />;
+    return <ChartEmptyState label={copy.empty ?? copy.noData ?? "No data"} height={220} />;
   }
 
   const ticks = rateTicks(Math.max(...data.map((point) => point.avgEngagementRate)));

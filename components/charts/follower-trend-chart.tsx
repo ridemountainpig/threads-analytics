@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useMemo } from "react";
 import {
   Area,
   Bar,
@@ -41,6 +41,7 @@ import {
   type ChartTooltipRow,
 } from "./chart-chrome";
 import { SegmentedControl } from "./segmented-control";
+import { useStoredChoice } from "./use-stored-choice";
 import type { PostsOnDay } from "@/lib/followers";
 
 /** Wide enough for a spelled-out four-figure follower count. */
@@ -52,6 +53,10 @@ const MODE_STORAGE_KEY = "follower-chart-mode";
 const MAX_SPIKE_LABELS = 3;
 
 type Mode = "overall" | "change";
+
+function parseMode(value: string | null): Mode | null {
+  return value === "overall" || value === "change" ? value : null;
+}
 
 interface FollowerTrendChartProps {
   data: Array<{ date: string; followers: number; change: number | null; changeSince?: string }>;
@@ -108,24 +113,8 @@ export default function FollowerTrendChart({
 }: FollowerTrendChartProps) {
   const locale = dateLocale ?? "en-US";
   const motion = useChartMotion();
-  const [mode, setModeState] = useState<Mode>("overall");
-  // Read after mount so server and client paint the same first frame.
-  useEffect(() => {
-    try {
-      const stored = window.localStorage.getItem(MODE_STORAGE_KEY);
-      if (stored === "overall" || stored === "change") setModeState(stored);
-    } catch {
-      // Storage unavailable — keep the default.
-    }
-  }, []);
-  const setMode = (next: Mode) => {
-    setModeState(next);
-    try {
-      window.localStorage.setItem(MODE_STORAGE_KEY, next);
-    } catch {
-      // Best-effort persistence.
-    }
-  };
+  const [storedMode, setMode] = useStoredChoice(MODE_STORAGE_KEY, parseMode);
+  const mode = storedMode ?? "overall";
   const copy = labels ?? {
     followers: "Followers",
     dailyChange: "Daily Change",

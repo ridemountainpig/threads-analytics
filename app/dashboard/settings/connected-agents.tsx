@@ -1,10 +1,9 @@
 import { ArrowUpRight, BookOpen, Bot } from "lucide-react";
 import { headers } from "next/headers";
-import { Button } from "@/components/ui/button";
 import CopyButton from "@/components/dashboard/copy-button";
 import type { Locale } from "@/lib/i18n";
 import { listClients } from "@/lib/oauth";
-import { revokeOAuthClientAction } from "@/actions/oauth";
+import RevokeAgentButton from "./revoke-agent-button";
 
 interface ConnectedAgentsProps {
   labels: {
@@ -14,10 +13,16 @@ interface ConnectedAgentsProps {
     guideHelp: string;
     copy: string;
     copied: string;
+    copyFailed: string;
     authorized: string;
     lastUsed: string;
     never: string;
     revoke: string;
+    revokeConfirmTitle: string;
+    revokeConfirmBody: string;
+    revoked: string;
+    revokeFailed: string;
+    cancel: string;
   };
   locale: Locale;
   dateLocale: string;
@@ -37,6 +42,15 @@ export default async function ConnectedAgents({
   const mcpUrl = `${proto}://${host}/api/mcp`;
   const guideUrl = `https://threads-analytics.app/${locale}/mcp`;
 
+  const revokeLabels = {
+    revoke: labels.revoke,
+    revokeConfirmTitle: labels.revokeConfirmTitle,
+    revokeConfirmBody: labels.revokeConfirmBody,
+    revoked: labels.revoked,
+    revokeFailed: labels.revokeFailed,
+    cancel: labels.cancel,
+  };
+
   const formatDate = (date: Date) =>
     new Intl.DateTimeFormat(dateLocale, {
       dateStyle: "medium",
@@ -50,7 +64,7 @@ export default async function ConnectedAgents({
         href={guideUrl}
         target="_blank"
         rel="noreferrer"
-        className="bg-muted/40 hover:bg-muted/70 group flex items-center gap-3 rounded-xl px-3.5 py-3 transition-[background-color,transform] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
+        className="bg-muted/40 hover:bg-muted/70 group flex items-center gap-3 rounded-xl px-3.5 py-3 transition-[background-color,scale] duration-150 active:scale-[0.99] motion-reduce:transition-none motion-reduce:active:scale-100"
       >
         <BookOpen className="text-muted-foreground size-4 shrink-0" />
         <span className="min-w-0 flex-1 text-sm">
@@ -79,11 +93,11 @@ export default async function ConnectedAgents({
                     : labels.never}
                 </p>
               </div>
-              <form action={revokeOAuthClientAction.bind(null, client.id)}>
-                <Button type="submit" variant="outline" size="sm">
-                  {labels.revoke}
-                </Button>
-              </form>
+              <RevokeAgentButton
+                clientId={client.id}
+                clientName={client.name}
+                labels={revokeLabels}
+              />
             </li>
           ))}
         </ul>
@@ -93,7 +107,10 @@ export default async function ConnectedAgents({
         <p className="text-muted-foreground text-sm">{labels.connectHelp}</p>
         <div className="bg-muted/40 flex items-center gap-2 rounded-xl py-1.5 pr-1.5 pl-3.5">
           <code className="min-w-0 flex-1 truncate font-mono text-xs">{mcpUrl}</code>
-          <CopyButton value={mcpUrl} labels={{ copy: labels.copy, copied: labels.copied }} />
+          <CopyButton
+            value={mcpUrl}
+            labels={{ copy: labels.copy, copied: labels.copied, failed: labels.copyFailed }}
+          />
         </div>
       </div>
     </div>
