@@ -116,7 +116,7 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
           locale,
           copy,
           image: screenshot.light,
-          version: release?.version,
+          release,
         })}
       />
       <ViewportRevealController />
@@ -299,7 +299,7 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
                     {Number(step.index)}
                   </span>
                   <h3>{step.title}</h3>
-                  <p>{emphasize(step.body)}</p>
+                  <p>{emphasize((!release && step.fallbackBody) || step.body)}</p>
                 </li>
               ))}
             </ol>

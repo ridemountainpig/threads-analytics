@@ -6,6 +6,7 @@ import {
   type GuideCopy,
   type GuideSlug,
 } from "@/lib/guides";
+import type { DesktopRelease } from "@/lib/desktop-release";
 import { gettingStarted } from "@/lib/getting-started";
 import type { DesktopGuideCopy, Dictionary, Locale, TokenGuideCopy } from "@/lib/i18n";
 import { locales } from "@/lib/locales";
@@ -138,12 +139,12 @@ export function getDesktopPageStructuredData({
   locale,
   copy,
   image,
-  version,
+  release,
 }: {
   locale: Locale;
   copy: DesktopGuideCopy;
   image: string;
-  version?: string;
+  release: Pick<DesktopRelease, "version" | "downloadUrl"> | null;
 }) {
   const path = "/desktop";
   const pageUrl = `${siteConfig.url}/${locale}${path}`;
@@ -164,8 +165,8 @@ export function getDesktopPageStructuredData({
         applicationSubCategory: "Social media analytics",
         operatingSystem: "macOS 11 or later",
         processorRequirements: "Apple silicon (arm64)",
-        downloadUrl: siteConfig.desktopReleases,
-        ...(version && { softwareVersion: version }),
+        downloadUrl: release?.downloadUrl ?? siteConfig.desktopReleases,
+        ...(release && { softwareVersion: release.version }),
         isAccessibleForFree: true,
         license: "https://www.gnu.org/licenses/agpl-3.0.html",
         inLanguage: locale,

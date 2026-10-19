@@ -337,7 +337,13 @@ export type DesktopGuideCopy = {
     title: string;
     description: string;
     /** Step bodies and FAQ answers may mark UI labels as `**label**`. */
-    steps: { index: string; title: string; body: string }[];
+    steps: {
+      index: string;
+      title: string;
+      body: string;
+      /** Replaces `body` when the buttons fall back to the Releases page. */
+      fallbackBody?: string;
+    }[];
     setupTitle: string;
     setupDescription: string;
     setupSteps: { index: string; title: string; body: string }[];
@@ -3192,6 +3198,8 @@ const desktopGuideEn: DesktopGuideCopy = {
         index: "01",
         title: "Download the ZIP",
         body: "Select **Download** anywhere on this page. The ZIP comes straight from this project's GitHub Releases.",
+        fallbackBody:
+          "Open GitHub Releases, pick the newest release that lists a macOS ZIP, and under **Assets** download the file ending in macos-arm64.zip — not the automatic Source code archive.",
       },
       {
         index: "02",
@@ -3393,6 +3401,8 @@ const desktopGuideZh: DesktopGuideCopy = {
         index: "01",
         title: "下載 ZIP",
         body: "點這一頁的任一個 **下載** 按鈕，ZIP 檔會直接從本專案的 GitHub Releases 下載。",
+        fallbackBody:
+          "前往 GitHub Releases，選擇最新且附有 macOS ZIP 的版本，在 **Assets** 下載檔名結尾是 macos-arm64.zip 的檔案，不要下載自動產生的 Source code 壓縮檔。",
       },
       {
         index: "02",
@@ -3597,6 +3607,8 @@ const desktopGuideJa: DesktopGuideCopy = {
         index: "01",
         title: "ZIP をダウンロード",
         body: "このページの **ダウンロード** ボタンを押すと、このプロジェクトの GitHub Releases から ZIP が直接ダウンロードされます。",
+        fallbackBody:
+          "GitHub Releases で macOS 用 ZIP を含む最新のリリースを選び、**Assets** からファイル名が macos-arm64.zip で終わるものをダウンロードします。自動生成の Source code は不要です。",
       },
       {
         index: "02",
