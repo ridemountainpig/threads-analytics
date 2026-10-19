@@ -50,6 +50,8 @@ Threads Access Token 會經過加密。開發環境會將金鑰儲存在 `deskto
 
 每個版本都使用純 `X.Y.Z` 版本號，因為 Native SDK updater 比較的是 bundle 版本，而 bundle 無法帶有 pre-release 後綴。workflow 會檢查版本號同時符合 `desktop/app.json` 與 `package.json`，在 Apple silicon runner 上建置 app，壓縮為 `Threads-Analytics-<version>-macos-arm64.zip` 並附上 SHA-256 檔案，然後建立 `v<version>` tag 與 GitHub Release。預覽版就是勾選 workflow 的 pre-release 輸入（預設勾選）發佈的版本。
 
+改版本號時也要在 `CHANGELOG.md` 加上 `## X.Y.Z` 段落，寫給使用者看，而不是列出 PR 標題。Release 內文以這一段開頭（由 `desktop/scripts/changelog-section.mjs` 讀取），接著是安裝說明，最後是收合的檔案與 checksum 表格。缺少這一段或內容為空時，workflow 會在建置前失敗；`pnpm desktop:test` 也會檢查目前 `package.json` 的版本有對應的段落。`update_notes` 輸入只用於 app 的更新視窗。
+
 workflow 會從 `desktop-release` environment 的 secrets 將 Developer ID 憑證匯入臨時鑰匙圈，以該身分封裝 app，對 sidecar 與已簽章的外殼各執行一次 smoke test（`pnpm desktop:smoke:macos --shell`），再用 App Store Connect API key 送交 Apple 公證服務，並在壓縮前 staple 公證票證。驗證步驟會檢查解壓後 app 的 staple 票證與 Gatekeeper 評估結果，並確認 ZIP 中只有這個 app，且其 bundle id 與 manifest 相同、版本為發行版本、執行檔為 arm64。所需的 secrets 列在 workflow 檔案開頭；請放在 `desktop-release` environment，並將其部署分支限制為 `main`，讓其他分支的 workflow 讀不到。
 
 workflow 也會透過 `THREADS_ANALYTICS_DESKTOP_VERSION` 把發行版本號傳給建置流程。`desktop/scripts/build-next.mjs` 會將它以 `NEXT_PUBLIC_DESKTOP_APP_VERSION` 烘入 app（本機封裝則退回 manifest 的版本號），執行中的 app 會拿它與最新且附有 `-macos-arm64.zip` 資產的 GitHub Release 比較。正式版建置只會收到正式版的提示，也就是純 `X.Y.Z` 版本號、且沒有標記為 pre-release 的版本。先前 `0.1.0-beta.N` 版本的建置會優先收到較新的正式版；沒有較新的正式版時，才會收到帶有 pre-release 後綴的較新版本。如果第一頁的 release 中沒有這個建置所屬類型的版本，「設定」→「關於」會顯示無法檢查，而不是顯示已是最新版本。workflow 預設會把版本標記為 pre-release，所以要在發布時（或之後編輯 release）取消勾選，已安裝的 app 才會收到這個版本。有新版本時會在儀表板顯示 banner，並在「設定」→「關於」中顯示。開發版建置沒有烘入版本號，因此會略過檢查。

@@ -30,12 +30,15 @@ name: Release Desktop (macOS)
 # A preview is the same kind of release with the pre-release box checked:
 # installed apps skip it until it is published, or later edited, with the box
 # unchecked and "Set as the latest release" checked.
+#
+# The release notes lead with the version's "## X.Y.Z" section of
+# CHANGELOG.md, which the version bump adds; the run fails without one.
 
 on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, a plain X.Y.Z such as 0.1.0. Must match desktop/app.json and package.json."
+        description: "Release version, a plain X.Y.Z such as 0.1.0. Must match desktop/app.json and package.json and have a section in CHANGELOG.md."
         required: true
         type: string
       prerelease:
@@ -149,6 +152,18 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
+
+      # The publish job leads the notes with this section; checking it here
+      # fails the run before the build.
+      - name: Check changelog section
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+        run: |
+          set -euo pipefail
+          if [[ -z "$(node desktop/scripts/changelog-section.mjs "$VERSION")" ]]; then
+            echo "::error::CHANGELOG.md needs a non-empty '## $VERSION' section"
+            exit 1
+          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -360,8 +375,8 @@ jobs:
       ASSET: ${{ needs.package-macos.outputs.asset }}
       PRERELEASE: ${{ needs.package-macos.outputs.prerelease }}
     steps:
-      # Only for desktop/app.json and the signing script, which uses Node
-      # built-ins alone.
+      # Only for desktop/app.json, CHANGELOG.md, and the signing and changelog
+      # scripts, which use Node built-ins alone.
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -411,21 +426,20 @@ jobs:
             --output "$RUNNER_TEMP/release/native-update.json" \
             "--notes=$UPDATE_NOTES"
 
+      # Promoting a preview doesn't rewrite these notes, so they don't name the
+      # release type; GitHub's pre-release badge shows it.
       - name: Write release notes
-        env:
-          UPDATE_NOTES: ${{ inputs.update_notes }}
         run: |
           set -euo pipefail
           sha="$(cut -d ' ' -f 1 "$RUNNER_TEMP/release/$ASSET.sha256")"
-          label="Release"
-          if [[ "$PRERELEASE" == "true" ]]; then label="Preview"; fi
-          whats_new=""
-          if [[ -n "$UPDATE_NOTES" ]]; then whats_new="$UPDATE_NOTES"$'\n\n'; fi
+          changes="$(node desktop/scripts/changelog-section.mjs "$VERSION")"
 
-          cat > "$RUNNER_TEMP/notes.md" <<NOTES
-          ## Threads Analytics Desktop $VERSION ($label)
+          {
+            printf '%s\n\n' "$changes"
+            cat <<NOTES
+          ### Install
 
-          ${whats_new}macOS, Apple silicon (arm64) only. Signed with a Developer ID and notarized by Apple. Installed copies that offer **Install** in their update notice update themselves; see the install guide for a first install or a manual update:
+          macOS, Apple silicon (arm64) only. Signed with a Developer ID and notarized by Apple. Installed copies that offer **Install** in their update notice update themselves; see the install guide for a first install or a manual update:
 
           - [Install guide (English)](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/desktop/docs/install-macos.md)
           - [安裝說明（繁體中文）](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/desktop/docs/install-macos-zh.md)
@@ -433,7 +447,8 @@ jobs:
 
           Only download the app from this project's GitHub Releases.
 
-          ### Assets
+          <details>
+          <summary>Assets and checksums</summary>
 
           | File | SHA-256 |
           | --- | --- |
@@ -442,7 +457,10 @@ jobs:
           \`native-update.json\` is the signed update feed installed apps read.
 
           Built from ${GITHUB_SHA}.
+
+          </details>
           NOTES
+          } > "$RUNNER_TEMP/notes.md"
 
       - name: Create GitHub Release
         env:
