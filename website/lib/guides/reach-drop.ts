@@ -64,7 +64,7 @@ const zh: GuideCopy = {
   metadata: {
     title: "Threads 觸及率下降怎麼辦：先判斷是真的掉還是正常波動",
     description:
-      "Threads（脆）觀看數突然下降？先別急著懷疑被限流。比較等長期間、發文篇數和內容組成，一步步找出真正改變的地方。",
+      "Threads（脆）觀看數突然下降、觸及率變低？先別急著懷疑被限流。比較等長期間、發文篇數和內容組成，一步步找出真正改變的地方，並建立自己的觀看基準。",
   },
   hero: {
     kicker: "指南 / 觸及",
@@ -110,17 +110,17 @@ const zh: GuideCopy = {
 };
 
 const ja: GuideCopy = {
-  navTitle: "Threads のリーチが落ちたとき",
-  menuTitle: "リーチが落ちたら",
+  navTitle: "Threads の閲覧数が減ったとき",
+  menuTitle: "閲覧数が減ったら",
   menuDescription: "本当の減少か通常の揺れかを見分ける",
   metadata: {
-    title: "Threads のリーチが落ちた？本当の低下と通常の揺れを見分ける方法",
+    title: "Threads の閲覧数が減った？本当の低下と通常の揺れを見分ける方法",
     description:
       "Threads（スレッズ）の閲覧数が落ちた？ペナルティを疑う前に、同じ長さの期間、投稿数、投稿内容の構成を比べましょう。何が変わったのかを順番に確かめる方法を解説します。",
   },
   hero: {
-    kicker: "ガイド / リーチ",
-    lineOne: "Threads のリーチが落ちたら？",
+    kicker: "ガイド / 閲覧数",
+    lineOne: "Threads の閲覧数が減ったら？",
     lineTwo: "本当の低下か、いつもの揺れかを見分ける",
     description:
       "閲覧数が急に落ちると、まず「制限されたのでは」と考えがちです。でも原因は、思っているより単純なことも少なくありません。一つずつ確認して、本当に変わったところを見つけましょう。",
