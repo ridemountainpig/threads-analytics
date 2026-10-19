@@ -30,7 +30,7 @@ export default function AccountSwitcher({
   return (
     <DropdownMenu>
       <DropdownMenuTrigger
-        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 inline-flex max-w-full items-center gap-1 rounded-sm text-left text-xs transition-colors duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none"
+        className="text-muted-foreground hover:text-foreground focus-visible:ring-ring/50 relative inline-flex max-w-full items-center gap-1 rounded-sm text-left text-xs transition-colors duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none max-md:after:absolute max-md:after:-inset-x-2 max-md:after:-inset-y-3"
         aria-label={label}
       >
         {pending ? <Loader2 className="size-3 shrink-0 animate-spin" /> : null}

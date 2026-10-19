@@ -33,6 +33,7 @@ export default async function DashboardLayout({ children }: { children: React.Re
         accounts={accounts.map(({ id, username, isActive }) => ({ id, username, isActive }))}
         locale={locale}
         labels={t.nav}
+        appearanceLabels={t.appearance}
         appName={t.common.appName}
         version={getCurrentVersionLink()}
         showSignOut={!isDesktopApp}

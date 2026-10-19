@@ -1,7 +1,6 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import { createPortal } from "react-dom";
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
 import {
@@ -12,6 +11,7 @@ import {
   medianRatioStep,
 } from "./chart-style";
 import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
+import { CellTooltip, useCellTooltip } from "./cell-tooltip";
 
 interface DataPoint {
   mediaType: string;
@@ -59,21 +59,12 @@ function formatHour(h: number, locale?: string) {
   }
 }
 
-interface TooltipState {
-  point: DataPoint;
-  label: string;
-  x: number;
-  y: number;
-}
-
 export default function ContentTypeTimeSlotChart({
   data,
   baselineMedianViews,
   dateLocale,
   labels,
 }: Props) {
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
-
   const copy = labels ?? {
     posts: "Posts",
     avgViews: "Avg Views",
@@ -87,24 +78,28 @@ export default function ContentTypeTimeSlotChart({
   const confidenceLabel = copy.confidence ?? "Confidence";
   const getMediaTypeLabel = (mediaType: string) => copy.mediaTypes?.[mediaType] ?? mediaType;
 
+  const mediaTypes = Array.from(new Set(data.map((d) => d.mediaType))).sort();
+  const byKey = new Map(data.map((d) => [`${d.mediaType}:${d.hour}`, d]));
+  const cellKeys = mediaTypes.flatMap((type) =>
+    HOURS.map((hour) => `${type}:${hour}`).filter((key) => byKey.has(key)),
+  );
+  const { tip, cellProps, onGridKeyDown } = useCellTooltip<{ point: DataPoint; label: string }>(
+    cellKeys,
+  );
+
   if (!data.length) {
     return <ChartEmptyState label={copy.noData} height={180} />;
   }
 
-  const mediaTypes = Array.from(new Set(data.map((d) => d.mediaType))).sort();
   const formatRatio = (value: number) =>
     baselineMedianViews > 0 ? `${(value / baselineMedianViews).toFixed(1)}×` : "—";
-  const byKey = new Map(data.map((d) => [`${d.mediaType}:${d.hour}`, d]));
 
   return (
     <>
       <div className="w-full overflow-x-auto">
-        <AxisHint
-          columns={copy.hour ?? "Hour"}
-          rows={copy.contentType ?? "Content Type"}
-          color={copy.vsMedian ?? "vs. your median"}
-        />
+        <AxisHint x={copy.hour ?? "Hour"} y={copy.contentType ?? "Content Type"} />
         <div
+          onKeyDown={onGridKeyDown}
           className="grid min-w-[720px] gap-[3px]"
           style={{
             gridTemplateColumns: `90px repeat(${HOURS.length}, minmax(22px, 1fr))`,
@@ -114,67 +109,69 @@ export default function ContentTypeTimeSlotChart({
           {HOURS.map((h) => (
             <div
               key={h}
-              className="text-muted-foreground pb-0.5 text-center text-[9px] leading-tight tracking-[0.02em] tabular-nums"
+              className="text-muted-foreground pb-0.5 text-center text-[10px] leading-tight tracking-[0.01em] whitespace-nowrap tabular-nums"
             >
               {h % 3 === 0 ? formatHour(h, dateLocale) : ""}
             </div>
           ))}
-          {mediaTypes.map((type) => (
+          {mediaTypes.map((type, row) => (
             <Fragment key={type}>
               <div className="text-muted-foreground flex items-center pr-2 text-xs font-medium">
                 {getMediaTypeLabel(type)}
               </div>
               {HOURS.map((hour) => {
                 const point = byKey.get(`${type}:${hour}`);
-                const step = point ? medianRatioStep(point.medianViews, baselineMedianViews) : 0;
+                if (!point) {
+                  return (
+                    <div
+                      key={`${type}-${hour}`}
+                      className="h-6 min-w-0 rounded-[4px]"
+                      style={{
+                        backgroundColor: "color-mix(in oklch, var(--muted) 40%, transparent)",
+                      }}
+                    />
+                  );
+                }
+                const step = medianRatioStep(point.medianViews, baselineMedianViews);
+                const label = `${getMediaTypeLabel(type)} · ${formatHour(hour, dateLocale)}`;
                 return (
-                  <div
+                  <button
                     key={`${type}-${hour}`}
-                    onMouseMove={
-                      point
-                        ? (e) =>
-                            setTooltip({
-                              point,
-                              label: `${getMediaTypeLabel(type)} · ${formatHour(hour, dateLocale)}`,
-                              x: e.clientX,
-                              y: e.clientY,
-                            })
-                        : undefined
-                    }
-                    onMouseLeave={() => setTooltip(null)}
-                    className={cn(
-                      "flex h-6 min-w-0 items-center justify-center rounded-[4px] transition-opacity duration-150 motion-reduce:transition-none",
-                      point && "hover:opacity-80",
-                      // Low-confidence cells stay visible but visually tentative.
-                      point?.confidence === "low" && "opacity-60",
+                    {...cellProps(
+                      { point, label },
+                      {
+                        key: `${type}:${hour}`,
+                        row,
+                        col: hour,
+                        label: `${label}: ${medianViewsLabel} ${point.medianViews.toLocaleString(dateLocale)}`,
+                      },
                     )}
+                    className="focus-visible:ring-foreground flex h-6 min-w-0 items-center justify-center rounded-[4px] transition-opacity duration-150 outline-none hover:opacity-80 focus-visible:ring-2 focus-visible:ring-inset motion-reduce:transition-none"
                     style={{
-                      backgroundColor: point
-                        ? medianRatioBg[step]
-                        : "color-mix(in oklch, var(--muted) 40%, transparent)",
+                      // Low confidence fades the fill, not the number, so it stays legible.
+                      backgroundColor:
+                        point.confidence === "low"
+                          ? `color-mix(in oklch, ${medianRatioBg[step]} 60%, transparent)`
+                          : medianRatioBg[step],
                     }}
                   >
-                    {point ? (
-                      <span
-                        className={cn(
-                          "text-[9px] leading-none font-medium tabular-nums",
-                          // Keep the value legible as the cell darkens.
-                          step === 2 ? "text-white" : "text-foreground/70",
-                        )}
-                      >
-                        {formatCompactNumber(point.medianViews)}
-                      </span>
-                    ) : null}
-                  </div>
+                    <span
+                      className={cn(
+                        "text-[10px] leading-none font-medium tracking-[-0.02em] tabular-nums",
+                        // On the darkest fill only pure white clears 4.5:1 in dark mode.
+                        step === 2 ? "text-foreground dark:text-white" : "text-foreground/80",
+                      )}
+                    >
+                      {formatCompactNumber(point.medianViews)}
+                    </span>
+                  </button>
                 );
               })}
             </Fragment>
           ))}
         </div>
         <div className="mt-2.5 flex items-center justify-end gap-1">
-          <span className="text-muted-foreground/80 text-[10px]">
-            {copy.belowMedian ?? copy.less}
-          </span>
+          <span className="text-muted-foreground text-[10px]">{copy.belowMedian ?? copy.less}</span>
           {MEDIAN_RATIO_STEPS.map((step) => (
             <div
               key={step}
@@ -182,44 +179,37 @@ export default function ContentTypeTimeSlotChart({
               style={{ backgroundColor: medianRatioBg[step] }}
             />
           ))}
-          <span className="text-muted-foreground/80 text-[10px]">
-            {copy.aboveMedian ?? copy.more}
-          </span>
+          <span className="text-muted-foreground text-[10px]">{copy.aboveMedian ?? copy.more}</span>
         </div>
       </div>
 
-      {tooltip &&
-        createPortal(
-          <div
-            className="pointer-events-none fixed z-50"
-            style={{ top: tooltip.y + 14, left: tooltip.x + 14 }}
-          >
-            <ChartTooltip
-              title={tooltip.label}
-              subtitle={`${confidenceLabel}: ${
-                copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence
-              }`}
-              rows={[
-                {
-                  label: medianViewsLabel,
-                  value: tooltip.point.medianViews.toLocaleString(),
-                  color: chartPalette.blue,
-                },
-                {
-                  label: copy.vsMedian ?? "vs. your median",
-                  value: formatRatio(tooltip.point.medianViews),
-                },
-                { label: copy.avgViews, value: tooltip.point.avgViews.toLocaleString() },
-                {
-                  label: copy.posts,
-                  value: tooltip.point.postCount.toLocaleString(),
-                  muted: true,
-                },
-              ]}
-            />
-          </div>,
-          document.body,
-        )}
+      {tip && (
+        <CellTooltip anchor={tip.anchor}>
+          <ChartTooltip
+            title={tip.data.label}
+            subtitle={`${confidenceLabel}: ${
+              copy.confidenceLevels?.[tip.data.point.confidence] ?? tip.data.point.confidence
+            }`}
+            rows={[
+              {
+                label: medianViewsLabel,
+                value: tip.data.point.medianViews.toLocaleString(dateLocale),
+                color: chartPalette.blue,
+              },
+              {
+                label: copy.vsMedian ?? "vs. your median",
+                value: formatRatio(tip.data.point.medianViews),
+              },
+              { label: copy.avgViews, value: tip.data.point.avgViews.toLocaleString(dateLocale) },
+              {
+                label: copy.posts,
+                value: tip.data.point.postCount.toLocaleString(dateLocale),
+                muted: true,
+              },
+            ]}
+          />
+        </CellTooltip>
+      )}
     </>
   );
 }

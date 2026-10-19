@@ -174,7 +174,7 @@ export default function ContentTypeChart({ data, labels }: ContentTypeChartProps
             dot={{
               r: 4,
               fill: chartColors.engagement,
-              stroke: "var(--background)",
+              stroke: "var(--card)",
               strokeWidth: 2,
             }}
             activeDot={activeDot(chartColors.engagement)}

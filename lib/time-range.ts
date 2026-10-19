@@ -36,8 +36,13 @@ export function getTimeRange(
     const { from, to, range } = params;
     if (from && to) {
       const tz = normalizeTimeZone(timeZone);
-      const since = parseDateOnlyInTimeZone(from, tz, false);
-      const until = parseDateOnlyInTimeZone(to, tz, true);
+      let since = parseDateOnlyInTimeZone(from, tz, false);
+      let until = parseDateOnlyInTimeZone(to, tz, true);
+      // A cookie or hand-edited URL can carry the ends reversed; read them as the same span.
+      if (since.getTime() > until.getTime()) {
+        since = parseDateOnlyInTimeZone(to, tz, false);
+        until = parseDateOnlyInTimeZone(from, tz, true);
+      }
       if (!isNaN(since.getTime()) && !isNaN(until.getTime())) {
         return { since, until };
       }

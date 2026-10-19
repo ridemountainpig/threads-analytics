@@ -1,7 +1,7 @@
 "use client";
 
-import { useTheme } from "next-themes";
 import { Toaster as Sonner, type ToasterProps } from "sonner";
+import { useTheme } from "@/components/theme-provider";
 import {
   CircleCheckIcon,
   InfoIcon,
@@ -11,12 +11,15 @@ import {
 } from "lucide-react";
 
 const Toaster = ({ ...props }: ToasterProps) => {
-  const { theme = "system" } = useTheme();
+  const { theme } = useTheme();
 
   return (
     <Sonner
-      theme={theme as ToasterProps["theme"]}
+      theme={theme}
       className="toaster group"
+      // --toast-offset-bottom (globals.css) is set only while the mobile tab bar shows.
+      offset={{ bottom: "var(--toast-offset-bottom, 24px)" }}
+      mobileOffset={{ bottom: "var(--toast-offset-bottom, 16px)" }}
       icons={{
         success: <CircleCheckIcon className="size-4" />,
         info: <InfoIcon className="size-4" />,
@@ -35,6 +38,9 @@ const Toaster = ({ ...props }: ToasterProps) => {
       toastOptions={{
         classNames: {
           toast: "cn-toast",
+          // Sonner's own button styles are unlayered, so overrides need `!`.
+          actionButton:
+            "bg-tint/12! hover:bg-tint/18! text-tint! h-7! rounded-full! px-3! font-medium!",
         },
       }}
       {...props}

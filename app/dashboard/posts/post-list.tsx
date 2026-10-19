@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef, type ReactNode } from "react";
+import { useState, useEffect, useOptimistic, useRef, useTransition } from "react";
 import Link from "next/link";
 import { useRouter, useSearchParams, usePathname } from "next/navigation";
 import {
@@ -12,6 +12,7 @@ import {
   ExternalLink,
   Gift,
   Layers,
+  Loader2,
   Search,
   X,
 } from "lucide-react";
@@ -47,8 +48,8 @@ function FilterChip({
       title={title}
       aria-label={title}
       className={cn(
-        "inline-flex shrink-0 items-center rounded-full text-xs whitespace-nowrap transition-[background-color,color,transform] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
-        size === "sm" ? "h-7 px-3" : "h-6 px-2.5",
+        "inline-flex shrink-0 items-center rounded-full text-xs whitespace-nowrap transition-[background-color,color,scale] duration-150 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+        size === "sm" ? "h-7 px-3 max-sm:h-8" : "h-6 px-2.5 max-sm:h-8",
         selected
           ? "bg-primary text-primary-foreground font-medium"
           : "bg-muted/70 text-foreground/70 hover:text-foreground",
@@ -127,7 +128,12 @@ interface PostListProps {
   currentType: string;
   availableTypes: string[];
   /** Belongs to the list, so it hides while a post is open below lg. */
-  pagination?: ReactNode;
+  pagination?: {
+    page: number;
+    pageCount: number;
+    prevHref: string | null;
+    nextHref: string | null;
+  };
   dateLocale?: string;
   timeZone: string;
   labels: {
@@ -137,8 +143,16 @@ interface PostListProps {
     likes: string;
     replies: string;
     noPosts: string;
+    settingsLink: string;
+    noMatchesQuery: string;
+    noMatchesType: string;
+    noMatchesQueryType: string;
+    noMatchesDetail: string;
+    noPostsDetail: string;
+    clearFilters: string;
     noText: string;
     viewOnThreads: string;
+    viewPartOnThreads?: string;
     startGiveaway: string;
     engRate: string;
     vsAvgViews: string;
@@ -175,6 +189,9 @@ interface PostListProps {
     ascending?: string;
     descending?: string;
     backToList?: string;
+    previousPage: string;
+    nextPage: string;
+    pageStatus: string;
   };
 }
 
@@ -249,7 +266,7 @@ function ThreadPartText({
       <span
         ref={textRef}
         className={cn(
-          "min-w-0 flex-1",
+          "min-w-0 flex-1 [overflow-wrap:anywhere]",
           expanded ? "whitespace-pre-wrap" : "line-clamp-1 break-all",
         )}
       >
@@ -274,7 +291,7 @@ function ThreadPartText({
 
 function ThreadBadge({ count, label }: { count: number; label?: string }) {
   return (
-    <span className="bg-tint/12 text-tint inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums">
+    <span className="bg-muted text-muted-foreground inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[11px] font-medium tabular-nums">
       <Layers className="size-3" />
       {(label ?? "{count}-part thread").replace("{count}", String(count))}
     </span>
@@ -414,12 +431,16 @@ function PostDetail({
     },
     ...post.threadParts,
   ];
+  const partLinkLabel = (position: number) =>
+    labels.viewPartOnThreads?.replace("{n}", String(position)) ?? labels.viewOnThreads;
 
   return (
     <div className="divide-border/60 divide-y">
       {/* Post content — the hero of the panel, set a step larger */}
       <div className="pb-5">
-        <p className="text-[15px] leading-relaxed">{post.text || labels.noText}</p>
+        <p className="text-[15px] leading-relaxed [overflow-wrap:anywhere] whitespace-pre-line">
+          {post.text || labels.noText}
+        </p>
         <div className="mt-3 flex flex-wrap items-center gap-3">
           <span className="text-muted-foreground text-sm tabular-nums">
             {formatPostDate(post.timestamp, locale, timeZone, true)}
@@ -435,7 +456,7 @@ function PostDetail({
               href={post.permalink}
               target="_blank"
               rel="noopener noreferrer"
-              className="text-tint flex items-center gap-1 text-sm hover:opacity-80"
+              className="text-tint flex items-center gap-1 text-sm transition-opacity duration-100 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
             >
               <ExternalLink className="size-3.5" />
               {labels.viewOnThreads}
@@ -443,7 +464,7 @@ function PostDetail({
           )}
           <Link
             href={`/dashboard/giveaway?post=${encodeURIComponent(post.id)}`}
-            className="text-tint flex items-center gap-1 text-sm hover:opacity-80"
+            className="text-tint flex items-center gap-1 text-sm transition-opacity duration-100 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
           >
             <Gift className="size-3.5" />
             {labels.startGiveaway}
@@ -591,14 +612,14 @@ function PostDetail({
                       href={row.permalink}
                       target="_blank"
                       rel="noopener noreferrer"
-                      aria-label={labels.viewOnThreads}
-                      title={labels.viewOnThreads}
-                      className="text-muted-foreground hover:text-tint mt-0.5 shrink-0"
+                      aria-label={partLinkLabel(row.position)}
+                      title={partLinkLabel(row.position)}
+                      className="text-muted-foreground hover:text-tint active:bg-muted -mx-2 -mt-1.5 -mb-2 inline-flex size-8 shrink-0 items-center justify-center rounded-full transition-colors duration-100 motion-reduce:transition-none"
                     >
                       <ExternalLink className="size-3.5" />
                     </a>
                   ) : (
-                    <span className="mt-0.5 inline-block size-3.5 shrink-0" />
+                    <span className="inline-block size-4 shrink-0" />
                   )}
                 </div>
               );
@@ -634,7 +655,7 @@ function PostDetail({
                           "rounded-full px-1.5 py-0.5 text-[11px] leading-4 font-semibold tabular-nums",
                           isCurrent
                             ? "bg-primary-foreground/15"
-                            : "bg-background/70 text-foreground",
+                            : "bg-background/70 text-foreground dark:bg-foreground/10",
                         )}
                       >
                         {stat.median === null ? "—" : `${stat.median}%`}
@@ -769,6 +790,36 @@ function PostDetail({
   );
 }
 
+function PageLink({
+  href,
+  onNavigate,
+  children,
+}: {
+  href: string | null;
+  onNavigate: (href: string) => void;
+  children: React.ReactNode;
+}) {
+  if (!href) {
+    return (
+      <span className="text-muted-foreground/50 bg-muted/40 rounded-full px-3.5 py-1.5 text-sm">
+        {children}
+      </span>
+    );
+  }
+  return (
+    <Link
+      href={href}
+      onNavigate={(e) => {
+        e.preventDefault();
+        onNavigate(href);
+      }}
+      className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,scale] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+    >
+      {children}
+    </Link>
+  );
+}
+
 export default function PostList({
   posts,
   medianViews,
@@ -790,6 +841,13 @@ export default function PostList({
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
+  const [isNavigating, startNavigation] = useTransition();
+  const [isSearching, startSearch] = useTransition();
+  const isPending = isNavigating || isSearching;
+  // Chips move on the press; the props catch up once the server answers.
+  const [shownSort, setShownSort] = useOptimistic(currentSort);
+  const [shownDir, setShownDir] = useOptimistic(currentDir);
+  const [shownType, setShownType] = useOptimistic(currentType);
 
   // Below lg, `?post=` switches the list for the detail, so the back gesture returns to the list.
   const urlPostId = searchParams.get("post");
@@ -818,17 +876,14 @@ export default function PostList({
   // Debounced server-side search: filtering must span every page, not just the
   // 50 posts currently loaded.
   useEffect(() => {
-    if (searchQuery === currentQuery) return;
+    if (searchQuery.trim() === lastPushedQuery.current.trim()) return;
     const handle = setTimeout(() => {
       lastPushedQuery.current = searchQuery;
-      const params = new URLSearchParams(searchParams.toString());
-      if (searchQuery) params.set("q", searchQuery);
-      else params.delete("q");
-      params.delete("page");
-      router.replace(`${pathname}?${params.toString()}`, { scroll: false });
+      const url = listUrl({ sort: shownSort, dir: shownDir, type: shownType, q: searchQuery });
+      startSearch(() => router.replace(url, { scroll: false }));
     }, 350);
     return () => clearTimeout(handle);
-  }, [searchQuery, currentQuery, searchParams, pathname, router]);
+  }, [searchQuery, shownSort, shownDir, shownType, searchParams, pathname, router]);
 
   // Mobile: open the detail at its top, and come back to the row that was opened.
   useEffect(() => {
@@ -846,42 +901,59 @@ export default function PostList({
 
   // Sync the input when the query changes from outside (e.g. back/forward).
   useEffect(() => {
-    if (currentQuery !== lastPushedQuery.current) {
+    // The server trims the query, so a trailing space mid-typing isn't a change.
+    if (currentQuery !== lastPushedQuery.current.trim()) {
       lastPushedQuery.current = currentQuery;
       setSearchQuery(currentQuery);
     }
   }, [currentQuery]);
 
-  function pushParams(mutate: (params: URLSearchParams) => void) {
+  // From the optimistic values, so a second press mid-load keeps both changes.
+  function listUrl(next: { sort: string; dir: string; type: string; q: string }) {
     const params = new URLSearchParams(searchParams.toString());
-    mutate(params);
+    if (next.sort === "date") params.delete("sort");
+    else params.set("sort", next.sort);
+    if (next.dir === "asc") params.set("dir", "asc");
+    else params.delete("dir");
+    if (next.type) params.set("type", next.type);
+    else params.delete("type");
+    if (next.q) params.set("q", next.q);
+    else params.delete("q");
     params.delete("page");
-    router.push(`${pathname}?${params.toString()}`, { scroll: false });
+    return `${pathname}?${params.toString()}`;
   }
 
-  function setSort(sort: SortOption) {
-    pushParams((params) => {
-      if (sort === "date") params.delete("sort");
-      else params.set("sort", sort);
+  function pushList(patch: { sort?: string; dir?: string; type?: string }) {
+    const next = { sort: shownSort, dir: shownDir, type: shownType, ...patch };
+    startNavigation(() => {
+      setShownSort(next.sort);
+      setShownDir(next.dir);
+      setShownType(next.type);
+      router.push(listUrl({ ...next, q: lastPushedQuery.current }), { scroll: false });
     });
   }
 
-  function toggleDir() {
-    const next = currentDir === "asc" ? "desc" : "asc";
-    pushParams((params) => {
-      if (next === "desc") params.delete("dir");
-      else params.set("dir", "asc");
-    });
+  function clearSearch() {
+    setSearchQuery("");
+    searchInputRef.current?.focus();
+    if (!lastPushedQuery.current) return;
+    lastPushedQuery.current = "";
+    const url = listUrl({ sort: shownSort, dir: shownDir, type: shownType, q: "" });
+    startSearch(() => router.replace(url, { scroll: false }));
   }
 
-  function setMediaFilter(type: string) {
-    pushParams((params) => {
-      if (!type) params.delete("type");
-      else params.set("type", type);
-    });
+  function clearFilters() {
+    setSearchQuery("");
+    lastPushedQuery.current = "";
+    pushList({ type: "" });
+  }
+
+  function goToPage(href: string) {
+    startNavigation(() => router.push(href));
   }
 
   function selectPost(id: string) {
+    if (id !== activeId && detailScrollRef.current) detailScrollRef.current.scrollTop = 0;
     setSelectedId(id);
     const params = new URLSearchParams(window.location.search);
     params.set("post", id);
@@ -922,6 +994,18 @@ export default function PostList({
 
   const selectedPost = posts.find((p) => p.id === activeId) ?? posts[0] ?? null;
 
+  const isFiltered = Boolean(currentQuery || currentType);
+  const noMatches = (
+    currentQuery && currentType
+      ? labels.noMatchesQueryType
+      : currentQuery
+        ? labels.noMatchesQuery
+        : labels.noMatchesType
+  )
+    .replace("{type}", () => labels.mediaTypes?.[currentType] ?? currentType)
+    .replace("{query}", () => currentQuery);
+  const [noPostsBefore, noPostsAfter = ""] = labels.noPosts.split("{settings}");
+
   return (
     <>
       <div
@@ -947,19 +1031,20 @@ export default function PostList({
               {SORT_OPTIONS.map((value) => (
                 <FilterChip
                   key={value}
-                  selected={currentSort === value}
-                  onClick={() => setSort(value)}
+                  selected={shownSort === value}
+                  onClick={() => pushList({ sort: value })}
                 >
                   {sortLabels[value]}
                 </FilterChip>
               ))}
               <button
-                onClick={toggleDir}
-                title={currentDir === "asc" ? labels.ascending : labels.descending}
-                aria-label={currentDir === "asc" ? labels.ascending : labels.descending}
-                className="bg-muted/70 text-foreground/70 hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+                type="button"
+                onClick={() => pushList({ dir: shownDir === "asc" ? "desc" : "asc" })}
+                title={shownDir === "asc" ? labels.ascending : labels.descending}
+                aria-label={shownDir === "asc" ? labels.ascending : labels.descending}
+                className="bg-muted/70 text-foreground/70 hover:text-foreground flex size-7 shrink-0 items-center justify-center rounded-full transition-[background-color,color,scale] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100 max-sm:size-8"
               >
-                {currentDir === "asc" ? (
+                {shownDir === "asc" ? (
                   <ArrowUp className="size-3.5" />
                 ) : (
                   <ArrowDown className="size-3.5" />
@@ -969,14 +1054,18 @@ export default function PostList({
             {/* Search: a recessed capsule field, Apple search-bar style */}
             <div className="flex flex-wrap items-center gap-2">
               <div className="relative flex-1">
-                <Search className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
+                {isSearching ? (
+                  <Loader2 className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2 animate-spin motion-reduce:animate-none" />
+                ) : (
+                  <Search className="text-muted-foreground absolute top-1/2 left-3 size-3.5 -translate-y-1/2" />
+                )}
                 <input
                   ref={searchInputRef}
                   type="search"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                   placeholder={labels.searchPlaceholder ?? "Search posts..."}
-                  className="bg-muted/70 placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-full py-1.5 pr-9 pl-9 text-sm transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none [&::-webkit-search-cancel-button]:hidden"
+                  className="bg-muted/70 placeholder:text-muted-foreground focus-visible:ring-ring/40 w-full rounded-full py-1.5 pr-9 pl-9 text-base transition-[background-color,box-shadow] duration-150 outline-none focus-visible:ring-2 motion-reduce:transition-none sm:text-sm [&::-webkit-search-cancel-button]:hidden"
                 />
                 {/* Apple search-bar grammar: a clear affordance appears once
                   there's something to clear, and hands focus back for the
@@ -985,11 +1074,8 @@ export default function PostList({
                   <button
                     type="button"
                     aria-label={labels.clearSearch ?? "Clear search"}
-                    onClick={() => {
-                      setSearchQuery("");
-                      searchInputRef.current?.focus();
-                    }}
-                    className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,transform] duration-150 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
+                    onClick={clearSearch}
+                    className="text-muted-foreground hover:text-foreground hover:bg-muted absolute top-1/2 right-1.5 inline-flex size-6 -translate-y-1/2 items-center justify-center rounded-full transition-[background-color,color,scale,translate] duration-150 after:absolute after:-inset-1.5 active:scale-90 motion-reduce:transition-none motion-reduce:active:scale-100"
                   >
                     <X className="size-3.5" />
                   </button>
@@ -1000,8 +1086,8 @@ export default function PostList({
               <div className="flex flex-wrap items-center gap-1.5">
                 <FilterChip
                   size="xs"
-                  selected={currentType === ""}
-                  onClick={() => setMediaFilter("")}
+                  selected={shownType === ""}
+                  onClick={() => pushList({ type: "" })}
                 >
                   {labels.allTypes ?? "All"}
                 </FilterChip>
@@ -1009,8 +1095,8 @@ export default function PostList({
                   <FilterChip
                     key={type}
                     size="xs"
-                    selected={currentType === type}
-                    onClick={() => setMediaFilter(type)}
+                    selected={shownType === type}
+                    onClick={() => pushList({ type })}
                   >
                     {labels.mediaTypes?.[type] ?? type}
                   </FilterChip>
@@ -1019,11 +1105,42 @@ export default function PostList({
             )}
           </div>
 
-          {/* Post list: floating rounded selection, macOS-sidebar style */}
-          <div ref={listScrollRef} className="flex-1 overflow-y-auto p-1.5">
-            {posts.length === 0 ? (
-              <div className="text-muted-foreground p-6 text-center text-sm">{labels.noPosts}</div>
-            ) : null}
+          {/* Post list: floating rounded selection, macOS-sidebar style. While
+              loading it dims after 150ms, so quick answers don't flicker. */}
+          <div
+            ref={listScrollRef}
+            aria-busy={isPending}
+            className={cn(
+              "flex-1 overflow-y-auto p-1.5 transition-opacity duration-200 ease-out motion-reduce:duration-0",
+              isPending && "opacity-60 delay-150",
+            )}
+          >
+            {posts.length === 0 &&
+              (isFiltered ? (
+                <div className="flex flex-col items-center gap-3 p-6 text-center">
+                  <p className="text-muted-foreground text-sm [overflow-wrap:anywhere]">
+                    {noMatches}
+                  </p>
+                  <button
+                    type="button"
+                    onClick={clearFilters}
+                    className="bg-muted/70 text-foreground hover:bg-muted rounded-full px-3.5 py-1.5 text-sm transition-[background-color,scale] duration-150 active:scale-[0.97] motion-reduce:transition-none motion-reduce:active:scale-100"
+                  >
+                    {labels.clearFilters}
+                  </button>
+                </div>
+              ) : (
+                <p className="text-muted-foreground p-6 text-center text-sm">
+                  {noPostsBefore}
+                  <Link
+                    href="/dashboard/settings"
+                    className="text-tint transition-opacity duration-100 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
+                  >
+                    {labels.settingsLink}
+                  </Link>
+                  {noPostsAfter}
+                </p>
+              ))}
             {posts.map((post) => (
               <button
                 key={post.id}
@@ -1047,7 +1164,7 @@ export default function PostList({
                   {post.threadParts.length > 0 && (
                     <ThreadBadge count={post.threadParts.length + 1} label={labels.threadBadge} />
                   )}
-                  <span className="text-muted-foreground/80 ml-auto text-[11px] tabular-nums">
+                  <span className="text-muted-foreground ml-auto text-[11px] tabular-nums">
                     {formatPostDate(post.timestamp, locale, timeZone)}
                   </span>
                 </div>
@@ -1056,17 +1173,20 @@ export default function PostList({
           </div>
         </div>
 
-        {/* Right: detail panel */}
+        {/* Right: detail panel. Below lg, leaving display:none replays the slide-in; back is instant. */}
         <div
           ref={detailScrollRef}
-          className={cn("flex-1 overflow-y-auto lg:block", !openPostId && "hidden")}
+          className={cn(
+            "max-lg:animate-in max-lg:fade-in-0 max-lg:slide-in-from-right-4 flex-1 overflow-y-auto duration-200 ease-out max-lg:motion-reduce:animate-none lg:block",
+            !openPostId && "hidden",
+          )}
         >
           {selectedPost ? (
             <div className="p-4 sm:p-6">
               <button
                 type="button"
                 onClick={closeDetail}
-                className="text-tint -mt-1 mb-3 -ml-1.5 inline-flex items-center gap-0.5 rounded-full py-1 pr-2.5 pl-1 text-sm transition-[opacity,transform] duration-150 active:scale-[0.97] active:opacity-70 motion-reduce:transition-none motion-reduce:active:scale-100 lg:hidden"
+                className="text-tint -mt-1 mb-3 -ml-1.5 inline-flex items-center gap-0.5 rounded-full py-1 pr-2.5 pl-1 text-sm transition-[opacity,scale] duration-150 active:scale-[0.97] active:opacity-70 motion-reduce:transition-none motion-reduce:active:scale-100 lg:hidden"
               >
                 <ChevronLeft className="size-4.5" />
                 {labels.backToList ?? "All posts"}
@@ -1086,12 +1206,28 @@ export default function PostList({
             </div>
           ) : (
             <div className="text-muted-foreground flex h-full items-center justify-center text-sm">
-              {labels.selectPost}
+              {isFiltered ? labels.noMatchesDetail : labels.noPostsDetail}
             </div>
           )}
         </div>
       </div>
-      {pagination && <div className={cn(openPostId && "hidden lg:block")}>{pagination}</div>}
+      {pagination && (
+        <div
+          className={cn("flex items-center justify-between gap-3", openPostId && "hidden lg:flex")}
+        >
+          <PageLink href={pagination.prevHref} onNavigate={goToPage}>
+            {labels.previousPage}
+          </PageLink>
+          <span className="text-muted-foreground text-sm tabular-nums">
+            {labels.pageStatus
+              .replace("{page}", String(pagination.page))
+              .replace("{total}", String(pagination.pageCount))}
+          </span>
+          <PageLink href={pagination.nextHref} onNavigate={goToPage}>
+            {labels.nextPage}
+          </PageLink>
+        </div>
+      )}
     </>
   );
 }

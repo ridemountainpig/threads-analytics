@@ -1,11 +1,11 @@
 "use client";
 
-import { Fragment, useState } from "react";
-import { createPortal } from "react-dom";
+import { Fragment } from "react";
 import { cn } from "@/lib/utils";
 import AxisHint from "./axis-hint";
 import { MEDIAN_RATIO_STEPS, chartPalette, medianRatioBg, medianRatioStep } from "./chart-style";
 import { ChartEmptyState, ChartTooltip } from "./chart-chrome";
+import { CellTooltip, useCellTooltip } from "./cell-tooltip";
 
 interface DataPoint {
   mediaType: string;
@@ -46,20 +46,12 @@ interface Props {
 
 const LENGTH_BUCKETS = ["0-50", "51-150", "151-300", "301+"];
 
-interface TooltipState {
-  point: DataPoint;
-  label: string;
-  x: number;
-  y: number;
-}
-
 export default function ContentFormatLengthMatrix({
   data,
   baselineMedianViews,
   numberLocale,
   labels,
 }: Props) {
-  const [tooltip, setTooltip] = useState<TooltipState | null>(null);
   const locale = numberLocale ?? "en-US";
 
   const copy = labels ?? {
@@ -79,29 +71,31 @@ export default function ContentFormatLengthMatrix({
   const confidenceLabel = copy.confidence ?? "Confidence";
   const getMediaTypeLabel = (mediaType: string) => copy.mediaTypes?.[mediaType] ?? mediaType;
 
+  const mediaTypes = Array.from(new Set(data.map((point) => point.mediaType))).sort();
+  const byKey = new Map(data.map((point) => [`${point.mediaType}:${point.lengthBucket}`, point]));
+  const cellKeys = mediaTypes.flatMap((type) =>
+    LENGTH_BUCKETS.map((bucket) => `${type}:${bucket}`).filter((key) => byKey.has(key)),
+  );
+  const { tip, cellProps, onGridKeyDown } = useCellTooltip<{ point: DataPoint; label: string }>(
+    cellKeys,
+  );
+
   if (!data.length) {
     return <ChartEmptyState label={copy.noData ?? "No data"} height={180} />;
   }
 
-  const mediaTypes = Array.from(new Set(data.map((point) => point.mediaType))).sort();
   const formatRatio = (value: number) =>
     baselineMedianViews > 0 ? `${(value / baselineMedianViews).toFixed(1)}×` : "—";
-  const byKey = new Map(data.map((point) => [`${point.mediaType}:${point.lengthBucket}`, point]));
-
-  const showTooltip = (point: DataPoint, label: string) => (e: React.MouseEvent<HTMLElement>) => {
-    const rect = e.currentTarget.getBoundingClientRect();
-    setTooltip({ point, label, x: rect.left + rect.width / 2, y: rect.top });
-  };
 
   return (
     <>
       <div className="w-full overflow-x-auto">
         <AxisHint
-          columns={copy.lengthBucket ?? "Character Count"}
-          rows={copy.contentType ?? "Content Type"}
-          color={copy.vsMedian ?? "vs. your median"}
+          x={copy.lengthBucket ?? "Character Count"}
+          y={copy.contentType ?? "Content Type"}
         />
         <div
+          onKeyDown={onGridKeyDown}
           className="grid min-w-[520px] gap-1"
           style={{
             gridTemplateColumns: `112px repeat(${LENGTH_BUCKETS.length}, minmax(88px, 1fr))`,
@@ -116,57 +110,76 @@ export default function ContentFormatLengthMatrix({
               {bucket}
             </div>
           ))}
-          {mediaTypes.map((type) => (
+          {mediaTypes.map((type, row) => (
             <Fragment key={type}>
               <div className="text-muted-foreground flex items-center pr-2 text-xs font-medium">
                 {getMediaTypeLabel(type)}
               </div>
-              {LENGTH_BUCKETS.map((bucket) => {
+              {LENGTH_BUCKETS.map((bucket, col) => {
                 const point = byKey.get(`${type}:${bucket}`);
                 const step = point ? medianRatioStep(point.medianViews, baselineMedianViews) : 0;
+                const className = cn(
+                  "flex h-16 min-w-0 flex-col justify-center rounded-lg border border-transparent px-2 text-center",
+                  // Thin samples get a dashed outline — the quiet "take this
+                  // one with a grain of salt" mark; details live in the tooltip.
+                  point?.confidence === "low" && "border-foreground/20 border-dashed",
+                );
+                const style = {
+                  backgroundColor: point
+                    ? medianRatioBg[step]
+                    : "color-mix(in oklch, var(--muted) 40%, transparent)",
+                };
+                if (!point) {
+                  return (
+                    <div key={`${type}-${bucket}`} className={className} style={style}>
+                      <span className="text-foreground text-sm font-semibold tabular-nums">–</span>
+                    </div>
+                  );
+                }
+                const label = `${getMediaTypeLabel(type)} · ${bucket}`;
                 return (
-                  <div
+                  <button
                     key={`${type}-${bucket}`}
-                    onMouseEnter={
-                      point
-                        ? showTooltip(point, `${getMediaTypeLabel(type)} · ${bucket}`)
-                        : undefined
-                    }
-                    onMouseMove={
-                      point
-                        ? showTooltip(point, `${getMediaTypeLabel(type)} · ${bucket}`)
-                        : undefined
-                    }
-                    onMouseLeave={() => setTooltip(null)}
-                    className={cn(
-                      "flex h-16 min-w-0 flex-col justify-center rounded-lg border border-transparent px-2 text-center transition-opacity duration-150 motion-reduce:transition-none",
-                      point && "hover:opacity-80",
-                      // Thin samples get a dashed outline — the quiet "take this
-                      // one with a grain of salt" mark; details live in the tooltip.
-                      point?.confidence === "low" && "border-foreground/20 border-dashed",
+                    {...cellProps(
+                      { point, label },
+                      {
+                        key: `${type}:${bucket}`,
+                        row,
+                        col,
+                        label: `${label}: ${medianViewsLabel} ${point.medianViews.toLocaleString(locale)}`,
+                      },
                     )}
-                    style={{
-                      backgroundColor: point
-                        ? medianRatioBg[step]
-                        : "color-mix(in oklch, var(--muted) 40%, transparent)",
-                    }}
+                    className={cn(
+                      className,
+                      "focus-visible:ring-foreground transition-opacity duration-150 outline-none hover:opacity-80 focus-visible:ring-2 focus-visible:ring-inset motion-reduce:transition-none",
+                    )}
+                    style={style}
                   >
-                    <span className="text-foreground text-sm font-semibold tabular-nums">
-                      {point ? point.medianViews.toLocaleString(locale) : "–"}
+                    {/* The darkest step needs pure white in dark mode to clear 4.5:1. */}
+                    <span
+                      className={cn(
+                        "text-foreground text-sm font-semibold tabular-nums",
+                        step === 2 && "dark:text-white",
+                      )}
+                    >
+                      {point.medianViews.toLocaleString(locale)}
                     </span>
-                    <span className="text-foreground/70 text-[10px] tabular-nums">
-                      {point ? `${point.postCount} ${copy.posts}` : ""}
+                    <span
+                      className={cn(
+                        "text-[10px] tabular-nums",
+                        step === 2 ? "text-foreground dark:text-white" : "text-foreground/80",
+                      )}
+                    >
+                      {`${point.postCount} ${copy.posts}`}
                     </span>
-                  </div>
+                  </button>
                 );
               })}
             </Fragment>
           ))}
         </div>
         <div className="mt-2.5 flex items-center justify-end gap-1">
-          <span className="text-muted-foreground/80 text-[9px]">
-            {copy.belowMedian ?? copy.less}
-          </span>
+          <span className="text-muted-foreground text-[10px]">{copy.belowMedian ?? copy.less}</span>
           {MEDIAN_RATIO_STEPS.map((step) => (
             <div
               key={step}
@@ -174,45 +187,38 @@ export default function ContentFormatLengthMatrix({
               style={{ backgroundColor: medianRatioBg[step] }}
             />
           ))}
-          <span className="text-muted-foreground/80 text-[9px]">
-            {copy.aboveMedian ?? copy.more}
-          </span>
+          <span className="text-muted-foreground text-[10px]">{copy.aboveMedian ?? copy.more}</span>
         </div>
       </div>
 
-      {tooltip &&
-        createPortal(
-          <div
-            className="pointer-events-none fixed z-50 -translate-x-1/2 -translate-y-[calc(100%+8px)]"
-            style={{ left: tooltip.x, top: tooltip.y }}
-          >
-            <ChartTooltip
-              title={tooltip.label}
-              rows={[
-                {
-                  label: medianViewsLabel,
-                  value: tooltip.point.medianViews.toLocaleString(locale),
-                  color: chartPalette.blue,
-                },
-                {
-                  label: copy.vsMedian ?? "vs. your median",
-                  value: formatRatio(tooltip.point.medianViews),
-                },
-                { label: copy.avgViews, value: tooltip.point.avgViews.toLocaleString(locale) },
-                { label: p75ViewsLabel, value: tooltip.point.p75Views.toLocaleString(locale) },
-                { label: hitRateLabel, value: `${tooltip.point.hitRate}%` },
-                { label: copy.posts, value: tooltip.point.postCount },
-                {
-                  label: confidenceLabel,
-                  value:
-                    copy.confidenceLevels?.[tooltip.point.confidence] ?? tooltip.point.confidence,
-                  muted: true,
-                },
-              ]}
-            />
-          </div>,
-          document.body,
-        )}
+      {tip && (
+        <CellTooltip anchor={tip.anchor}>
+          <ChartTooltip
+            title={tip.data.label}
+            rows={[
+              {
+                label: medianViewsLabel,
+                value: tip.data.point.medianViews.toLocaleString(locale),
+                color: chartPalette.blue,
+              },
+              {
+                label: copy.vsMedian ?? "vs. your median",
+                value: formatRatio(tip.data.point.medianViews),
+              },
+              { label: copy.avgViews, value: tip.data.point.avgViews.toLocaleString(locale) },
+              { label: p75ViewsLabel, value: tip.data.point.p75Views.toLocaleString(locale) },
+              { label: hitRateLabel, value: `${tip.data.point.hitRate}%` },
+              { label: copy.posts, value: tip.data.point.postCount },
+              {
+                label: confidenceLabel,
+                value:
+                  copy.confidenceLevels?.[tip.data.point.confidence] ?? tip.data.point.confidence,
+                muted: true,
+              },
+            ]}
+          />
+        </CellTooltip>
+      )}
     </>
   );
 }

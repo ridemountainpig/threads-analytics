@@ -19,15 +19,20 @@ import PageHeader from "@/components/dashboard/page-header";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { dateLocales, getDictionary } from "@/lib/i18n-server";
 import { getServerTimezone } from "@/lib/server-timezone";
+import { hourLabeler } from "@/lib/hour-label";
+import { STALE_SYNC_DAYS } from "@/lib/stale-sync";
 import TodayViews, { type TodayView } from "./today-views";
 import { TodayPostsCard, YesterdayPostsCard } from "./today-posts";
 import ReplyInbox, { type ReplyInboxProps } from "./reply-inbox";
+import StaleNotice from "./stale-notice";
 
 interface PageProps {
   searchParams: Promise<{ view?: string }>;
 }
 
 const STALE_AFTER_MS = 60 * 60 * 1000;
+// StaleSyncBanner's threshold: past it, phones already show that amber banner.
+const STALE_BANNER_MS = STALE_SYNC_DAYS * 24 * 60 * 60 * 1000;
 
 const titleClass = "text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase";
 // Tighter on phones so today's posts start on the first screen.
@@ -86,7 +91,11 @@ export default async function TodayPage({ searchParams }: PageProps) {
     accessToken = decryptToken(account.accessToken);
   } catch {
     return (
-      <div className="text-muted-foreground p-8">{t.common.accountCredentialsUnavailable}</div>
+      <TokenExpiredNotice
+        message={t.common.credentialsUnavailable}
+        help={t.common.tokenExpiredHelp}
+        settingsLabel={t.common.settings}
+      />
     );
   }
 
@@ -115,9 +124,7 @@ export default async function TodayPage({ searchParams }: PageProps) {
         minute: "2-digit",
       }).format(date),
     );
-  const hourFormat = new Intl.DateTimeFormat(dateLocale, { hour: "numeric", timeZone: "UTC" });
-  const hourLabel = (hour: number) =>
-    normalizeIntlSpaces(hourFormat.format(new Date(Date.UTC(2000, 0, 1, hour))));
+  const hourLabel = hourLabeler(dateLocale);
 
   const subtitle = new Intl.DateTimeFormat(dateLocale, {
     timeZone: tz,
@@ -133,7 +140,8 @@ export default async function TodayPage({ searchParams }: PageProps) {
       minute: "2-digit",
     }).format(lastSyncedAt),
   );
-  const isStale = now.getTime() - lastSyncedAt.getTime() > STALE_AFTER_MS;
+  const syncAge = now.getTime() - lastSyncedAt.getTime();
+  const isStale = syncAge > STALE_AFTER_MS;
 
   const views = posts.reduce((sum, post) => sum + post.views, 0);
   const engagement = posts.reduce(
@@ -169,6 +177,8 @@ export default async function TodayPage({ searchParams }: PageProps) {
     ...t.today,
     viewOnThreads: t.postsPage.viewOnThreads,
     noText: t.postsPage.noText,
+    openSettings: t.sync.goToSettings,
+    tryAgain: t.common.tryAgain,
   };
   const inboxProps: ReplyInboxProps =
     inbox.status === "ok"
@@ -189,6 +199,7 @@ export default async function TodayPage({ searchParams }: PageProps) {
         }
       : {
           status: "unavailable",
+          reason: inbox.status,
           message:
             inbox.status === "missing_permission"
               ? t.today.repliesMissingPermission
@@ -230,11 +241,21 @@ export default async function TodayPage({ searchParams }: PageProps) {
         }}
       />
 
-      {isStale && (
-        <p className="rounded-xl border border-amber-500/30 bg-amber-500/5 px-3 py-2 text-xs">
-          {t.today.staleNotice.replace("{time}", syncedAtLabel)}
-        </p>
-      )}
+      <StaleNotice
+        stale={isStale}
+        className={syncAge >= STALE_BANNER_MS ? "max-sm:hidden" : undefined}
+        labels={{
+          message: t.today.staleNotice.replace("{time}", syncedAtLabel),
+          sync: t.sync.sync,
+          syncing: t.sync.syncing,
+          synced: t.sync.synced,
+          failed: t.sync.failed,
+          tokenExpired: t.sync.tokenExpired,
+          inProgress: t.sync.inProgress,
+          goToSettings: t.sync.goToSettings,
+          repliesPermissionMissing: t.sync.repliesPermissionMissing,
+        }}
+      />
 
       <div className="space-y-4">
         <div className="grid grid-cols-2 gap-4 md:grid-cols-4">

@@ -1,4 +1,5 @@
 // Mirrors the giveaway layout — header, then the 2:3 setup/results columns.
+// Below lg the results column holds only the short empty-state card.
 export default function GiveawayLoading() {
   return (
     <div className="animate-pulse space-y-4 p-4 motion-reduce:animate-none sm:p-6">
@@ -7,8 +8,8 @@ export default function GiveawayLoading() {
         <div className="bg-muted/70 h-4 w-56 rounded-md" />
       </div>
       <div className="grid gap-4 lg:grid-cols-5">
-        <div className="bg-muted h-[30rem] rounded-xl lg:col-span-2" />
-        <div className="bg-muted/70 h-[30rem] rounded-xl lg:col-span-3" />
+        <div className="bg-muted h-[40rem] rounded-xl lg:col-span-2" />
+        <div className="bg-muted/70 h-60 rounded-xl lg:col-span-3 lg:h-[40rem]" />
       </div>
     </div>
   );

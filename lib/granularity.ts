@@ -1,5 +1,17 @@
 export type Granularity = "day" | "week" | "month";
 
+// Built from parts because no locale's format() output is guaranteed to be YYYY-MM-DD.
+export function toDateKey(date: Date, timeZone: string): string {
+  const parts = new Intl.DateTimeFormat("en-US", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(date);
+  const get = (type: Intl.DateTimeFormatPartTypes) => parts.find((p) => p.type === type)?.value;
+  return `${get("year")}-${get("month")}-${get("day")}`;
+}
+
 function utcDate(dateKey: string): Date {
   return new Date(`${dateKey}T00:00:00Z`);
 }

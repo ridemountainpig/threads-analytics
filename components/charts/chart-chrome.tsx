@@ -123,9 +123,21 @@ export function ChartLegend({
 
 // Empty state: a faint glyph and caption centered in the space the chart
 // would occupy, so cards keep their rhythm when a metric has no data yet.
-export function ChartEmptyState({ label, height = 192 }: { label: ReactNode; height?: number }) {
+// `action` offers the way forward when there is one (a sync, a wider range).
+export function ChartEmptyState({
+  label,
+  height = 192,
+  action,
+}: {
+  label: ReactNode;
+  height?: number;
+  action?: ReactNode;
+}) {
   return (
-    <div className="flex w-full flex-col items-center justify-center gap-2.5" style={{ height }}>
+    <div
+      className="flex w-full flex-col items-center justify-center gap-2.5 px-4 text-center"
+      style={{ minHeight: height }}
+    >
       <svg
         aria-hidden
         width="36"
@@ -137,7 +149,8 @@ export function ChartEmptyState({ label, height = 192 }: { label: ReactNode; hei
         <rect x="15" y="6" width="6" height="18" rx="2" fill="currentColor" opacity="0.7" />
         <rect x="28" y="10" width="6" height="14" rx="2" fill="currentColor" opacity="0.45" />
       </svg>
-      <p className="text-muted-foreground/80 text-xs">{label}</p>
+      <p className="text-muted-foreground max-w-sm text-xs text-balance">{label}</p>
+      {action ? <div className="mt-0.5">{action}</div> : null}
     </div>
   );
 }
@@ -198,7 +211,7 @@ export function seriesDot(color: string, pointCount: number) {
           cx={cx}
           cy={cy}
           r={3}
-          fill="var(--background)"
+          fill="var(--card)"
           stroke={color}
           strokeWidth={1.5}
         />
