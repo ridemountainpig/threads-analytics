@@ -160,7 +160,7 @@ export const guideHub: Record<Locale, GuideHubCopy> = {
     metadata: {
       title: "Threads（脆）數據分析指南：洞察報告、發文時間、觸及率",
       description:
-        "Threads（脆）數據分析教學：看懂洞察報告的每個數字、用自己的貼文找出最佳發文時間，並判斷觸及率下降是真的掉還是正常波動。",
+        "Threads（脆）數據分析教學：看懂洞察報告與後台數據的每個數字、用自己的貼文找出最佳發文時間，並判斷觸及率、觀看數下降是真的掉還是正常波動。",
     },
     label: "指南",
     kicker: "指南 / Threads 數據",
@@ -194,9 +194,9 @@ export const guideHub: Record<Locale, GuideHubCopy> = {
   },
   ja: {
     metadata: {
-      title: "Threads（スレッズ）分析ガイド：インサイト・投稿時間・リーチ",
+      title: "Threads（スレッズ）分析ガイド：インサイト・投稿時間・閲覧数",
       description:
-        "Threads（スレッズ）のデータ分析ガイド。インサイトの数字の読み方、自分の投稿から最適な投稿時間を見つける方法、リーチが落ちたときの確かめ方を解説します。",
+        "Threads（スレッズ）のデータ分析ガイド。インサイトの数字の読み方、自分の投稿から最適な投稿時間を見つける方法、閲覧数が減ったときの確かめ方を解説します。",
     },
     label: "ガイド",
     kicker: "ガイド / Threads データ",
@@ -242,15 +242,15 @@ export const guideMeta: Record<
 > = {
   "threads-insights": {
     published: "2026-09-30",
-    modified: "2026-09-30",
+    modified: "2026-10-17",
     citesMetaAnnouncement: true,
   },
   "best-time-to-post": {
     published: "2026-09-30",
-    modified: "2026-09-30",
+    modified: "2026-10-17",
     citesMetaAnnouncement: false,
   },
-  "reach-drop": { published: "2026-09-30", modified: "2026-09-30", citesMetaAnnouncement: false },
+  "reach-drop": { published: "2026-09-30", modified: "2026-10-17", citesMetaAnnouncement: false },
 };
 
 /** Byline for the guides; matches the Article schema author. */

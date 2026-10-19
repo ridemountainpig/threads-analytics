@@ -368,9 +368,9 @@ export type DesktopGuideCopy = {
 
 const tokenGuideEn: TokenGuideCopy = {
   metadata: {
-    title: "Get a Threads Access Token: 18-Step API Guide",
+    title: "Threads API Access Token: 18-Step Setup Guide",
     description:
-      "Get a long-lived Threads API token with screenshots. Create a Meta app, add the Threads API, invite a tester, and copy your token in 18 steps.",
+      "Get a long-lived Threads API access token with screenshots. Create a Meta app, add the Threads API, invite a tester, and copy your token in 18 steps.",
   },
   hero: {
     kicker: "GUIDE / THREADS ACCESS TOKEN",
@@ -4910,7 +4910,7 @@ export const dictionaries = {
   },
   ja: {
     metadata: {
-      title: "無料の Threads 分析ツール：セルフホスト型ダッシュボード",
+      title: "無料の Threads（スレッズ）分析ツール：セルフホスト型ダッシュボード",
       description:
         "Threads Analytics は無料・オープンソースの Threads 分析ツール。Mac アプリですぐに使うことも、Web 版をセルフホストすることもできます。最適な投稿時間、コンテンツ形式、文章量、キーワード、フォロワー推移を自分のデータから分析。",
     },
