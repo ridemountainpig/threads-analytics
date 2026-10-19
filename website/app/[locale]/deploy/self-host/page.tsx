@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight } from "lucide-react";
 import { AgentCtaOthers } from "@/components/agent-cta-others";
-import { ClosingCurves } from "@/components/closing-curves";
 import { JsonLd } from "@/components/json-ld";
 import { mdxArticleComponents } from "@/components/mdx-article";
 import { SiteFooter } from "@/components/site-footer";
@@ -108,12 +107,11 @@ export default async function SelfHostPage({ params }: { params: Params }) {
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
             <div className="agent-cta">
-              <ClosingCurves />
               <div className="agent-cta-inner">
                 <h2>{copy.cta.title}</h2>
                 <p>{copy.cta.description}</p>
                 <div className="hero-actions">
-                  <Link href={`/${locale}/token-guide`} className="button button-light">
+                  <Link href={`/${locale}/token-guide`} className="button button-primary">
                     {copy.cta.primary}
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>
@@ -121,7 +119,7 @@ export default async function SelfHostPage({ params }: { params: Params }) {
                     href={siteConfig.github}
                     target="_blank"
                     rel="noreferrer"
-                    className="button button-ghost"
+                    className="button button-secondary"
                   >
                     {copy.cta.secondary}
                     <ArrowUpRight aria-hidden="true" strokeWidth={2} />

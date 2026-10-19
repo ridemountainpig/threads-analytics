@@ -7,12 +7,11 @@ import { SiClaudecode, SiCursor } from "react-icons/si";
 import { AgentCtaOthers } from "@/components/agent-cta-others";
 import { AgentHeroActions } from "@/components/agent-hero-actions";
 import { AgentKicker } from "@/components/agent-kicker";
-import { ClosingCurves } from "@/components/closing-curves";
 import { Railway } from "@/components/deployment-logos";
-import { HeroCurve } from "@/components/hero-curve";
 import { JsonLd } from "@/components/json-ld";
 import { AgentPromptCard } from "@/components/agent-prompt-card";
 import { RailwayAgentDemo } from "@/components/railway-agent-demo";
+import { SectionHead } from "@/components/section-head";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
@@ -66,9 +65,7 @@ export default async function RailwayAgentDeployPage({
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>
-        <section className="agent-hero-section" data-motion-pause>
-          <div className="hero-grid-bg" aria-hidden="true" />
-          <HeroCurve />
+        <section className="agent-hero-section">
           <div className="site-shell agent-hero-grid">
             <div className="agent-hero-copy">
               <AgentKicker
@@ -135,11 +132,12 @@ export default async function RailwayAgentDeployPage({
         <section className="agent-steps-section">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.steps.kicker}</p>
-                <h2>{copy.steps.title}</h2>
-                <p className="section-description">{copy.steps.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.steps.kicker}
+                title={copy.steps.title}
+                description={copy.steps.description}
+              />
             </div>
             <div className="agent-steps-grid" data-reveal="stagger" data-reveal-delay="1">
               {copy.steps.items.map((item) => (
@@ -156,11 +154,12 @@ export default async function RailwayAgentDeployPage({
         <section className="agent-demo-section">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading section-heading-inverse">
-                <p className="section-kicker">{copy.demo.kicker}</p>
-                <h2>{copy.demo.title}</h2>
-                <p className="section-description">{copy.demo.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.demo.kicker}
+                title={copy.demo.title}
+                description={copy.demo.description}
+              />
             </div>
             <div className="render-deferred" data-reveal="scale" data-reveal-delay="1">
               <RailwayAgentDemo
@@ -175,7 +174,6 @@ export default async function RailwayAgentDeployPage({
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
             <div className="agent-cta">
-              <ClosingCurves />
               <div className="agent-cta-inner">
                 <h2>{copy.cta.title}</h2>
                 <p>{copy.cta.description}</p>
@@ -184,12 +182,12 @@ export default async function RailwayAgentDeployPage({
                     href={siteConfig.railwayAgent}
                     target="_blank"
                     rel="noreferrer"
-                    className="button button-light"
+                    className="button button-primary"
                   >
                     {copy.cta.primary}
                     <ArrowUpRight aria-hidden="true" strokeWidth={2} />
                   </a>
-                  <Link href={`/${locale}#deploy`} className="button button-ghost">
+                  <Link href={`/${locale}#deploy`} className="button button-secondary">
                     <ArrowLeft aria-hidden="true" strokeWidth={2} />
                     {copy.cta.secondary}
                   </Link>

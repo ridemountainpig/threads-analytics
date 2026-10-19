@@ -1,26 +1,41 @@
 import type { Metadata, Viewport } from "next";
 import { GoogleAnalytics } from "@next/third-parties/google";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import { notFound } from "next/navigation";
+import { ThemeController } from "@/components/theme-menu";
 import { getDictionary, isLocale, locales } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
+import { themeBootstrap, themeColors } from "@/lib/theme";
 import "@/app/globals.css";
 
 // Self-hosted so every platform renders the same face --sans declares; CJK
-// glyphs still fall through to the Noto families in the stack.
-const inter = Inter({
+// glyphs fall through to each locale's system family (app/styles/tokens.css).
+const geist = Geist({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-geist",
 });
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist-mono",
+});
+
+// The header's GitHub star count (lib/github-stars.ts) refreshes daily; set
+// here too so a build that couldn't reach GitHub still retries the next day.
+export const revalidate = 86400;
 
 export const viewport: Viewport = {
   width: "device-width",
   initialScale: 1,
-  // Keep in sync with --paper in app/globals.css.
-  themeColor: "#f8f6fc",
-  colorScheme: "light",
+  // An explicit light/dark pick overrides these at runtime (ThemeController).
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: themeColors.light },
+    { media: "(prefers-color-scheme: dark)", color: themeColors.dark },
+  ],
+  colorScheme: "light dark",
 };
 
 export function generateStaticParams() {
@@ -80,7 +95,7 @@ export default async function LocaleLayout({
   return (
     <html
       lang={locale}
-      className={inter.variable}
+      className={`${geist.variable} ${geistMono.variable}`}
       data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
@@ -93,9 +108,10 @@ export default async function LocaleLayout({
         <div
           hidden
           dangerouslySetInnerHTML={{
-            __html: `<script>${revealBootstrap}${anchorBootstrap}</script>`,
+            __html: `<script>${themeBootstrap}${revealBootstrap}${anchorBootstrap}</script>`,
           }}
         />
+        <ThemeController />
         {children}
       </body>
       {gaId ? <GoogleAnalytics gaId={gaId} /> : null}

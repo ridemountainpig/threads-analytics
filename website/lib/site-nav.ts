@@ -28,7 +28,7 @@ export type SiteNavItem = {
   icon: SiteNavIcon;
   /** Route rather than an in-page anchor on the home page. */
   page: boolean;
-  /** Short tag after the label, such as Beta. */
+  /** Short tag after the label, such as "New". */
   badge?: string;
   /** Tinted row that leads its dropdown. */
   featured?: boolean;
@@ -75,7 +75,7 @@ export function getSiteNav(locale: Locale): SiteNavGroup[] {
       id: "get-started",
       label: nav.getStarted,
       items: [
-        { ...entry(nav.desktop, `${home}/desktop`, "desktop"), badge: nav.beta, featured: true },
+        { ...entry(nav.desktop, `${home}/desktop`, "desktop"), featured: true },
         {
           ...entry(nav.railwayAgent, `${home}/deploy/railway-agent`, "railway"),
           section: nav.selfHostSection,

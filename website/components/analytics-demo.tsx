@@ -328,14 +328,8 @@ export function AnalyticsDemo({ copy }: { copy: Dictionary["demo"] }) {
               >
                 <defs>
                   <linearGradient id="chart-area" x1="0" y1="0" x2="0" y2="1">
-                    <stop offset="0" stopColor="#b06cff" stopOpacity="0.38" />
-                    <stop offset="0.55" stopColor="#ed79bb" stopOpacity="0.14" />
-                    <stop offset="1" stopColor="#ed79bb" stopOpacity="0" />
-                  </linearGradient>
-                  <linearGradient id="chart-line-color" x1="0%" y1="0%" x2="100%" y2="0%">
-                    <stop offset="0" stopColor="#f39acb" />
-                    <stop offset="0.52" stopColor="#ec7dbc" />
-                    <stop offset="1" stopColor="#a968f5" />
+                    <stop offset="0" className="chart-area-stop-top" />
+                    <stop offset="1" className="chart-area-stop-bottom" />
                   </linearGradient>
                   <clipPath id="chart-line-reveal">
                     <rect className="chart-line-clip" x="0" y="-10" width="680" height="240" />
@@ -346,12 +340,7 @@ export function AnalyticsDemo({ copy }: { copy: Dictionary["demo"] }) {
                 </g>
                 <path className="chart-baseline" d="M0 144H680" />
                 <path className="chart-area" d={chart.area} />
-                <path
-                  className="chart-line"
-                  d={chart.line}
-                  stroke="url(#chart-line-color)"
-                  clipPath="url(#chart-line-reveal)"
-                />
+                <path className="chart-line" d={chart.line} clipPath="url(#chart-line-reveal)" />
                 {chart.points.map((point, index) => (
                   <circle
                     key={`${point.x}-${point.y}`}

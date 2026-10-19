@@ -1,12 +1,19 @@
 import type { Metadata } from "next";
-import { Inter } from "next/font/google";
+import { Geist, Geist_Mono } from "next/font/google";
 import Link from "next/link";
+import { themeBootstrap } from "@/lib/theme";
 import "./globals.css";
 
-const inter = Inter({
+const geist = Geist({
   subsets: ["latin"],
   display: "swap",
-  variable: "--font-inter",
+  variable: "--font-geist",
+});
+
+const geistMono = Geist_Mono({
+  subsets: ["latin"],
+  display: "swap",
+  variable: "--font-geist-mono",
 });
 
 export const metadata: Metadata = {
@@ -16,8 +23,9 @@ export const metadata: Metadata = {
 
 export default function GlobalNotFound() {
   return (
-    <html lang="en" className={inter.variable}>
+    <html lang="en" className={`${geist.variable} ${geistMono.variable}`} suppressHydrationWarning>
       <body>
+        <div hidden dangerouslySetInnerHTML={{ __html: `<script>${themeBootstrap}</script>` }} />
         <main className="not-found-page">
           <div className="not-found-card">
             <p className="not-found-code">404</p>

@@ -3,10 +3,8 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, ChartNoAxesColumn, Info, Ruler } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
-import { ClosingCurves } from "@/components/closing-curves";
 import { GuideProgress } from "@/components/guide-progress";
 import { GuideLinks } from "@/components/guide-links";
-import { HeroCurve } from "@/components/hero-curve";
 import { JsonLd } from "@/components/json-ld";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
@@ -71,9 +69,7 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ loca
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>
-        <section className="agent-hero-section" data-motion-pause>
-          <div className="hero-grid-bg" aria-hidden="true" />
-          <HeroCurve />
+        <section className="agent-hero-section">
           <div className="site-shell agent-hero-grid">
             <div className="agent-hero-copy">
               <p className="section-kicker">
@@ -205,12 +201,11 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ loca
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
             <div className="agent-cta guide-finish">
-              <ClosingCurves />
               <div className="agent-cta-inner">
                 <h2>{copy.cta.title}</h2>
                 <p>{copy.cta.description}</p>
                 <div className="hero-actions">
-                  <Link href={`/${locale}#deploy`} className="button button-light">
+                  <Link href={`/${locale}#deploy`} className="button button-primary">
                     {copy.cta.primary}
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>
@@ -218,9 +213,9 @@ export default async function AnalyticsPage({ params }: { params: Promise<{ loca
                     href={siteConfig.github}
                     target="_blank"
                     rel="noreferrer"
-                    className="button button-ghost"
+                    className="button button-secondary"
                   >
-                    <FaGithub className="github-icon" aria-hidden="true" />
+                    <FaGithub aria-hidden="true" />
                     {copy.cta.secondary}
                   </a>
                 </div>

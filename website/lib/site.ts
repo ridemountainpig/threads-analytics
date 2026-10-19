@@ -54,9 +54,10 @@ export const siteConfig = {
   name: "Threads Analytics",
   url: resolveSiteUrl(),
   github: "https://github.com/ridemountainpig/threads-analytics",
-  // The release list, not /releases/latest: desktop betas ship as
-  // pre-releases, which GitHub never marks as "Latest".
-  desktopReleases: "https://github.com/ridemountainpig/threads-analytics/releases",
+  // The newest stable desktop release (GitHub marks it "Latest").
+  desktopReleases: "https://github.com/ridemountainpig/threads-analytics/releases/latest",
+  // The data folder the packaged app creates (desktop/docs/install-macos.md).
+  desktopDataFolder: "~/Library/Application Support/Threads Analytics",
   creator: "https://yencheng.dev/",
   railway: `${railwayTemplate}&utm_medium=integration&utm_source=template&utm_campaign=generic`,
   railwayTemplate,

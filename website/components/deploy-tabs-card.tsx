@@ -28,63 +28,56 @@ export function DeployTabsCard({
   const [tab, setTab] = useState<"template" | "agent">("template");
 
   return (
-    <div className="deploy-card deploy-card-tabbed">
-      <span className="deploy-card-topline">
-        <span className="deploy-eyebrow">{copy.eyebrow}</span>
-        {brandMark}
+    <div className="home-deploy-card">
+      <span className="home-deploy-top">
+        <span className="home-deploy-eyebrow">{copy.eyebrow}</span>
+        <span className="home-deploy-mark" aria-hidden="true">
+          {brandMark}
+        </span>
       </span>
       <strong>{copy.title}</strong>
       <p>{copy.body}</p>
 
-      <div className="deploy-switch">
+      <span className="home-deploy-footer">
         {/* Toggle buttons, not an ARIA tabs pattern: the switch only swaps
             the action link below, and tab roles would promise tabpanel
             navigation and arrow-key support that don't exist here. */}
-        <div className="deploy-tabs" role="group" aria-label={copy.title}>
+        <span className="home-deploy-switch" role="group" aria-label={copy.title}>
           <button
             type="button"
             aria-pressed={tab === "template"}
-            className={tab === "template" ? "is-active" : undefined}
             onClick={() => setTab("template")}
           >
             {copy.templateTab}
           </button>
-          <span className="deploy-tab-divider" aria-hidden="true" />
-          <button
-            type="button"
-            aria-pressed={tab === "agent"}
-            className={tab === "agent" ? "is-active" : undefined}
-            onClick={() => setTab("agent")}
-          >
+          <button type="button" aria-pressed={tab === "agent"} onClick={() => setTab("agent")}>
             {copy.agentTab}
           </button>
-        </div>
+        </span>
 
         {/* Both actions stay mounted in one grid cell so the switch
             crossfades; the inactive one is visibility-hidden. */}
-        <div className="deploy-tab-action-swap">
+        <span className="home-deploy-swap">
           <a
             href={templateHref}
             target="_blank"
             rel="noreferrer"
-            className={tab === "template" ? "deploy-tab-action is-current" : "deploy-tab-action"}
+            className="home-card-link"
+            data-current={tab === "template" ? "" : undefined}
           >
-            <span className="deploy-tab-action-text">{copy.action}</span>
-            <span className="deploy-tab-action-chip" aria-hidden="true">
-              <ArrowUpRight className="deploy-tab-action-arrow" strokeWidth={2} />
-            </span>
+            {copy.action}
+            <ArrowUpRight aria-hidden="true" strokeWidth={2} />
           </a>
           <Link
             href={walkthroughHref}
-            className={tab === "agent" ? "deploy-tab-action is-current" : "deploy-tab-action"}
+            className="home-card-link"
+            data-current={tab === "agent" ? "" : undefined}
           >
-            <span className="deploy-tab-action-text">{copy.agentAction}</span>
-            <span className="deploy-tab-action-chip" aria-hidden="true">
-              <ArrowUpRight className="deploy-tab-action-arrow" strokeWidth={2} />
-            </span>
+            {copy.agentAction}
+            <ArrowUpRight aria-hidden="true" strokeWidth={2} />
           </Link>
-        </div>
-      </div>
+        </span>
+      </span>
     </div>
   );
 }

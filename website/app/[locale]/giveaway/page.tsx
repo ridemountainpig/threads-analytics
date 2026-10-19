@@ -3,11 +3,10 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, KeyRound, ShieldCheck, Ticket } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
-import { ClosingCurves } from "@/components/closing-curves";
 import { GiveawayDrawDemo } from "@/components/giveaway-draw-demo";
 import { GiveawayWinnersCard } from "@/components/giveaway-winners-card";
-import { HeroCurve } from "@/components/hero-curve";
 import { JsonLd } from "@/components/json-ld";
+import { SectionHead } from "@/components/section-head";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
@@ -57,9 +56,7 @@ export default async function GiveawayPage({ params }: { params: Promise<{ local
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} />
       <main>
-        <section className="agent-hero-section" data-motion-pause>
-          <div className="hero-grid-bg" aria-hidden="true" />
-          <HeroCurve />
+        <section className="agent-hero-section">
           <div className="site-shell agent-hero-grid">
             <div className="agent-hero-copy">
               <p className="section-kicker">
@@ -97,11 +94,12 @@ export default async function GiveawayPage({ params }: { params: Promise<{ local
         <section className="agent-steps-section">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.how.kicker}</p>
-                <h2>{copy.how.title}</h2>
-                <p className="section-description">{copy.how.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.how.kicker}
+                title={copy.how.title}
+                description={copy.how.description}
+              />
             </div>
             <ol
               className="mcp-steps-strip giveaway-steps-strip"
@@ -126,11 +124,12 @@ export default async function GiveawayPage({ params }: { params: Promise<{ local
         <section className="agent-steps-section">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.conditions.kicker}</p>
-                <h2>{copy.conditions.title}</h2>
-                <p className="section-description">{copy.conditions.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.conditions.kicker}
+                title={copy.conditions.title}
+                description={copy.conditions.description}
+              />
             </div>
             <div className="mcp-tools-panel" data-reveal="scale" data-reveal-delay="1">
               <div className="mcp-tools-head">
@@ -153,11 +152,12 @@ export default async function GiveawayPage({ params }: { params: Promise<{ local
         <section className="agent-steps-section" id="draw">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.demo.kicker}</p>
-                <h2>{copy.demo.title}</h2>
-                <p className="section-description">{copy.demo.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.demo.kicker}
+                title={copy.demo.title}
+                description={copy.demo.description}
+              />
             </div>
             <div data-reveal="scale" data-reveal-delay="1">
               <GiveawayDrawDemo copy={copy.demo} />
@@ -171,11 +171,12 @@ export default async function GiveawayPage({ params }: { params: Promise<{ local
         <section className="agent-steps-section">
           <div className="site-shell">
             <div data-reveal="up">
-              <div className="section-heading">
-                <p className="section-kicker">{copy.fairness.kicker}</p>
-                <h2>{copy.fairness.title}</h2>
-                <p className="section-description">{copy.fairness.description}</p>
-              </div>
+              <SectionHead
+                variant="numbered"
+                kicker={copy.fairness.kicker}
+                title={copy.fairness.title}
+                description={copy.fairness.description}
+              />
             </div>
             <div
               className="agent-steps-grid giveaway-fairness-grid"
@@ -206,12 +207,11 @@ export default async function GiveawayPage({ params }: { params: Promise<{ local
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
             <div className="agent-cta guide-finish">
-              <ClosingCurves />
               <div className="agent-cta-inner">
                 <h2>{copy.cta.title}</h2>
                 <p>{copy.cta.description}</p>
                 <div className="hero-actions">
-                  <Link href={`/${locale}#deploy`} className="button button-light">
+                  <Link href={`/${locale}#deploy`} className="button button-primary">
                     {copy.cta.primary}
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>
@@ -219,9 +219,9 @@ export default async function GiveawayPage({ params }: { params: Promise<{ local
                     href={siteConfig.github}
                     target="_blank"
                     rel="noreferrer"
-                    className="button button-ghost"
+                    className="button button-secondary"
                   >
-                    <FaGithub className="github-icon" aria-hidden="true" />
+                    <FaGithub aria-hidden="true" />
                     {copy.cta.secondary}
                   </a>
                 </div>

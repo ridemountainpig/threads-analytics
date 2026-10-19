@@ -18,8 +18,10 @@ import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
 import { LanguageMenu } from "@/components/language-menu";
 import { MobileMenu } from "@/components/mobile-menu";
 import { NavMenu } from "@/components/nav-menu";
+import { ThemeMenu } from "@/components/theme-menu";
 import type { Dictionary, Locale } from "@/lib/i18n";
 import { siteConfig } from "@/lib/site";
+import { formatStars, getGithubStars } from "@/lib/github-stars";
 import { getSiteNav, type SiteNavIcon } from "@/lib/site-nav";
 
 const navIcons: Record<SiteNavIcon, ReactNode> = {
@@ -41,18 +43,32 @@ const navIcons: Record<SiteNavIcon, ReactNode> = {
 
 const brandIcons = new Set<SiteNavIcon>(["railway", "zeabur", "vercel"]);
 
-export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary["nav"] }) {
+/**
+ * `productBar`: the page pins its own product bar (the Mac page), so the
+ * header scrolls away beneath it as on Apple's product pages and drops the
+ * Mac app button that bar's Download replaces.
+ */
+export async function SiteHeader({
+  locale,
+  copy,
+  productBar = false,
+}: {
+  locale: Locale;
+  copy: Dictionary["nav"];
+  productBar?: boolean;
+}) {
   const groups = getSiteNav(locale);
+  const stars = await getGithubStars();
 
   return (
-    <header className="site-header">
+    <header className={productBar ? "site-header site-header-scrolls" : "site-header"}>
       <div className="site-shell header-inner">
         <Link href={`/${locale}`} className="brand-link" aria-label="Threads Analytics home">
           <Image
             src="/media/threads-analytics-icon.png"
             alt=""
-            width={28}
-            height={28}
+            width={24}
+            height={24}
             className="brand-icon"
             priority
           />
@@ -81,20 +97,36 @@ export function SiteHeader({ locale, copy }: { locale: Locale; copy: Dictionary[
         </nav>
 
         <div className="header-actions">
-          <LanguageMenu locale={locale} />
-          <a className="header-github" href={siteConfig.github} target="_blank" rel="noreferrer">
-            <FaGithub className="github-icon" aria-hidden="true" />
-            <span>{copy.github}</span>
-          </a>
-          <Link
-            href={`/${locale}/desktop`}
-            className="header-mac"
-            aria-label={`${copy.desktop.label} (${copy.beta})`}
+          <ThemeMenu copy={copy.theme} />
+          <LanguageMenu locale={locale} label={copy.language} />
+          <a
+            className={stars === null ? "header-icon-button" : "header-icon-button header-github"}
+            href={siteConfig.github}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={
+              stars === null
+                ? copy.github
+                : `${copy.github}, ${copy.githubStars.replace("{count}", String(stars))}`
+            }
           >
-            <FaApple className="header-mac-icon" aria-hidden="true" />
-            <span className="header-mac-label">{copy.desktop.label}</span>
-            <span className="header-mac-beta">{copy.beta}</span>
-          </Link>
+            <FaGithub aria-hidden="true" />
+            {stars === null ? null : (
+              <span className="header-github-stars" aria-hidden="true">
+                ★ {formatStars(stars)}
+              </span>
+            )}
+          </a>
+          {productBar ? null : (
+            <Link
+              href={`/${locale}/desktop`}
+              className="header-cta"
+              aria-label={copy.desktop.label}
+            >
+              <FaApple className="header-cta-icon" aria-hidden="true" />
+              <span className="header-cta-label">{copy.desktop.label}</span>
+            </Link>
+          )}
           <MobileMenu
             groups={groups.map((group) => ({
               id: group.id,

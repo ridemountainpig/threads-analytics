@@ -3,7 +3,6 @@ import { notFound } from "next/navigation";
 import Link from "next/link";
 import { ArrowRight, ArrowUpRight, ChevronDown } from "lucide-react";
 import { FaGithub } from "react-icons/fa6";
-import { ClosingCurves } from "@/components/closing-curves";
 import { GuideLinks } from "@/components/guide-links";
 import { GuideSources } from "@/components/guide-sources";
 import { JsonLd } from "@/components/json-ld";
@@ -132,16 +131,18 @@ export default async function GuidePage({ params }: { params: Params }) {
         <section className="agent-cta-section">
           <div className="site-shell" data-reveal="up">
             <div className="agent-cta guide-finish">
-              <ClosingCurves />
               <div className="agent-cta-inner">
                 <h2>{copy.cta.title}</h2>
                 <p>{copy.cta.description}</p>
                 <div className="hero-actions">
-                  <Link href={`/${locale}${copy.cta.primaryHref}`} className="button button-light">
+                  <Link
+                    href={`/${locale}${copy.cta.primaryHref}`}
+                    className="button button-primary"
+                  >
                     {copy.cta.primary}
                     <ArrowRight aria-hidden="true" strokeWidth={2} />
                   </Link>
-                  <Link href={`/${locale}/analytics`} className="button button-ghost">
+                  <Link href={`/${locale}/analytics`} className="button button-secondary">
                     {copy.cta.secondary}
                     <ArrowUpRight aria-hidden="true" strokeWidth={2} />
                   </Link>
