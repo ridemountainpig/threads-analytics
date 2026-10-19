@@ -138,10 +138,12 @@ export function getDesktopPageStructuredData({
   locale,
   copy,
   image,
+  version,
 }: {
   locale: Locale;
   copy: DesktopGuideCopy;
   image: string;
+  version?: string;
 }) {
   const path = "/desktop";
   const pageUrl = `${siteConfig.url}/${locale}${path}`;
@@ -163,6 +165,7 @@ export function getDesktopPageStructuredData({
         operatingSystem: "macOS 11 or later",
         processorRequirements: "Apple silicon (arm64)",
         downloadUrl: siteConfig.desktopReleases,
+        ...(version && { softwareVersion: version }),
         isAccessibleForFree: true,
         license: "https://www.gnu.org/licenses/agpl-3.0.html",
         inLanguage: locale,

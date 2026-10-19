@@ -140,6 +140,129 @@ html.dark .mac-page {
   flex: 0 0 auto;
 }
 
+/* ---------- Download notice ---------- */
+
+/* Above the site header and the product bar. */
+.mac-download-notice {
+  position: fixed;
+  z-index: 60;
+  right: 24px;
+  bottom: 24px;
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  width: min(380px, calc(100vw - 32px));
+  padding: 16px 12px 16px 16px;
+  border-radius: 18px;
+  background: var(--color-popover);
+  box-shadow: var(--shadow-window);
+  animation: mac-notice-in 240ms var(--ease-out) both;
+}
+
+.mac-download-check {
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  margin-top: 1px;
+  color: var(--color-success);
+}
+
+.mac-download-copy {
+  display: grid;
+  flex: 1 1 auto;
+  gap: 4px;
+  justify-items: start;
+}
+
+.mac-download-copy strong {
+  font-size: 0.9375rem;
+  font-weight: 600;
+}
+
+.mac-download-copy p {
+  margin: 0;
+  color: var(--color-text-soft);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  text-wrap: pretty;
+}
+
+.mac-download-star {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 32px;
+  margin-top: 8px;
+  padding: 0 13px;
+  border-radius: 999px;
+  background: var(--color-text);
+  color: var(--color-bg);
+  font-size: 0.8125rem;
+  font-weight: 500;
+  transition:
+    background-color 160ms ease,
+    transform 160ms var(--ease-out);
+}
+
+.mac-download-star:hover {
+  background: color-mix(in srgb, var(--color-text) 84%, var(--color-bg));
+}
+
+.mac-download-star:active {
+  transform: scale(0.96);
+}
+
+.mac-download-star svg {
+  width: 15px;
+  height: 15px;
+}
+
+.mac-download-close {
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  margin: -4px 0 0;
+  padding: 0;
+  border: 0;
+  border-radius: 999px;
+  background: transparent;
+  color: var(--color-muted);
+  cursor: pointer;
+  transition:
+    background-color 160ms ease,
+    color 160ms ease;
+}
+
+.mac-download-close:hover {
+  background: var(--color-fill);
+  color: var(--color-text);
+}
+
+.mac-download-close svg {
+  width: 16px;
+  height: 16px;
+}
+
+@keyframes mac-notice-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+@media (max-width: 780px) {
+  .mac-download-notice {
+    right: 16px;
+    bottom: 16px;
+  }
+}
+
 /* ---------- Hero ---------- */
 
 .mac-hero {
@@ -648,6 +771,12 @@ html.dark .mac-device-base::before {
   overflow-wrap: anywhere;
 }
 
+.mac-spec-file .mac-text-link {
+  justify-self: start;
+  margin-top: 4px;
+  font-size: 0.8125rem;
+}
+
 .mac-panel-foot {
   display: flex;
   gap: 10px;
@@ -918,12 +1047,14 @@ html.dark .mac-device-base::before {
 /* Touch screens get ~44pt targets; the extra area is invisible. */
 @media (pointer: coarse) {
   .mac-localnav-cta,
-  .mac-text-link {
+  .mac-text-link,
+  .mac-download-close {
     position: relative;
   }
 
   .mac-localnav-cta::after,
-  .mac-text-link::after {
+  .mac-text-link::after,
+  .mac-download-close::after {
     content: "";
     position: absolute;
     inset: -8px -4px;

@@ -18,11 +18,13 @@ import {
   Server,
   ShieldCheck,
 } from "lucide-react";
+import { DesktopDownloadLink, DesktopDownloadNotice } from "@/components/desktop-download";
 import { JsonLd } from "@/components/json-ld";
 import { SectionHead } from "@/components/section-head";
 import { SiteFooter } from "@/components/site-footer";
 import { SiteHeader } from "@/components/site-header";
 import { ViewportRevealController } from "@/components/viewport-reveal-controller";
+import { getDesktopRelease } from "@/lib/desktop-release";
 import { getDictionary, isLocale, locales, type DesktopPerkIcon, type Locale } from "@/lib/i18n";
 import { localizedPageMetadata } from "@/lib/metadata";
 import { siteConfig } from "@/lib/site";
@@ -30,6 +32,7 @@ import { getDesktopPageStructuredData } from "@/lib/structured-data";
 
 // Release assets are named by the release workflow
 // (.github/workflows/release-desktop.yml); the version varies per release.
+// Shown only when the latest release couldn't be looked up.
 const assetName = "Threads-Analytics-x.y.z-macos-arm64.zip";
 
 // desktop/docs ships one install guide per locale.
@@ -94,15 +97,28 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
   const dictionary = getDictionary(locale);
   const copy = dictionary.desktopGuide;
 
-  const downloadLink = {
-    href: siteConfig.desktopReleases,
-    target: "_blank",
-    rel: "noreferrer",
-  } as const;
+  const release = await getDesktopRelease();
+  const download = release
+    ? { href: release.downloadUrl, version: release.version }
+    : { href: siteConfig.desktopReleases };
+  const fileSize = release
+    ? new Intl.NumberFormat(locale, {
+        style: "unit",
+        unit: "megabyte",
+        maximumFractionDigits: 0,
+      }).format(release.bytes / 1e6)
+    : null;
 
   return (
     <>
-      <JsonLd data={getDesktopPageStructuredData({ locale, copy, image: screenshot.light })} />
+      <JsonLd
+        data={getDesktopPageStructuredData({
+          locale,
+          copy,
+          image: screenshot.light,
+          version: release?.version,
+        })}
+      />
       <ViewportRevealController />
       <SiteHeader locale={locale} copy={dictionary.nav} productBar />
       <main className="mac-page">
@@ -117,9 +133,9 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
               <a href="#install">{copy.localNav.install}</a>
               <a href="#faq">{copy.localNav.faq}</a>
             </div>
-            <a {...downloadLink} className="mac-localnav-cta">
+            <DesktopDownloadLink {...download} className="mac-localnav-cta">
               {copy.localNav.download}
-            </a>
+            </DesktopDownloadLink>
           </div>
         </nav>
 
@@ -140,10 +156,10 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
             </h1>
             <p className="mac-hero-lead">{copy.hero.description}</p>
             <div className="mac-hero-actions">
-              <a {...downloadLink} className="button button-primary">
+              <DesktopDownloadLink {...download} className="button button-primary">
                 {copy.hero.primaryCta}
                 <Download aria-hidden="true" strokeWidth={2} />
-              </a>
+              </DesktopDownloadLink>
               <a href="#install" className="mac-text-link">
                 {copy.hero.secondaryCta}
                 <ChevronRight aria-hidden="true" strokeWidth={2} />
@@ -250,10 +266,10 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
                 </tbody>
               </table>
               <div className="mac-compare-actions">
-                <a {...downloadLink} className="button button-primary">
+                <DesktopDownloadLink {...download} className="button button-primary">
                   {copy.localNav.download}
                   <Download aria-hidden="true" strokeWidth={2} />
-                </a>
+                </DesktopDownloadLink>
                 <Link href={`/${locale}#deploy`} className="mac-text-link">
                   {copy.compare.noteCta}
                   <ChevronRight aria-hidden="true" strokeWidth={2} />
@@ -321,8 +337,28 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
                   ))}
                 </ul>
                 <div className="mac-spec-file">
-                  <span>{copy.install.assetLabel}</span>
-                  <code>{assetName}</code>
+                  {release ? (
+                    <>
+                      <span>
+                        {copy.install.latestLabel} · {release.version} · {fileSize}
+                      </span>
+                      <code>{release.fileName}</code>
+                      <a
+                        href={release.releaseUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="mac-text-link"
+                      >
+                        {copy.install.releaseNotes}
+                        <ArrowUpRight aria-hidden="true" strokeWidth={2} />
+                      </a>
+                    </>
+                  ) : (
+                    <>
+                      <span>{copy.install.assetLabel}</span>
+                      <code>{assetName}</code>
+                    </>
+                  )}
                 </div>
                 <p className="mac-panel-foot">
                   <ShieldCheck aria-hidden="true" strokeWidth={1.8} />
@@ -384,10 +420,10 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
             <h2 id="mac-closing-title">{copy.cta.title}</h2>
             <p className="mac-closing-lead">{copy.cta.description}</p>
             <div className="mac-hero-actions">
-              <a {...downloadLink} className="button button-primary">
+              <DesktopDownloadLink {...download} className="button button-primary">
                 {copy.cta.primary}
                 <Download aria-hidden="true" strokeWidth={2} />
-              </a>
+              </DesktopDownloadLink>
               <Link href={`/${locale}#deploy`} className="button button-secondary">
                 {copy.cta.secondary}
                 <ArrowRight aria-hidden="true" strokeWidth={2} />
@@ -396,6 +432,7 @@ export default async function DesktopPage({ params }: { params: Promise<{ locale
             <p className="mac-hero-note">{copy.cta.note}</p>
           </div>
         </section>
+        <DesktopDownloadNotice copy={copy.downloadNotice} starHref={siteConfig.github} />
       </main>
       <SiteFooter locale={locale} copy={dictionary.footer} />
     </>
