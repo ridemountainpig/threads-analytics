@@ -6,8 +6,9 @@ name: Release
 #                  that neither the v<version> tag nor the X.Y.Z image exists
 #   package-macos  builds the Apple silicon app on a macOS runner, signs it
 #                  with a Developer ID, notarizes and staples it, and zips it
-#   image          meanwhile builds and smoke-tests the image with
-#                  docker-publish.yml and pushes it as sha-<short sha>
+#   image          meanwhile builds the image with docker-publish.yml,
+#                  pushes it as sha-<short sha> and smoke-tests that digest
+#                  on amd64 and arm64
 #   tag-image      once both have passed, tags that exact image X.Y.Z
 #   publish        signs the update feed for the ZIP and creates the GitHub
 #                  Release tagged v<version>, always as a pre-release
