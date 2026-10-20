@@ -27,45 +27,36 @@ type GithubRelease = {
   assets: { name: string; size: number; browser_download_url: string }[];
 };
 
-const perPage = 30;
-
-function findDownload(releases: GithubRelease[]): DesktopRelease | null {
-  for (const release of releases) {
-    if (release.draft || release.prerelease) continue;
-    const asset = release.assets.find(({ name }) => assetPattern.test(name));
-    if (!asset?.browser_download_url.startsWith(`${siteConfig.github}/releases/download/`)) {
-      continue;
-    }
-    return {
-      version: release.tag_name.replace(/^v/, ""),
-      fileName: asset.name,
-      downloadUrl: asset.browser_download_url,
-      bytes: asset.size,
-      releaseUrl: release.html_url,
-    };
+function toDownload(release: GithubRelease): DesktopRelease | null {
+  if (release.draft || release.prerelease) return null;
+  const asset = release.assets.find(({ name }) => assetPattern.test(name));
+  if (!asset?.browser_download_url.startsWith(`${siteConfig.github}/releases/download/`)) {
+    return null;
   }
-  return null;
+  return {
+    version: release.tag_name.replace(/^v/, ""),
+    fileName: asset.name,
+    downloadUrl: asset.browser_download_url,
+    bytes: asset.size,
+    releaseUrl: release.html_url,
+  };
 }
 
-/** The newest stable release that ships the macOS ZIP; null when GitHub can't be reached. */
+/**
+ * The release GitHub marks Latest, which Promote Release sets and installed
+ * apps read their update feed from; null when it ships no macOS ZIP or GitHub
+ * can't be reached.
+ */
 export async function getDesktopRelease(): Promise<DesktopRelease | null> {
   const repo = new URL(siteConfig.github).pathname;
   try {
-    // Pages only go past the first when it holds no stable release with the ZIP.
-    for (let page = 1; ; page++) {
-      const response = await fetch(
-        `https://api.github.com/repos${repo}/releases?per_page=${perPage}&page=${page}`,
-        {
-          headers: { Accept: "application/vnd.github+json" },
-          next: { revalidate: ONE_HOUR },
-          signal: AbortSignal.timeout(5000),
-        },
-      );
-      if (!response.ok) return null;
-      const releases = (await response.json()) as GithubRelease[];
-      const download = findDownload(releases);
-      if (download || releases.length < perPage) return download;
-    }
+    const response = await fetch(`https://api.github.com/repos${repo}/releases/latest`, {
+      headers: { Accept: "application/vnd.github+json" },
+      next: { revalidate: ONE_HOUR },
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!response.ok) return null;
+    return toDownload((await response.json()) as GithubRelease);
   } catch {
     return null;
   }
