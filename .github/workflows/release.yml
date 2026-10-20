@@ -1,13 +1,22 @@
-name: Release Desktop (macOS)
+name: Release
 
-# Manually triggered. Builds the Apple silicon app on a macOS runner, signs
-# it with a Developer ID, notarizes and staples it, and zips it. A second job
-# signs the update feed for that ZIP and publishes both in a GitHub Release
-# tagged v<version> at the commit the workflow was dispatched from. Only
-# dispatches from main publish.
+# Manually triggered from main with a version. Releases the Mac app and the
+# dashboard's Docker image as one version, built from one commit:
+#   validate       checks the version, the manifests and CHANGELOG.md, and
+#                  that neither the v<version> tag nor the X.Y.Z image exists
+#   package-macos  builds the Apple silicon app on a macOS runner, signs it
+#                  with a Developer ID, notarizes and staples it, and zips it
+#   image          meanwhile builds the image with docker-publish.yml,
+#                  pushes it as sha-<short sha> and smoke-tests that digest
+#                  on amd64 and arm64
+#   tag-image      once both have passed, tags that exact image X.Y.Z
+#   publish        signs the update feed for the ZIP and creates the GitHub
+#                  Release tagged v<version>, always as a pre-release
+# Existing installs see none of it until Promote Release (promote.yml) points
+# `latest`, X.Y and X at the image and publishes the release.
 #
-# Both jobs read secrets from the desktop-release environment. Signing and
-# notarization (package-macos):
+# package-macos and publish read secrets from the desktop-release
+# environment. Signing and notarization (package-macos):
 #   MACOS_CERTIFICATE_P12       base64 of the Developer ID Application .p12
 #   MACOS_CERTIFICATE_PASSWORD  password of that .p12
 #   MACOS_SIGNING_IDENTITY      e.g. "Developer ID Application: Name (TEAMID)"
@@ -23,13 +32,13 @@ name: Release Desktop (macOS)
 # (updates.feed_url in desktop/app.json), and the Native SDK updater only
 # compares plain X.Y.Z versions. So every release gets a version of its own,
 # matching desktop/app.json and package.json:
-#   version input  → 0.1.0
-#   tag            → v0.1.0
-#   assets         → Threads-Analytics-0.1.0-macos-arm64.zip (+ .sha256),
+#   version input  → 1.0.0
+#   tag            → v1.0.0
+#   assets         → Threads-Analytics-1.0.0-macos-arm64.zip (+ .sha256),
 #                    native-update.json
-# A preview is the same kind of release with the pre-release box checked:
-# installed apps skip it until it is published, or later edited, with the box
-# unchecked and "Set as the latest release" checked.
+#   image          → ghcr.io/<owner>/<repo>:1.0.0
+# Installed apps and the website's download page skip pre-releases, so the
+# release can be tested before it is promoted.
 #
 # The release notes lead with the version's "## X.Y.Z" section of
 # CHANGELOG.md, which the version bump adds; the run fails without one.
@@ -38,14 +47,9 @@ on:
   workflow_dispatch:
     inputs:
       version:
-        description: "Release version, a plain X.Y.Z such as 0.1.0. Must match desktop/app.json and package.json and have a section in CHANGELOG.md."
+        description: "Release version, a plain X.Y.Z such as 1.0.0. Must match desktop/app.json and package.json and have a section in CHANGELOG.md."
         required: true
         type: string
-      prerelease:
-        description: "Mark the GitHub Release as a pre-release. Installed apps are only offered it once the box is unchecked (edit the release to roll it out)."
-        required: false
-        type: boolean
-        default: true
       update_notes:
         description: "Optional plain-text summary shown in the app's update dialog, e.g. Faster sync and a new growth chart."
         required: false
@@ -55,49 +59,51 @@ on:
 permissions:
   contents: read
 
+# Shared with promote.yml, so a version is never promoted mid-release.
 concurrency:
-  group: release-desktop
+  group: release
   cancel-in-progress: false
 
 env:
   APP_NAME: Threads Analytics
   # GitHub rewrites spaces in release asset names, so the ZIP keeps a hyphen.
   ASSET_PREFIX: Threads-Analytics
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 # Actions are pinned to commit SHAs because these jobs hold signing secrets
 # and publish releases (contents: write).
 jobs:
-  package-macos:
-    # Older runners' `security import` can reject a .p12 exported by newer
-    # Keychain Access (AES encryption) as a wrong password.
-    runs-on: macos-15
-    # Holds the signing secrets; restrict its deployment branches to main.
-    environment: desktop-release
+  validate:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: read
     outputs:
       version: ${{ steps.release.outputs.version }}
       tag: ${{ steps.release.outputs.tag }}
       asset: ${{ steps.release.outputs.asset }}
-      prerelease: ${{ steps.release.outputs.prerelease }}
-      sha256: ${{ steps.zip.outputs.sha256 }}
     steps:
       - name: Require the main branch
         if: github.ref != 'refs/heads/main'
         run: |
-          echo "::error::Desktop releases are only published from main (dispatched from $GITHUB_REF)"
+          echo "::error::Releases are only published from main (dispatched from $GITHUB_REF)"
           exit 1
 
-      # Dependency code runs in this job, so the write-scoped token stays out
-      # of .git/config; only the release step gets it, through GH_TOKEN.
       - name: Checkout repository
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
 
+      - name: Set up Node.js
+        uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version-file: .nvmrc
+
       - name: Validate release version
         id: release
         env:
           VERSION: ${{ inputs.version }}
-          PRERELEASE: ${{ inputs.prerelease }}
           UPDATE_NOTES: ${{ inputs.update_notes }}
         run: |
           set -euo pipefail
@@ -106,7 +112,7 @@ jobs:
           # (lib/release-version.ts) rejects leading zeros.
           version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
           if [[ ! "$VERSION" =~ $version_pattern ]]; then
-            echo "::error::Version '$VERSION' must be a plain X.Y.Z with no leading zeros (e.g. 0.1.0). Mark a preview with the pre-release box instead of a suffix"
+            echo "::error::Version '$VERSION' must be a plain X.Y.Z with no leading zeros (e.g. 1.0.0). Every release starts as a pre-release, so it needs no suffix"
             exit 1
           fi
 
@@ -131,6 +137,13 @@ jobs:
             exit 1
           fi
 
+          # The publish job leads the notes with this section; checking it here
+          # fails the run before the build.
+          if [[ -z "$(node desktop/scripts/changelog-section.mjs "$VERSION")" ]]; then
+            echo "::error::CHANGELOG.md needs a non-empty '## $VERSION' section"
+            exit 1
+          fi
+
           tag="v$VERSION"
           if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
             echo "::error::Tag '$tag' already exists on origin"
@@ -141,8 +154,42 @@ jobs:
             echo "version=$VERSION"
             echo "tag=$tag"
             echo "asset=${ASSET_PREFIX}-${VERSION}-macos-arm64.zip"
-            echo "prerelease=$PRERELEASE"
           } >> "$GITHUB_OUTPUT"
+
+      # Running images compare their version tag's digest against `latest`, so
+      # a published X.Y.Z is never moved.
+      - name: Check the image version is unpublished
+        env:
+          VERSION: ${{ steps.release.outputs.version }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin > /dev/null
+          image="$REGISTRY/${IMAGE_NAME,,}:$VERSION"
+          if output="$(docker buildx imagetools inspect "$image" 2>&1)"; then
+            echo "::error::$image is already published; release a new version instead"
+            exit 1
+          elif [[ "$output" != *"not found"* ]]; then
+            echo "::error::Couldn't check whether $image exists: $output"
+            exit 1
+          fi
+
+  package-macos:
+    needs: validate
+    # Older runners' `security import` can reject a .p12 exported by newer
+    # Keychain Access (AES encryption) as a wrong password.
+    runs-on: macos-15
+    # Holds the signing secrets; restrict its deployment branches to main.
+    environment: desktop-release
+    outputs:
+      sha256: ${{ steps.zip.outputs.sha256 }}
+    steps:
+      # Dependency code runs in this job, so the write-scoped token stays out
+      # of .git/config; only the release step gets it, through GH_TOKEN.
+      - name: Checkout repository
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
 
       - name: Install pnpm
         uses: pnpm/action-setup@0977fd99725f1db4007ccb2928dbb4e90d06cc86 # v6.0.10
@@ -152,18 +199,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: pnpm
-
-      # The publish job leads the notes with this section; checking it here
-      # fails the run before the build.
-      - name: Check changelog section
-        env:
-          VERSION: ${{ steps.release.outputs.version }}
-        run: |
-          set -euo pipefail
-          if [[ -z "$(node desktop/scripts/changelog-section.mjs "$VERSION")" ]]; then
-            echo "::error::CHANGELOG.md needs a non-empty '## $VERSION' section"
-            exit 1
-          fi
 
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
@@ -227,7 +262,7 @@ jobs:
       - name: Build and package macOS app
         env:
           # Baked into the app so it can compare itself against GitHub Releases.
-          THREADS_ANALYTICS_DESKTOP_VERSION: ${{ steps.release.outputs.version }}
+          THREADS_ANALYTICS_DESKTOP_VERSION: ${{ needs.validate.outputs.version }}
           MACOS_SIGNING_IDENTITY: ${{ secrets.MACOS_SIGNING_IDENTITY }}
         run: |
           pnpm desktop:package:macos
@@ -285,7 +320,7 @@ jobs:
         id: zip
         working-directory: desktop/zig-out/package
         env:
-          ASSET: ${{ steps.release.outputs.asset }}
+          ASSET: ${{ needs.validate.outputs.asset }}
         run: |
           set -euo pipefail
           ditto -c -k --keepParent "${APP_NAME}.app" "$RUNNER_TEMP/$ASSET"
@@ -295,8 +330,8 @@ jobs:
 
       - name: Verify zipped bundle
         env:
-          ASSET: ${{ steps.release.outputs.asset }}
-          VERSION: ${{ steps.release.outputs.version }}
+          ASSET: ${{ needs.validate.outputs.asset }}
+          VERSION: ${{ needs.validate.outputs.version }}
         run: |
           set -euo pipefail
           extract="$RUNNER_TEMP/verify"
@@ -328,7 +363,13 @@ jobs:
           test -f "$app/Contents/Resources/dist/server/server.js"
           test -d "$app/Contents/Resources/dist/runtime/prisma/migrations"
           codesign --verify --deep --strict --verbose=2 "$app"
-          xcrun stapler validate "$app"
+          # stapler looks the ticket up on Apple's CloudKit, which can drop the
+          # connection (error 68), so a failure is retried before it counts.
+          for attempt in 1 2 3; do
+            if xcrun stapler validate "$app"; then break; fi
+            if (( attempt == 3 )); then exit 1; fi
+            sleep 20
+          done
           # Checks the reported source, not just the exit status, so a host with
           # assessments disabled cannot pass vacuously.
           assessment="$(spctl --assess --type execute --verbose=2 "$app" 2>&1)" || true
@@ -348,8 +389,8 @@ jobs:
         with:
           name: desktop-release
           path: |
-            ${{ runner.temp }}/${{ steps.release.outputs.asset }}
-            ${{ runner.temp }}/${{ steps.release.outputs.asset }}.sha256
+            ${{ runner.temp }}/${{ needs.validate.outputs.asset }}
+            ${{ runner.temp }}/${{ needs.validate.outputs.asset }}.sha256
           retention-days: 1
           if-no-files-found: error
 
@@ -359,21 +400,58 @@ jobs:
           security delete-keychain "$RUNNER_TEMP/signing.keychain-db" 2>/dev/null || true
           rm -f "$RUNNER_TEMP/signing.p12" "$RUNNER_TEMP/AuthKey.p8"
 
+  # Runs alongside package-macos. The image is pushed only as sha-<short sha>;
+  # nothing that deployments pull changes here.
+  image:
+    needs: validate
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
+      id-token: write
+    uses: ./.github/workflows/docker-publish.yml
+    with:
+      version: ${{ needs.validate.outputs.version }}
+
+  # Tags the digest the image job pushed, so X.Y.Z is exactly the image that
+  # was smoke-tested, and only once the Mac app has passed as well.
+  tag-image:
+    needs: [validate, package-macos, image]
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Tag the image with its version
+        env:
+          VERSION: ${{ needs.validate.outputs.version }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin > /dev/null
+          image="$REGISTRY/${IMAGE_NAME,,}"
+          docker buildx imagetools create --tag "$image:$VERSION" "$image@$DIGEST"
+          tagged="sha256:$(docker buildx imagetools inspect --raw "$image:$VERSION" | sha256sum | cut -d ' ' -f 1)"
+          if [[ "$tagged" != "$DIGEST" ]]; then
+            echo "::error::$image:$VERSION is $tagged, expected $DIGEST"
+            exit 1
+          fi
+          echo "Tagged $image:$VERSION ($DIGEST)"
+
   # Signs the update feed and publishes the release on a fresh runner that
   # installs no dependencies and runs none of the app's code, so the update
   # key (which lets a feed reach every installed app) never shares a machine
   # with that code, and only this job gets the write-scoped token.
   publish:
-    needs: package-macos
+    needs: [validate, package-macos, tag-image]
     runs-on: ubuntu-latest
     environment: desktop-release
     permissions:
       contents: write
     env:
-      VERSION: ${{ needs.package-macos.outputs.version }}
-      TAG: ${{ needs.package-macos.outputs.tag }}
-      ASSET: ${{ needs.package-macos.outputs.asset }}
-      PRERELEASE: ${{ needs.package-macos.outputs.prerelease }}
+      VERSION: ${{ needs.validate.outputs.version }}
+      TAG: ${{ needs.validate.outputs.tag }}
+      ASSET: ${{ needs.validate.outputs.asset }}
     steps:
       # Only for desktop/app.json, CHANGELOG.md, and the signing and changelog
       # scripts, which use Node built-ins alone.
@@ -407,8 +485,8 @@ jobs:
 
       # The feed pins the ZIP's URL, size, and SHA-256 under the update key.
       # Installed apps read it from the Latest release (updates.feed_url in
-      # desktop/app.json), so a pre-release reaches no one until it is
-      # published with the pre-release box unchecked.
+      # desktop/app.json), so it reaches no one until Promote Release
+      # publishes the release.
       - name: Sign update feed
         env:
           NATIVE_UPDATE_PRIVATE_KEY: ${{ secrets.NATIVE_UPDATE_PRIVATE_KEY }}
@@ -437,7 +515,7 @@ jobs:
           {
             printf '%s\n\n' "$changes"
             cat <<NOTES
-          ### Install
+          ### Mac app
 
           macOS, Apple silicon (arm64) only. Signed with a Developer ID and notarized by Apple. Installed copies that offer **Install** in their update notice update themselves; see the install guide for a first install or a manual update:
 
@@ -446,6 +524,14 @@ jobs:
           - [インストールガイド（日本語）](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/desktop/docs/install-macos-ja.md)
 
           Only download the app from this project's GitHub Releases.
+
+          ### Docker image
+
+          \`\`\`sh
+          docker pull ghcr.io/${GITHUB_REPOSITORY,,}:$VERSION
+          \`\`\`
+
+          Built from the same commit as the Mac app. To update a self-hosted deployment, see [Updating](https://github.com/${GITHUB_REPOSITORY}/blob/${GITHUB_SHA}/README.md#updating).
 
           <details>
           <summary>Assets and checksums</summary>
@@ -471,10 +557,10 @@ jobs:
             "$TAG"
             --repo "$GITHUB_REPOSITORY"
             --target "$GITHUB_SHA"
-            --title "Threads Analytics Desktop $VERSION"
+            --title "Threads Analytics $VERSION"
             --notes-file "$RUNNER_TEMP/notes.md"
+            --prerelease
           )
-          if [[ "$PRERELEASE" == "true" ]]; then args+=(--prerelease); fi
           gh release create "${args[@]}" \
             "$RUNNER_TEMP/release/$ASSET" \
             "$RUNNER_TEMP/release/$ASSET.sha256" \

@@ -46,21 +46,23 @@ Threads Access Token 會經過加密。開發環境會將金鑰儲存在 `deskto
 
 ## 發行
 
-桌面版由 GitHub Actions 的 **Release Desktop (macOS)** workflow（`.github/workflows/release-desktop.yml`）手動觸發發佈。請在 `main` 上執行，並輸入純版本號，例如 `0.1.0`。
+版本由 GitHub Actions 的 **Release** workflow（`.github/workflows/release.yml`）手動觸發發佈，Mac app 與儀表板的 Docker 映像檔會以同一個版本號、從同一個 commit 一起發佈。請在 `main` 上執行，並輸入純版本號，例如 `1.0.0`。
 
-每個版本都使用純 `X.Y.Z` 版本號，因為 Native SDK updater 比較的是 bundle 版本，而 bundle 無法帶有 pre-release 後綴。workflow 會檢查版本號同時符合 `desktop/app.json` 與 `package.json`，在 Apple silicon runner 上建置 app，壓縮為 `Threads-Analytics-<version>-macos-arm64.zip` 並附上 SHA-256 檔案，然後建立 `v<version>` tag 與 GitHub Release。預覽版就是勾選 workflow 的 pre-release 輸入（預設勾選）發佈的版本。
+每個版本都使用純 `X.Y.Z` 版本號，因為 Native SDK updater 比較的是 bundle 版本，而 bundle 無法帶有 pre-release 後綴。workflow 會檢查版本號同時符合 `desktop/app.json` 與 `package.json`，在 Apple silicon runner 上建置 app，壓縮為 `Threads-Analytics-<version>-macos-arm64.zip` 並附上 SHA-256 檔案，然後建立 `v<version>` tag 與 GitHub Release。每個版本都會先建立為 pre-release，在轉為正式版之前，已安裝的 app 與網站的下載頁都會略過它。
 
-改版本號時也要在 `CHANGELOG.md` 加上 `## X.Y.Z` 段落，寫給使用者看，而不是列出 PR 標題。Release 內文以這一段開頭（由 `desktop/scripts/changelog-section.mjs` 讀取），接著是安裝說明，最後是收合的檔案與 checksum 表格。缺少這一段或內容為空時，workflow 會在建置前失敗；`pnpm desktop:test` 也會檢查目前 `package.json` 的版本有對應的段落。`update_notes` 輸入只用於 app 的更新視窗。
+改版本號時也要在 `CHANGELOG.md` 加上 `## X.Y.Z` 段落，寫給使用者看，而不是列出 PR 標題。Release 內文以這一段開頭（由 `desktop/scripts/changelog-section.mjs` 讀取），接著是 Mac app 的安裝說明與映像檔的 `docker pull` 指令，最後是收合的檔案與 checksum 表格。缺少這一段或內容為空時，workflow 會在建置前失敗；`pnpm desktop:test` 也會檢查目前 `package.json` 的版本有對應的段落。`update_notes` 輸入只用於 app 的更新視窗。
+
+建置 app 的同時，workflow 也會呼叫 `.github/workflows/docker-publish.yml`（兩次發行之間把 `main` 發佈為 `latest` 的 workflow）建置 Docker 映像檔。發行用的映像檔會寫入版本號，讓儀表板顯示版本號而不是 `sha-…`；它只會推送為 `sha-<short sha>`，接著在原生的 amd64 與 arm64 runner 上對推送出去的 digest 執行 smoke test。app 與映像檔都通過之後，workflow 才會把這個映像檔標上 `X.Y.Z` 並建立 release；它在一開始就確認過 tag 與映像檔版本都還不存在，已發佈的 `X.Y.Z` 也不會再被移動。用 ZIP 與 `ghcr.io/ridemountainpig/threads-analytics:X.Y.Z` 測試 pre-release 之後，以同一個版本號執行 **Promote Release**（`.github/workflows/promote.yml`）。它會把 `latest`、`X.Y`、`X`（0.x 不推 `0`）指到同一個映像檔，不會重新 build，並把 release 發佈為 Latest。比最新正式版還舊的版本會被拒絕，所以 `latest` 不會往回退。
 
 workflow 會從 `desktop-release` environment 的 secrets 將 Developer ID 憑證匯入臨時鑰匙圈，以該身分封裝 app，對 sidecar 與已簽章的外殼各執行一次 smoke test（`pnpm desktop:smoke:macos --shell`），再用 App Store Connect API key 送交 Apple 公證服務，並在壓縮前 staple 公證票證。驗證步驟會檢查解壓後 app 的 staple 票證與 Gatekeeper 評估結果，並確認 ZIP 中只有這個 app，且其 bundle id 與 manifest 相同、版本為發行版本、執行檔為 arm64。所需的 secrets 列在 workflow 檔案開頭；請放在 `desktop-release` environment，並將其部署分支限制為 `main`，讓其他分支的 workflow 讀不到。
 
-workflow 也會透過 `THREADS_ANALYTICS_DESKTOP_VERSION` 把發行版本號傳給建置流程。`desktop/scripts/build-next.mjs` 會將它以 `NEXT_PUBLIC_DESKTOP_APP_VERSION` 烘入 app（本機封裝則退回 manifest 的版本號），執行中的 app 會拿它與最新且附有 `-macos-arm64.zip` 資產的 GitHub Release 比較。正式版建置只會收到正式版的提示，也就是純 `X.Y.Z` 版本號、且沒有標記為 pre-release 的版本。先前 `0.1.0-beta.N` 版本的建置會優先收到較新的正式版；沒有較新的正式版時，才會收到帶有 pre-release 後綴的較新版本。如果第一頁的 release 中沒有這個建置所屬類型的版本，「設定」→「關於」會顯示無法檢查，而不是顯示已是最新版本。workflow 預設會把版本標記為 pre-release，所以要在發布時（或之後編輯 release）取消勾選，已安裝的 app 才會收到這個版本。有新版本時會在儀表板顯示 banner，並在「設定」→「關於」中顯示。開發版建置沒有烘入版本號，因此會略過檢查。
+workflow 也會透過 `THREADS_ANALYTICS_DESKTOP_VERSION` 把發行版本號傳給建置流程。`desktop/scripts/build-next.mjs` 會將它以 `NEXT_PUBLIC_DESKTOP_APP_VERSION` 烘入 app（本機封裝則退回 manifest 的版本號），執行中的 app 會拿它與最新且附有 `-macos-arm64.zip` 資產的 GitHub Release 比較。正式版建置只會收到正式版的提示，也就是純 `X.Y.Z` 版本號、且沒有標記為 pre-release 的版本。先前 `0.1.0-beta.N` 版本的建置會優先收到較新的正式版；沒有較新的正式版時，才會收到帶有 pre-release 後綴的較新版本。如果第一頁的 release 中沒有這個建置所屬類型的版本，「設定」→「關於」會顯示無法檢查，而不是顯示已是最新版本。每個版本都會先建立為 pre-release，所以要等 Promote Release 發佈之後，已安裝的 app 才會收到這個版本。有新版本時會在儀表板顯示 banner，並在「設定」→「關於」中顯示。開發版建置沒有烘入版本號，因此會略過檢查。
 
 ### App 內更新
 
-更新由 Native SDK updater（`desktop/app.json` 的 `updates`）安裝。workflow 的第二個 job `publish` 會用 `desktop/scripts/sign-update-feed.mjs` 簽署 `native-update.json`：這是一份以 Ed25519 簽章的內容，記載 bundle id、版本、目標平台，以及 ZIP 的網址、大小與 SHA-256。這個 job 在全新的 runner 上執行，不安裝任何依賴套件，也不執行 app 的程式碼，因此 `NATIVE_UPDATE_PRIVATE_KEY` secret 不會和那些程式碼出現在同一台機器上，而且只有這個 job 拿得到可寫入的 token。`desktop/src/main.zig` 中的 Zig 測試會確認 app 內建的驗證器接受這支腳本的輸出。
+更新由 Native SDK updater（`desktop/app.json` 的 `updates`）安裝。workflow 的 `publish` job 會用 `desktop/scripts/sign-update-feed.mjs` 簽署 `native-update.json`：這是一份以 Ed25519 簽章的內容，記載 bundle id、版本、目標平台，以及 ZIP 的網址、大小與 SHA-256。這個 job 在全新的 runner 上執行，不安裝任何依賴套件，也不執行 app 的程式碼，因此 `NATIVE_UPDATE_PRIVATE_KEY` secret 不會和那些程式碼出現在同一台機器上，而且只有這個 job 拿得到可以建立 release 的 token。`desktop/src/main.zig` 中的 Zig 測試會確認 app 內建的驗證器接受這支腳本的輸出。
 
-已安裝的 app 會從 GitHub 標記為 **Latest** 的 release 讀取更新資訊（`updates.feed_url`），所以只有最新的版本才保留勾選 **Set as the latest release**。儀表板 banner 與「設定」→「關於」會提供「安裝」按鈕，透過 bridge（`native-sdk.command.invoke`，只允許 app 自己的 origin）執行 `app.check-for-updates` 指令；app 選單的 **Check for Updates…** 也會執行相同流程。updater 會驗證更新資訊的簽章、下載 ZIP 並檢查大小與 SHA-256、要求其中只有一個 bundle id 相同且版本與更新資訊一致的 app，並確認其程式碼簽章屬於已安裝 app 的 Developer ID team。接著替換 app 並重新開啟；新版無法開啟時會還原舊版。app 所在的資料夾必須可寫入。`check_on_start` 為關閉，updater 不會在啟動時打斷使用者，改由 banner 提示有新版本。
+已安裝的 app 會從 GitHub 標記為 **Latest** 的 release 讀取更新資訊（`updates.feed_url`），Promote Release 發佈版本時會把它設為 Latest。儀表板 banner 與「設定」→「關於」會提供「安裝」按鈕，透過 bridge（`native-sdk.command.invoke`，只允許 app 自己的 origin）執行 `app.check-for-updates` 指令；app 選單的 **Check for Updates…** 也會執行相同流程。updater 會驗證更新資訊的簽章、下載 ZIP 並檢查大小與 SHA-256、要求其中只有一個 bundle id 相同且版本與更新資訊一致的 app，並確認其程式碼簽章屬於已安裝 app 的 Developer ID team。接著替換 app 並重新開啟；新版無法開啟時會還原舊版。app 所在的資料夾必須可寫入。`check_on_start` 為關閉，updater 不會在啟動時打斷使用者，改由 banner 提示有新版本。
 
 bridge 呼叫失敗時，按鈕會改為下載 ZIP。下載交給系統瀏覽器而不是 app 本身，因此 macOS 會照常標記隔離屬性，新版第一次開啟時仍會經過 Gatekeeper 檢查。只有本 repo 的 release 下載網址才會顯示下載連結，這個範圍已涵蓋在 `desktop/app.json` 的 `external_links` 允許清單內。
 

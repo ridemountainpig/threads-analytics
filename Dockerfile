@@ -43,10 +43,13 @@ ENV NODE_ENV=production
 
 # Set by docker-publish.yml so the running app can detect newer published
 # images. Local source builds leave them empty, disabling the update check.
+# IMAGE_VERSION is only set for release images.
 ARG GIT_COMMIT_SHA=""
 ARG IMAGE_REPOSITORY=""
+ARG IMAGE_VERSION=""
 ENV GIT_COMMIT_SHA=${GIT_COMMIT_SHA}
 ENV IMAGE_REPOSITORY=${IMAGE_REPOSITORY}
+ENV IMAGE_VERSION=${IMAGE_VERSION}
 
 COPY --from=builder /app/.next/standalone ./
 COPY --from=builder /app/.next/static ./.next/static

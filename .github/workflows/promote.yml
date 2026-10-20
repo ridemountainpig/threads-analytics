@@ -1,0 +1,106 @@
+name: Promote Release
+
+# Manually triggered once a pre-release from the Release workflow has been
+# tested. Points the image's `latest`, X.Y and X (no `0` for 0.x) at X.Y.Z
+# without rebuilding it, then publishes the GitHub Release as Latest, which is
+# when installed apps are offered the update and the website's download page
+# switches to it. Every step sets the same state again, so a failed run can be
+# re-run.
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version to promote, a plain X.Y.Z such as 1.0.0 that the Release workflow published as a pre-release."
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Shared with release.yml, so a version is never promoted mid-release.
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
+
+jobs:
+  promote:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+    env:
+      VERSION: ${{ inputs.version }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - name: Require the main branch
+        if: github.ref != 'refs/heads/main'
+        run: |
+          echo "::error::Releases are only promoted from main (dispatched from $GITHUB_REF)"
+          exit 1
+
+      # Promoting an older version would move `latest` back and downgrade
+      # every deployment that pulls it.
+      - name: Check the release
+        run: |
+          set -euo pipefail
+          version_pattern='^(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)\.(0|[1-9][0-9]*)$'
+          if [[ ! "$VERSION" =~ $version_pattern ]]; then
+            echo "::error::Version '$VERSION' must be a plain X.Y.Z with no leading zeros (e.g. 1.0.0)"
+            exit 1
+          fi
+
+          if ! is_draft="$(gh release view "v$VERSION" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft)"; then
+            echo "::error::There is no release v$VERSION. Run the Release workflow for $VERSION first"
+            exit 1
+          fi
+          if [[ "$is_draft" == "true" ]]; then
+            echo "::error::Release v$VERSION is a draft, which the Release workflow never creates"
+            exit 1
+          fi
+
+          stable="$(gh release list --repo "$GITHUB_REPOSITORY" --exclude-drafts --exclude-pre-releases --limit 100 --json tagName --jq '.[].tagName')"
+          newest="$(printf '%s\nv%s\n' "$stable" "$VERSION" | sed -n 's/^v\([0-9]*\.[0-9]*\.[0-9]*\)$/\1/p' | sort -V | tail -n 1)"
+          if [[ "$newest" != "$VERSION" ]]; then
+            echo "::error::$newest is already published, so $VERSION can't become the latest release"
+            exit 1
+          fi
+
+      # Retagging the published digest keeps every tag on the image the Release
+      # workflow smoke-tested, and running X.Y.Z images see `latest` as theirs.
+      - name: Point latest, X.Y and X at the image
+        run: |
+          set -euo pipefail
+          printf '%s' "$GH_TOKEN" | docker login "$REGISTRY" -u "$GITHUB_ACTOR" --password-stdin > /dev/null
+          image="$REGISTRY/${IMAGE_NAME,,}"
+          if ! docker buildx imagetools inspect "$image:$VERSION" > /dev/null; then
+            echo "::error::$image:$VERSION isn't published. The Release workflow tags it once the Mac app and the image have both passed"
+            exit 1
+          fi
+          digest="sha256:$(docker buildx imagetools inspect --raw "$image:$VERSION" | sha256sum | cut -d ' ' -f 1)"
+
+          tags=(latest "${VERSION%.*}")
+          major="${VERSION%%.*}"
+          if [[ "$major" != 0 ]]; then tags+=("$major"); fi
+          args=()
+          for tag in "${tags[@]}"; do args+=(--tag "$image:$tag"); done
+          docker buildx imagetools create "${args[@]}" "$image@$digest"
+
+          for tag in "${tags[@]}"; do
+            tagged="sha256:$(docker buildx imagetools inspect --raw "$image:$tag" | sha256sum | cut -d ' ' -f 1)"
+            if [[ "$tagged" != "$digest" ]]; then
+              echo "::error::$image:$tag is $tagged, expected $digest"
+              exit 1
+            fi
+            echo "$image:$tag → $digest"
+          done
+
+      - name: Publish the release
+        run: |
+          set -euo pipefail
+          gh release edit "v$VERSION" --repo "$GITHUB_REPOSITORY" --prerelease=false --latest
+          echo "Promoted https://github.com/${GITHUB_REPOSITORY}/releases/tag/v${VERSION}"

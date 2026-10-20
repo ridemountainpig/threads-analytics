@@ -300,6 +300,8 @@ Vercel は長時間実行プロセスをサポートしていないため、内�
 - **ソースからデプロイ** — `git pull` 後に `pnpm install && pnpm prisma:generate && pnpm build` を実行し、`pnpm start` で再起動します（マイグレーションは自動実行）。
 - **Vercel** — 新しいバージョンを push するだけです。マイグレーションは上記のとおりビルド時に実行されます。
 
+各リリースのイメージにはバージョンのタグ（例：`1.0.0`）と、そのシリーズの最新版を指す `1.0`・`1` のタグも付くため、Docker や Docker Compose では `latest` の代わりにこれらのタグでバージョンを固定できます（Compose では `image:` の行を変更）。各バージョンの変更内容は [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) をご覧ください。
+
 更新してもデータベース（投稿、インサイト、アカウント）はそのまま保持されます。
 
 ---
