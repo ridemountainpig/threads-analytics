@@ -364,8 +364,9 @@ export interface ThreadsUserReply {
   timestamp: string;
   media_type: string;
   permalink: string;
-  rootPostId: string;
-  repliedToId: string;
+  // Null under another account's post: Threads leaves root_post and replied_to out there.
+  rootPostId: string | null;
+  repliedToId: string | null;
 }
 
 /**
@@ -410,15 +411,15 @@ export async function getUserReplies(
 
   const replies: ThreadsUserReply[] = [];
   for (const r of data.data ?? []) {
-    if (!r.timestamp || !r.root_post?.id || !r.replied_to?.id) continue;
+    if (!r.timestamp) continue;
     replies.push({
       id: r.id,
       text: r.text ?? "",
       timestamp: r.timestamp,
       media_type: r.media_type ?? "TEXT_POST",
       permalink: r.permalink ?? "",
-      rootPostId: r.root_post.id,
-      repliedToId: r.replied_to.id,
+      rootPostId: r.root_post?.id ?? null,
+      repliedToId: r.replied_to?.id ?? null,
     });
   }
 

@@ -5,6 +5,8 @@ import {
   getTodayBounds,
   getTodayFollowers,
   getTodayInbox,
+  getTodayMyReplies,
+  getTodayOverall,
   getRecentPosts,
 } from "@/lib/today-data";
 import { replyRate } from "@/lib/today-replies";
@@ -24,6 +26,9 @@ import { STALE_SYNC_DAYS } from "@/lib/stale-sync";
 import TodayViews, { type TodayView } from "./today-views";
 import { TodayPostsCard, YesterdayPostsCard } from "./today-posts";
 import ReplyInbox, { type ReplyInboxProps } from "./reply-inbox";
+import MyReplies, { type MyRepliesProps } from "./my-replies";
+import RepliesCard from "./replies-card";
+import TodayOverallCard from "./today-overall";
 import StaleNotice from "./stale-notice";
 
 interface PageProps {
@@ -108,12 +113,16 @@ export default async function TodayPage({ searchParams }: PageProps) {
   ]);
   const { today: posts, yesterday: yesterdayPosts } = recentPosts;
   const inboxPosts = [...posts, ...yesterdayPosts];
-  const inbox = await getTodayInbox(
-    account.id,
-    accessToken,
-    inboxPosts.map((post) => post.id),
-    bounds.todayStart,
-  );
+  const [inbox, myReplies, overall] = await Promise.all([
+    getTodayInbox(
+      account.id,
+      accessToken,
+      inboxPosts.map((post) => post.id),
+      bounds.todayStart,
+    ),
+    getTodayMyReplies(account.id, accessToken, bounds.todayStart),
+    getTodayOverall(account.id, accessToken, tz, bounds, posts, now),
+  ]);
 
   const number = (value: number) => Math.round(value).toLocaleString(dateLocale);
   const time = (date: Date) =>
@@ -190,7 +199,8 @@ export default async function TodayPage({ searchParams }: PageProps) {
           })),
           awaiting: inbox.inbox.awaiting,
           answered: inbox.inbox.answered,
-          authorReplies: inbox.inbox.authorReplies,
+          // MyReplies shows the full count; this narrower one would contradict it.
+          authorReplies: myReplies.status === "ok" ? 0 : inbox.inbox.authorReplies,
           replyRate: replyRate(inbox.inbox),
           failedPosts: inbox.failedPosts,
           labels: inboxLabels,
@@ -207,6 +217,33 @@ export default async function TodayPage({ searchParams }: PageProps) {
                 ? t.today.repliesTokenExpired
                 : t.today.repliesFailed,
           labels: inboxLabels,
+        };
+  const myRepliesLabels = {
+    ...t.today,
+    viewOnThreads: t.postsPage.viewOnThreads,
+    noText: t.postsPage.noText,
+    tryAgain: t.common.tryAgain,
+  };
+  const myRepliesProps: MyRepliesProps =
+    myReplies.status === "ok"
+      ? {
+          status: "ok",
+          replies: myReplies.replies,
+          truncated: myReplies.truncated,
+          labels: myRepliesLabels,
+          locale: dateLocale,
+          timeZone: tz,
+        }
+      : {
+          status: "unavailable",
+          retry: myReplies.status === "failed",
+          message:
+            myReplies.status === "missing_permission"
+              ? t.today.repliesMissingPermission
+              : myReplies.status === "token_expired"
+                ? t.today.repliesTokenExpired
+                : t.today.repliesFailed,
+          labels: myRepliesLabels,
         };
   const awaiting = inbox.status === "ok" ? inbox.inbox.awaiting : 0;
   const postCardProps = {
@@ -326,45 +363,57 @@ export default async function TodayPage({ searchParams }: PageProps) {
         <TodayViews
           initialView={initialView}
           aside={
-            <Card>
-              <CardHeader>
-                <CardTitle className={titleClass}>{t.today.rhythmTitle}</CardTitle>
-              </CardHeader>
-              <CardContent className="space-y-3">
-                {nextBestHour && (
-                  <div>
-                    <p className="text-muted-foreground text-xs">{t.today.nextBestHour}</p>
-                    <p className="mt-0.5 text-2xl leading-8 font-semibold tracking-[-0.01em] tabular-nums">
-                      {nextBestHour}
+            <div className="space-y-4">
+              <TodayOverallCard
+                overall={overall}
+                labels={{
+                  ...t.today,
+                  postViewsEstimated: t.chart.postViewsEstimated,
+                  otherViews: t.chart.otherViews,
+                  posts: t.chart.posts,
+                }}
+                locale={dateLocale}
+              />
+              <Card>
+                <CardHeader>
+                  <CardTitle className={titleClass}>{t.today.rhythmTitle}</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-3">
+                  {nextBestHour && (
+                    <div>
+                      <p className="text-muted-foreground text-xs">{t.today.nextBestHour}</p>
+                      <p className="mt-0.5 text-2xl leading-8 font-semibold tracking-[-0.01em] tabular-nums">
+                        {nextBestHour}
+                      </p>
+                    </div>
+                  )}
+                  {bestHours.length > 0 && (
+                    <p className="text-muted-foreground flex flex-wrap gap-x-2 text-sm tabular-nums">
+                      <span>{t.today.bestHours}</span>
+                      <span>
+                        {bestHours.map((hour, i) => (
+                          <Fragment key={hour}>
+                            {i > 0 && " · "}
+                            <span
+                              className={
+                                hour === nextHour ? "text-foreground font-semibold" : undefined
+                              }
+                            >
+                              {hourLabel(hour)}
+                            </span>
+                          </Fragment>
+                        ))}
+                      </span>
                     </p>
-                  </div>
-                )}
-                {bestHours.length > 0 && (
-                  <p className="text-muted-foreground flex flex-wrap gap-x-2 text-sm tabular-nums">
-                    <span>{t.today.bestHours}</span>
-                    <span>
-                      {bestHours.map((hour, i) => (
-                        <Fragment key={hour}>
-                          {i > 0 && " · "}
-                          <span
-                            className={
-                              hour === nextHour ? "text-foreground font-semibold" : undefined
-                            }
-                          >
-                            {hourLabel(hour)}
-                          </span>
-                        </Fragment>
-                      ))}
-                    </span>
+                  )}
+                  <p className="text-muted-foreground text-sm tabular-nums">
+                    {posts[0]
+                      ? t.today.latestPost.replace("{time}", time(new Date(posts[0].postedAt)))
+                      : t.today.noPostsToday}
                   </p>
-                )}
-                <p className="text-muted-foreground text-sm tabular-nums">
-                  {posts[0]
-                    ? t.today.latestPost.replace("{time}", time(new Date(posts[0].postedAt)))
-                    : t.today.noPostsToday}
-                </p>
-              </CardContent>
-            </Card>
+                </CardContent>
+              </Card>
+            </div>
           }
           labels={{
             posts: t.today.postsTab,
@@ -378,7 +427,23 @@ export default async function TodayPage({ searchParams }: PageProps) {
               )}
             </div>
           }
-          replies={<ReplyInbox {...inboxProps} />}
+          replies={
+            <RepliesCard
+              received={<ReplyInbox {...inboxProps} />}
+              sent={<MyReplies {...myRepliesProps} />}
+              receivedCount={inbox.status === "ok" ? inbox.inbox.replies.length : null}
+              sentCount={myReplies.status === "ok" ? myReplies.replies.length : null}
+              initialView={
+                inbox.status === "ok" &&
+                inbox.inbox.replies.length === 0 &&
+                myReplies.status === "ok" &&
+                myReplies.replies.length > 0
+                  ? "sent"
+                  : "received"
+              }
+              labels={t.today}
+            />
+          }
         />
       </div>
     </div>

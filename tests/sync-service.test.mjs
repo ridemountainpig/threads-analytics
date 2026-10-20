@@ -81,15 +81,14 @@ const stored = (id, ageMs, values) => ({
   ...values,
 });
 
-/** One of the author's replies as /replies lists it. */
+/** One of the author's replies as /replies lists it; under another account's post the roots are left out. */
 const reply = (id, ageMs, rootId, repliedToId) => ({
   id,
   text: `reply ${id}`,
   timestamp: ago(ageMs).toISOString(),
   media_type: "TEXT_POST",
   permalink: "",
-  root_post: { id: rootId },
-  replied_to: { id: repliedToId },
+  ...(rootId ? { root_post: { id: rootId }, replied_to: { id: repliedToId } } : {}),
 });
 
 const post = (id) => rowsOf("post").find((row) => row.id === id);
@@ -106,6 +105,7 @@ test("a first sync stores every post, its thread parts and today's followers", a
     reply("p1-2", HOUR - 60_000, "p1", "p1"),
     reply("answer", 30 * 60_000, "p1", "a-commenters-reply"),
     reply("elsewhere", 10 * 60_000, "someone-elses-post", "someone-elses-post"),
+    reply("no-roots", 5 * 60_000, null, null),
   ];
 
   const result = await syncAccount(account());

@@ -4,7 +4,6 @@ import { useMemo, useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { ArrowRight, ExternalLink, RotateCw } from "lucide-react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import type { InboxReply } from "@/lib/today-replies";
 import { cn, normalizeIntlSpaces } from "@/lib/utils";
 import ExpandableText from "./expandable-text";
@@ -13,7 +12,6 @@ type Filter = "awaiting" | "all" | "answered";
 
 export interface ReplyInboxLabels {
   repliesTitle: string;
-  repliesSub: string;
   filterAwaiting: string;
   filterAll: string;
   filterAnswered: string;
@@ -53,55 +51,42 @@ export type ReplyInboxProps =
       labels: ReplyInboxLabels;
     };
 
-function excerpt(text: string, max = 24) {
+export function filterChipClass(selected: boolean) {
+  return cn(
+    // The ::after strip stretches the 32px chip to a 44px tap target.
+    "relative inline-flex h-8 items-center rounded-full px-3 text-xs whitespace-nowrap tabular-nums transition-[background-color,color,scale] duration-150 after:absolute after:inset-x-0 after:-inset-y-1.5 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
+    selected
+      ? "bg-primary text-primary-foreground font-medium"
+      : "bg-muted/70 text-foreground/70 hover:text-foreground",
+  );
+}
+
+export function excerpt(text: string, max = 24) {
   const flat = text.replace(/\s+/g, " ").trim();
   return flat.length > max ? `${flat.slice(0, max)}…` : flat;
 }
 
 export default function ReplyInbox(props: ReplyInboxProps) {
-  const { labels } = props;
-  const header = (
-    <CardHeader>
-      <CardTitle className="text-muted-foreground text-[11px] font-semibold tracking-[0.08em] uppercase">
-        {labels.repliesTitle}
-      </CardTitle>
-      <p className="text-muted-foreground text-xs">{labels.repliesSub}</p>
-    </CardHeader>
-  );
-
-  if (props.status === "unavailable") {
-    return (
-      <Card>
-        {header}
-        <CardContent className="space-y-2">
-          <p className="text-muted-foreground text-sm">{props.message}</p>
-          {props.reason === "failed" ? (
-            <RetryButton label={labels.tryAgain} />
-          ) : (
-            <Link
-              href="/dashboard/settings"
-              className="text-tint -my-2.5 inline-flex min-h-11 items-center gap-1 text-sm font-medium transition-opacity duration-150 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
-            >
-              {labels.openSettings}
-              <ArrowRight aria-hidden className="size-3.5" />
-            </Link>
-          )}
-        </CardContent>
-      </Card>
-    );
-  }
-
+  if (props.status === "ok") return <InboxList {...props} />;
   return (
-    <Card>
-      {header}
-      <CardContent>
-        <InboxList {...props} />
-      </CardContent>
-    </Card>
+    <div className="space-y-2">
+      <p className="text-muted-foreground text-sm">{props.message}</p>
+      {props.reason === "failed" ? (
+        <RetryButton label={props.labels.tryAgain} />
+      ) : (
+        <Link
+          href="/dashboard/settings"
+          className="text-tint -my-2.5 inline-flex min-h-11 items-center gap-1 text-sm font-medium transition-opacity duration-150 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
+        >
+          {props.labels.openSettings}
+          <ArrowRight aria-hidden className="size-3.5" />
+        </Link>
+      )}
+    </div>
   );
 }
 
-function RetryButton({ label }: { label: string }) {
+export function RetryButton({ label }: { label: string }) {
   const router = useRouter();
   const [pending, startTransition] = useTransition();
   return (
@@ -164,13 +149,7 @@ function InboxList({
               type="button"
               aria-pressed={filter === value}
               onClick={() => setFilter(value)}
-              className={cn(
-                // The ::after strip stretches the 32px chip to a 44px tap target.
-                "relative inline-flex h-8 items-center rounded-full px-3 text-xs whitespace-nowrap tabular-nums transition-[background-color,color,scale] duration-150 after:absolute after:inset-x-0 after:-inset-y-1.5 active:scale-[0.96] motion-reduce:transition-none motion-reduce:active:scale-100",
-                filter === value
-                  ? "bg-primary text-primary-foreground font-medium"
-                  : "bg-muted/70 text-foreground/70 hover:text-foreground",
-              )}
+              className={filterChipClass(filter === value)}
             >
               {label}
             </button>

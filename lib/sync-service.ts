@@ -20,7 +20,7 @@ import {
 import { ensureFreshToken } from "@/lib/token-refresh";
 import { DEFAULT_TZ, getDateString } from "@/lib/analytics";
 import { dateKeyToUtcDate } from "@/lib/followers";
-import { classifyThreadReplies, type ChainNode } from "@/lib/thread-replies";
+import { classifyThreadReplies, type ChainNode, type ReplyCandidate } from "@/lib/thread-replies";
 import {
   isInsightsReadDue,
   isPostSnapshotDue,
@@ -543,7 +543,10 @@ async function syncThreadReplies(
   pull: RepliesPull,
   limit: Limiter,
 ): Promise<ThreadRepliesSyncResult> {
-  const rootIds = [...new Set(pull.replies.map((r) => r.rootPostId))];
+  const replies = pull.replies.filter(
+    (r): r is ThreadsUserReply & ReplyCandidate => r.rootPostId !== null && r.repliedToId !== null,
+  );
+  const rootIds = [...new Set(replies.map((r) => r.rootPostId))];
   const [rootRows, existing] = await Promise.all([
     db.post.findMany({
       where: { accountId, id: { in: rootIds } },
@@ -569,7 +572,7 @@ async function syncThreadReplies(
       { rootPostId: r.rootPostId, position: r.position, timestamp: r.timestamp },
     ]),
   );
-  const parts = classifyThreadReplies(pull.replies, rootPosts, knownParts);
+  const parts = classifyThreadReplies(replies, rootPosts, knownParts);
 
   const now = new Date();
   const existingById = new Map(existing.map((r) => [r.id, r]));

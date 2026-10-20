@@ -1,5 +1,7 @@
 // Dependency-free so the test suite can run it with Node's type stripping.
 
+import { classifyThreadReplies, type ChainNode, type ReplyCandidate } from "./thread-replies";
+
 export interface ConversationReply {
   id: string;
   // Null for private profiles.
@@ -97,4 +99,51 @@ export function buildReplyInbox(
 export function replyRate(inbox: Pick<ReplyInbox, "awaiting" | "answered">): number | null {
   const total = inbox.awaiting + inbox.answered;
   return total === 0 ? null : Math.round((inbox.answered / total) * 100);
+}
+
+export interface AuthoredReply {
+  id: string;
+  text: string;
+  timestamp: string;
+  permalink: string;
+  rootPostId: string | null;
+  repliedToId: string | null;
+}
+
+export interface MyReply {
+  id: string;
+  text: string;
+  timestamp: string;
+  permalink: string;
+  // Null under another account's post.
+  ownPostId: string | null;
+}
+
+export function buildMyReplies(
+  replies: readonly AuthoredReply[],
+  rootPosts: ReadonlyMap<string, Date>,
+  knownParts: ReadonlyMap<string, ChainNode>,
+  since: Date,
+): MyReply[] {
+  const underOwnPosts = replies.filter(
+    (reply): reply is AuthoredReply & ReplyCandidate =>
+      reply.rootPostId !== null && reply.repliedToId !== null,
+  );
+  const continuations = new Set([
+    ...knownParts.keys(),
+    ...classifyThreadReplies(underOwnPosts, rootPosts, knownParts).map((part) => part.reply.id),
+  ]);
+  const sinceMs = since.getTime();
+  return replies
+    .filter(
+      (reply) => !continuations.has(reply.id) && new Date(reply.timestamp).getTime() >= sinceMs,
+    )
+    .map((reply) => ({
+      id: reply.id,
+      text: reply.text,
+      timestamp: reply.timestamp,
+      permalink: reply.permalink,
+      ownPostId: reply.rootPostId && rootPosts.has(reply.rootPostId) ? reply.rootPostId : null,
+    }))
+    .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 }
