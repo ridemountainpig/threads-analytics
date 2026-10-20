@@ -2,6 +2,19 @@
 
 Notable changes to the Threads Analytics dashboard and macOS app, newest first. The website is not included.
 
+## 1.0.0
+
+The Mac app and the Docker image now release together under one version.
+
+### New
+
+- Docker images are tagged with each release's version, such as `1.0.0`, plus `1.0` and `1` for the newest release in that line, so a deployment can pin one instead of `latest`.
+- Deployments running a release image show its version in the sidebar and Settings instead of a commit hash.
+
+### Maintenance
+
+- Dependency updates, including Next.js security fixes. ([#59](https://github.com/ridemountainpig/threads-analytics/pull/59))
+
 ## 0.1.2
 
 ### New
