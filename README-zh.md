@@ -1,7 +1,11 @@
 <p align="center">
-  <img src="public/threads-analytics-icon.png" alt="Threads Analytics icon" width="92" />
+  <a href="https://threads-analytics.app/zh-TW">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/banner-zh-dark.webp" />
+      <img src="docs/images/readme/banner-zh-light.webp" alt="Threads Analytics — 免費開源、可自架的 Threads 數據分析工具" />
+    </picture>
+  </a>
 </p>
-<h1 align="center">Threads Analytics</h1>
 <p align="center">
   Threads Analytics｜免費開源、可自架的 Threads 數據分析工具。連接 Access Token，用詳細圖表與指標深入了解你的貼文表現。
 </p>
@@ -15,10 +19,6 @@
 </p>
 <p align="center">
   <a href="https://threads-analytics.app/zh-TW"><strong>官方網站</strong></a> · <a href="https://threads-analytics.app/zh-TW#demo">線上 Demo</a> · <a href="https://threads-analytics.app/zh-TW/token-guide">Token 取得教學</a>
-</p>
-
-<p align="center">
-  <a href="https://threads-analytics.app/zh-TW"><img src="docs/images/dashboard-zh.png" alt="Threads Analytics 儀表板" /></a>
 </p>
 
 ---
@@ -58,12 +58,52 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/demo/analytics.png" alt="分析 — 成效圖表" /></td>
-    <td width="50%"><img src="docs/images/demo/audience.png" alt="分析 — 受眾成長與輪廓" /></td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/overview-dark.webp" />
+        <img src="docs/images/readme/overview-light.webp" alt="總覽 — 帳號表現一目了然" />
+      </picture>
+      <p align="center"><b>總覽</b> · 帳號表現一目了然</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/today-dark.webp" />
+        <img src="docs/images/readme/today-light.webp" alt="今日 — 今天的貼文，以及還在等你回覆的留言" />
+      </picture>
+      <p align="center"><b>今日</b> · 今天的貼文，以及還在等你回覆的留言</p>
+    </td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/images/demo/posts.png" alt="貼文列表與單篇分析面板" /></td>
-    <td width="50%"><img src="docs/images/demo/content.png" alt="分析 — 內容模式與發文活動" /></td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/analytics-dark.webp" />
+        <img src="docs/images/readme/analytics-light.webp" alt="分析 — 帳號觀看依來源拆分" />
+      </picture>
+      <p align="center"><b>分析</b> · 帳號觀看依來源拆分</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/posts-dark.webp" />
+        <img src="docs/images/readme/posts-light.webp" alt="貼文 — 每篇貼文發布後第一週的成長" />
+      </picture>
+      <p align="center"><b>貼文</b> · 每篇貼文發布後第一週的成長</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/audience-dark.webp" />
+        <img src="docs/images/readme/audience-light.webp" alt="受眾 — 粉絲成長與粉絲分布" />
+      </picture>
+      <p align="center"><b>受眾</b> · 粉絲成長與粉絲分布</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/giveaway-dark.webp" />
+        <img src="docs/images/readme/giveaway-light.webp" alt="抽獎 — 從貼文留言抽出得獎者" />
+      </picture>
+      <p align="center"><b>抽獎</b> · 從貼文留言抽出得獎者</p>
+    </td>
   </tr>
 </table>
 

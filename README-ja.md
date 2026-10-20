@@ -1,7 +1,11 @@
 <p align="center">
-  <img src="public/threads-analytics-icon.png" alt="Threads Analytics icon" width="92" />
+  <a href="https://threads-analytics.app/ja">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/banner-ja-dark.webp" />
+      <img src="docs/images/readme/banner-ja-light.webp" alt="Threads Analytics — セルフホスト型の Threads アナリティクス" />
+    </picture>
+  </a>
 </p>
-<h1 align="center">Threads Analytics</h1>
 <p align="center">
   セルフホスト型の Threads アナリティクスダッシュボード。アクセストークンを接続すると、詳細なチャートと指標で投稿パフォーマンスを分析できます。
 </p>
@@ -15,10 +19,6 @@
 </p>
 <p align="center">
   <a href="https://threads-analytics.app/ja"><strong>公式サイト</strong></a> · <a href="https://threads-analytics.app/ja#demo">ライブデモ</a> · <a href="https://threads-analytics.app/ja/token-guide">トークン取得ガイド</a>
-</p>
-
-<p align="center">
-  <a href="https://threads-analytics.app/ja"><img src="docs/images/dashboard-ja.png" alt="Threads Analytics ダッシュボード" /></a>
 </p>
 
 ---
@@ -58,12 +58,52 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/demo/analytics.png" alt="アナリティクス — パフォーマンスチャート" /></td>
-    <td width="50%"><img src="docs/images/demo/audience.png" alt="アナリティクス — オーディエンスの成長と属性" /></td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/overview-dark.webp" />
+        <img src="docs/images/readme/overview-light.webp" alt="概要 — アカウントの状況をひと目で" />
+      </picture>
+      <p align="center"><b>概要</b> · アカウントの状況をひと目で</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/today-dark.webp" />
+        <img src="docs/images/readme/today-light.webp" alt="今日 — 今日の投稿と、返信を待っているリプライ" />
+      </picture>
+      <p align="center"><b>今日</b> · 今日の投稿と、返信を待っているリプライ</p>
+    </td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/images/demo/posts.png" alt="投稿リストと投稿ごとのアナリティクスパネル" /></td>
-    <td width="50%"><img src="docs/images/demo/content.png" alt="アナリティクス — コンテンツ傾向と投稿アクティビティ" /></td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/analytics-dark.webp" />
+        <img src="docs/images/readme/analytics-light.webp" alt="アナリティクス — アカウントのビューを流入元ごとに表示" />
+      </picture>
+      <p align="center"><b>アナリティクス</b> · アカウントのビューを流入元ごとに表示</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/posts-dark.webp" />
+        <img src="docs/images/readme/posts-light.webp" alt="投稿 — 各投稿の公開後 1 週間の伸び" />
+      </picture>
+      <p align="center"><b>投稿</b> · 各投稿の公開後 1 週間の伸び</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/audience-dark.webp" />
+        <img src="docs/images/readme/audience-light.webp" alt="オーディエンス — フォロワーの伸びと所在地" />
+      </picture>
+      <p align="center"><b>オーディエンス</b> · フォロワーの伸びと所在地</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/giveaway-dark.webp" />
+        <img src="docs/images/readme/giveaway-light.webp" alt="プレゼント抽選 — 投稿へのリプライから当選者を抽選" />
+      </picture>
+      <p align="center"><b>プレゼント抽選</b> · 投稿へのリプライから当選者を抽選</p>
+    </td>
   </tr>
 </table>
 
