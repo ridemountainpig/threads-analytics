@@ -175,14 +175,15 @@ Server 也註冊了現成的 prompts，多數接受選填的 `period` 參數（�
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
 cat > .env <<EOF
-APP_PASSWORD=choose-a-long-password
+APP_PASSWORD=$(openssl rand -hex 12)
 TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
+grep APP_PASSWORD .env
 docker compose up -d
 ```
 
-記得先把 `APP_PASSWORD` 換成自己的密碼。Compose 會等資料庫就緒、執行 migration，再在 3000 port 提供儀表板，同步 scheduler 也已開啟；`DATABASE_URL` 與 `SYNC_SCHEDULER_ENABLED` 都已幫你設好。`.env` 裡的其他變數（例如 `CRON_SECRET`）也會一併傳給應用程式。
+`grep` 印出來的 `APP_PASSWORD` 就是登入用的密碼，記得存起來。想改用自己的密碼，就修改 `.env` 再執行一次 `docker compose up -d`。Compose 會等資料庫就緒、執行 migration，再在 3000 port 提供儀表板，同步 scheduler 也已開啟；`DATABASE_URL` 與 `SYNC_SCHEDULER_ENABLED` 都已幫你設好。`.env` 裡的其他變數（例如 `CRON_SECRET`）也會一併傳給應用程式。
 
 資料存在 `postgres-data` volume，重新啟動或更新都會保留。PostgreSQL 只會在第一次建立 volume 時讀取 `POSTGRES_PASSWORD`，之後請沿用一開始的值；另外 `docker compose down -v` 會連同 volume 刪掉所有已同步的貼文。
 

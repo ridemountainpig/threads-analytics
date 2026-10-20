@@ -1,7 +1,7 @@
 # Runs the dashboard with its own PostgreSQL. Put these in a .env file next to
 # this one, then run `docker compose up -d`:
 #
-#   APP_PASSWORD=choose-a-long-password
+#   APP_PASSWORD=           # openssl rand -hex 12
 #   TOKEN_ENCRYPTION_KEY=   # openssl rand -hex 32
 #   POSTGRES_PASSWORD=      # openssl rand -hex 16
 #

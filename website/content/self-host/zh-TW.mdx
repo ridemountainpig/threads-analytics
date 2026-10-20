@@ -42,14 +42,15 @@ Repository 裡的 [`docker-compose.yml`](https://github.com/ridemountainpig/thre
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
 cat > .env <<EOF
-APP_PASSWORD=choose-a-long-password
+APP_PASSWORD=$(openssl rand -hex 12)
 TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
+grep APP_PASSWORD .env
 docker compose up -d
 ```
 
-執行前先把 `APP_PASSWORD` 換成你自己的密碼。Compose 會等資料庫就緒、套用 migration，再在 3000 port 提供儀表板，同步排程也已經開好，所以 `DATABASE_URL` 和 `SYNC_SCHEDULER_ENABLED` 都不用自己設。`.env` 裡的其他變數，例如 `CRON_SECRET`，也會一併傳給應用程式。
+`grep` 印出來的 `APP_PASSWORD` 就是登入用的密碼，記得存起來。想改用你自己的密碼，就修改 `.env` 再執行一次 `docker compose up -d`。Compose 會等資料庫就緒、套用 migration，再在 3000 port 提供儀表板，同步排程也已經開好，所以 `DATABASE_URL` 和 `SYNC_SCHEDULER_ENABLED` 都不用自己設。`.env` 裡的其他變數，例如 `CRON_SECRET`，也會一併傳給應用程式。
 
 貼文和帳號都存在 `postgres-data` volume 裡，重新啟動或更新都不會消失。用 `docker compose logs -f app` 可以持續查看伺服器 log。
 

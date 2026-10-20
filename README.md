@@ -175,14 +175,15 @@ The [self-host guide](https://threads-analytics.app/en/deploy/self-host) on the 
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
 cat > .env <<EOF
-APP_PASSWORD=choose-a-long-password
+APP_PASSWORD=$(openssl rand -hex 12)
 TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
+grep APP_PASSWORD .env
 docker compose up -d
 ```
 
-Swap in your own `APP_PASSWORD` first. Compose waits for the database, runs migrations, and serves the dashboard on port 3000 with the sync scheduler on; `DATABASE_URL` and `SYNC_SCHEDULER_ENABLED` are set for you. Any other variable in `.env` (such as `CRON_SECRET`) is passed to the app too.
+Save the `APP_PASSWORD` that `grep` prints; it's the password you sign in with. To pick your own, edit `.env` and run `docker compose up -d` again. Compose waits for the database, runs migrations, and serves the dashboard on port 3000 with the sync scheduler on; `DATABASE_URL` and `SYNC_SCHEDULER_ENABLED` are set for you. Any other variable in `.env` (such as `CRON_SECRET`) is passed to the app too.
 
 Data lives in the `postgres-data` volume, which survives restarts and updates. PostgreSQL only reads `POSTGRES_PASSWORD` when it first creates that volume, so keep the value you started with — and note that `docker compose down -v` deletes the volume along with every synced post.
 

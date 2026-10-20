@@ -175,14 +175,15 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
 cat > .env <<EOF
-APP_PASSWORD=choose-a-long-password
+APP_PASSWORD=$(openssl rand -hex 12)
 TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
+grep APP_PASSWORD .env
 docker compose up -d
 ```
 
-先に `APP_PASSWORD` を自分のパスワードに置き換えてください。Compose はデータベースの準備を待ってマイグレーションを実行し、ポート 3000 でダッシュボードを提供します。同期スケジューラもオンで、`DATABASE_URL` と `SYNC_SCHEDULER_ENABLED` は設定済みです。`.env` のほかの変数（`CRON_SECRET` など）もアプリに渡されます。
+`grep` で表示される `APP_PASSWORD` がサインイン用のパスワードなので、控えておいてください。自分で決めたい場合は `.env` を書き換えて、もう一度 `docker compose up -d` を実行します。Compose はデータベースの準備を待ってマイグレーションを実行し、ポート 3000 でダッシュボードを提供します。同期スケジューラもオンで、`DATABASE_URL` と `SYNC_SCHEDULER_ENABLED` は設定済みです。`.env` のほかの変数（`CRON_SECRET` など）もアプリに渡されます。
 
 データは `postgres-data` ボリュームに保存され、再起動や更新でも残ります。PostgreSQL が `POSTGRES_PASSWORD` を読むのはボリュームを最初に作るときだけなので、最初の値を使い続けてください。また `docker compose down -v` はボリュームごと削除し、同期済みの投稿もすべて消えます。
 

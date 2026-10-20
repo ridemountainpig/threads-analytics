@@ -42,14 +42,15 @@ The repository’s [`docker-compose.yml`](https://github.com/ridemountainpig/thr
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
 cat > .env <<EOF
-APP_PASSWORD=choose-a-long-password
+APP_PASSWORD=$(openssl rand -hex 12)
 TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
+grep APP_PASSWORD .env
 docker compose up -d
 ```
 
-Swap in your own `APP_PASSWORD` before running it. Compose waits for the database, applies migrations, and serves the dashboard on port 3000 with the sync scheduler already on, so you don’t set `DATABASE_URL` or `SYNC_SCHEDULER_ENABLED` yourself. Any other variable in `.env`, such as `CRON_SECRET`, is passed to the app as well.
+Save the `APP_PASSWORD` that `grep` prints, because it’s the password you sign in with. To pick your own, edit `.env` and run `docker compose up -d` again. Compose waits for the database, applies migrations, and serves the dashboard on port 3000 with the sync scheduler already on, so you don’t set `DATABASE_URL` or `SYNC_SCHEDULER_ENABLED` yourself. Any other variable in `.env`, such as `CRON_SECRET`, is passed to the app as well.
 
 Your posts and accounts live in the `postgres-data` volume, which survives restarts and updates. `docker compose logs -f app` follows the server log.
 

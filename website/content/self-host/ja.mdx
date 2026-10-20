@@ -42,14 +42,15 @@ SYNC_SCHEDULER_ENABLED=true
 ```bash
 curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
 cat > .env <<EOF
-APP_PASSWORD=choose-a-long-password
+APP_PASSWORD=$(openssl rand -hex 12)
 TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
 POSTGRES_PASSWORD=$(openssl rand -hex 16)
 EOF
+grep APP_PASSWORD .env
 docker compose up -d
 ```
 
-実行する前に `APP_PASSWORD` を自分のパスワードに置き換えてください。Compose はデータベースの準備を待ってマイグレーションを実行し、ポート 3000 でダッシュボードを提供します。同期スケジューラも最初からオンなので、`DATABASE_URL` と `SYNC_SCHEDULER_ENABLED` を自分で設定する必要はありません。`.env` に書いたほかの変数（`CRON_SECRET` など）もアプリに渡されます。
+`grep` で表示される `APP_PASSWORD` がサインイン用のパスワードなので、控えておいてください。自分で決めたい場合は `.env` を書き換えて、もう一度 `docker compose up -d` を実行します。Compose はデータベースの準備を待ってマイグレーションを実行し、ポート 3000 でダッシュボードを提供します。同期スケジューラも最初からオンなので、`DATABASE_URL` と `SYNC_SCHEDULER_ENABLED` を自分で設定する必要はありません。`.env` に書いたほかの変数（`CRON_SECRET` など）もアプリに渡されます。
 
 投稿とアカウントは `postgres-data` ボリュームに保存され、再起動や更新をしても残ります。サーバーのログは `docker compose logs -f app` で確認できます。
 
