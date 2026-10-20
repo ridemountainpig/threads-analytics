@@ -1,7 +1,11 @@
 <p align="center">
-  <img src="public/threads-analytics-icon.png" alt="Threads Analytics icon" width="92" />
+  <a href="https://threads-analytics.app/en">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/banner-dark.webp" />
+      <img src="docs/images/readme/banner-light.webp" alt="Threads Analytics — self-hosted analytics for your Threads account" />
+    </picture>
+  </a>
 </p>
-<h1 align="center">Threads Analytics</h1>
 <p align="center">
   A self-hosted Threads analytics dashboard. Connect your access token and explore post performance with detailed charts and metrics.
 </p>
@@ -15,10 +19,6 @@
 </p>
 <p align="center">
   <a href="https://threads-analytics.app/en"><strong>Website</strong></a> · <a href="https://threads-analytics.app/en#demo">Live demo</a> · <a href="https://threads-analytics.app/en/token-guide">Token guide</a>
-</p>
-
-<p align="center">
-  <a href="https://threads-analytics.app/en"><img src="docs/images/dashboard.png" alt="Threads Analytics dashboard" /></a>
 </p>
 
 ---
@@ -58,12 +58,52 @@
 
 <table>
   <tr>
-    <td width="50%"><img src="docs/images/demo/analytics.png" alt="Analytics — Performance charts" /></td>
-    <td width="50%"><img src="docs/images/demo/audience.png" alt="Analytics — Audience growth and demographics" /></td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/overview-dark.webp" />
+        <img src="docs/images/readme/overview-light.webp" alt="Overview — your account at a glance" />
+      </picture>
+      <p align="center"><b>Overview</b> · your account at a glance</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/today-dark.webp" />
+        <img src="docs/images/readme/today-light.webp" alt="Today — today's posts and the replies waiting on you" />
+      </picture>
+      <p align="center"><b>Today</b> · today's posts and the replies waiting on you</p>
+    </td>
   </tr>
   <tr>
-    <td width="50%"><img src="docs/images/demo/posts.png" alt="Posts list with per-post analytics panel" /></td>
-    <td width="50%"><img src="docs/images/demo/content.png" alt="Analytics — Content patterns and posting activity" /></td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/analytics-dark.webp" />
+        <img src="docs/images/readme/analytics-light.webp" alt="Analytics — account views, split by source" />
+      </picture>
+      <p align="center"><b>Analytics</b> · account views, split by source</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/posts-dark.webp" />
+        <img src="docs/images/readme/posts-light.webp" alt="Posts — every post's first week, hour by hour" />
+      </picture>
+      <p align="center"><b>Posts</b> · every post's first week, hour by hour</p>
+    </td>
+  </tr>
+  <tr>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/audience-dark.webp" />
+        <img src="docs/images/readme/audience-light.webp" alt="Audience — follower growth and where your followers are" />
+      </picture>
+      <p align="center"><b>Audience</b> · follower growth and where your followers are</p>
+    </td>
+    <td width="50%" valign="top">
+      <picture>
+        <source media="(prefers-color-scheme: dark)" srcset="docs/images/readme/giveaway-dark.webp" />
+        <img src="docs/images/readme/giveaway-light.webp" alt="Giveaway — winners drawn from a post's replies" />
+      </picture>
+      <p align="center"><b>Giveaway</b> · winners drawn from a post's replies</p>
+    </td>
   </tr>
 </table>
 
