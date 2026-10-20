@@ -1,6 +1,12 @@
 {
   "version": 1,
   "skills": {
+    "cinematic-shot": {
+      "source": "1weiho/cinematic-shot",
+      "sourceType": "github",
+      "skillPath": "skills/cinematic-shot/SKILL.md",
+      "computedHash": "c6d5d1d7a9e03facc32a29d6b2b3bc2cd249ca7f6dac505f411e3d2c721467f9"
+    },
     "native-sdk": {
       "source": "vercel-labs/native",
       "sourceType": "github",
