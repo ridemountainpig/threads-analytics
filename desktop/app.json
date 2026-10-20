@@ -3,7 +3,7 @@
   "id": "dev.ridemountainpig.threads-analytics",
   "name": "threads-analytics-desktop",
   "display_name": "Threads Analytics",
-  "version": "0.1.1",
+  "version": "0.1.2",
   "icons": ["assets/icon.png"],
   "platforms": ["macos"],
   "permissions": ["dialog", "command"],
