@@ -4,6 +4,15 @@ import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
+  // The Zeabur deploy guide was retired; its indexed links land on the self-host guide.
+  redirects: async () => [
+    {
+      source: "/:locale/deploy/zeabur-agent",
+      destination: "/:locale/deploy/self-host",
+      permanent: true,
+    },
+    { source: "/deploy/zeabur-agent", destination: "/deploy/self-host", permanent: true },
+  ],
   experimental: {
     globalNotFound: true,
   },

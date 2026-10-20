@@ -1,10 +1,10 @@
-Threads Analytics は PostgreSQL データベースを使う Next.js アプリです。自分で管理するサーバーなら、ビルド済みの Docker イメージを使うのがいちばん手軽です。ソースからビルドすることも、Vercel にデプロイして Cron ジョブで同期することもできます。このページでは、それぞれに必要なもの、投稿を自動で同期し続ける方法、更新の手順をまとめます。
+Threads Analytics は PostgreSQL データベースを使う Next.js アプリです。自分で管理するサーバーなら、Docker Compose がいちばん手軽です。ファイル 1 つでアプリとデータベースをまとめて起動できます。ビルド済みの Docker イメージを既存のデータベースにつないで動かすことも、ソースからビルドすることも、Vercel にデプロイして Cron ジョブで同期することもできます。このページでは、それぞれに必要なもの、投稿を自動で同期し続ける方法、更新の手順をまとめます。
 
-手作業で設定したくない場合は、Railway・Zeabur・Vercel 向けの[ワンクリックテンプレートとエージェント用プロンプト](/#deploy)がすべて代わりに行います。
+手作業で設定したくない場合は、Railway・Vercel 向けの[ワンクリックテンプレートとエージェント用プロンプト](/#deploy)がすべて代わりに行います。
 
 ## 必要なもの
 
-- **PostgreSQL データベース。**マネージドサービスでも自分のサーバー上のものでもかまいません。アプリが使うのは接続文字列だけです。
+- **PostgreSQL データベース。**マネージドサービスでも自分のサーバー上のものでもかまいません。アプリが使うのは接続文字列だけです。Docker Compose なら一緒に用意されます。
 - **アプリを動かす場所。**Docker イメージ（amd64 または arm64）を実行できるサーバー、Vercel、または Node.js 22.12 以上か 24 以上が入ったマシン。
 - **Threads アクセストークン。**デプロイ後にダッシュボードで貼り付けます。取得方法は[トークンガイド](/token-guide)で解説しています。
 
@@ -14,13 +14,13 @@ Threads Analytics は PostgreSQL データベースを使う Next.js アプリ�
 
 <Table variant="text">
 
-| 変数                     | 必須   | 用途                                                                                                                  |
-| ------------------------ | ------ | --------------------------------------------------------------------------------------------------------------------- |
-| `APP_PASSWORD`           | はい   | ダッシュボードにログインするためのパスワード。                                                                        |
-| `DATABASE_URL`           | はい   | PostgreSQL の接続文字列。                                                                                             |
-| `TOKEN_ENCRYPTION_KEY`   | はい   | データベースに保存する Threads アクセストークンを暗号化します。`openssl rand -hex 32` で生成できます。                |
-| `SYNC_SCHEDULER_ENABLED` | いいえ | `true` にすると内蔵の同期スケジューラが起動します。Docker・VPS・Railway・Zeabur では設定し、Vercel では設定しません。 |
-| `CRON_SECRET`            | いいえ | Cron ジョブが同期のために呼び出す `/api/cron/sync` を保護します。Vercel では必須です。                                |
+| 変数                     | 必須   | 用途                                                                                                          |
+| ------------------------ | ------ | ------------------------------------------------------------------------------------------------------------- |
+| `APP_PASSWORD`           | はい   | ダッシュボードにログインするためのパスワード。                                                                |
+| `DATABASE_URL`           | はい   | PostgreSQL の接続文字列。                                                                                     |
+| `TOKEN_ENCRYPTION_KEY`   | はい   | データベースに保存する Threads アクセストークンを暗号化します。`openssl rand -hex 32` で生成できます。        |
+| `SYNC_SCHEDULER_ENABLED` | いいえ | `true` にすると内蔵の同期スケジューラが起動します。Docker・VPS・Railway では設定し、Vercel では設定しません。 |
+| `CRON_SECRET`            | いいえ | Cron ジョブが同期のために呼び出す `/api/cron/sync` を保護します。Vercel では必須です。                        |
 
 </Table>
 
@@ -35,9 +35,29 @@ SYNC_SCHEDULER_ENABLED=true
 
 <Callout>`TOKEN_ENCRYPTION_KEY` は一度決めたら変えないでください。保存されたトークンは暗号化したときの鍵でしか復号できないため、鍵を変えると全アカウントのトークンを貼り直すことになります。同期済みの投稿や履歴には影響しません。</Callout>
 
+## Docker Compose
+
+リポジトリの [`docker-compose.yml`](https://github.com/ridemountainpig/threads-analytics/blob/main/docker-compose.yml) は、ダッシュボードを専用の PostgreSQL と一緒に起動します。先にデータベースを用意する必要はありません。サーバー上の空のフォルダでファイルをダウンロードし、隣に `.env` を作ります。
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
+cat > .env <<EOF
+APP_PASSWORD=choose-a-long-password
+TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+EOF
+docker compose up -d
+```
+
+実行する前に `APP_PASSWORD` を自分のパスワードに置き換えてください。Compose はデータベースの準備を待ってマイグレーションを実行し、ポート 3000 でダッシュボードを提供します。同期スケジューラも最初からオンなので、`DATABASE_URL` と `SYNC_SCHEDULER_ENABLED` を自分で設定する必要はありません。`.env` に書いたほかの変数（`CRON_SECRET` など）もアプリに渡されます。
+
+投稿とアカウントは `postgres-data` ボリュームに保存され、再起動や更新をしても残ります。サーバーのログは `docker compose logs -f app` で確認できます。
+
+<Callout>PostgreSQL が `POSTGRES_PASSWORD` を読むのはボリュームを最初に作るときだけなので、最初に決めた値を使い続けてください。`docker compose down -v` はボリュームごと削除し、同期済みの投稿もすべて消えます。</Callout>
+
 ## Docker
 
-イメージは [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics) で amd64 と arm64 向けに公開されています。変数を `.env.local` に書いてから起動します。
+すでに PostgreSQL があり、アプリのコンテナだけを動かす場合は、[GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics) で amd64 と arm64 向けに公開されているイメージを使います。変数を `.env.local` に書いてから起動します。
 
 ```bash
 docker run -d --name threads-analytics --restart unless-stopped \
@@ -95,7 +115,7 @@ Hobby プランでは Cron ジョブは 1 日 1 回までしか実行できな�
 
 同期を動かす仕組みは、アプリを動かす場所によって変わります。
 
-- **Docker・VPS・Railway・Zeabur：**`SYNC_SCHEDULER_ENABLED=true` を設定します。スケジューラはサーバーとともに起動し、同期の時期が来たアカウントを定期的に確認します。
+- **Docker・VPS・Railway：**`SYNC_SCHEDULER_ENABLED=true` を設定します（Docker Compose では設定済み）。スケジューラはサーバーとともに起動し、同期の時期が来たアカウントを定期的に確認します。
 - **Vercel：**上記の Cron ジョブを使います。
 - **そのほかの環境：**どのスケジューラからでも、`CRON_SECRET` を付けてエンドポイントを呼び出せます。
 
@@ -109,7 +129,14 @@ curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://analytics.example.com/
 
 新しいバージョンは新しい Docker イメージとして公開され、データベースマイグレーションも起動時に自動で実行されます。そのため、更新に必要なのは新しいイメージかコードを取得することだけです。投稿・インサイト・アカウントはデータベースにそのまま残ります。
 
-Docker では、新しいイメージを取得し、同じオプションでコンテナを作り直します。
+Docker Compose では、`docker-compose.yml` のあるフォルダで次を実行します。
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+Docker だけで動かしている場合は、新しいイメージを取得し、同じオプションでコンテナを作り直します。
 
 ```bash
 docker pull ghcr.io/ridemountainpig/threads-analytics:latest
@@ -120,7 +147,7 @@ docker run -d --name threads-analytics --restart unless-stopped \
 ```
 
 - **ソースから実行：**`git pull` のあと `pnpm install`、`pnpm prisma:generate`、`pnpm build` を実行し、`pnpm start` で再起動します。
-- **Railway・Zeabur：**各サービスのダッシュボードから再デプロイします。Zeabur では `threads-analytics` サービスを開いて **Redeploy** をクリックします。
+- **Railway：**Railway のダッシュボードから再デプロイします。
 - **Vercel：**プロジェクトを再デプロイします。
 
 ## デプロイしたら

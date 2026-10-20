@@ -1,9 +1,8 @@
 import Link from "next/link";
-import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
+import { Railway, Vercel } from "@/components/deployment-logos";
 import type { Locale } from "@/lib/i18n";
 
 const PLATFORMS = [
-  { slug: "zeabur-agent", name: "Zeabur", Logo: Zeabur },
   { slug: "railway-agent", name: "Railway", Logo: Railway },
   { slug: "vercel-agent", name: "Vercel", Logo: Vercel },
 ] as const;

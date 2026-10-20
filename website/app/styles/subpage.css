@@ -371,40 +371,6 @@
   transform: rotate(180deg);
 }
 
-.agent-prompt-inputrow {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 12px;
-}
-
-.agent-prompt-domain {
-  color: var(--color-muted);
-  font-family: var(--mono);
-  font-size: 0.6875rem;
-}
-
-.agent-prompt-send {
-  display: grid;
-  flex: 0 0 auto;
-  place-items: center;
-  width: 32px;
-  height: 32px;
-  border-radius: 8px;
-  background: var(--color-text);
-  color: var(--color-bg);
-  transition: transform 160ms var(--ease-out);
-}
-
-.agent-prompt-send:active {
-  transform: scale(0.94);
-}
-
-.agent-prompt-send svg {
-  width: 15px;
-  height: 15px;
-}
-
 .guide-check-list {
   display: grid;
   gap: 12px;

@@ -1,10 +1,10 @@
-Threads Analytics is a Next.js app with a PostgreSQL database. On a server you manage, the prebuilt Docker image is the quickest way to run it. You can also build it from source, or run it on Vercel with a cron job doing the syncing. This guide covers what each route needs, how to keep your posts syncing, and how to update.
+Threads Analytics is a Next.js app with a PostgreSQL database. On a server you manage, Docker Compose is the quickest way to run it: one file starts the app and its database together. You can also run the prebuilt Docker image against a database you already have, build it from source, or run it on Vercel with a cron job doing the syncing. This guide covers what each route needs, how to keep your posts syncing, and how to update.
 
-If you’d rather not set this up by hand, the [one-click templates and agent prompts](/#deploy) for Railway, Zeabur and Vercel do it all for you.
+If you’d rather not set this up by hand, the [one-click template and agent prompts](/#deploy) for Railway and Vercel do it all for you.
 
 ## What you need
 
-- **A PostgreSQL database.** A managed service or one on your own server; the app only needs its connection string.
+- **A PostgreSQL database.** A managed service or one on your own server; the app only needs its connection string. Docker Compose brings its own.
 - **Somewhere to run the app.** A server that runs Docker images (amd64 or arm64), Vercel, or any machine with Node.js 22.12+ or 24+.
 - **A Threads access token.** You add it in the dashboard after deploying. The [token guide](/token-guide) walks through getting one.
 
@@ -14,13 +14,13 @@ Set these wherever the app runs: an env file for Docker, the project settings on
 
 <Table variant="text">
 
-| Variable                 | Required | What it’s for                                                                                                    |
-| ------------------------ | -------- | ---------------------------------------------------------------------------------------------------------------- |
-| `APP_PASSWORD`           | Yes      | The password you sign in to the dashboard with.                                                                  |
-| `DATABASE_URL`           | Yes      | The PostgreSQL connection string.                                                                                |
-| `TOKEN_ENCRYPTION_KEY`   | Yes      | Encrypts the Threads access tokens stored in the database. Generate one with `openssl rand -hex 32`.             |
-| `SYNC_SCHEDULER_ENABLED` | No       | `true` starts the built-in sync scheduler. Set it on Docker, a VPS, Railway or Zeabur; leave it unset on Vercel. |
-| `CRON_SECRET`            | No       | Protects `/api/cron/sync`, the endpoint a cron job calls to sync. Required on Vercel.                            |
+| Variable                 | Required | What it’s for                                                                                            |
+| ------------------------ | -------- | -------------------------------------------------------------------------------------------------------- |
+| `APP_PASSWORD`           | Yes      | The password you sign in to the dashboard with.                                                          |
+| `DATABASE_URL`           | Yes      | The PostgreSQL connection string.                                                                        |
+| `TOKEN_ENCRYPTION_KEY`   | Yes      | Encrypts the Threads access tokens stored in the database. Generate one with `openssl rand -hex 32`.     |
+| `SYNC_SCHEDULER_ENABLED` | No       | `true` starts the built-in sync scheduler. Set it on Docker, a VPS or Railway; leave it unset on Vercel. |
+| `CRON_SECRET`            | No       | Protects `/api/cron/sync`, the endpoint a cron job calls to sync. Required on Vercel.                    |
 
 </Table>
 
@@ -35,9 +35,29 @@ SYNC_SCHEDULER_ENABLED=true
 
 <Callout>Keep `TOKEN_ENCRYPTION_KEY` the same for as long as the deployment lives. Stored tokens can only be decrypted with the key that encrypted them, so changing it means pasting every account’s token again. Your synced posts and history are not affected.</Callout>
 
+## Docker Compose
+
+The repository’s [`docker-compose.yml`](https://github.com/ridemountainpig/threads-analytics/blob/main/docker-compose.yml) runs the dashboard next to its own PostgreSQL, so there is no database to set up first. In an empty folder on your server, download it and write a `.env` file beside it:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
+cat > .env <<EOF
+APP_PASSWORD=choose-a-long-password
+TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+EOF
+docker compose up -d
+```
+
+Swap in your own `APP_PASSWORD` before running it. Compose waits for the database, applies migrations, and serves the dashboard on port 3000 with the sync scheduler already on, so you don’t set `DATABASE_URL` or `SYNC_SCHEDULER_ENABLED` yourself. Any other variable in `.env`, such as `CRON_SECRET`, is passed to the app as well.
+
+Your posts and accounts live in the `postgres-data` volume, which survives restarts and updates. `docker compose logs -f app` follows the server log.
+
+<Callout>PostgreSQL reads `POSTGRES_PASSWORD` only when it first creates the volume, so keep the value you started with. `docker compose down -v` deletes the volume, and every synced post with it.</Callout>
+
 ## Docker
 
-The image is published to [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics) for amd64 and arm64. With the variables in `.env.local`, start it with:
+To run only the app container against a PostgreSQL you already have, use the image on [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics), published for amd64 and arm64. With the variables in `.env.local`, start it with:
 
 ```bash
 docker run -d --name threads-analytics --restart unless-stopped \
@@ -95,7 +115,7 @@ Automatic syncing stays off until you choose an interval. After deploying, open 
 
 What triggers the sync depends on where the app runs:
 
-- **Docker, a VPS, Railway or Zeabur:** set `SYNC_SCHEDULER_ENABLED=true`. The scheduler starts with the server and regularly checks which accounts are due.
+- **Docker, a VPS or Railway:** set `SYNC_SCHEDULER_ENABLED=true` (Docker Compose already does). The scheduler starts with the server and regularly checks which accounts are due.
 - **Vercel:** the cron job above.
 - **Anywhere else:** any scheduler can call the endpoint with your `CRON_SECRET`.
 
@@ -109,7 +129,14 @@ Calling it more often than your interval is harmless: accounts that aren’t due
 
 New versions ship as a new Docker image, and migrations run automatically when the app starts, so updating only means getting the new image or code. Your posts, insights and accounts stay in the database.
 
-On Docker, pull the new image and recreate the container with the same flags:
+With Docker Compose, run these in the folder that holds `docker-compose.yml`:
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+On plain Docker, pull the new image and recreate the container with the same flags:
 
 ```bash
 docker pull ghcr.io/ridemountainpig/threads-analytics:latest
@@ -120,7 +147,7 @@ docker run -d --name threads-analytics --restart unless-stopped \
 ```
 
 - **From source:** run `git pull`, then `pnpm install`, `pnpm prisma:generate` and `pnpm build`, and restart `pnpm start`.
-- **Railway or Zeabur:** redeploy the service from the platform’s dashboard. On Zeabur, open the `threads-analytics` service and click **Redeploy**.
+- **Railway:** redeploy the service from the Railway dashboard.
 - **Vercel:** redeploy the project.
 
 ## After deploying

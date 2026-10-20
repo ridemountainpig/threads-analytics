@@ -22,6 +22,6 @@ lib/generated
 docs
 .agents
 .claude
-zeabur.yaml
+docker-compose.yml
 skills-lock.json
 website

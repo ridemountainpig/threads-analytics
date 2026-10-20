@@ -8,7 +8,7 @@ import { AnalyticsDemo } from "@/components/analytics-demo";
 import { AnchorScrollController } from "@/components/anchor-scroll-controller";
 import { CommandPill } from "@/components/command-pill";
 import { DeployTabsCard } from "@/components/deploy-tabs-card";
-import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
+import { Railway, Vercel } from "@/components/deployment-logos";
 import { FeatureGrid } from "@/components/feature-grid";
 import { Frame } from "@/components/frame";
 import { GiveawayWinnersCard } from "@/components/giveaway-winners-card";
@@ -119,7 +119,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                       <span className="home-step-platforms" aria-hidden="true">
                         <FaApple />
                         <Railway />
-                        <Zeabur />
                         <Vercel />
                         <FaDocker />
                       </span>
@@ -290,12 +289,6 @@ export default async function HomePage({ params }: { params: Promise<{ locale: s
                 templateHref={siteConfig.railway}
                 walkthroughHref={`/${locale}/deploy/railway-agent`}
                 brandMark={<Railway focusable="false" />}
-              />
-              <DeployTabsCard
-                copy={copy.deploy.zeabur}
-                templateHref={siteConfig.zeabur}
-                walkthroughHref={`/${locale}/deploy/zeabur-agent`}
-                brandMark={<Zeabur focusable="false" />}
               />
               <Link href={`/${locale}/deploy/vercel-agent`} className="home-deploy-card">
                 <span className="home-deploy-top">

@@ -1,15 +1,5 @@
 import type { SVGProps } from "react";
 
-function Zeabur(props: SVGProps<SVGSVGElement>) {
-  return (
-    <svg {...props} viewBox="0 0 294 229" preserveAspectRatio="xMidYMid">
-      <path d="M114 145h179v84H0v-84h82l114-61H0V0h293v84l-179 61Z" fill="currentColor" />
-      <path fill="#6300FF" d="M195 0H0v84h195V0Z" />
-      <path fill="#F40" d="M293 145H115v84h178v-84Z" />
-    </svg>
-  );
-}
-
 function Railway(props: SVGProps<SVGSVGElement>) {
   return (
     <svg {...props} fill="none" viewBox="0 0 1024 1024">
@@ -35,4 +25,4 @@ function Vercel(props: SVGProps<SVGSVGElement>) {
   );
 }
 
-export { Railway, Vercel, Zeabur };
+export { Railway, Vercel };

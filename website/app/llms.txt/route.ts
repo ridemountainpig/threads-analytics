@@ -24,7 +24,6 @@ export function GET() {
     "/token-guide": copy.tokenGuide.metadata,
     "/deploy/self-host": selfHost[locale].metadata,
     "/deploy/railway-agent": copy.railwayAgentDeploy.metadata,
-    "/deploy/zeabur-agent": copy.zeaburAgentDeploy.metadata,
     "/deploy/vercel-agent": copy.vercelAgentDeploy.metadata,
   };
 
@@ -54,7 +53,6 @@ export function GET() {
       "/token-guide",
       "/deploy/self-host",
       "/deploy/railway-agent",
-      "/deploy/zeabur-agent",
       "/deploy/vercel-agent",
     ]),
     "## Other languages",

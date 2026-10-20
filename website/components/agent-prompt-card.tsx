@@ -1,21 +1,18 @@
 "use client";
 
 import { useEffect, useRef, useState } from "react";
-import { ArrowUp, Check, ChevronDown, Copy, Sparkles } from "lucide-react";
+import { Check, ChevronDown, Copy, Sparkles } from "lucide-react";
 
 // Shared prompt card for the agent deploy pages: label + prompt text + copy
-// button, with an optional send row (domain chip + arrow link) for platforms
-// with a hosted agent box. Used standalone (Zeabur) and inside
-// .agent-prompt-stack (Railway). Multi-paragraph runbook prompts (Vercel)
-// pass `expand` to render collapsed with a show-more toggle; copying always
-// copies the full text.
+// button. Used inside .agent-prompt-stack (Railway); multi-paragraph runbook
+// prompts (Vercel) pass `expand` to render collapsed with a show-more toggle.
+// Copying always copies the full text.
 export function AgentPromptCard({
   label,
   text,
   copyLabel,
   copiedLabel,
   hint,
-  send,
   expand,
 }: {
   label: string;
@@ -23,7 +20,6 @@ export function AgentPromptCard({
   copyLabel: string;
   copiedLabel: string;
   hint?: string;
-  send?: { href: string; label: string; domain: string };
   expand?: { moreLabel: string; lessLabel: string };
 }) {
   const [expanded, setExpanded] = useState(false);
@@ -121,24 +117,6 @@ export function AgentPromptCard({
             {expanded ? expand.lessLabel : expand.moreLabel}
             <ChevronDown aria-hidden="true" strokeWidth={2.2} />
           </button>
-        ) : null}
-        {send ? (
-          <div className="agent-prompt-inputrow">
-            <span className="agent-prompt-domain">{send.domain}</span>
-            <a
-              href={send.href}
-              target="_blank"
-              rel="noreferrer"
-              className="agent-prompt-send"
-              aria-label={send.label}
-              title={send.label}
-              onClick={() => {
-                navigator.clipboard?.writeText(text).then(markCopied, () => {});
-              }}
-            >
-              <ArrowUp aria-hidden="true" strokeWidth={2.4} />
-            </a>
-          </div>
         ) : null}
       </div>
       {hint ? <p className="agent-prompt-hint">{hint}</p> : null}

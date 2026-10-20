@@ -1,0 +1,44 @@
+# Runs the dashboard with its own PostgreSQL. Put these in a .env file next to
+# this one, then run `docker compose up -d`:
+#
+#   APP_PASSWORD=choose-a-long-password
+#   TOKEN_ENCRYPTION_KEY=   # openssl rand -hex 32
+#   POSTGRES_PASSWORD=      # openssl rand -hex 16
+#
+# Anything else in .env, such as CRON_SECRET, is passed to the app as well.
+services:
+  app:
+    image: ghcr.io/ridemountainpig/threads-analytics:latest
+    restart: unless-stopped
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "3000:3000"
+    env_file:
+      - path: .env
+        required: false
+    environment:
+      APP_PASSWORD: ${APP_PASSWORD:?set APP_PASSWORD in .env}
+      TOKEN_ENCRYPTION_KEY: ${TOKEN_ENCRYPTION_KEY:?set TOKEN_ENCRYPTION_KEY in .env}
+      DATABASE_URL: postgresql://threads:${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}@db:5432/threads_analytics
+      SYNC_SCHEDULER_ENABLED: "true"
+
+  db:
+    image: postgres:17-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: threads
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?set POSTGRES_PASSWORD in .env}
+      POSTGRES_DB: threads_analytics
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    healthcheck:
+      # TCP, not the socket: the first-boot init server listens on the socket only.
+      test: ["CMD", "pg_isready", "-h", "127.0.0.1", "-U", "threads", "-d", "threads_analytics"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  postgres-data:

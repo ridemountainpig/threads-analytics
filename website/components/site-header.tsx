@@ -14,7 +14,7 @@ import {
   TrendingDown,
 } from "lucide-react";
 import { FaApple, FaGithub } from "react-icons/fa6";
-import { Railway, Vercel, Zeabur } from "@/components/deployment-logos";
+import { Railway, Vercel } from "@/components/deployment-logos";
 import { LanguageMenu } from "@/components/language-menu";
 import { MobileMenu } from "@/components/mobile-menu";
 import { NavMenu } from "@/components/nav-menu";
@@ -31,7 +31,6 @@ const navIcons: Record<SiteNavIcon, ReactNode> = {
   giveaway: <Ticket strokeWidth={2} />,
   deploy: <Rocket strokeWidth={2} />,
   railway: <Railway />,
-  zeabur: <Zeabur />,
   vercel: <Vercel />,
   "self-host": <Server strokeWidth={2} />,
   desktop: <FaApple />,
@@ -41,7 +40,7 @@ const navIcons: Record<SiteNavIcon, ReactNode> = {
   "reach-drop": <TrendingDown strokeWidth={2} />,
 };
 
-const brandIcons = new Set<SiteNavIcon>(["railway", "zeabur", "vercel"]);
+const brandIcons = new Set<SiteNavIcon>(["railway", "vercel"]);
 
 /**
  * `productBar`: the page pins its own product bar (the Mac page), so the

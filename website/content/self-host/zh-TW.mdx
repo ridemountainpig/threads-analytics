@@ -1,10 +1,10 @@
-Threads Analytics 是一個搭配 PostgreSQL 資料庫的 Next.js 應用程式。在自己管理的伺服器上，用預先建置好的 Docker 映像檔最快；也可以從原始碼建置，或部署到 Vercel、改由 Cron Job 負責同步。這篇整理每種方式需要準備什麼、怎麼讓貼文持續自動同步，以及之後如何更新。
+Threads Analytics 是一個搭配 PostgreSQL 資料庫的 Next.js 應用程式。在自己管理的伺服器上，用 Docker Compose 最快：一個檔案就能把應用程式和資料庫一起啟動。也可以把預先建置好的 Docker 映像檔接到既有的資料庫、從原始碼建置，或部署到 Vercel、改由 Cron Job 負責同步。這篇整理每種方式需要準備什麼、怎麼讓貼文持續自動同步，以及之後如何更新。
 
-不想自己動手設定的話，Railway、Zeabur 和 Vercel 都有[一鍵範本與 Agent 部署 Prompt](/#deploy)，可以幫你全部處理好。
+不想自己動手設定的話，Railway 和 Vercel 都有[一鍵範本與 Agent 部署 Prompt](/#deploy)，可以幫你全部處理好。
 
 ## 事前準備
 
-- **PostgreSQL 資料庫。**代管服務或架在自己伺服器上的都可以，應用程式只需要它的連線字串。
+- **PostgreSQL 資料庫。**代管服務或架在自己伺服器上的都可以，應用程式只需要它的連線字串。用 Docker Compose 的話會一併建立。
 - **執行應用程式的地方。**能跑 Docker 映像檔（amd64 或 arm64）的伺服器、Vercel，或任何裝了 Node.js 22.12+ 或 24+ 的機器。
 - **Threads Access Token。**部署完成後再到儀表板貼上，產生方式請看 [Token 生成教學](/token-guide)。
 
@@ -14,13 +14,13 @@ Threads Analytics 是一個搭配 PostgreSQL 資料庫的 Next.js 應用程式�
 
 <Table variant="text">
 
-| 變數                     | 必填 | 用途                                                                                   |
-| ------------------------ | ---- | -------------------------------------------------------------------------------------- |
-| `APP_PASSWORD`           | 是   | 登入儀表板用的密碼。                                                                   |
-| `DATABASE_URL`           | 是   | PostgreSQL 連線字串。                                                                  |
-| `TOKEN_ENCRYPTION_KEY`   | 是   | 加密存在資料庫裡的 Threads Access Token，可用 `openssl rand -hex 32` 產生。            |
-| `SYNC_SCHEDULER_ENABLED` | 否   | 設為 `true` 會啟動內建的同步排程。Docker、VPS、Railway、Zeabur 請設定；Vercel 不要設。 |
-| `CRON_SECRET`            | 否   | 保護 `/api/cron/sync`，也就是 Cron Job 呼叫來觸發同步的端點。Vercel 必填。             |
+| 變數                     | 必填 | 用途                                                                           |
+| ------------------------ | ---- | ------------------------------------------------------------------------------ |
+| `APP_PASSWORD`           | 是   | 登入儀表板用的密碼。                                                           |
+| `DATABASE_URL`           | 是   | PostgreSQL 連線字串。                                                          |
+| `TOKEN_ENCRYPTION_KEY`   | 是   | 加密存在資料庫裡的 Threads Access Token，可用 `openssl rand -hex 32` 產生。    |
+| `SYNC_SCHEDULER_ENABLED` | 否   | 設為 `true` 會啟動內建的同步排程。Docker、VPS、Railway 請設定；Vercel 不要設。 |
+| `CRON_SECRET`            | 否   | 保護 `/api/cron/sync`，也就是 Cron Job 呼叫來觸發同步的端點。Vercel 必填。     |
 
 </Table>
 
@@ -35,9 +35,29 @@ SYNC_SCHEDULER_ENABLED=true
 
 <Callout>`TOKEN_ENCRYPTION_KEY` 設定後就不要再改。存起來的 Token 只能用當初加密的那把金鑰解開，換了金鑰，每個帳號的 Token 都得重新貼一次。已同步的貼文與歷史紀錄則不受影響。</Callout>
 
+## Docker Compose
+
+Repository 裡的 [`docker-compose.yml`](https://github.com/ridemountainpig/threads-analytics/blob/main/docker-compose.yml) 會把儀表板和它專用的 PostgreSQL 一起跑起來，不必先準備資料庫。在伺服器上找一個空資料夾，下載這個檔案，並在旁邊寫一個 `.env`：
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
+cat > .env <<EOF
+APP_PASSWORD=choose-a-long-password
+TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+EOF
+docker compose up -d
+```
+
+執行前先把 `APP_PASSWORD` 換成你自己的密碼。Compose 會等資料庫就緒、套用 migration，再在 3000 port 提供儀表板，同步排程也已經開好，所以 `DATABASE_URL` 和 `SYNC_SCHEDULER_ENABLED` 都不用自己設。`.env` 裡的其他變數，例如 `CRON_SECRET`，也會一併傳給應用程式。
+
+貼文和帳號都存在 `postgres-data` volume 裡，重新啟動或更新都不會消失。用 `docker compose logs -f app` 可以持續查看伺服器 log。
+
+<Callout>PostgreSQL 只有在第一次建立 volume 時才會讀取 `POSTGRES_PASSWORD`，之後請沿用一開始的值。`docker compose down -v` 會刪掉 volume，所有已同步的貼文也會一起刪除。</Callout>
+
 ## Docker
 
-映像檔發佈在 [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics)，支援 amd64 和 arm64。把變數寫進 `.env.local` 後執行：
+如果已經有 PostgreSQL、只想跑應用程式容器，可以直接用發佈在 [GitHub Container Registry](https://github.com/ridemountainpig/threads-analytics/pkgs/container/threads-analytics) 的映像檔，支援 amd64 和 arm64。把變數寫進 `.env.local` 後執行：
 
 ```bash
 docker run -d --name threads-analytics --restart unless-stopped \
@@ -95,7 +115,7 @@ Hobby 方案的 Cron Job 一天最多只能跑一次，所以請維持每天一�
 
 由誰來觸發同步，取決於應用程式跑在哪裡：
 
-- **Docker、VPS、Railway 或 Zeabur：**設定 `SYNC_SCHEDULER_ENABLED=true`。排程會隨伺服器啟動，定期檢查哪些帳號該同步了。
+- **Docker、VPS 或 Railway：**設定 `SYNC_SCHEDULER_ENABLED=true`（Docker Compose 已經幫你設好）。排程會隨伺服器啟動，定期檢查哪些帳號該同步了。
 - **Vercel：**使用上面的 Cron Job。
 - **其他環境：**任何排程工具都可以帶著 `CRON_SECRET` 呼叫這個端點。
 
@@ -109,7 +129,14 @@ curl -fsS -H "Authorization: Bearer $CRON_SECRET" https://analytics.example.com/
 
 新版本會以新的 Docker 映像檔發佈，資料庫 migration 也會在啟動時自動執行，所以更新只需要取得新的映像檔或程式碼。貼文、洞察資料和帳號都會留在資料庫裡。
 
-Docker 的話，拉取新的映像檔，再用相同參數重建容器：
+Docker Compose 的話，在放著 `docker-compose.yml` 的資料夾裡執行：
+
+```bash
+docker compose pull
+docker compose up -d
+```
+
+只用 Docker 的話，拉取新的映像檔，再用相同參數重建容器：
 
 ```bash
 docker pull ghcr.io/ridemountainpig/threads-analytics:latest
@@ -120,7 +147,7 @@ docker run -d --name threads-analytics --restart unless-stopped \
 ```
 
 - **從原始碼執行：**`git pull` 後依序執行 `pnpm install`、`pnpm prisma:generate`、`pnpm build`，再重新啟動 `pnpm start`。
-- **Railway 或 Zeabur：**在平台的控制台重新部署服務。Zeabur 是打開 `threads-analytics` 服務並點擊 **Redeploy**。
+- **Railway：**在 Railway 控制台重新部署服務。
 - **Vercel：**重新部署專案。
 
 ## 部署完成後

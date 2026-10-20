@@ -33,17 +33,17 @@ export type SelfHostCopy = {
 
 /** ISO dates for the byline, Article schema and sitemap; update `modified` by
  * hand when the guide changes. */
-export const selfHostMeta = { published: "2026-10-04", modified: "2026-10-04" };
+export const selfHostMeta = { published: "2026-10-04", modified: "2026-10-19" };
 
 export const selfHost: Record<Locale, SelfHostCopy> = {
   en: {
     menuTitle: "Self-host guide",
-    menuDescription: "Docker, env vars, sync and updates",
+    menuDescription: "Docker Compose, env vars, sync, updates",
     navTitle: "Self-host with Docker",
     metadata: {
       title: "Self-Host Threads Analytics with Docker",
       description:
-        "Self-host Threads Analytics with Docker, source code, or Vercel. Configure environment variables, automatic post syncing, and safe updates.",
+        "Self-host Threads Analytics with Docker Compose, Docker, source code, or Vercel. Configure environment variables, automatic post syncing, and safe updates.",
     },
     hero: {
       kicker: "DEPLOY / SELF-HOST",
@@ -65,12 +65,12 @@ export const selfHost: Record<Locale, SelfHostCopy> = {
   },
   "zh-TW": {
     menuTitle: "自架部署教學",
-    menuDescription: "Docker、環境變數、同步與更新",
+    menuDescription: "Docker Compose、環境變數、同步與更新",
     navTitle: "用 Docker 自架部署",
     metadata: {
       title: "自架 Threads Analytics：Docker 部署、環境變數、自動同步與更新",
       description:
-        "用 Docker、原始碼或 Vercel 自架 Threads Analytics 數據分析儀表板：需要設定哪些環境變數、怎麼讓貼文自動同步，以及之後如何更新。",
+        "用 Docker Compose、Docker、原始碼或 Vercel 自架 Threads Analytics 數據分析儀表板：需要設定哪些環境變數、怎麼讓貼文自動同步，以及之後如何更新。",
     },
     hero: {
       kicker: "部署 / 自架",
@@ -92,12 +92,12 @@ export const selfHost: Record<Locale, SelfHostCopy> = {
   },
   ja: {
     menuTitle: "セルフホストガイド",
-    menuDescription: "Docker・環境変数・同期・更新",
+    menuDescription: "Docker Compose・環境変数・同期・更新",
     navTitle: "Docker でセルフホスト",
     metadata: {
       title: "Threads Analytics をセルフホスト：Docker での構築・自動同期・更新",
       description:
-        "Threads Analytics を Docker、ソース、Vercel でセルフホストする方法。設定する環境変数、投稿を自動で同期し続ける方法、データを失わずに更新する手順をまとめました。",
+        "Threads Analytics を Docker Compose、Docker、ソース、Vercel でセルフホストする方法。設定する環境変数、投稿を自動で同期し続ける方法、データを失わずに更新する手順をまとめました。",
     },
     hero: {
       kicker: "デプロイ / セルフホスト",

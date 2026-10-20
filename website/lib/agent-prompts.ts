@@ -1,5 +1,5 @@
 // Full runbook prompt for deploying through Vercel MCP plus dashboard-only
-// browser steps. Unlike the one-line Railway/Zeabur prompts this is a precise
+// browser steps. Unlike the short Railway prompts this is a precise
 // technical spec (tool boundaries, secret handling, verification), so it is
 // kept byte-identical across locales instead of being translated.
 export const vercelAgentPrompt = `Help me deploy Threads Analytics:

@@ -31,6 +31,7 @@
 - [Getting Your Threads Access Token](#getting-your-threads-access-token)
 - [MCP Server](#mcp-server)
 - [Deployment](#deployment)
+  - [Docker Compose](#docker-compose)
   - [Docker](#docker)
   - [Vercel](#vercel)
   - [Auto-sync](#auto-sync)
@@ -47,12 +48,13 @@
 - **Overview** — stat cards (views, likes, replies, reposts, quotes, shares, engagement rate) with period-over-period delta, views trend chart (day / week / month), best posting hour recommendation, and viral posts
 - **Analytics** — 31 charts across **Performance**, **Content**, and **Audience** tabs
 - **Posts** — searchable, filterable list with per-post analytics panel, including each post's growth curve over its first week
+- **Giveaway** — draw winners from a post's replies with stackable conditions (keyword, tagged friends, deadline, one entry per account), right inside your dashboard
 - **MCP server** — let Claude and other AI agents query your analytics through an OAuth-protected endpoint
 - Multi-account support with account switching
 - Auto-sync on configurable intervals
 - Automatic access-token renewal — connect once, no manual re-pasting every 60 days
 - Password-protected (single `APP_PASSWORD` env var)
-- English / 繁體中文 / 日本語 UI
+- English / 繁體中文 / 日本語 UI, with light, dark, and Auto appearance
 
 <table>
   <tr>
@@ -79,20 +81,13 @@ To build the desktop app from source, see the [desktop README](./desktop/README.
 
 ## Quick Start
 
-The fastest way to a running instance is a one-click deploy — both templates provision a PostgreSQL database and set the required environment variables for you:
+The fastest way to a running instance is the one-click Railway template — it provisions a PostgreSQL database and sets the required environment variables for you:
 
-| Platform | Deploy                                                                                                                                                                        |
-| -------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Railway  | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
-| Zeabur   | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-Prefer to let an AI coding agent (Claude Code, Codex, Cursor…) handle it? Each agent deploy guide comes with a ready-made prompt — paste it into your agent and it provisions the database, deploys the app, and hands back the URL: [Railway](https://threads-analytics.app/en/deploy/railway-agent) · [Zeabur](https://threads-analytics.app/en/deploy/zeabur-agent) · [Vercel](https://threads-analytics.app/en/deploy/vercel-agent)
+Prefer to let an AI coding agent (Claude Code, Codex, Cursor…) handle it? Each agent deploy guide comes with a ready-made prompt — paste it into your agent and it provisions the database, deploys the app, and hands back the URL: [Railway](https://threads-analytics.app/en/deploy/railway-agent) · [Vercel](https://threads-analytics.app/en/deploy/vercel-agent)
 
-Already have a server? Run the prebuilt image directly (see [Docker](#docker)):
-
-```bash
-docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
-```
+Already have a server? [Docker Compose](#docker-compose) starts the app and its PostgreSQL together with one command, or run the prebuilt image against a database you already have (see [Docker](#docker)).
 
 Once the app is up, sign in with your `APP_PASSWORD` and connect a Threads account — see the next section. To run from source instead, see [Development](#development).
 
@@ -171,11 +166,29 @@ The server also registers ready-made prompts. Most take an optional `period` arg
 
 ## Deployment
 
-The [self-host guide](https://threads-analytics.app/en/deploy/self-host) on the website walks through all of this step by step: Docker, running from source, Vercel cron, environment variables, auto-sync, and updates.
+The [self-host guide](https://threads-analytics.app/en/deploy/self-host) on the website walks through all of this step by step: Docker Compose, Docker, running from source, Vercel cron, environment variables, auto-sync, and updates.
+
+### Docker Compose
+
+[`docker-compose.yml`](./docker-compose.yml) runs the dashboard next to its own PostgreSQL, so you don't need a database first. In an empty folder, download it and write a `.env` file beside it:
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
+cat > .env <<EOF
+APP_PASSWORD=choose-a-long-password
+TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+EOF
+docker compose up -d
+```
+
+Swap in your own `APP_PASSWORD` first. Compose waits for the database, runs migrations, and serves the dashboard on port 3000 with the sync scheduler on; `DATABASE_URL` and `SYNC_SCHEDULER_ENABLED` are set for you. Any other variable in `.env` (such as `CRON_SECRET`) is passed to the app too.
+
+Data lives in the `postgres-data` volume, which survives restarts and updates. PostgreSQL only reads `POSTGRES_PASSWORD` when it first creates that volume, so keep the value you started with — and note that `docker compose down -v` deletes the volume along with every synced post.
 
 ### Docker
 
-A prebuilt multi-arch (amd64/arm64) image is published to GitHub Container Registry. Set the [environment variables](#2-set-up-environment-variables), then run:
+To run only the app container against a PostgreSQL you already have, use the prebuilt multi-arch (amd64/arm64) image on GitHub Container Registry. Set the [environment variables](#2-set-up-environment-variables), then run:
 
 ```bash
 docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
@@ -221,13 +234,20 @@ Vercel does not support long-running processes, so the built-in sync scheduler c
 
 ### Auto-sync
 
-On long-running deployments (Railway / Zeabur / VPS / Docker), set `SYNC_SCHEDULER_ENABLED=true`. The built-in scheduler starts with the server and syncs every connected account — not only the active one — at the interval configured in Settings. On Vercel, use the cron setup above instead.
+On long-running deployments (Docker / VPS / Railway), set `SYNC_SCHEDULER_ENABLED=true` — the Docker Compose file already does. The built-in scheduler starts with the server and syncs every connected account — not only the active one — at the interval configured in Settings. On Vercel, use the cron setup above instead.
 
 <a id="updating"></a>
 
 ### Updating an existing deployment
 
-New versions ship as updated Docker images. Database migrations run automatically on startup, so updating only requires getting the new image or code:
+New versions ship as updated Docker images, and deployments running the published image show an update banner in the dashboard when one is available. Database migrations run automatically on startup, so updating only requires getting the new image or code:
+
+- **Docker Compose** — in the folder with `docker-compose.yml`:
+
+  ```bash
+  docker compose pull
+  docker compose up -d
+  ```
 
 - **Docker / VPS** — pull the latest image, then stop the old container and start a new one with the same flags:
 
@@ -235,7 +255,6 @@ New versions ship as updated Docker images. Database migrations run automaticall
   docker pull ghcr.io/ridemountainpig/threads-analytics:latest
   ```
 
-- **Zeabur** — open the `threads-analytics` service and click **Redeploy** to pull the latest image.
 - **Railway** — trigger a redeploy of the service from the Railway dashboard.
 - **From source** — `git pull`, then `pnpm install && pnpm prisma:generate && pnpm build` and restart with `pnpm start` (runs migrations automatically).
 - **Vercel** — push the new version; migrations run at build time as described above.
@@ -254,6 +273,7 @@ Requirements: Node.js 22.12+ or 24+, pnpm, and a PostgreSQL database.
 git clone https://github.com/ridemountainpig/threads-analytics.git
 cd threads-analytics
 pnpm install
+pnpm prisma:generate
 ```
 
 ### 2. Set up environment variables

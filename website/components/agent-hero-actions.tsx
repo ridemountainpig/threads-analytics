@@ -9,10 +9,7 @@ export function AgentHeroActions({
   promptText,
   openHref,
 }: {
-  copy:
-    | Dictionary["zeaburAgentDeploy"]["hero"]
-    | Dictionary["railwayAgentDeploy"]["hero"]
-    | Dictionary["vercelAgentDeploy"]["hero"];
+  copy: Dictionary["railwayAgentDeploy"]["hero"] | Dictionary["vercelAgentDeploy"]["hero"];
   promptText: string;
   openHref: string;
 }) {
