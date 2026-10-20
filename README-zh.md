@@ -260,6 +260,8 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
 - **從原始碼部署** — `git pull` 後執行 `pnpm install && pnpm prisma:generate && pnpm build`，再以 `pnpm start` 重新啟動（會自動執行 migration）。
 - **Vercel** — 推送新版本即可，migration 會如上所述在建置階段執行。
 
+每個正式版本的映像檔也會標上版本號，例如 `1.0.0`，另有 `1.0` 與 `1` 指向該系列的最新版本，因此 Docker 與 Docker Compose 部署可以用這些 tag 固定版本，而不是 `latest`（Compose 請修改 `image:` 那一行）。各版本的變更內容請見 [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases)。
+
 更新過程中資料庫（貼文、洞察資料、帳號）都會完整保留。
 
 ---

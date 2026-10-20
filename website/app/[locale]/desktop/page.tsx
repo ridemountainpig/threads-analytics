@@ -31,7 +31,7 @@ import { siteConfig } from "@/lib/site";
 import { getDesktopPageStructuredData } from "@/lib/structured-data";
 
 // Release assets are named by the release workflow
-// (.github/workflows/release-desktop.yml); the version varies per release.
+// (.github/workflows/release.yml); the version varies per release.
 // Shown only when the latest release couldn't be looked up.
 const assetName = "Threads-Analytics-x.y.z-macos-arm64.zip";
 

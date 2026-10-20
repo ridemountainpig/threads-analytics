@@ -5,6 +5,7 @@ import "server-only";
 // disables the update check entirely.
 const commitSha = process.env.GIT_COMMIT_SHA;
 const imageRepository = process.env.IMAGE_REPOSITORY?.toLowerCase();
+const imageVersion = process.env.IMAGE_VERSION;
 
 // The digest check (update banner) and the version-URL scrape (version links)
 // have different freshness needs, so each cache gets its own TTL.
@@ -134,9 +135,10 @@ function refreshDeepVersionUrl(tag: string) {
   })();
 }
 
-// docker/metadata-action tags each publish as `sha-<short sha>` (7 chars).
+// docker/metadata-action tags each publish as `sha-<short sha>` (7 chars), and
+// a release also as its X.Y.Z, which is never moved.
 function currentImageTag(sha: string) {
-  return `sha-${sha.slice(0, 7)}`;
+  return imageVersion || `sha-${sha.slice(0, 7)}`;
 }
 
 async function fetchManifestDigest(repository: string, tag: string, token: string) {

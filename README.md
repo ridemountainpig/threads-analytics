@@ -260,6 +260,8 @@ New versions ship as updated Docker images, and deployments running the publishe
 - **From source** — `git pull`, then `pnpm install && pnpm prisma:generate && pnpm build` and restart with `pnpm start` (runs migrations automatically).
 - **Vercel** — push the new version; migrations run at build time as described above.
 
+Releases are also tagged with their version, such as `1.0.0`, plus `1.0` and `1` for the newest release in that line, so Docker and Docker Compose deployments can pin one instead of `latest` (in Compose, edit the `image:` line). [GitHub Releases](https://github.com/ridemountainpig/threads-analytics/releases) lists what changed in each.
+
 Your database (posts, insights, accounts) is preserved across updates.
 
 ---

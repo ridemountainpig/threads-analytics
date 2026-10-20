@@ -6,7 +6,7 @@ import { siteConfig } from "./site";
 // this lowers the route's revalidate below the layout's daily one.
 const ONE_HOUR = 3600;
 
-// Named by .github/workflows/release-desktop.yml.
+// Named by .github/workflows/release.yml.
 const assetPattern = /-macos-arm64\.zip$/;
 
 export type DesktopRelease = {

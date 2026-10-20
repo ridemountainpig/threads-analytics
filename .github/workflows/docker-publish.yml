@@ -1,7 +1,23 @@
 name: Build and Publish Docker Image
 
+# Dispatched by hand, it publishes main between releases as `latest` and
+# `sha-<short sha>`. The Release workflow calls it with a version instead: the
+# image then carries that version and is pushed only as `sha-<short sha>`, and
+# Release tags it X.Y.Z once the Mac app has passed too. `latest`, X.Y and X
+# move when Promote Release publishes the version.
+
 on:
   workflow_dispatch:
+  workflow_call:
+    inputs:
+      version:
+        description: "Release version baked into the image, a plain X.Y.Z checked by the caller."
+        required: true
+        type: string
+    outputs:
+      digest:
+        description: "Digest of the pushed multi-platform image."
+        value: ${{ jobs.build-and-push.outputs.digest }}
 
 env:
   REGISTRY: ghcr.io
@@ -15,6 +31,8 @@ jobs:
       packages: write
       attestations: write
       id-token: write
+    outputs:
+      digest: ${{ steps.build.outputs.digest }}
 
     steps:
       - name: Checkout repository
@@ -31,7 +49,7 @@ jobs:
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          password: ${{ github.token }}
 
       - name: Extract metadata
         id: meta
@@ -40,7 +58,8 @@ jobs:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
             type=sha,format=short
-            type=raw,value=latest
+            type=raw,value=latest,enable=${{ inputs.version == '' }}
+          labels: ${{ inputs.version != '' && format('org.opencontainers.image.version={0}', inputs.version) || '' }}
 
       # Boot the amd64 image against PostgreSQL before anything is pushed, so a
       # broken image never becomes `latest`. The multi-platform build below
@@ -55,6 +74,7 @@ jobs:
           build-args: |
             GIT_COMMIT_SHA=${{ github.sha }}
             IMAGE_REPOSITORY=${{ github.repository }}
+            IMAGE_VERSION=${{ inputs.version }}
           tags: threads-analytics:smoke
           cache-from: type=gha
 
@@ -71,6 +91,7 @@ jobs:
           build-args: |
             GIT_COMMIT_SHA=${{ github.sha }}
             IMAGE_REPOSITORY=${{ github.repository }}
+            IMAGE_VERSION=${{ inputs.version }}
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
           cache-from: type=gha
