@@ -1,5 +1,5 @@
 import { vercelAgentPrompt } from "./agent-prompts";
-import { railwayTemplate, zeaburTemplate } from "./links";
+import { railwayTemplate } from "./links";
 import type { Locale } from "./locales";
 
 // The locale registry lives in locales.ts (dictionary-free so proxy.ts can
@@ -3755,7 +3755,6 @@ export const dictionaries = {
         description: "One-click templates, Docker, and agents",
       },
       railwayAgent: { label: "Railway Agent", description: "Two prompts to your coding agent" },
-      zeaburAgent: { label: "Zeabur Agent", description: "One prompt to Zeabur's AI agent" },
       vercelAgent: { label: "Vercel Agent", description: "One prompt through Vercel MCP" },
       desktop: { label: "Mac app", description: "Run it on your Mac, no server needed" },
       tokenGuide: { label: "Token guide", description: "A Threads access token in 18 steps" },
@@ -3790,9 +3789,9 @@ export const dictionaries = {
         },
         {
           title: "Run it your way",
-          body: "Download the Mac app, or deploy to Railway, Zeabur, Vercel, or a server of your own.",
+          body: "Download the Mac app, or deploy to Railway, Vercel, or a server of your own.",
           code: "",
-          status: "5 ways to run it",
+          status: "4 ways to run it",
         },
         {
           title: "Read your own signals",
@@ -3936,7 +3935,7 @@ export const dictionaries = {
           index: "06",
           tag: "SELF-HOSTED",
           title: "Your data stays on your stack",
-          body: "Deploy with PostgreSQL on Railway, Zeabur, Vercel, Docker, or your own server. Tokens are encrypted at rest.",
+          body: "Deploy with PostgreSQL on Railway, Vercel, Docker, or your own server. Tokens are encrypted at rest.",
         },
       ],
     },
@@ -3986,15 +3985,6 @@ export const dictionaries = {
         action: "Open Railway template",
         agentAction: "Deploy with your agent",
       },
-      zeabur: {
-        eyebrow: "ONE-CLICK",
-        title: "Deploy on Zeabur",
-        body: "Start the service and database together, then connect your Threads token.",
-        templateTab: "One-click",
-        agentTab: "For your agent",
-        action: "Open Zeabur template",
-        agentAction: "Deploy with Zeabur Agent",
-      },
       vercel: {
         eyebrow: "AGENT DEPLOY",
         title: "Deploy on Vercel",
@@ -4004,7 +3994,7 @@ export const dictionaries = {
       docker: {
         eyebrow: "BRING YOUR OWN SERVER",
         title: "Docker / VPS",
-        body: "Run the multi-architecture image anywhere with a PostgreSQL connection.",
+        body: "Start the app and its PostgreSQL together with Docker Compose, or run the multi-architecture image anywhere with a database you already have.",
         action: "Self-host guide",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
@@ -4014,101 +4004,6 @@ export const dictionaries = {
         body: "Download the app, paste your Threads access token, and the full dashboard runs on your Mac. Your data stays in a local database: no hosting bill, no PostgreSQL, no password.",
         action: "Download for Mac",
         note: "macOS 11+ · Apple silicon",
-      },
-    },
-    zeaburAgentDeploy: {
-      metadata: {
-        title: "Self-Host Threads Analytics on Zeabur with AI",
-        description:
-          "Self-host Threads Analytics on Zeabur with one prompt. Its AI agent configures PostgreSQL, encryption keys, an app password, and a public URL.",
-      },
-      hero: {
-        kicker: "DEPLOY / ZEABUR AGENT",
-        lineOne: "One prompt.",
-        lineTwo: "The agent does the rest.",
-        description:
-          "Zeabur Agent reads the template, provisions PostgreSQL, generates the encryption key, asks for your password, and hands back a live URL. You only paste a prompt.",
-        copyCta: "Copy the agent prompt",
-        copiedCta: "Prompt copied",
-        openCta: "Open Zeabur Agent",
-        note: "About 2 minutes · No YAML, no environment variables",
-      },
-      prompt: {
-        label: "AGENT PROMPT",
-        hint: "Send copies the prompt and opens zeabur.com — paste it into the agent box there.",
-        text: `Help me deploy this Threads Analytics template (${zeaburTemplate}) and ask me for the password during deployment.`,
-        copy: "Copy",
-        copied: "Copied",
-        send: "Copy the prompt and open Zeabur Agent",
-      },
-      steps: {
-        kicker: "01 / THREE STEPS",
-        title: "From prompt to dashboard in three steps.",
-        description:
-          "No YAML, no environment variables, no database setup. The agent handles configuration; you make one decision — your password.",
-        items: [
-          {
-            index: "01",
-            title: "Copy the prompt",
-            body: "Use the button above — the prompt already includes the template link and tells the agent to ask for your password.",
-          },
-          {
-            index: "02",
-            title: "Paste it into Zeabur Agent",
-            body: "Open zeabur.com, sign in, and paste the prompt into the “Ask Zeabur Agent to deploy…” box at the bottom of the page.",
-          },
-          {
-            index: "03",
-            title: "Pick a password, get your URL",
-            body: "The agent generates credentials, deploys PostgreSQL and the dashboard, and replies with your live URL and login password.",
-          },
-        ],
-      },
-      demo: {
-        kicker: "02 / WATCH IT RUN",
-        title: "What the conversation actually looks like.",
-        description:
-          "A replay of a real Zeabur Agent deployment — the same messages, choices, and result you'll see in your own chat.",
-        windowTitle: "ZEABUR AGENT",
-        status: "REPLAY",
-        working: "Working…",
-        workedForA: "Worked for 38s",
-        workedForB: "Worked for 42s",
-        lineOne:
-          "I'll look up this template first to see what it deploys and what settings it needs.",
-        lineTwo: "You're logged in with one server available: Tokyo, Japan. I'll deploy there.",
-        setupTitle: "Here's what the template sets up:",
-        setupItems: [
-          "PostgreSQL 16 with a persistent volume for your analytics data",
-          "threads-analytics dashboard, exposed on a public domain",
-        ],
-        passwordQuestion:
-          "One thing I need from you: what password do you want for signing into the dashboard?",
-        chips: [
-          "Generate a strong password for me",
-          "I'll type my own password",
-          "I'll set it myself in the dashboard later",
-        ],
-        progress: [
-          "Generating credentials",
-          "Creating the project on your server",
-          "Deploying the template",
-          "Verifying both services",
-        ],
-        doneTitle: "Your Threads Analytics dashboard is deployed.",
-        urlLabel: "URL",
-        passwordLabel: "Your login password",
-        passwordNote:
-          "Save it to your password manager — you can change it later in the APP_PASSWORD variable.",
-        replay: "Replay deployment",
-        disclaimer: "Simulated replay · your run will look the same",
-      },
-      cta: {
-        title: "Ready to run it yourself?",
-        description: "Copy the prompt, open Zeabur Agent, and your dashboard is minutes away.",
-        primary: "Open Zeabur Agent",
-        secondary: "Back to all deploy options",
-        others: "OTHER PLATFORMS",
       },
     },
     railwayAgentDeploy: {
@@ -4386,7 +4281,6 @@ export const dictionaries = {
       giveaway: { label: "抽獎", description: "從貼文留言公平抽出得獎者" },
       deployOptions: { label: "所有部署方式", description: "一鍵範本、Docker 與 Agent 部署" },
       railwayAgent: { label: "Railway Agent", description: "兩段 Prompt，交給 Coding Agent" },
-      zeaburAgent: { label: "Zeabur Agent", description: "一段 Prompt，交給 Zeabur AI Agent" },
       vercelAgent: { label: "Vercel Agent", description: "一段 Prompt，透過 Vercel MCP 部署" },
       desktop: { label: "Mac 版 App", description: "直接在 Mac 上跑，不用架伺服器" },
       tokenGuide: { label: "Token 生成教學", description: "18 個步驟拿到 Access Token" },
@@ -4420,9 +4314,9 @@ export const dictionaries = {
         },
         {
           title: "選一種方式執行",
-          body: "下載 Mac 版 App，或部署到 Railway、Zeabur、Vercel，也能放在自己的伺服器。",
+          body: "下載 Mac 版 App，或部署到 Railway、Vercel，也能放在自己的伺服器。",
           code: "",
-          status: "5 種執行方式",
+          status: "4 種執行方式",
         },
         {
           title: "讀懂自己的數據",
@@ -4561,7 +4455,7 @@ export const dictionaries = {
           index: "06",
           tag: "自架部署",
           title: "資料留在自己的環境",
-          body: "使用 Railway、Zeabur、Vercel、Docker 或自己的伺服器搭配 PostgreSQL，Token 會加密保存。",
+          body: "使用 Railway、Vercel、Docker 或自己的伺服器搭配 PostgreSQL，Token 會加密保存。",
         },
       ],
     },
@@ -4611,15 +4505,6 @@ export const dictionaries = {
         action: "開啟 Railway 模板",
         agentAction: "用你的 Agent 部署",
       },
-      zeabur: {
-        eyebrow: "一鍵部署",
-        title: "部署到 Zeabur",
-        body: "一起啟動服務和資料庫，接著連接你的 Threads Token。",
-        templateTab: "一鍵部署",
-        agentTab: "交給 Agent",
-        action: "開啟 Zeabur 模板",
-        agentAction: "用 Zeabur Agent 部署",
-      },
       vercel: {
         eyebrow: "AGENT 部署",
         title: "部署到 Vercel",
@@ -4629,7 +4514,7 @@ export const dictionaries = {
       docker: {
         eyebrow: "使用自己的伺服器",
         title: "Docker / VPS",
-        body: "在任何地方執行多架構 Image，只需要準備 PostgreSQL 連線。",
+        body: "用 Docker Compose 連同 PostgreSQL 一起啟動，或在任何已有資料庫的地方執行多架構 Image。",
         action: "自架部署教學",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
@@ -4639,89 +4524,6 @@ export const dictionaries = {
         body: "下載 App、貼上 Threads Access Token，完整的儀表板就在你的 Mac 上執行。資料存在本機資料庫，不用主機費、不用 PostgreSQL，也不用設密碼。",
         action: "下載 Mac 版",
         note: "macOS 11 以上 · Apple Silicon",
-      },
-    },
-    zeaburAgentDeploy: {
-      metadata: {
-        title: "自架 Threads 分析工具到 Zeabur：用 Zeabur Agent 一句話完成部署",
-        description:
-          "在 Zeabur 自架 Threads Analytics：複製一段 Prompt，讓 Zeabur AI Agent 自動部署 PostgreSQL、加密金鑰、登入密碼與公開網址，全程不用手動設定。",
-      },
-      hero: {
-        kicker: "部署 / ZEABUR AGENT",
-        lineOne: "一段 Prompt，",
-        lineTwo: "剩下的交給 Agent。",
-        description:
-          "Zeabur Agent 會讀取模板、建立 PostgreSQL、產生加密金鑰、詢問密碼，最後回傳可登入的網址。你只要複製貼上。",
-        copyCta: "複製 Agent Prompt",
-        copiedCta: "已複製 Prompt",
-        openCta: "開啟 Zeabur Agent",
-        note: "大約 2 分鐘 · 不用 YAML、不用環境變數",
-      },
-      prompt: {
-        label: "AGENT PROMPT",
-        hint: "按送出會複製 Prompt 並開啟 zeabur.com，貼進頁面上的 Agent 輸入框即可。",
-        text: `幫我部署這個 Threads Analytics 模板（${zeaburTemplate}），並在部署過程中詢問我要設定的密碼。`,
-        copy: "複製",
-        copied: "已複製",
-        send: "複製 Prompt 並開啟 Zeabur Agent",
-      },
-      steps: {
-        kicker: "01 / 三個步驟",
-        title: "從 Prompt 到儀表板，只要三步。",
-        description:
-          "沒有 YAML、沒有環境變數、不用自己建資料庫。設定交給 Agent，你只需要決定一件事：登入密碼。",
-        items: [
-          {
-            index: "01",
-            title: "複製 Prompt",
-            body: "用上面的按鈕複製。Prompt 已包含模板連結，也會提醒 Agent 在部署時跟你確認密碼。",
-          },
-          {
-            index: "02",
-            title: "貼給 Zeabur Agent",
-            body: "打開 zeabur.com 並登入，把 Prompt 貼進頁面下方的「Ask Zeabur Agent to deploy…」輸入框送出。",
-          },
-          {
-            index: "03",
-            title: "選好密碼，拿到網址",
-            body: "Agent 會產生憑證、部署 PostgreSQL 和儀表板，最後回覆你的網址與登入密碼。",
-          },
-        ],
-      },
-      demo: {
-        kicker: "02 / 實際看一次",
-        title: "整段對話，長這個樣子。",
-        description:
-          "重播一次真實的 Zeabur Agent 部署過程：你會看到的訊息、選項和結果，和自己操作時一模一樣。",
-        windowTitle: "ZEABUR AGENT",
-        status: "REPLAY",
-        working: "執行中…",
-        workedForA: "執行了 38 秒",
-        workedForB: "執行了 42 秒",
-        lineOne: "我先查看這個模板，確認它會部署什麼、需要哪些設定。",
-        lineTwo: "你已登入，有一台可用的伺服器：東京（日本）。我會部署在這裡。",
-        setupTitle: "這個模板會建立：",
-        setupItems: [
-          "PostgreSQL 16，附持久化磁碟保存你的分析資料",
-          "threads-analytics 儀表板，公開網域可直接存取",
-        ],
-        passwordQuestion: "需要你決定一件事：你想用什麼密碼登入儀表板？",
-        chips: ["幫我產生一組強密碼", "我自己輸入密碼", "之後再到儀表板設定"],
-        progress: ["產生憑證", "在你的伺服器建立專案", "部署模板", "確認兩個服務都啟動"],
-        doneTitle: "你的 Threads Analytics 儀表板部署完成。",
-        urlLabel: "網址",
-        passwordLabel: "你的登入密碼",
-        passwordNote: "請馬上存進密碼管理工具——之後也可以在 APP_PASSWORD 變數修改。",
-        replay: "重播部署過程",
-        disclaimer: "模擬重播 · 實際流程相同",
-      },
-      cta: {
-        title: "換你部署一次了。",
-        description: "複製 Prompt、開啟 Zeabur Agent，幾分鐘後就有自己的儀表板。",
-        primary: "開啟 Zeabur Agent",
-        secondary: "回到所有部署方式",
-        others: "其他部署平台",
       },
     },
     railwayAgentDeploy: {
@@ -4985,7 +4787,6 @@ export const dictionaries = {
         label: "Railway Agent",
         description: "2 つのプロンプトでエージェントに任せる",
       },
-      zeaburAgent: { label: "Zeabur Agent", description: "1 つのプロンプトを Zeabur AI Agent に" },
       vercelAgent: {
         label: "Vercel Agent",
         description: "Vercel MCP 経由、1 プロンプトでデプロイ",
@@ -5026,9 +4827,9 @@ export const dictionaries = {
         },
         {
           title: "好きな方法で動かす",
-          body: "Mac アプリをダウンロードするか、Railway・Zeabur・Vercel・自前のサーバーにデプロイします。",
+          body: "Mac アプリをダウンロードするか、Railway・Vercel・自前のサーバーにデプロイします。",
           code: "",
-          status: "5 通りの動かし方",
+          status: "4 通りの動かし方",
         },
         {
           title: "自分のシグナルを読む",
@@ -5171,7 +4972,7 @@ export const dictionaries = {
           index: "06",
           tag: "セルフホスト",
           title: "データは自分の環境に置く",
-          body: "Railway、Zeabur、Vercel、Docker、または自分のサーバーへPostgreSQLと一緒にデプロイ。Tokenは暗号化されます。",
+          body: "Railway、Vercel、Docker、または自分のサーバーへPostgreSQLと一緒にデプロイ。Tokenは暗号化されます。",
         },
       ],
     },
@@ -5221,15 +5022,6 @@ export const dictionaries = {
         action: "Railwayテンプレートを開く",
         agentAction: "自分のエージェントでデプロイ",
       },
-      zeabur: {
-        eyebrow: "ワンクリック",
-        title: "Zeaburへデプロイ",
-        body: "サービスとデータベースを同時に起動し、Threads Tokenを接続します。",
-        templateTab: "ワンクリック",
-        agentTab: "エージェント",
-        action: "Zeaburテンプレートを開く",
-        agentAction: "Zeabur Agentでデプロイ",
-      },
       vercel: {
         eyebrow: "エージェントデプロイ",
         title: "Vercelへデプロイ",
@@ -5239,7 +5031,7 @@ export const dictionaries = {
       docker: {
         eyebrow: "自分のサーバーで",
         title: "Docker / VPS",
-        body: "PostgreSQL接続を用意すれば、マルチアーキテクチャimageをどこでも実行できます。",
+        body: "Docker ComposeならPostgreSQLごと起動できます。既存のデータベースがあれば、マルチアーキテクチャimageをどこでも実行できます。",
         action: "セルフホストガイド",
         command: "docker pull ghcr.io/ridemountainpig/threads-analytics:latest",
       },
@@ -5249,98 +5041,6 @@ export const dictionaries = {
         body: "アプリをダウンロードして Threads アクセストークンを貼り付ければ、ダッシュボード一式が Mac 上で動きます。データはローカルのデータベースに保存。ホスティング費用も PostgreSQL もパスワードも不要です。",
         action: "Mac 版をダウンロード",
         note: "macOS 11 以降 · Apple Silicon",
-      },
-    },
-    zeaburAgentDeploy: {
-      metadata: {
-        title: "Threads Analytics を Zeabur にセルフホスト：Zeabur Agent でプロンプト1つ",
-        description:
-          "Threads Analytics を Zeabur にセルフホスト。プロンプト1つで Zeabur AI エージェントが PostgreSQL、暗号化キー、パスワード、公開 URL まで自動設定。",
-      },
-      hero: {
-        kicker: "デプロイ / ZEABUR AGENT",
-        lineOne: "プロンプトは1つ。",
-        lineTwo: "残りはエージェントが。",
-        description:
-          "Zeabur Agent がテンプレートを読み、PostgreSQL と暗号化キーを用意し、パスワードを確認して公開 URL を返します。あなたはコピーして貼るだけ。",
-        copyCta: "エージェント用プロンプトをコピー",
-        copiedCta: "コピーしました",
-        openCta: "Zeabur Agentを開く",
-        note: "所要時間は約2分 · YAMLも環境変数も不要",
-      },
-      prompt: {
-        label: "AGENT PROMPT",
-        hint: "送信を押すとプロンプトをコピーしてzeabur.comを開きます。ページのエージェント入力欄に貼り付けてください。",
-        text: `このThreads Analyticsテンプレート（${zeaburTemplate}）をデプロイしてください。デプロイ中にパスワードを私に確認してください。`,
-        copy: "コピー",
-        copied: "コピー済み",
-        send: "プロンプトをコピーしてZeabur Agentを開く",
-      },
-      steps: {
-        kicker: "01 / 3ステップ",
-        title: "プロンプトからダッシュボードまで、3ステップ。",
-        description:
-          "YAMLも環境変数もデータベース設定も不要。設定はエージェントに任せて、あなたが決めるのはパスワードだけです。",
-        items: [
-          {
-            index: "01",
-            title: "プロンプトをコピー",
-            body: "上のボタンでコピーします。テンプレートのリンクと、パスワードを確認する指示があらかじめ含まれています。",
-          },
-          {
-            index: "02",
-            title: "Zeabur Agentに貼り付け",
-            body: "zeabur.comを開いてサインインし、ページ下部の「Ask Zeabur Agent to deploy…」入力欄にプロンプトを貼り付けます。",
-          },
-          {
-            index: "03",
-            title: "パスワードを決めてURLを受け取る",
-            body: "エージェントが認証情報を生成し、PostgreSQLとダッシュボードをデプロイして、URLとログインパスワードを返信します。",
-          },
-        ],
-      },
-      demo: {
-        kicker: "02 / 実際の流れ",
-        title: "会話は、こんなふうに進みます。",
-        description:
-          "実際のZeabur Agentデプロイのリプレイです。あなたのチャットでも同じメッセージ、同じ選択肢、同じ結果が表示されます。",
-        windowTitle: "ZEABUR AGENT",
-        status: "REPLAY",
-        working: "実行中…",
-        workedForA: "38秒で完了",
-        workedForB: "42秒で完了",
-        lineOne: "まずこのテンプレートを確認し、何をデプロイし、どの設定が必要かを調べます。",
-        lineTwo:
-          "ログイン済みで、利用可能なサーバーが1台あります：東京（日本）。ここにデプロイします。",
-        setupTitle: "このテンプレートが構築するもの：",
-        setupItems: [
-          "分析データを保存する永続ボリューム付きPostgreSQL 16",
-          "公開ドメインで使えるthreads-analyticsダッシュボード",
-        ],
-        passwordQuestion:
-          "1つだけ確認させてください。ダッシュボードのログインパスワードはどうしますか？",
-        chips: ["強力なパスワードを生成して", "自分で入力する", "後でダッシュボードから設定する"],
-        progress: [
-          "認証情報を生成",
-          "サーバーにプロジェクトを作成",
-          "テンプレートをデプロイ",
-          "2つのサービスを確認",
-        ],
-        doneTitle: "Threads Analyticsダッシュボードのデプロイが完了しました。",
-        urlLabel: "URL",
-        passwordLabel: "ログインパスワード",
-        passwordNote:
-          "今すぐパスワードマネージャーに保存してください。後からAPP_PASSWORD変数で変更できます。",
-        replay: "デプロイをもう一度再生",
-        disclaimer: "シミュレーションによる再現 · 実際の流れと同じです",
-      },
-      cta: {
-        title: "次は、あなたの番です。",
-        description:
-          "プロンプトをコピーしてZeabur Agentを開けば、数分でダッシュボードが手に入ります。",
-        primary: "Zeabur Agentを開く",
-        secondary: "他のデプロイ方法へ戻る",
-        others: "他のプラットフォーム",
       },
     },
     railwayAgentDeploy: {

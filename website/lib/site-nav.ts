@@ -12,7 +12,6 @@ export type SiteNavIcon =
   | "giveaway"
   | "deploy"
   | "railway"
-  | "zeabur"
   | "vercel"
   | "self-host"
   | "desktop"
@@ -80,7 +79,6 @@ export function getSiteNav(locale: Locale): SiteNavGroup[] {
           ...entry(nav.railwayAgent, `${home}/deploy/railway-agent`, "railway"),
           section: nav.selfHostSection,
         },
-        entry(nav.zeaburAgent, `${home}/deploy/zeabur-agent`, "zeabur"),
         entry(nav.vercelAgent, `${home}/deploy/vercel-agent`, "vercel"),
         entry(
           { label: selfHost[locale].menuTitle, description: selfHost[locale].menuDescription },

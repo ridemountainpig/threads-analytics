@@ -1,6 +1,6 @@
 import "server-only";
 
-import { railwayTemplate, zeaburTemplate } from "./links";
+import { railwayTemplate } from "./links";
 
 function resolveSiteUrl() {
   const configuredUrl = (process.env.SITE_URL ?? process.env.NEXT_PUBLIC_SITE_URL)?.trim();
@@ -62,7 +62,5 @@ export const siteConfig = {
   railway: `${railwayTemplate}&utm_medium=integration&utm_source=template&utm_campaign=generic`,
   railwayTemplate,
   railwayAgent: "https://railway.com/agents",
-  zeabur: zeaburTemplate,
-  zeaburAgent: "https://zeabur.com",
   vercelAgent: "https://vercel.com/docs/agent-resources/vercel-mcp",
 } as const;

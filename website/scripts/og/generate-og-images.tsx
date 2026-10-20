@@ -14,7 +14,7 @@ import { mkdir, readFile, writeFile } from "node:fs/promises";
 import { join } from "node:path";
 import type { ReactElement } from "react";
 import { ImageResponse } from "next/og";
-import { Railway, Vercel, Zeabur } from "../../components/deployment-logos";
+import { Railway, Vercel } from "../../components/deployment-logos";
 import { getGuide, guideHub, guideSlugs } from "../../lib/guides";
 import { getDictionary, locales, type Locale } from "../../lib/i18n";
 import { selfHost } from "../../lib/self-host";
@@ -268,25 +268,6 @@ const variants: OgVariant[] = [
           <span style={{ display: "flex", alignItems: "center", gap: 12, color: colors.text }}>
             <Railway width={26} height={26} />
             Railway
-          </span>
-        ),
-      });
-    },
-  },
-  {
-    prefix: "zeabur-agent",
-    render: (locale, brandIconSrc) => {
-      const copy = getDictionary(locale).zeaburAgentDeploy;
-      return renderOpenGraphImage({
-        brandIconSrc,
-        brandLabel: brandLabels[locale],
-        headline: [copy.hero.lineOne, copy.hero.lineTwo],
-        description: copy.metadata.description,
-        footerLeft: <span>{copy.hero.kicker}</span>,
-        footerRight: (
-          <span style={{ display: "flex", alignItems: "center", gap: 12, color: colors.text }}>
-            <Zeabur width={30} height={23} />
-            Zeabur
           </span>
         ),
       });

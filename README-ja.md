@@ -31,6 +31,7 @@
 - [Threads アクセストークンの取得](#threads-アクセストークンの取得)
 - [MCP サーバー](#mcp-サーバー)
 - [デプロイ](#デプロイ)
+  - [Docker Compose](#docker-compose)
   - [Docker](#docker)
   - [Vercel](#vercel)
   - [自動同期](#自動同期)
@@ -47,12 +48,13 @@
 - **概要** — 統計カード（ビュー、いいね、リプライ、リポスト、引用、シェア、エンゲージメント率）と前期比、ビュー推移チャート（日／週／月）、最適投稿時間の推奨、バイラル投稿
 - **アナリティクス** — **パフォーマンス**、**コンテンツ**、**オーディエンス**の 3 タブにまたがる 31 種類のチャート
 - **投稿** — 検索・フィルタ可能なリストと投稿ごとのアナリティクスパネル（投稿後 1 週間の伸びのグラフを含む）
+- **プレゼント抽選** — 投稿へのリプライから当選者を抽選。キーワード、友達のタグ付け、締め切り、1 アカウント 1 回などの条件を組み合わせ、自分のダッシュボード内で完結
 - **MCP サーバー** — Claude などの AI エージェントが OAuth 保護されたエンドポイント経由でアナリティクスを照会可能
 - 複数アカウント対応、アカウント切り替え可能
 - 設定可能な間隔での自動同期
 - アクセストークンの自動更新 — 一度接続すれば、60 日ごとに手動で貼り直す必要はありません
 - パスワード保護（単一の `APP_PASSWORD` 環境変数）
-- English / 繁體中文 / 日本語 UI
+- English / 繁體中文 / 日本語 UI、ライト・ダーク・自動の外観に対応
 
 <table>
   <tr>
@@ -79,20 +81,13 @@ Apple Silicon 搭載 Mac（M1 以降）では、[GitHub Releases](https://github
 
 ## クイックスタート
 
-最速でインスタンスを立ち上げる方法はワンクリックデプロイです — どちらのテンプレートも PostgreSQL データベースのプロビジョニングと必要な環境変数の設定を自動で行います：
+最速でインスタンスを立ち上げる方法は Railway のワンクリックテンプレートです — PostgreSQL データベースのプロビジョニングと必要な環境変数の設定を自動で行います：
 
-| プラットフォーム | デプロイ                                                                                                                                                                      |
-| ---------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Railway          | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
-| Zeabur           | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-AI コーディングエージェント（Claude Code、Codex、Cursor など）に任せることもできます。各エージェントデプロイガイドには、エージェントに貼り付けるだけでデータベースの作成、デプロイ、URL の報告まで自動で行うプロンプトが用意されています：[Railway](https://threads-analytics.app/ja/deploy/railway-agent) · [Zeabur](https://threads-analytics.app/ja/deploy/zeabur-agent) · [Vercel](https://threads-analytics.app/ja/deploy/vercel-agent)
+AI コーディングエージェント（Claude Code、Codex、Cursor など）に任せることもできます。各エージェントデプロイガイドには、エージェントに貼り付けるだけでデータベースの作成、デプロイ、URL の報告まで自動で行うプロンプトが用意されています：[Railway](https://threads-analytics.app/ja/deploy/railway-agent) · [Vercel](https://threads-analytics.app/ja/deploy/vercel-agent)
 
-すでにサーバーがある場合は、ビルド済みイメージを直接実行できます（詳細は [Docker](#docker)）：
-
-```bash
-docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
-```
+すでにサーバーがある場合は、[Docker Compose](#docker-compose) でアプリと PostgreSQL をコマンド 1 つでまとめて起動できます。既存のデータベースがあるなら、ビルド済みイメージを直接実行することもできます（詳細は [Docker](#docker)）。
 
 アプリが起動したら `APP_PASSWORD` でサインインし、Threads アカウントを接続します — 次のセクションを参照してください。ソースから実行する場合は[開発セットアップ](#開発セットアップ)へ。
 
@@ -171,11 +166,30 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 ## デプロイ
 
-このセクションの内容は、ウェブサイトの[セルフホストガイド](https://threads-analytics.app/ja/deploy/self-host)でステップごとに解説しています：Docker、ソースからの実行、Vercel Cron、環境変数、自動同期、更新。
+このセクションの内容は、ウェブサイトの[セルフホストガイド](https://threads-analytics.app/ja/deploy/self-host)でステップごとに解説しています：Docker Compose、Docker、ソースからの実行、Vercel Cron、環境変数、自動同期、更新。
+
+### Docker Compose
+
+[`docker-compose.yml`](./docker-compose.yml) は、ダッシュボードを専用の PostgreSQL と一緒に起動します。先にデータベースを用意する必要はありません。空のフォルダでファイルをダウンロードし、隣に `.env` を作ります：
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
+cat > .env <<EOF
+APP_PASSWORD=$(openssl rand -hex 12)
+TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+EOF
+grep APP_PASSWORD .env
+docker compose up -d
+```
+
+`grep` で表示される `APP_PASSWORD` がサインイン用のパスワードなので、控えておいてください。自分で決めたい場合は `.env` を書き換えて、もう一度 `docker compose up -d` を実行します。Compose はデータベースの準備を待ってマイグレーションを実行し、ポート 3000 でダッシュボードを提供します。同期スケジューラもオンで、`DATABASE_URL` と `SYNC_SCHEDULER_ENABLED` は設定済みです。`.env` のほかの変数（`CRON_SECRET` など）もアプリに渡されます。
+
+データは `postgres-data` ボリュームに保存され、再起動や更新でも残ります。PostgreSQL が `POSTGRES_PASSWORD` を読むのはボリュームを最初に作るときだけなので、最初の値を使い続けてください。また `docker compose down -v` はボリュームごと削除し、同期済みの投稿もすべて消えます。
 
 ### Docker
 
-GitHub Container Registry にビルド済みのマルチアーキテクチャ（amd64/arm64）イメージが公開されています。[環境変数](#2-環境変数の設定)を設定後、次を実行：
+すでに PostgreSQL があり、アプリのコンテナだけを動かす場合は、GitHub Container Registry で公開されているビルド済みのマルチアーキテクチャ（amd64/arm64）イメージを使います。[環境変数](#2-環境変数の設定)を設定後、次を実行：
 
 ```bash
 docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
@@ -221,13 +235,20 @@ Vercel は長時間実行プロセスをサポートしていないため、内�
 
 ### 自動同期
 
-常時稼働のデプロイ環境（Railway / Zeabur / VPS / Docker）では `SYNC_SCHEDULER_ENABLED=true` を設定します。内蔵スケジューラがサーバー起動とともに開始し、設定で構成された間隔で接続済みのすべてのアカウント（アクティブなものだけでなく）を同期します。Vercel では上記の cron 設定を使用してください。
+常時稼働のデプロイ環境（Docker / VPS / Railway）では `SYNC_SCHEDULER_ENABLED=true` を設定します（Docker Compose では設定済み）。内蔵スケジューラがサーバー起動とともに開始し、設定で構成された間隔で接続済みのすべてのアカウント（アクティブなものだけでなく）を同期します。Vercel では上記の cron 設定を使用してください。
 
 <a id="updating"></a>
 
 ### 既存デプロイの更新
 
-新しいバージョンは更新された Docker イメージとして公開されます。データベースマイグレーションは起動時に自動実行されるため、更新に必要なのは新しいイメージまたはコードの取得だけです：
+新しいバージョンは更新された Docker イメージとして公開され、公式イメージで動かしている場合は新しいバージョンが出るとダッシュボードに更新バナーが表示されます。データベースマイグレーションは起動時に自動実行されるため、更新に必要なのは新しいイメージまたはコードの取得だけです：
+
+- **Docker Compose** — `docker-compose.yml` のあるフォルダで次を実行：
+
+  ```bash
+  docker compose pull
+  docker compose up -d
+  ```
 
 - **Docker / VPS** — 最新イメージを取得し、古いコンテナを停止して同じフラグで再起動：
 
@@ -235,7 +256,6 @@ Vercel は長時間実行プロセスをサポートしていないため、内�
   docker pull ghcr.io/ridemountainpig/threads-analytics:latest
   ```
 
-- **Zeabur** — `threads-analytics` サービスを開いて **Redeploy** をクリックすると最新イメージが取得されます。
 - **Railway** — Railway ダッシュボードからサービスの再デプロイをトリガーします。
 - **ソースからデプロイ** — `git pull` 後に `pnpm install && pnpm prisma:generate && pnpm build` を実行し、`pnpm start` で再起動します（マイグレーションは自動実行）。
 - **Vercel** — 新しいバージョンを push するだけです。マイグレーションは上記のとおりビルド時に実行されます。
@@ -254,6 +274,7 @@ Vercel は長時間実行プロセスをサポートしていないため、内�
 git clone https://github.com/ridemountainpig/threads-analytics.git
 cd threads-analytics
 pnpm install
+pnpm prisma:generate
 ```
 
 ### 2. 環境変数の設定

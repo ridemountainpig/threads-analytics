@@ -31,6 +31,7 @@
 - [取得 Threads Access Token](#取得-threads-access-token)
 - [MCP Server](#mcp-server)
 - [部署](#部署)
+  - [Docker Compose](#docker-compose)
   - [Docker](#docker)
   - [Vercel](#vercel)
   - [自動同步](#自動同步)
@@ -47,12 +48,13 @@
 - **總覽** — 數據卡（觀看、讚、回覆、轉發、引用、分享、互動率）含相對上期的漲跌幅、觀看趨勢圖（日／週／月）、最佳發文時段推薦、高曝光貼文
 - **分析** — 橫跨**成效**、**內容**與**受眾**三個分頁的 31 張圖表
 - **貼文** — 可搜尋、可篩選的列表，點選後展開單篇詳細分析，包含發文後第一週的成長曲線
+- **抽獎** — 從貼文留言抽出得獎者，可疊加條件（關鍵字、標記好友、截止時間、每個帳號限一次），直接在自己的儀表板完成
 - **MCP server** — 讓 Claude 等 AI agent 透過 OAuth 保護的端點查詢你的分析數據
 - 多帳號支援，可隨時切換
 - 可設定自動同步間隔
 - Access Token 自動續期 — 連接一次即可，不用每 60 天手動重貼
 - 密碼保護（單一環境變數 `APP_PASSWORD`）
-- 繁體中文 / English / 日本語 介面
+- 繁體中文 / English / 日本語 介面，支援淺色、深色與自動外觀
 
 <table>
   <tr>
@@ -79,20 +81,13 @@
 
 ## 快速開始
 
-最快取得線上實例的方式是一鍵部署 — 兩個模板都會自動建立 PostgreSQL 資料庫並設定好必要的環境變數：
+最快取得線上實例的方式是 Railway 一鍵部署模板 — 會自動建立 PostgreSQL 資料庫並設定好必要的環境變數：
 
-| 平台    | 部署                                                                                                                                                                          |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Railway | [![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic) |
-| Zeabur  | [![Deploy on Zeabur](https://zeabur.com/button.svg)](https://zeabur.com/templates/XLGQAD)                                                                                     |
+[![Deploy on Railway](https://railway.com/button.svg)](https://railway.com/deploy/zibjsX?referralCode=vPBCb4&utm_medium=integration&utm_source=template&utm_campaign=generic)
 
-也可以交給 AI coding agent（Claude Code、Codex、Cursor…）代勞 — 每個 agent 部署指南都附有現成的 prompt，貼給 agent 就會自動建立資料庫、完成部署並回報網址：[Railway](https://threads-analytics.app/zh-TW/deploy/railway-agent) · [Zeabur](https://threads-analytics.app/zh-TW/deploy/zeabur-agent) · [Vercel](https://threads-analytics.app/zh-TW/deploy/vercel-agent)
+也可以交給 AI coding agent（Claude Code、Codex、Cursor…）代勞 — 每個 agent 部署指南都附有現成的 prompt，貼給 agent 就會自動建立資料庫、完成部署並回報網址：[Railway](https://threads-analytics.app/zh-TW/deploy/railway-agent) · [Vercel](https://threads-analytics.app/zh-TW/deploy/vercel-agent)
 
-已經有自己的伺服器？直接執行預建映像檔（詳見 [Docker](#docker)）：
-
-```bash
-docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
-```
+已經有自己的伺服器？[Docker Compose](#docker-compose) 一個指令就能把應用程式和 PostgreSQL 一起啟動；已經有資料庫的話，也可以直接執行預建映像檔（詳見 [Docker](#docker)）。
 
 服務啟動後，用 `APP_PASSWORD` 登入並連接 Threads 帳號 — 見下一節。想從原始碼執行請見[開發設定](#開發設定)。
 
@@ -171,11 +166,30 @@ Server 也註冊了現成的 prompts，多數接受選填的 `period` 參數（�
 
 ## 部署
 
-網站上的[自架部署教學](https://threads-analytics.app/zh-TW/deploy/self-host)會一步步說明這一節的所有內容：Docker、從原始碼執行、Vercel Cron、環境變數、自動同步與更新。
+網站上的[自架部署教學](https://threads-analytics.app/zh-TW/deploy/self-host)會一步步說明這一節的所有內容：Docker Compose、Docker、從原始碼執行、Vercel Cron、環境變數、自動同步與更新。
+
+### Docker Compose
+
+[`docker-compose.yml`](./docker-compose.yml) 會把儀表板和它專用的 PostgreSQL 一起跑起來，不必先準備資料庫。在空資料夾裡下載這個檔案，並在旁邊寫一個 `.env`：
+
+```bash
+curl -fsSLO https://raw.githubusercontent.com/ridemountainpig/threads-analytics/main/docker-compose.yml
+cat > .env <<EOF
+APP_PASSWORD=$(openssl rand -hex 12)
+TOKEN_ENCRYPTION_KEY=$(openssl rand -hex 32)
+POSTGRES_PASSWORD=$(openssl rand -hex 16)
+EOF
+grep APP_PASSWORD .env
+docker compose up -d
+```
+
+`grep` 印出來的 `APP_PASSWORD` 就是登入用的密碼，記得存起來。想改用自己的密碼，就修改 `.env` 再執行一次 `docker compose up -d`。Compose 會等資料庫就緒、執行 migration，再在 3000 port 提供儀表板，同步 scheduler 也已開啟；`DATABASE_URL` 與 `SYNC_SCHEDULER_ENABLED` 都已幫你設好。`.env` 裡的其他變數（例如 `CRON_SECRET`）也會一併傳給應用程式。
+
+資料存在 `postgres-data` volume，重新啟動或更新都會保留。PostgreSQL 只會在第一次建立 volume 時讀取 `POSTGRES_PASSWORD`，之後請沿用一開始的值；另外 `docker compose down -v` 會連同 volume 刪掉所有已同步的貼文。
 
 ### Docker
 
-GitHub Container Registry 上有發佈好的 multi-arch（amd64/arm64）映像檔。設定好[環境變數](#2-設定環境變數)後執行：
+如果已經有 PostgreSQL、只想跑應用程式容器，可以使用 GitHub Container Registry 上發佈好的 multi-arch（amd64/arm64）映像檔。設定好[環境變數](#2-設定環境變數)後執行：
 
 ```bash
 docker run -p 3000:3000 --env-file .env.local ghcr.io/ridemountainpig/threads-analytics:latest
@@ -221,13 +235,20 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
 
 ### 自動同步
 
-在長時間運行的部署環境（Railway / Zeabur / VPS / Docker）設定 `SYNC_SCHEDULER_ENABLED=true`，內建 scheduler 會隨伺服器啟動，並依照 Settings 中設定的間隔自動同步所有已連接的帳號（不只是使用中的那一個）。Vercel 請改用上方的 cron 設定。
+在長時間運行的部署環境（Docker / VPS / Railway）設定 `SYNC_SCHEDULER_ENABLED=true`（Docker Compose 已經幫你設好），內建 scheduler 會隨伺服器啟動，並依照 Settings 中設定的間隔自動同步所有已連接的帳號（不只是使用中的那一個）。Vercel 請改用上方的 cron 設定。
 
 <a id="updating"></a>
 
 ### 更新既有部署
 
-新版本會以更新後的 Docker 映像檔發佈。資料庫 migration 會在啟動時自動執行，因此更新只需要取得新的映像檔或程式碼：
+新版本會以更新後的 Docker 映像檔發佈，使用官方映像檔的部署在有新版時會於儀表板顯示更新提示。資料庫 migration 會在啟動時自動執行，因此更新只需要取得新的映像檔或程式碼：
+
+- **Docker Compose** — 在放著 `docker-compose.yml` 的資料夾裡執行：
+
+  ```bash
+  docker compose pull
+  docker compose up -d
+  ```
 
 - **Docker / VPS** — 拉取最新映像檔，停掉舊 container 後用相同參數重新啟動：
 
@@ -235,7 +256,6 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
   docker pull ghcr.io/ridemountainpig/threads-analytics:latest
   ```
 
-- **Zeabur** — 開啟 `threads-analytics` 服務並點擊 **Redeploy**，即會拉取最新映像檔。
 - **Railway** — 在 Railway Dashboard 對服務觸發重新部署。
 - **從原始碼部署** — `git pull` 後執行 `pnpm install && pnpm prisma:generate && pnpm build`，再以 `pnpm start` 重新啟動（會自動執行 migration）。
 - **Vercel** — 推送新版本即可，migration 會如上所述在建置階段執行。
@@ -254,6 +274,7 @@ Vercel 不支援常駐 process，內建同步 scheduler 無法在上面運行，
 git clone https://github.com/ridemountainpig/threads-analytics.git
 cd threads-analytics
 pnpm install
+pnpm prisma:generate
 ```
 
 ### 2. 設定環境變數

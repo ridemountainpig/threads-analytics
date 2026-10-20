@@ -60,7 +60,7 @@ jobs:
             elif [[ "$file" == .github/workflows/ci.yml || "$file" == .nvmrc ]]; then
               app=true
               website=true
-            elif [[ "$file" =~ ^(docs/|desktop/docs/|desktop/README[^/]*\.md$|[^/]+\.md$|LICENSE$|zeabur\.yaml$|\.github/dependabot\.yml$) ]]; then
+            elif [[ "$file" =~ ^(docs/|desktop/docs/|desktop/README[^/]*\.md$|[^/]+\.md$|LICENSE$|docker-compose\.yml$|\.github/dependabot\.yml$) ]]; then
               : # Documentation and hosting templates: nothing to build or test.
             else
               app=true

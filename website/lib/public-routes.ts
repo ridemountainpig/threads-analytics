@@ -9,7 +9,6 @@ import { isGuideSlug } from "./guides/slugs";
 export const staticPublicRoutes = [
   "",
   "/deploy/railway-agent",
-  "/deploy/zeabur-agent",
   "/deploy/vercel-agent",
   "/deploy/self-host",
   "/desktop",
