@@ -31,11 +31,22 @@ export default function RepliesCard({
 
   // The awaiting tile links to #replies, which is about replies received.
   useEffect(() => {
-    const showReceived = () => {
+    const onHashChange = () => {
       if (window.location.hash === "#replies") setView("received");
     };
-    window.addEventListener("hashchange", showReceived);
-    return () => window.removeEventListener("hashchange", showReceived);
+    // hashchange misses a repeat click while the hash is already #replies.
+    const onClick = (event: MouseEvent) => {
+      if (event.target instanceof Element && event.target.closest('a[href="#replies"]')) {
+        setView("received");
+      }
+    };
+    onHashChange();
+    window.addEventListener("hashchange", onHashChange);
+    document.addEventListener("click", onClick);
+    return () => {
+      window.removeEventListener("hashchange", onHashChange);
+      document.removeEventListener("click", onClick);
+    };
   }, []);
 
   const withCount = (label: string, count: number | null) =>

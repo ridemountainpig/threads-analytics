@@ -1664,7 +1664,7 @@ export const dictionaries = {
       myRepliesSub: "他のアカウントの投稿への返信を含む、今日書いた返信（スレッドの続きは除く）",
       filterOthers: "他の人の投稿",
       filterOwn: "自分の投稿",
-      onOthersPost: "他の人の投稿",
+      onOthersPost: "他の人の投稿への返信",
       noMyReplies: "今日はまだ誰にも返信していません。",
       noMyRepliesFilter: "今日はまだありません。",
       myRepliesTruncated: "最新の {count} 件のみ表示しています。",
