@@ -1,6 +1,11 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { buildReplyInbox, isHiddenStatus, replyRate } from "../lib/today-replies.ts";
+import {
+  buildMyReplies,
+  buildReplyInbox,
+  isHiddenStatus,
+  replyRate,
+} from "../lib/today-replies.ts";
 
 const since = new Date("2026-10-11T16:00:00Z");
 const today = (minute) =>
@@ -139,4 +144,43 @@ test("replies from every post are merged newest first", () => {
 test("reply rate covers only replies aimed at the author", () => {
   assert.equal(replyRate({ awaiting: 1, answered: 3 }), 75);
   assert.equal(replyRate({ awaiting: 0, answered: 0 }), null);
+});
+
+const authored = (id, rootPostId, repliedToId, minute) => ({
+  id,
+  text: `text ${id}`,
+  timestamp: today(minute),
+  permalink: `https://threads.net/p/${id}`,
+  rootPostId,
+  repliedToId,
+});
+
+test("my replies keep comments anywhere but drop thread parts", () => {
+  const rootPosts = new Map([["mine", new Date("2026-10-12T00:00:00Z")]]);
+  const knownParts = new Map([
+    ["old-part", { rootPostId: "mine", position: 2, timestamp: new Date("2026-10-11T12:00:00Z") }],
+  ]);
+  const replies = buildMyReplies(
+    [
+      authored("part2", "mine", "mine", 1),
+      authored("part3", "mine", "part2", 2),
+      authored("after-old", "mine", "old-part", 3),
+      authored("to-commenter", "mine", "comment", 4),
+      authored("elsewhere", "theirs", "theirs", 5),
+      authored("no-roots", null, null, 7),
+      authored("old-part", "mine", "mine", 6),
+      { ...authored("yesterday", "theirs", "theirs", 0), timestamp: yesterday },
+    ],
+    rootPosts,
+    knownParts,
+    since,
+  );
+  assert.deepEqual(
+    replies.map((r) => [r.id, r.ownPostId]),
+    [
+      ["no-roots", null],
+      ["elsewhere", null],
+      ["to-commenter", "mine"],
+    ],
+  );
 });

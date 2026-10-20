@@ -6,6 +6,7 @@ import {
   computeBestTimeToPost,
   computeTopHours,
   DEFAULT_TZ,
+  estimateDailyContentViews,
   getBaselineMedianViews,
   getDateString,
 } from "@/lib/analytics";
@@ -16,11 +17,22 @@ import { getRecentPostPace, type PostPace } from "@/lib/post-growth-data";
 import {
   getConversation,
   getFollowersCount,
+  getPostInsights,
+  getUserReplies,
   MissingReplyPermissionError,
   TokenExpiredError,
+  type PostInsights,
+  type ThreadsUserReply,
 } from "@/lib/threads-api";
-import { parseDateOnlyInTimeZone } from "@/lib/time-range";
-import { buildReplyInbox, type PostConversation, type ReplyInbox } from "@/lib/today-replies";
+import { parseDateOnlyInTimeZone, toUnix } from "@/lib/time-range";
+import {
+  buildMyReplies,
+  buildReplyInbox,
+  type MyReply,
+  type PostConversation,
+  type ReplyInbox,
+} from "@/lib/today-replies";
+import { getUserInsightsCached } from "@/lib/user-insights-cache";
 
 export const TODAY_LIVE_TAG = "today-live";
 
@@ -313,4 +325,149 @@ export async function getTodayInbox(
 
   if (conversations.length === 0 && failedPosts > 0) return { status: "failed" };
   return { status: "ok", inbox: buildReplyInbox(conversations, since), failedPosts };
+}
+
+export type TodayMyReplies =
+  | {
+      status: "ok";
+      replies: Array<MyReply & { postText: string | null; insights: PostInsights | null }>;
+      truncated: boolean;
+    }
+  | { status: "missing_permission" | "token_expired" | "failed" };
+
+const MY_REPLIES_PAGE_LIMIT = 3;
+const MY_REPLIES_INSIGHTS_LIMIT = 50;
+
+function getReplyInsightsCached(accountId: string, replyId: string, accessToken: string) {
+  return unstable_cache(
+    () => getPostInsights(replyId, accessToken),
+    [TODAY_LIVE_TAG, "reply-insights", accountId, replyId],
+    { revalidate: INBOX_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
+  )();
+}
+
+function getUserRepliesSinceCached(accountId: string, accessToken: string, since: number) {
+  return unstable_cache(
+    async () => {
+      const replies: ThreadsUserReply[] = [];
+      let after: string | undefined;
+      for (let page = 0; page < MY_REPLIES_PAGE_LIMIT; page++) {
+        const result = await getUserReplies(accountId, accessToken, { since, after });
+        replies.push(...result.replies);
+        after = result.nextCursor;
+        if (!after) break;
+      }
+      return { replies, truncated: after !== undefined };
+    },
+    [TODAY_LIVE_TAG, "my-replies", accountId, String(since)],
+    { revalidate: INBOX_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
+  )();
+}
+
+export async function getTodayMyReplies(
+  accountId: string,
+  accessToken: string,
+  since: Date,
+): Promise<TodayMyReplies> {
+  let pull: { replies: ThreadsUserReply[]; truncated: boolean };
+  try {
+    pull = await getUserRepliesSinceCached(accountId, accessToken, toUnix(since));
+  } catch (err) {
+    if (err instanceof MissingReplyPermissionError) return { status: "missing_permission" };
+    if (err instanceof TokenExpiredError) return { status: "token_expired" };
+    console.warn("[today] my replies failed:", err instanceof Error ? err.message : err);
+    return { status: "failed" };
+  }
+
+  const rootIds = [
+    ...new Set(pull.replies.flatMap((reply) => (reply.rootPostId ? [reply.rootPostId] : []))),
+  ];
+  const [roots, parts] = await Promise.all([
+    db.post.findMany({
+      where: { accountId, id: { in: rootIds } },
+      select: { id: true, timestamp: true, text: true },
+    }),
+    db.threadReply.findMany({
+      where: { accountId, rootPostId: { in: rootIds } },
+      select: { id: true, rootPostId: true, position: true, timestamp: true },
+    }),
+  ]);
+  const replies = buildMyReplies(
+    pull.replies,
+    new Map(roots.map((root) => [root.id, root.timestamp])),
+    new Map(parts.map(({ id, ...node }) => [id, node])),
+    since,
+  );
+  const postText = new Map(roots.map((root) => [root.id, root.text]));
+  const limit = createLimiter(INBOX_CONCURRENCY);
+  const insights = await Promise.all(
+    replies.map((reply, i) =>
+      i < MY_REPLIES_INSIGHTS_LIMIT
+        ? limit(() => getReplyInsightsCached(accountId, reply.id, accessToken)).catch(() => null)
+        : null,
+    ),
+  );
+  return {
+    status: "ok",
+    replies: replies.map((reply, i) => ({
+      ...reply,
+      postText: reply.ownPostId ? (postText.get(reply.ownPostId) ?? "") : null,
+      insights: insights[i] ?? null,
+    })),
+    truncated: pull.truncated,
+  };
+}
+
+export interface TodayOverall {
+  views: number;
+  // Null until Threads reports today's account views; views then counts today's posts only.
+  split: { fromPosts: number; other: number } | null;
+  postCount: number;
+  avgViewsPerPost: number;
+}
+
+// Same window the analytics page spreads post views over.
+const CONTENT_LOOKBACK_MS = 14 * DAY_MS;
+
+export async function getTodayOverall(
+  accountId: string,
+  accessToken: string,
+  timeZone: string,
+  { todayStart }: TodayBounds,
+  todayPosts: readonly Pick<TodayPost, "views">[],
+  now = new Date(),
+): Promise<TodayOverall> {
+  const contentRange = { gte: new Date(todayStart.getTime() - CONTENT_LOOKBACK_MS), lte: now };
+  const [insights, postRows, partRows] = await Promise.all([
+    getUserInsightsCached(accountId, accessToken, toUnix(todayStart), toUnix(now)).catch(
+      () => null,
+    ),
+    db.post.findMany({
+      where: { accountId, timestamp: contentRange, mediaType: { not: "REPOST_FACADE" } },
+      select: { timestamp: true, views: true },
+    }),
+    db.threadReply.findMany({
+      where: { accountId, timestamp: contentRange },
+      select: { timestamp: true, views: true },
+    }),
+  ]);
+
+  const todayKey = getDateString(now, timeZone);
+  const accountPoints = (insights?.views ?? []).filter(
+    (point) => getDateString(new Date(point.end_time), timeZone) === todayKey,
+  );
+  const postViews = todayPosts.reduce((sum, post) => sum + post.views, 0);
+  const postCount = todayPosts.length;
+  const base = {
+    postCount,
+    avgViewsPerPost: postCount > 0 ? Math.round(postViews / postCount) : 0,
+  };
+  if (accountPoints.length === 0) return { views: postViews, split: null, ...base };
+
+  const views = accountPoints.reduce((sum, point) => sum + point.value, 0);
+  const estimated = estimateDailyContentViews([...postRows, ...partRows], timeZone, now).get(
+    todayKey,
+  );
+  const fromPosts = Math.min(views, Math.round(estimated ?? 0));
+  return { views, split: { fromPosts, other: views - fromPosts }, ...base };
 }

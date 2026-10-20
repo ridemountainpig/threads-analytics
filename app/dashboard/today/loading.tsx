@@ -16,7 +16,10 @@ export default function TodayLoading() {
           <div className="bg-muted h-8 w-36 rounded-full lg:hidden" />
           <div className="bg-muted h-96 rounded-xl lg:col-span-2 lg:col-start-1 lg:row-span-2 lg:row-start-1" />
           <div className="bg-muted hidden h-48 rounded-xl lg:col-start-3 lg:row-start-2 lg:block" />
-          <div className="bg-muted h-36 rounded-xl lg:col-start-3 lg:row-start-1" />
+          <div className="space-y-4 lg:col-start-3 lg:row-start-1">
+            <div className="bg-muted h-60 rounded-xl" />
+            <div className="bg-muted h-36 rounded-xl" />
+          </div>
         </div>
       </div>
     </div>
