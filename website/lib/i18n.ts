@@ -337,7 +337,13 @@ export type DesktopGuideCopy = {
     title: string;
     description: string;
     /** Step bodies and FAQ answers may mark UI labels as `**label**`. */
-    steps: { index: string; title: string; body: string }[];
+    steps: {
+      index: string;
+      title: string;
+      body: string;
+      /** Replaces `body` when the buttons fall back to the Releases page. */
+      fallbackBody?: string;
+    }[];
     setupTitle: string;
     setupDescription: string;
     setupSteps: { index: string; title: string; body: string }[];
@@ -345,9 +351,19 @@ export type DesktopGuideCopy = {
     tokenCta: string;
     requirementsTitle: string;
     requirements: string[];
+    /** Shown when the Releases page is the fallback (GitHub couldn't be reached). */
     assetLabel: string;
+    latestLabel: string;
+    releaseNotes: string;
     intelNote: string;
     hint: string;
+  };
+  /** Shown after a direct download starts. */
+  downloadNotice: {
+    title: string;
+    body: string;
+    starCta: string;
+    close: string;
   };
   faq: {
     kicker: string;
@@ -3181,7 +3197,9 @@ const desktopGuideEn: DesktopGuideCopy = {
       {
         index: "01",
         title: "Download the ZIP",
-        body: "Open GitHub Releases, pick the newest release that lists a macOS ZIP, and under **Assets** download the file ending in macos-arm64.zip — not the automatic Source code archive.",
+        body: "Select **Download** anywhere on this page. The ZIP comes straight from this project's GitHub Releases.",
+        fallbackBody:
+          "Open GitHub Releases, pick the newest release that lists a macOS ZIP, and under **Assets** download the file ending in macos-arm64.zip — not the automatic Source code archive.",
       },
       {
         index: "02",
@@ -3224,6 +3242,8 @@ const desktopGuideEn: DesktopGuideCopy = {
       "No Node.js, pnpm, or PostgreSQL to install",
     ],
     assetLabel: "On GitHub Releases, download",
+    latestLabel: "Latest release",
+    releaseNotes: "Release notes",
     intelNote: "Intel Macs aren't supported yet.",
     hint: "Only download the app from this project's GitHub Releases.",
   },
@@ -3276,6 +3296,12 @@ const desktopGuideEn: DesktopGuideCopy = {
     ],
     issuesCta: "Open a GitHub issue",
     guideCta: "Read the full install guide",
+  },
+  downloadNotice: {
+    title: "Download started",
+    body: "Threads Analytics is free and open source. A star on GitHub helps other people find it.",
+    starCta: "Star on GitHub",
+    close: "Dismiss",
   },
   cta: {
     title: "Put your Threads history on your Mac.",
@@ -3374,7 +3400,9 @@ const desktopGuideZh: DesktopGuideCopy = {
       {
         index: "01",
         title: "下載 ZIP",
-        body: "前往 GitHub Releases，選擇最新且附有 macOS ZIP 的版本，在 **Assets** 下載檔名結尾是 macos-arm64.zip 的檔案，不要下載自動產生的 Source code 壓縮檔。",
+        body: "點這一頁的任一個 **下載** 按鈕，ZIP 檔會直接從本專案的 GitHub Releases 下載。",
+        fallbackBody:
+          "前往 GitHub Releases，選擇最新且附有 macOS ZIP 的版本，在 **Assets** 下載檔名結尾是 macos-arm64.zip 的檔案，不要下載自動產生的 Source code 壓縮檔。",
       },
       {
         index: "02",
@@ -3417,6 +3445,8 @@ const desktopGuideZh: DesktopGuideCopy = {
       "不需要另外安裝 Node.js、pnpm 或 PostgreSQL",
     ],
     assetLabel: "在 GitHub Releases 下載",
+    latestLabel: "最新版本",
+    releaseNotes: "版本說明",
     intelNote: "目前不支援 Intel Mac。",
     hint: "請只從本專案的 GitHub Releases 下載 App。",
   },
@@ -3469,6 +3499,12 @@ const desktopGuideZh: DesktopGuideCopy = {
     ],
     issuesCta: "到 GitHub Issues 回報",
     guideCta: "看完整安裝指南",
+  },
+  downloadNotice: {
+    title: "已開始下載",
+    body: "Threads Analytics 是免費的開源專案，到 GitHub 給顆星星，能讓更多人找到它。",
+    starCta: "到 GitHub 給星星",
+    close: "關閉",
   },
   cta: {
     title: "把你的 Threads 紀錄，放進 Mac。",
@@ -3570,7 +3606,9 @@ const desktopGuideJa: DesktopGuideCopy = {
       {
         index: "01",
         title: "ZIP をダウンロード",
-        body: "GitHub Releases で macOS 用 ZIP を含む最新のリリースを選び、**Assets** からファイル名が macos-arm64.zip で終わるものをダウンロードします。自動生成の Source code は不要です。",
+        body: "このページの **ダウンロード** ボタンを押すと、このプロジェクトの GitHub Releases から ZIP が直接ダウンロードされます。",
+        fallbackBody:
+          "GitHub Releases で macOS 用 ZIP を含む最新のリリースを選び、**Assets** からファイル名が macos-arm64.zip で終わるものをダウンロードします。自動生成の Source code は不要です。",
       },
       {
         index: "02",
@@ -3613,6 +3651,8 @@ const desktopGuideJa: DesktopGuideCopy = {
       "Node.js、pnpm、PostgreSQL のインストールは不要",
     ],
     assetLabel: "GitHub Releases でダウンロード",
+    latestLabel: "最新リリース",
+    releaseNotes: "リリースノート",
     intelNote: "Intel Mac には現在対応していません。",
     hint: "アプリはこのプロジェクトの GitHub Releases からのみダウンロードしてください。",
   },
@@ -3665,6 +3705,12 @@ const desktopGuideJa: DesktopGuideCopy = {
     ],
     issuesCta: "GitHub Issues で報告",
     guideCta: "インストールガイドを読む",
+  },
+  downloadNotice: {
+    title: "ダウンロードを開始しました",
+    body: "Threads Analytics は無料のオープンソースです。GitHub でスターを付けると、ほかの人が見つけやすくなります。",
+    starCta: "GitHub でスターを付ける",
+    close: "閉じる",
   },
   cta: {
     title: "Threads の履歴を、自分の Mac に。",
