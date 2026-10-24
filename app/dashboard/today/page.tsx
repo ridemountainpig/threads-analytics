@@ -172,13 +172,14 @@ export default async function TodayPage({ searchParams }: PageProps) {
       now,
     ),
   );
-  const laterToday = bestHours.find((hour) => hour > currentHour);
-  const nextHour = laterToday ?? bestHours[0];
+  const topHours = bestHours.slots.map((slot) => slot.hour);
+  const laterToday = topHours.find((hour) => hour > currentHour);
+  const nextHour = laterToday ?? topHours[0];
   const nextBestHour =
     laterToday !== undefined
       ? hourLabel(laterToday)
-      : bestHours.length > 0
-        ? t.today.tomorrow.replace("{time}", hourLabel(bestHours[0]!))
+      : topHours.length > 0
+        ? t.today.tomorrow.replace("{time}", hourLabel(topHours[0]!))
         : null;
 
   const postText = new Map(inboxPosts.map((post) => [post.id, post.text]));
@@ -387,11 +388,11 @@ export default async function TodayPage({ searchParams }: PageProps) {
                       </p>
                     </div>
                   )}
-                  {bestHours.length > 0 && (
+                  {bestHours.slots.length > 0 ? (
                     <p className="text-muted-foreground flex flex-wrap gap-x-2 text-sm tabular-nums">
                       <span>{t.today.bestHours}</span>
                       <span>
-                        {bestHours.map((hour, i) => (
+                        {bestHours.slots.map(({ hour, postCount }, i) => (
                           <Fragment key={hour}>
                             {i > 0 && " · "}
                             <span
@@ -400,11 +401,18 @@ export default async function TodayPage({ searchParams }: PageProps) {
                               }
                             >
                               {hourLabel(hour)}
+                            </span>{" "}
+                            <span className="text-xs">
+                              ({postCount} {t.common.posts})
                             </span>
                           </Fragment>
                         ))}
                       </span>
                     </p>
+                  ) : (
+                    bestHours.totalPosts > 0 && (
+                      <p className="text-muted-foreground text-sm">{t.today.bestHoursUnclear}</p>
+                    )
                   )}
                   <p className="text-muted-foreground text-sm tabular-nums">
                     {posts[0]

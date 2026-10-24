@@ -13,11 +13,13 @@ import {
   computePostingGapAnalysis,
   computePostingStreak,
   computeSharesTrend,
+  computeTopHours,
   computeTopPostsByEngagementRate,
   computeViewsTrend,
   computeViralPosts,
   computeWeeklyFrequency,
   getBaselineMedianViews,
+  getSettledBaselineMedianViews,
   getMedian,
   getPercentile,
   percentChange,
@@ -158,6 +160,59 @@ test("hours and weekdays are read in the analytics time zone", () => {
   ]);
   assert.deepEqual(days("UTC"), [["Sun", 2]]);
   assert.equal(computeDayOfWeekPerformance(posts, "UTC").length, 7);
+});
+
+test("best hours leave out posts read before they settled", () => {
+  const at = tpe("2026-10-05T09:00:00");
+  const posts = [
+    post(at, { views: 900, syncedAt: new Date(at.getTime() + 96 * HOUR) }),
+    // Read 24 hours in: its views are still climbing, so it says nothing yet.
+    post(new Date(at.getTime() + 60_000), {
+      views: 10,
+      syncedAt: new Date(at.getTime() + 24 * HOUR),
+    }),
+    // No read time: treated as settled.
+    post(tpe("2026-10-05T21:00:00"), { views: 300 }),
+  ];
+  assert.deepEqual(
+    computeBestTimeToPost(posts).map((point) => [point.hour, point.postCount, point.medianViews]),
+    [
+      [9, 1, 900],
+      [21, 1, 300],
+    ],
+  );
+});
+
+test("top hours are only the hours that clearly beat the typical post", () => {
+  const slot = (hour, postCount, medianViews) => ({ hour, postCount, medianViews, avgViews: 0 });
+  // 20:00 is 2x the typical post; 12:00 has too few posts to count.
+  assert.deepEqual(
+    computeTopHours(
+      [slot(8, 10, 100), slot(12, 2, 900), slot(18, 10, 110), slot(20, 10, 200)],
+      100,
+    ),
+    [20],
+  );
+  // Within 30% of the typical post: no hour is recommended.
+  assert.deepEqual(
+    computeTopHours([slot(8, 10, 100), slot(18, 10, 115), slot(20, 10, 125)], 100),
+    [],
+  );
+  assert.deepEqual(computeTopHours([slot(8, 2, 500)], 100), []);
+});
+
+test("top hours are measured against the typical individual post", () => {
+  const at = (hour, day) => tpe(`2026-10-0${day}T${String(hour).padStart(2, "0")}:00:00`);
+  const views = { 8: [1, 1, 100, 100, 100], 12: [1, 1, 100, 100, 100], 20: [1, 1, 1, 1, 1] };
+  const posts = Object.entries(views).flatMap(([hour, list]) =>
+    list.map((v, i) => post(at(Number(hour), i + 1), { views: v })),
+  );
+  // Every post's median is 1, so both 100-view hours clearly beat it.
+  assert.equal(getSettledBaselineMedianViews(posts), 1);
+  assert.deepEqual(
+    computeTopHours(computeBestTimeToPost(posts), getSettledBaselineMedianViews(posts)),
+    [8, 12],
+  );
 });
 
 test("weeks are keyed by their Monday, even across the turn of the year", () => {
