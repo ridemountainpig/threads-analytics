@@ -2,7 +2,8 @@
 // in so that no test reaches a real database. It covers the slice of Prisma's
 // API the tested modules call: reads and writes that match on equality, the
 // lt/lte/gt/gte/not/in operators, OR/AND, compound unique keys, Prisma's JSON
-// nulls and the relations listed below; `include` for those relations; counts,
+// nulls and the relations listed below; `include` for those relations, one-to-many
+// ones ordered by the include's own orderBy; counts,
 // upserts, createMany, groupBy with _max, array transactions; the schema's
 // column defaults; and Prisma's error when update or delete finds no row.
 // Every call is async and hands out copies, as a real client would.
@@ -13,6 +14,14 @@ const RELATIONS = {
   oAuthCode: { client: ["oAuthClient", "clientId"] },
   postMetricSnapshot: { post: ["post", "postId"] },
   threadReply: { rootPost: ["post", "rootPostId"] },
+};
+
+/** One-to-many back sides: model → relation → [related model, its key to this model]. */
+const LIST_RELATIONS = {
+  post: {
+    metricSnapshots: ["postMetricSnapshot", "postId"],
+    threadReplies: ["threadReply", "rootPostId"],
+  },
 };
 
 /** One-to-one back sides: model → relation → [related model, its key to this model]. */
@@ -106,10 +115,29 @@ function matches(name, row, where = {}) {
   });
 }
 
+function relatedList(name, row, field, options) {
+  const [target, foreignKey] = LIST_RELATIONS[name]?.[field] ?? [];
+  if (!target) return undefined;
+  const rows = table(target).filter((other) => other[foreignKey] === row.id);
+  for (const order of [options?.orderBy ?? []].flat().reverse()) {
+    const [[orderField, direction]] = Object.entries(order);
+    const sign = direction === "desc" ? -1 : 1;
+    rows.sort(
+      (a, b) => sign * (a[orderField] < b[orderField] ? -1 : a[orderField] > b[orderField] ? 1 : 0),
+    );
+  }
+  return rows.map((other) => structuredClone(other));
+}
+
 function withIncludes(name, row, include = {}) {
   const copy = structuredClone(row);
-  for (const [relation, enabled] of Object.entries(include)) {
-    if (!enabled) continue;
+  for (const [relation, options] of Object.entries(include)) {
+    if (!options) continue;
+    const list = relatedList(name, row, relation, options);
+    if (list !== undefined) {
+      copy[relation] = list;
+      continue;
+    }
     const relatedRow = related(name, row, relation);
     if (relatedRow === undefined) throw new Error(`fake-db: no relation ${name}.${relation}`);
     copy[relation] = relatedRow && structuredClone(relatedRow);

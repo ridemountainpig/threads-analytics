@@ -174,8 +174,11 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 | 工具                   | 功能                                                                                                                                                                            |
 | ---------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
 | `get_account_overview` | 所有已連接帳號的名稱、同步狀態、貼文數、資料日期範圍與追蹤者成長摘要——建議的第一個呼叫                                                                                          |
+| `get_today`            | 今天到目前為止的表現：帳號觀看、追蹤者變化、今天與昨天的貼文相對中位數與相對近期貼文同齡成長的比較，以及平常表現最好的時段                                                      |
 | `list_posts`           | 貼文列表含指標；支援日期範圍、排序（日期／觀看／讚／互動率）、媒體類型篩選、全文搜尋與分頁                                                                                      |
 | `get_post`             | 單篇貼文完整資訊，含全文，以及發文後 1 小時、3 小時、6 小時、12 小時、24 小時、48 小時與 7 天的成效                                                                             |
+| `get_thread`           | 串文的所有分段：根貼文加上作者自己的續文，各段含全文、成效、與前一段的間隔，以及留住根貼文多少觀看（並與你平常的留存率比較）                                                    |
+| `get_post_benchmark`   | 單篇貼文與該期間其他貼文的比較：觀看相對整體與同媒體類型中位數的倍數、觀看與互動率百分位、各互動率相對中位數，以及具相同文字特徵的貼文表現                                      |
 | `compare_post_growth`  | 在相同的發文後時間點（例如發文 24 小時）比較貼文，並與你的中位數排名；尚未到達該時間點的新貼文，也會和其他貼文同一時間點的表現比較，看是領先還是落後                            |
 | `get_analytics`        | 指定日期範圍內的 31 個聚合分析 section（最佳發文時段、關鍵字分析、觀看分佈、發文連續紀錄等），可只取需要的                                                                      |
 | `get_follower_history` | 每日追蹤者快照與成長摘要，可選擇附上最新受眾組成                                                                                                                                |
@@ -184,7 +187,7 @@ claude mcp add --transport http threads-analytics https://your-deployment.exampl
 
 連接多個帳號時，除了 `get_account_overview` 以外的每個工具都接受 `account` 參數（帳號名稱或 id）。若未提供，工具會回傳帳號清單，讓 agent 先問你要查哪一個，而不是自行猜測。
 
-以 `YYYY-MM-DD` 指定的日期代表分析時區（預設 Asia/Taipei；桌面 App 使用 Mac 的系統時區）的一整天；`list_posts`、`compare_post_growth`、`get_analytics`、`compare_periods` 與 `get_monthly_review` 也接受 `timezone` 參數，改用其他時區解讀。
+以 `YYYY-MM-DD` 指定的日期代表分析時區（預設 Asia/Taipei；桌面 App 使用 Mac 的系統時區）的一整天；`list_posts`、`get_post_benchmark`、`get_today`、`compare_post_growth`、`get_analytics`、`compare_periods` 與 `get_monthly_review` 也接受 `timezone` 參數，改用其他時區解讀。
 
 貼文成長資料（`get_post` 的各時間點成效與 `compare_post_growth`）來自每次同步在貼文發布後 30 天內記錄的成效——發文初期最密每 15 分鐘一筆，後期每天一筆。從加入這項功能的版本才開始記錄，更早發布的貼文沒有成長資料；同步越頻繁，貼文初期的曲線就越細。
 
