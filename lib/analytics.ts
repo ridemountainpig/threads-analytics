@@ -419,12 +419,17 @@ const SETTLED_AGE_MS = 72 * 60 * 60 * 1000;
 const isSettled = (post: PostWithInsights) =>
   !post.syncedAt || post.syncedAt.getTime() - post.timestamp.getTime() >= SETTLED_AGE_MS;
 
+/** The account's typical post among those `computeBestTimeToPost` ranks. */
+export function getSettledBaselineMedianViews(posts: PostWithInsights[]) {
+  return getBaselineMedianViews(posts.filter(isSettled));
+}
+
 export function computeBestTimeToPost(
   posts: PostWithInsights[],
   tz = DEFAULT_TZ,
 ): HourPerformancePoint[] {
   const settled = posts.filter(isSettled);
-  const baselineMedianViews = getBaselineMedianViews(settled);
+  const baselineMedianViews = getSettledBaselineMedianViews(settled);
   const buckets = new Map<number, AggregateBucket>();
 
   for (const post of settled) {
@@ -855,7 +860,7 @@ export const TOP_HOUR_MIN_LIFT = 1.3;
 
 /**
  * Up to three hours whose median views clearly beat the account's typical
- * post. Empty when no hour has enough posts or stands out: the hours perform
+ * post (`getSettledBaselineMedianViews` of the same posts). Empty when no hour has enough posts or stands out: the hours perform
  * about the same, or there is not enough data to tell.
  */
 export function computeTopHours(
@@ -865,19 +870,16 @@ export function computeTopHours(
     medianViews?: number;
     postCount: number;
   }>,
+  baselineMedianViews: number,
 ): number[] {
   const views = (h: (typeof bestTimeToPost)[number]) => h.medianViews ?? h.avgViews;
-  // The typical post across every hour, weighted by how often each hour is used.
-  const baseline = getMedian(
-    bestTimeToPost.flatMap((h) => Array<number>(h.postCount).fill(views(h))),
-  );
 
   return bestTimeToPost
     .filter(
       (h) =>
         h.postCount >= TOP_HOUR_MIN_POSTS &&
         views(h) > 0 &&
-        views(h) >= baseline * TOP_HOUR_MIN_LIFT,
+        views(h) >= baselineMedianViews * TOP_HOUR_MIN_LIFT,
     )
     .sort((a, b) => views(b) - views(a))
     .slice(0, 3)

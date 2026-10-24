@@ -410,7 +410,7 @@ export default async function TodayPage({ searchParams }: PageProps) {
                       </span>
                     </p>
                   ) : (
-                    bestHours.postCount > 0 && (
+                    bestHours.totalPosts > 0 && (
                       <p className="text-muted-foreground text-sm">{t.today.bestHoursUnclear}</p>
                     )
                   )}

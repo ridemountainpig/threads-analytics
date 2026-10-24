@@ -5,6 +5,7 @@ import { db } from "@/lib/db";
 import {
   computeBestTimeToPost,
   computeTopHours,
+  getSettledBaselineMedianViews,
   DEFAULT_TZ,
   estimateDailyContentViews,
   getBaselineMedianViews,
@@ -248,8 +249,10 @@ const BEST_HOURS_LOOKBACK_MS = 90 * DAY_MS;
 export interface BestPostingHours {
   /** Hours that clearly beat the account's typical post, with how many posts back each. */
   slots: Array<{ hour: number; postCount: number }>;
-  /** Settled posts the ranking looked at; with none, there is nothing to rank yet. */
+  /** Settled posts the ranking looked at. */
   postCount: number;
+  /** Posts in the lookback, settled or not; with none, there is nothing to rank yet. */
+  totalPosts: number;
 }
 
 export async function getBestPostingHours(
@@ -282,11 +285,12 @@ export async function getBestPostingHours(
   });
   const byHour = computeBestTimeToPost(posts, timeZone);
   return {
-    slots: computeTopHours(byHour).map((hour) => ({
+    slots: computeTopHours(byHour, getSettledBaselineMedianViews(posts)).map((hour) => ({
       hour,
       postCount: byHour.find((point) => point.hour === hour)?.postCount ?? 0,
     })),
     postCount: byHour.reduce((sum, point) => sum + point.postCount, 0),
+    totalPosts: posts.length,
   };
 }
 

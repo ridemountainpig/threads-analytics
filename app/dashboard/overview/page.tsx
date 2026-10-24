@@ -14,6 +14,7 @@ import { getTodayBounds } from "@/lib/today-data";
 import {
   computeBestTimeToPost,
   computeTopHours,
+  getSettledBaselineMedianViews,
   computeViralPosts,
   getBaselineMedianViews,
   getDateString,
@@ -351,7 +352,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const deltaMedianViews = pctChange(curMedianViews, prevMedianViews);
   const viralPosts = computeViralPosts(posts);
   const bestTimeToPost = computeBestTimeToPost(posts, tz);
-  const topHours = computeTopHours(bestTimeToPost);
+  const topHours = computeTopHours(bestTimeToPost, getSettledBaselineMedianViews(posts));
   const topHourDetails = topHours
     .map((hour) => bestTimeToPost.find((point) => point.hour === hour))
     .filter((point) => point !== undefined);

@@ -18,6 +18,7 @@ import {
   computeReplyRateLeaders,
   computeSharesTrend,
   computeTopHours,
+  getSettledBaselineMedianViews,
   computeViralPosts,
   computeWeeklyFrequency,
   type AnalyticsResult,
@@ -136,7 +137,7 @@ export async function GET(request: NextRequest) {
     replyRateLeaders: computeReplyRateLeaders(posts),
     sharesTrend: computeSharesTrend(posts, undefined, { since, until }),
     postingConsistency: computePostingConsistency(posts, since, until),
-    topHours: computeTopHours(bestTimeToPost),
+    topHours: computeTopHours(bestTimeToPost, getSettledBaselineMedianViews(posts)),
     lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString(),
   };
 
