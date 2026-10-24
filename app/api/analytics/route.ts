@@ -103,6 +103,7 @@ export async function GET(request: NextRequest) {
     reposts: p.reposts,
     quotes: p.quotes,
     shares: p.shares,
+    syncedAt: p.syncedAt,
   }));
 
   const totalShares = posts.reduce((sum, p) => sum + p.shares, 0);

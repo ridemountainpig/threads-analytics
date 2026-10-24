@@ -248,6 +248,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     reposts: p.reposts,
     quotes: p.quotes,
     shares: p.shares,
+    syncedAt: p.syncedAt,
   }));
 
   // Period-over-period deltas (computed from DB data for consistency)

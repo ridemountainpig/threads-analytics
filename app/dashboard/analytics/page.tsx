@@ -344,6 +344,7 @@ export default async function AnalyticsPage({ searchParams }: PageProps) {
     reposts: p.reposts,
     quotes: p.quotes,
     shares: p.shares,
+    syncedAt: p.syncedAt,
   }));
 
   const postCapReached = dbPosts.length >= DASHBOARD_POST_LIMIT;

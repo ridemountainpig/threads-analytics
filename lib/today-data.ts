@@ -245,11 +245,18 @@ export async function getRecentPosts(
 
 const BEST_HOURS_LOOKBACK_MS = 90 * DAY_MS;
 
+export interface BestPostingHours {
+  /** Hours that clearly beat the account's typical post, with how many posts back each. */
+  slots: Array<{ hour: number; postCount: number }>;
+  /** Settled posts the ranking looked at; with none, there is nothing to rank yet. */
+  postCount: number;
+}
+
 export async function getBestPostingHours(
   accountId: string,
   timeZone: string,
   now = new Date(),
-): Promise<number[]> {
+): Promise<BestPostingHours> {
   const posts = await db.post.findMany({
     where: {
       accountId,
@@ -270,9 +277,17 @@ export async function getBestPostingHours(
       reposts: true,
       quotes: true,
       shares: true,
+      syncedAt: true,
     },
   });
-  return computeTopHours(computeBestTimeToPost(posts, timeZone));
+  const byHour = computeBestTimeToPost(posts, timeZone);
+  return {
+    slots: computeTopHours(byHour).map((hour) => ({
+      hour,
+      postCount: byHour.find((point) => point.hour === hour)?.postCount ?? 0,
+    })),
+    postCount: byHour.reduce((sum, point) => sum + point.postCount, 0),
+  };
 }
 
 export type TodayInbox =

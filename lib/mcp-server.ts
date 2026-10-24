@@ -45,6 +45,8 @@ import {
   computeSharesTrend,
   computeTextFeatureComparison,
   computeTopHours,
+  TOP_HOUR_MIN_LIFT,
+  TOP_HOUR_MIN_POSTS,
   computeTopPostsByEngagementRate,
   computeViewsDistribution,
   computeViewsTrend,
@@ -108,6 +110,7 @@ const DEFAULT_SECTIONS: SectionName[] = [
   "total_engagement",
   "daily_performance",
   "best_time_to_post",
+  "top_hours",
   "content_type_analysis",
   "viral_posts",
   "posting_consistency",
@@ -222,6 +225,7 @@ async function fetchPosts(accountId: string, since: Date, until: Date) {
     reposts: p.reposts,
     quotes: p.quotes,
     shares: p.shares,
+    syncedAt: p.syncedAt,
   }));
 }
 
@@ -689,7 +693,12 @@ export function registerMcpServer(server: McpServer) {
       description:
         "Aggregated analytics over a date range. Pick only the sections you need to keep the response small. Sections: " +
         ANALYTICS_SECTIONS.join(", ") +
-        ". Defaults to a summary set over the last 90 days.",
+        ". Defaults to a summary set over the last 90 days. " +
+        "best_time_to_post lists every posting hour with its post count, median views and confidence; " +
+        "posts read before they were 72 hours old are left out because their views are still growing. " +
+        `top_hours is the dashboard's pick from it: at most 3 hours with at least ${TOP_HOUR_MIN_POSTS} posts whose median views ` +
+        `beat the account's typical post by ${Math.round((TOP_HOUR_MIN_LIFT - 1) * 100)}% or more. An empty top_hours means no hour clearly stands out, ` +
+        "so say that rather than ranking hours yourself; treat any hour with fewer than about 10 posts as a hint.",
       inputSchema: z.object({
         account: accountArg,
         since: dateArg("Start of the date range (inclusive)"),
