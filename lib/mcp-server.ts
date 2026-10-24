@@ -52,6 +52,7 @@ import {
   computeWeeklyFrequency,
   DEFAULT_TZ,
   getBaselineMedianViews,
+  getDateString,
   percentChange,
   ratePct,
   type PostWithInsights,
@@ -65,6 +66,16 @@ import {
   toGrowthPoints,
   type MetricReading,
 } from "./post-growth";
+import { getPostBenchmarks, type PostBenchmarks } from "./post-benchmarks";
+import { buildRetentionBenchmark, classifyThreadPartKind } from "./thread-part-kind";
+import {
+  getBestPostingHours,
+  getRecentPosts,
+  getTodayBounds,
+  getTodayFollowers,
+  getTodayOverall,
+  type TodayPost,
+} from "./today-data";
 
 const DEFAULT_RANGE_MS = 90 * 24 * 60 * 60 * 1000;
 const TEXT_PREVIEW_LENGTH = 300;
@@ -510,7 +521,7 @@ export function registerMcpServer(server: McpServer) {
       title: "Get post",
       annotations: READ_ONLY,
       description:
-        "Full detail of a single post by id: its complete text, current metrics, and how it grew after publishing — its metrics at 1h, 3h, 6h, 12h, 24h, 48h and 7d, read from the snapshots each sync records during a post's first 30 days (null where the readings don't cover that age). To compare it with other posts at the same age, use compare_post_growth.",
+        "Full detail of a single post by id: its complete text, current metrics, and how it grew after publishing — its metrics at 1h, 3h, 6h, 12h, 24h, 48h and 7d, read from the snapshots each sync records during a post's first 30 days (null where the readings don't cover that age). To compare it with other posts at the same age, use compare_post_growth; to rank it against the account's other posts, use get_post_benchmark. threadPartCount above 0 means it opens a multi-part thread: read the other parts with get_thread.",
       inputSchema: z.object({
         account: accountArg,
         id: z.string().describe("Post id from list_posts"),
@@ -524,10 +535,13 @@ export function registerMcpServer(server: McpServer) {
       const resolved = await resolveAccount(accountRef);
       if ("error" in resolved) return errorResult(resolved.error);
       const { account } = resolved;
-      const post = await db.post.findFirst({
-        where: { id, accountId: account.id },
-        include: { metricSnapshots: { orderBy: { capturedAt: "asc" }, select: SNAPSHOT_SELECT } },
-      });
+      const [post, threadPartCount] = await Promise.all([
+        db.post.findFirst({
+          where: { id, accountId: account.id },
+          include: { metricSnapshots: { orderBy: { capturedAt: "asc" }, select: SNAPSHOT_SELECT } },
+        }),
+        db.threadReply.count({ where: { rootPostId: id, accountId: account.id } }),
+      ]);
       if (!post) return errorResult(`Post ${id} not found.`);
       return jsonResult({
         id: post.id,
@@ -543,6 +557,7 @@ export function registerMcpServer(server: McpServer) {
         shares: post.shares,
         engagementRatePct: engagementRate(post),
         syncedAt: post.syncedAt.toISOString(),
+        threadPartCount,
         growth: describePostGrowth(
           post.timestamp,
           post.metricSnapshots,
@@ -677,6 +692,224 @@ export function registerMcpServer(server: McpServer) {
           comparedWith: r.comparedWith,
           vsMedian: r.vsMedian,
         })),
+      });
+    },
+  );
+
+  server.registerTool(
+    "get_thread",
+    {
+      title: "Get thread",
+      annotations: READ_ONLY,
+      description:
+        'A multi-part thread in full: the root post plus the author\'s own continuation parts (the "2/", "3/" posts), each with its complete text, metrics, how long after the previous part it was added, and how many of the root\'s viewers it kept. list_posts and get_post only cover the root post, so call this when get_post reports threadPartCount above 0. Part-2 retention is compared with this account\'s typical figure over the last 90 days, overall and for parts of the same kind (link only, link with text, or text).',
+      inputSchema: z.object({
+        account: accountArg,
+        id: z.string().describe("Root post id from list_posts"),
+      }),
+    },
+    async ({ account: accountRef, id }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
+      const post = await db.post.findFirst({ where: { id, accountId: account.id } });
+      if (!post) return errorResult(`Post ${id} not found.`);
+
+      const [parts, retentionRows] = await Promise.all([
+        db.threadReply.findMany({
+          where: { rootPostId: post.id, accountId: account.id },
+          orderBy: [{ position: "asc" }, { timestamp: "asc" }],
+        }),
+        db.threadReply.findMany({
+          where: {
+            accountId: account.id,
+            position: 2,
+            rootPost: {
+              timestamp: { gte: new Date(Date.now() - DEFAULT_RANGE_MS) },
+              mediaType: { not: "REPOST_FACADE" },
+              views: { gt: 0 },
+            },
+          },
+          orderBy: [{ timestamp: "asc" }],
+          include: { rootPost: { select: { views: true } } },
+        }),
+      ]);
+
+      // Replying to the root twice leaves two parts at position 2; the thread
+      // reads as the earlier one, the same pick as the posts page.
+      const firstPart2ByRoot = new Map<string, (typeof retentionRows)[number]>();
+      for (const row of retentionRows) {
+        if (!firstPart2ByRoot.has(row.rootPostId)) firstPart2ByRoot.set(row.rootPostId, row);
+      }
+      const benchmark = buildRetentionBenchmark(
+        [...firstPart2ByRoot.values()].map((r) => ({
+          text: r.text,
+          views: r.views,
+          rootViews: r.rootPost.views,
+        })),
+      );
+      const part2 = parts.find((part) => part.position === 2);
+      const part2Kind = part2 ? classifyThreadPartKind(part2.text) : null;
+
+      return jsonResult({
+        root: {
+          id: post.id,
+          timestamp: post.timestamp.toISOString(),
+          mediaType: post.mediaType,
+          permalink: post.permalink,
+          text: post.text,
+          views: post.views,
+          likes: post.likes,
+          replies: post.replies,
+          reposts: post.reposts,
+          quotes: post.quotes,
+          shares: post.shares,
+          engagementRatePct: engagementRate(post),
+        },
+        partCount: parts.length,
+        ...(parts.length === 0 && {
+          note: "This post has no continuation parts: it is a single post, or its parts haven't been synced yet.",
+        }),
+        parts: parts.map((part) => ({
+          id: part.id,
+          position: part.position,
+          timestamp: part.timestamp.toISOString(),
+          gapSeconds: part.gapSeconds,
+          mediaType: part.mediaType,
+          permalink: part.permalink,
+          text: part.text,
+          views: part.views,
+          likes: part.likes,
+          replies: part.replies,
+          reposts: part.reposts,
+          quotes: part.quotes,
+          shares: part.shares,
+          engagementRatePct: engagementRate(part),
+          retentionPct: ratePct(part.views, post.views),
+        })),
+        ...(part2 && {
+          part2Retention: {
+            kind: part2Kind,
+            retentionPct: ratePct(part2.views, post.views),
+            typicalPct: benchmark.median,
+            typicalForKindPct: part2Kind ? benchmark.kinds[part2Kind].median : null,
+            threadsCompared: firstPart2ByRoot.size,
+          },
+        }),
+      });
+    },
+  );
+
+  server.registerTool(
+    "get_post_benchmark",
+    {
+      title: "Get post benchmark",
+      annotations: READ_ONLY,
+      description:
+        "How one post stands against the account's other posts in a date range: its views against the median for all posts and for its media type, its view and engagement-rate percentiles, each interaction rate against the median rate, and how posts that share its text features (asking a question, containing a link) usually do. The range defaults to the last 90 days and always includes the post itself.",
+      inputSchema: z.object({
+        account: accountArg,
+        id: z.string().describe("Post id from list_posts"),
+        since: dateArg("Start of the comparison range (inclusive)"),
+        until: dateArg("End of the comparison range (inclusive)"),
+        timezone: z
+          .string()
+          .optional()
+          .describe(
+            "IANA timezone that YYYY-MM-DD dates are read in (default: the server's configured analytics timezone)",
+          ),
+      }),
+    },
+    async ({ account: accountRef, id, since, until, timezone }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
+
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
+      let range;
+      try {
+        range = parseRange(since, until, tz);
+      } catch (err) {
+        return errorResult((err as Error).message);
+      }
+
+      const post = await db.post.findFirst({ where: { id, accountId: account.id } });
+      if (!post || post.mediaType === "REPOST_FACADE") return errorResult(`Post ${id} not found.`);
+      if (post.timestamp < range.since || post.timestamp > range.until) {
+        if (since || until) {
+          return errorResult(
+            `Post ${id} was published ${post.timestamp.toISOString()}, outside the requested range.`,
+          );
+        }
+        // Only the default range moves, so an older post is ranked against its own era.
+        range = {
+          since: post.timestamp,
+          until: new Date(post.timestamp.getTime() + DEFAULT_RANGE_MS),
+        };
+      }
+
+      const [benchmarks, postCount] = await Promise.all([
+        getPostBenchmarks(account.id, range.since, range.until, [post.id]),
+        db.post.count({
+          where: {
+            accountId: account.id,
+            timestamp: { gte: range.since, lte: range.until },
+            mediaType: { not: "REPOST_FACADE" },
+          },
+        }),
+      ]);
+      const typeMedian =
+        benchmarks.typeMedianViews[post.mediaType] ?? benchmarks.overallMedianViews;
+      const times = (value: number, base: number) =>
+        base > 0 ? Math.round((value / base) * 100) / 100 : null;
+      const percentiles = benchmarks.perPost[post.id];
+      const rateVsMedian = (metric: keyof PostBenchmarks["metricRateMedians"]) => ({
+        ratePct: ratePct(post[metric], post.views),
+        medianRatePct: benchmarks.metricRateMedians[metric],
+      });
+      const hasFeature = {
+        question: /[?？]/.test(post.text),
+        link: /https?:\/\//i.test(post.text),
+      };
+
+      return jsonResult({
+        range: { since: range.since.toISOString(), until: range.until.toISOString() },
+        postsCompared: postCount,
+        post: {
+          id: post.id,
+          timestamp: post.timestamp.toISOString(),
+          mediaType: post.mediaType,
+          permalink: post.permalink,
+          text: previewText(post.text, TEXT_PREVIEW_LENGTH),
+          views: post.views,
+          engagementRatePct: engagementRate(post),
+        },
+        views: {
+          medianViews: benchmarks.overallMedianViews,
+          vsMedian: times(post.views, benchmarks.overallMedianViews),
+          mediaTypeMedianViews: typeMedian,
+          vsMediaTypeMedian: times(post.views, typeMedian),
+          percentile: percentiles?.viewPercentile ?? null,
+        },
+        engagementRate: {
+          ratePct: engagementRate(post),
+          medianRatePct: benchmarks.engagementRateMedian,
+          percentile: percentiles?.engRatePercentile ?? null,
+        },
+        interactionRates: {
+          likes: rateVsMedian("likes"),
+          replies: rateVsMedian("replies"),
+          reposts: rateVsMedian("reposts"),
+          quotes: rateVsMedian("quotes"),
+          shares: rateVsMedian("shares"),
+        },
+        textFeatures: benchmarks.features.map((feature) => ({
+          ...feature,
+          postHasIt: hasFeature[feature.feature],
+        })),
+        note: "Percentiles are 0–100, higher is better. Metrics are lifetime totals as of the last sync, so a post younger than a few days has not finished growing; use compare_post_growth to judge it at the same age as other posts. textFeatures.deltaPct is null when fewer than 5 posts in range have the feature.",
       });
     },
   );
@@ -1032,6 +1265,107 @@ export function registerMcpServer(server: McpServer) {
       });
       if ("error" in result) return errorResult(result.error);
       return jsonResult(result.review);
+    },
+  );
+
+  server.registerTool(
+    "get_today",
+    {
+      title: "Get today",
+      annotations: READ_ONLY,
+      description:
+        "How today is going, as of now: account views so far (split into views on recent posts and other views when Threads reports them), follower count and today's change, today's posts and yesterday's posts with their metrics, each against the account's median and against how its recent posts had grown by the same age (pace), what yesterday's posts gained since midnight, and the hours that usually perform best. Days are calendar days in the given timezone. Post metrics are as of the last sync.",
+      inputSchema: z.object({
+        account: accountArg,
+        timezone: z
+          .string()
+          .optional()
+          .describe(
+            "IANA timezone that decides where today starts (default: the server's configured analytics timezone)",
+          ),
+      }),
+    },
+    async ({ account: accountRef, timezone }) => {
+      const resolved = await resolveAccount(accountRef);
+      if ("error" in resolved) return errorResult(resolved.error);
+      const { account } = resolved;
+
+      const tz = timezone ?? DEFAULT_TZ;
+      if (!isValidTimeZone(tz)) return errorResult(`Unknown timezone: ${tz}`);
+
+      let accessToken: string;
+      try {
+        accessToken = decryptToken(account.accessToken);
+      } catch {
+        return errorResult(
+          "The stored Threads credentials can't be read. Reconnect the account in Settings.",
+        );
+      }
+
+      const now = new Date();
+      const bounds = getTodayBounds(tz, now);
+      const [recent, followers, bestHours] = await Promise.all([
+        getRecentPosts(account.id, bounds),
+        getTodayFollowers(account.id, accessToken, now),
+        getBestPostingHours(account.id, tz, now),
+      ]);
+      const overall = await getTodayOverall(account.id, accessToken, tz, bounds, recent.today, now);
+
+      const describe = (post: TodayPost) => ({
+        id: post.id,
+        postedAt: post.postedAt,
+        mediaType: post.mediaType,
+        permalink: post.permalink,
+        text: previewText(post.text, TEXT_PREVIEW_LENGTH),
+        views: post.views,
+        likes: post.likes,
+        replies: post.replies,
+        reposts: post.reposts,
+        quotes: post.quotes,
+        shares: post.shares,
+        engagementRatePct: engagementRate(post),
+        vsMedianViews:
+          recent.medianViews > 0 ? Math.round((post.views / recent.medianViews) * 100) / 100 : null,
+        threadPartCount: post.parts.length,
+        pace: post.pace && {
+          readingAgeHours: post.pace.readingAgeHours,
+          views: post.pace.views,
+          typicalViewsAtSameAge: post.pace.typical,
+          vsTypical: post.pace.vsTypical,
+        },
+        ...(post.gainedToday && { gainedToday: post.gainedToday }),
+      });
+
+      return jsonResult({
+        date: getDateString(now, tz),
+        timezone: tz,
+        asOf: now.toISOString(),
+        lastSyncedAt: account.syncState?.lastSyncedAt?.toISOString() ?? null,
+        accountViews: {
+          views: overall.views,
+          fromRecentPosts: overall.split?.fromPosts ?? null,
+          other: overall.split?.other ?? null,
+          ...(overall.split === null && {
+            note: "Threads hasn't reported today's account views yet, so views is the total of today's posts only.",
+          }),
+        },
+        followers: { current: followers.current, changeToday: followers.net },
+        baseline: {
+          medianViews: recent.medianViews,
+          medianEngagementRatePct:
+            recent.medianEngagementRate === null
+              ? null
+              : Math.round(recent.medianEngagementRate * 100) / 100,
+          paceComparedWithPosts: recent.typicalSample,
+        },
+        todayPosts: {
+          count: overall.postCount,
+          avgViewsPerPost: overall.avgViewsPerPost,
+          posts: recent.today.map(describe),
+        },
+        yesterdayPosts: recent.yesterday.map(describe),
+        bestHours: bestHours.map((hour) => `${String(hour).padStart(2, "0")}:00`),
+      });
     },
   );
 
