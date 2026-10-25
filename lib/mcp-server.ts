@@ -1284,7 +1284,7 @@ export function registerMcpServer(server: McpServer) {
       title: "Get today",
       annotations: READ_ONLY,
       description:
-        "How today is going, as of now: account views so far (split into views on recent posts and other views when Threads reports them), follower count and today's change, today's posts and yesterday's posts with their metrics, each against the account's median and against how its recent posts had grown by the same age (pace), what yesterday's posts gained since midnight, and the hours that usually perform best. Days are calendar days in the given timezone. Post metrics are as of the last sync.",
+        "How today is going, as of now: account views so far (split into views on recent posts and other views when Threads reports them), follower count and today's change, today's posts and yesterday's posts with their metrics, each against the account's median and against how its recent posts had grown by the same age (pace), what yesterday's posts gained since midnight, and the hours that usually perform best (the same pick as get_analytics' top_hours, so it can be empty). Days are calendar days in the given timezone. Post metrics are as of the last sync.",
       inputSchema: z.object({
         account: accountArg,
         timezone: z
@@ -1374,7 +1374,19 @@ export function registerMcpServer(server: McpServer) {
           posts: recent.today.map(describe),
         },
         yesterdayPosts: recent.yesterday.map(describe),
-        bestHours: bestHours.map((hour) => `${String(hour).padStart(2, "0")}:00`),
+        bestHours: {
+          hours: bestHours.slots.map((slot) => ({
+            hour: `${String(slot.hour).padStart(2, "0")}:00`,
+            postCount: slot.postCount,
+          })),
+          postsRanked: bestHours.postCount,
+          ...(bestHours.slots.length === 0 && {
+            note:
+              bestHours.totalPosts === 0
+                ? "No posts in the last 90 days, so there is nothing to rank yet."
+                : "No hour clearly beats the rest yet. Say so rather than picking hours from other data.",
+          }),
+        },
       });
     },
   );
