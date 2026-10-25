@@ -14,6 +14,7 @@ import { getTodayBounds } from "@/lib/today-data";
 import {
   computeBestTimeToPost,
   computeTopHours,
+  getSettledBaselineMedianViews,
   computeViralPosts,
   getBaselineMedianViews,
   getDateString,
@@ -248,6 +249,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
     reposts: p.reposts,
     quotes: p.quotes,
     shares: p.shares,
+    syncedAt: p.syncedAt,
   }));
 
   // Period-over-period deltas (computed from DB data for consistency)
@@ -350,7 +352,7 @@ export default async function OverviewPage({ searchParams }: PageProps) {
   const deltaMedianViews = pctChange(curMedianViews, prevMedianViews);
   const viralPosts = computeViralPosts(posts);
   const bestTimeToPost = computeBestTimeToPost(posts, tz);
-  const topHours = computeTopHours(bestTimeToPost);
+  const topHours = computeTopHours(bestTimeToPost, getSettledBaselineMedianViews(posts));
   const topHourDetails = topHours
     .map((hour) => bestTimeToPost.find((point) => point.hour === hour))
     .filter((point) => point !== undefined);
