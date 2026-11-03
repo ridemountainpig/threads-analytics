@@ -83,12 +83,19 @@ function getFollowersCountCached(accountId: string, accessToken: string) {
 async function getLiveFollowersCount(
   accountId: string,
   accessToken: string,
+  todayStart: Date,
   now: Date,
 ): Promise<number | null> {
   const cached = await getFollowersCountCached(accountId, accessToken).catch(() => null);
-  if (isFreshFollowersReading(cached, now, FOLLOWERS_TTL_SECONDS * 1000)) return cached.count;
-  // A stale count would be measured against yesterday's closing snapshot, which
-  // a later sync wrote, and read as followers lost.
+  // A count read before today began can predate yesterday's closing snapshot,
+  // which a later sync wrote, and measured against it would read as followers
+  // lost; the same goes for one past the TTL.
+  if (
+    isFreshFollowersReading(cached, now, FOLLOWERS_TTL_SECONDS * 1000) &&
+    cached.fetchedAt >= todayStart.getTime()
+  ) {
+    return cached.count;
+  }
   return getFollowersCount(accountId, accessToken).catch(() => null);
 }
 
@@ -99,8 +106,9 @@ export async function getTodayFollowers(
 ): Promise<{ current: number | null; net: number | null }> {
   // Snapshot days follow DEFAULT_TZ, the zone the sync writes them in.
   const todayKey = getDateString(now, DEFAULT_TZ);
+  const todayStart = parseDateOnlyInTimeZone(todayKey, DEFAULT_TZ, false);
   const [live, snapshots] = await Promise.all([
-    getLiveFollowersCount(accountId, accessToken, now),
+    getLiveFollowersCount(accountId, accessToken, todayStart, now),
     db.followerSnapshot.findMany({
       where: {
         accountId,
