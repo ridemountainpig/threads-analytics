@@ -171,6 +171,16 @@ export function computeFollowerRangeTrend(
   return { trend: [head, ...rest], opening };
 }
 
+/** Whether a cached live follower reading is recent enough to show. */
+export function isFreshFollowersReading<T extends { fetchedAt: number }>(
+  reading: T | null | undefined,
+  now: Date,
+  maxAgeMs: number,
+): reading is T {
+  if (!reading || typeof reading.fetchedAt !== "number") return false;
+  return now.getTime() - reading.fetchedAt <= maxAgeMs;
+}
+
 export interface PostOnDay {
   id: string;
   text: string;

@@ -13,7 +13,12 @@ import {
 } from "@/lib/analytics";
 import { createLimiter } from "@/lib/concurrency";
 import { DASHBOARD_POST_LIMIT } from "@/lib/dashboard-data";
-import { dateKeyToUtcDate, FOLLOWER_LOOKBACK_DAYS, shiftDateKey } from "@/lib/followers";
+import {
+  dateKeyToUtcDate,
+  FOLLOWER_LOOKBACK_DAYS,
+  isFreshFollowersReading,
+  shiftDateKey,
+} from "@/lib/followers";
 import { getRecentPostPace, type PostPace } from "@/lib/post-growth-data";
 import {
   getConversation,
@@ -55,12 +60,43 @@ export function getTodayBounds(timeZone: string, now = new Date()): TodayBounds 
 
 const FOLLOWERS_TTL_SECONDS = 5 * 60;
 
+interface LiveFollowersReading {
+  count: number | null;
+  fetchedAt: number;
+}
+
+// unstable_cache serves an expired entry as is and only refreshes it in the
+// background, and scheduled syncs never invalidate it, so after a quiet night
+// the first visit gets a count read days ago. The reading carries its fetch
+// time so getTodayFollowers can tell.
 function getFollowersCountCached(accountId: string, accessToken: string) {
   return unstable_cache(
-    () => getFollowersCount(accountId, accessToken),
+    async (): Promise<LiveFollowersReading> => ({
+      count: await getFollowersCount(accountId, accessToken),
+      fetchedAt: Date.now(),
+    }),
     ["today-followers", accountId],
     { revalidate: FOLLOWERS_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
   )();
+}
+
+async function getLiveFollowersCount(
+  accountId: string,
+  accessToken: string,
+  todayStart: Date,
+  now: Date,
+): Promise<number | null> {
+  const cached = await getFollowersCountCached(accountId, accessToken).catch(() => null);
+  // A count read before today began can predate yesterday's closing snapshot,
+  // which a later sync wrote, and measured against it would read as followers
+  // lost; the same goes for one past the TTL.
+  if (
+    isFreshFollowersReading(cached, now, FOLLOWERS_TTL_SECONDS * 1000) &&
+    cached.fetchedAt >= todayStart.getTime()
+  ) {
+    return cached.count;
+  }
+  return getFollowersCount(accountId, accessToken).catch(() => null);
 }
 
 export async function getTodayFollowers(
@@ -70,8 +106,9 @@ export async function getTodayFollowers(
 ): Promise<{ current: number | null; net: number | null }> {
   // Snapshot days follow DEFAULT_TZ, the zone the sync writes them in.
   const todayKey = getDateString(now, DEFAULT_TZ);
+  const todayStart = parseDateOnlyInTimeZone(todayKey, DEFAULT_TZ, false);
   const [live, snapshots] = await Promise.all([
-    getFollowersCountCached(accountId, accessToken).catch(() => null),
+    getLiveFollowersCount(accountId, accessToken, todayStart, now),
     db.followerSnapshot.findMany({
       where: {
         accountId,
