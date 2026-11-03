@@ -125,6 +125,11 @@ export default async function TodayPage({ searchParams }: PageProps) {
   ]);
 
   const number = (value: number) => Math.round(value).toLocaleString(dateLocale);
+  // Snapshot keys are calendar dates, so format them as such rather than in tz.
+  const snapshotDate = (key: string) =>
+    new Intl.DateTimeFormat(dateLocale, { month: "short", day: "numeric", timeZone: "UTC" }).format(
+      new Date(`${key}T00:00:00Z`),
+    );
   const time = (date: Date) =>
     normalizeIntlSpaces(
       new Intl.DateTimeFormat(dateLocale, {
@@ -354,9 +359,18 @@ export default async function TodayPage({ searchParams }: PageProps) {
             sub={
               followers.net === null
                 ? t.today.followersPending
-                : followers.current !== null
-                  ? t.today.followersTotal.replace("{count}", number(followers.current))
-                  : undefined
+                : [
+                    // Missed syncs: the change covers more than today, so say since when.
+                    followers.changeSince &&
+                      t.chart.followerChangeSince.replace(
+                        "{date}",
+                        snapshotDate(followers.changeSince),
+                      ),
+                    followers.current !== null &&
+                      t.today.followersTotal.replace("{count}", number(followers.current)),
+                  ]
+                    .filter(Boolean)
+                    .join(" · ") || undefined
             }
           />
         </div>

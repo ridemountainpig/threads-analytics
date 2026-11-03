@@ -1284,7 +1284,7 @@ export function registerMcpServer(server: McpServer) {
       title: "Get today",
       annotations: READ_ONLY,
       description:
-        "How today is going, as of now: account views so far (split into views on recent posts and other views when Threads reports them), follower count and today's change, today's posts and yesterday's posts with their metrics, each against the account's median and against how its recent posts had grown by the same age (pace), what yesterday's posts gained since midnight, and the hours that usually perform best (the same pick as get_analytics' top_hours, so it can be empty). Days are calendar days in the given timezone. Post metrics are as of the last sync.",
+        "How today is going, as of now: account views so far (split into views on recent posts and other views when Threads reports them), follower count and today's change (with changeSince naming the day it is measured from when missed syncs stretch it past yesterday), today's posts and yesterday's posts with their metrics, each against the account's median and against how its recent posts had grown by the same age (pace), what yesterday's posts gained since midnight, and the hours that usually perform best (the same pick as get_analytics' top_hours, so it can be empty). Days are calendar days in the given timezone. Post metrics are as of the last sync.",
       inputSchema: z.object({
         account: accountArg,
         timezone: z
@@ -1359,7 +1359,11 @@ export function registerMcpServer(server: McpServer) {
             note: "Threads hasn't reported today's account views yet, so views is the total of today's posts only.",
           }),
         },
-        followers: { current: followers.current, changeToday: followers.net },
+        followers: {
+          current: followers.current,
+          changeToday: followers.net,
+          ...(followers.changeSince && { changeSince: followers.changeSince }),
+        },
         baseline: {
           medianViews: recent.medianViews,
           medianEngagementRatePct:
