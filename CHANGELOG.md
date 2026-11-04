@@ -2,6 +2,26 @@
 
 Notable changes to the Threads Analytics dashboard and macOS app, newest first. The website is not included.
 
+## 1.0.1
+
+### New
+
+- The MCP server can tell an agent how today is going, return every part of a thread, and compare one post with your other posts, using the same numbers as the Today and Posts pages. ([#66](https://github.com/ridemountainpig/threads-analytics/pull/66))
+
+### Improved
+
+- Best posting hours leave out posts that are still growing and only list hours that clearly beat your typical post, so there can be fewer than three, or none. Each hour shows how many posts back it, and Today says when no hour stands out yet. ([#64](https://github.com/ridemountainpig/threads-analytics/pull/64))
+- When a sync was missed, the Followers card on Today says which day the change is counted from, such as "Change since Nov 1". ([#71](https://github.com/ridemountainpig/threads-analytics/pull/71))
+
+### Fixed
+
+- The Followers card on Today no longer shows an outdated follower count as followers lost. ([#70](https://github.com/ridemountainpig/threads-analytics/pull/70))
+- The first visit to Today after a quiet stretch no longer shows replies and reply insights from hours earlier. ([#71](https://github.com/ridemountainpig/threads-analytics/pull/71))
+
+### Maintenance
+
+- Dependency updates, including Next.js 16.4.3. ([#67](https://github.com/ridemountainpig/threads-analytics/pull/67), [#68](https://github.com/ridemountainpig/threads-analytics/pull/68))
+
 ## 1.0.0
 
 The Mac app and the Docker image now release together under one version.
