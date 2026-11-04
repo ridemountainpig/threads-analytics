@@ -12,7 +12,6 @@ const {
   computeFollowerTrend,
   followerChangeBetween,
   groupPostsByDay,
-  isFreshFollowersReading,
   parseDemographics,
   snapshotDays,
   summarizeFollowerGrowth,
@@ -281,19 +280,4 @@ test("posts are grouped by snapshot day, busiest first", () => {
     ],
     count: 3,
   });
-});
-
-test("a cached live follower count only counts while it is recent", () => {
-  const now = tpe("2026-11-03T13:00:00");
-  const ttl = 5 * 60 * 1000;
-  const readAt = (iso) => ({ count: 1815, fetchedAt: tpe(iso).getTime() });
-  assert.equal(isFreshFollowersReading(readAt("2026-11-03T12:58:00"), now, ttl), true);
-  // Fetched alongside the request, a moment after `now` was read.
-  assert.equal(isFreshFollowersReading(readAt("2026-11-03T13:00:01"), now, ttl), true);
-  // An entry served past its TTL, e.g. from two days ago: measuring it against
-  // yesterday's closing snapshot would report followers lost.
-  assert.equal(isFreshFollowersReading(readAt("2026-11-01T09:00:00"), now, ttl), false);
-  assert.equal(isFreshFollowersReading(null, now, ttl), false);
-  // An entry cached by an earlier version held the bare count.
-  assert.equal(isFreshFollowersReading(1815, now, ttl), false);
 });

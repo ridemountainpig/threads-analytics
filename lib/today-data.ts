@@ -1,6 +1,5 @@
 import "server-only";
 
-import { unstable_cache } from "next/cache";
 import { db } from "@/lib/db";
 import {
   computeBestTimeToPost,
@@ -13,11 +12,12 @@ import {
 } from "@/lib/analytics";
 import { createLimiter } from "@/lib/concurrency";
 import { DASHBOARD_POST_LIMIT } from "@/lib/dashboard-data";
+import { cachedFresh } from "@/lib/fresh-cache";
 import {
   dateKeyToUtcDate,
   FOLLOWER_LOOKBACK_DAYS,
-  isFreshFollowersReading,
   shiftDateKey,
+  utcDateToKey,
 } from "@/lib/followers";
 import { getRecentPostPace, type PostPace } from "@/lib/post-growth-data";
 import {
@@ -60,55 +60,35 @@ export function getTodayBounds(timeZone: string, now = new Date()): TodayBounds 
 
 const FOLLOWERS_TTL_SECONDS = 5 * 60;
 
-interface LiveFollowersReading {
-  count: number | null;
-  fetchedAt: number;
-}
-
-// unstable_cache serves an expired entry as is and only refreshes it in the
-// background, and scheduled syncs never invalidate it, so after a quiet night
-// the first visit gets a count read days ago. The reading carries its fetch
-// time so getTodayFollowers can tell.
-function getFollowersCountCached(accountId: string, accessToken: string) {
-  return unstable_cache(
-    async (): Promise<LiveFollowersReading> => ({
-      count: await getFollowersCount(accountId, accessToken),
-      fetchedAt: Date.now(),
-    }),
-    ["today-followers", accountId],
-    { revalidate: FOLLOWERS_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
-  )();
-}
-
-async function getLiveFollowersCount(
+// A count read before today began can predate yesterday's closing snapshot,
+// which a later sync wrote, and measured against it would read as followers lost.
+function getLiveFollowersCount(
   accountId: string,
   accessToken: string,
   todayStart: Date,
-  now: Date,
 ): Promise<number | null> {
-  const cached = await getFollowersCountCached(accountId, accessToken).catch(() => null);
-  // A count read before today began can predate yesterday's closing snapshot,
-  // which a later sync wrote, and measured against it would read as followers
-  // lost; the same goes for one past the TTL.
-  if (
-    isFreshFollowersReading(cached, now, FOLLOWERS_TTL_SECONDS * 1000) &&
-    cached.fetchedAt >= todayStart.getTime()
-  ) {
-    return cached.count;
-  }
-  return getFollowersCount(accountId, accessToken).catch(() => null);
+  return cachedFresh(
+    () => getFollowersCount(accountId, accessToken),
+    ["today-followers", accountId],
+    { ttlSeconds: FOLLOWERS_TTL_SECONDS, tags: [TODAY_LIVE_TAG], notBefore: todayStart.getTime() },
+  ).catch(() => null);
 }
 
 export async function getTodayFollowers(
   accountId: string,
   accessToken: string,
   now = new Date(),
-): Promise<{ current: number | null; net: number | null }> {
+): Promise<{
+  current: number | null;
+  net: number | null;
+  /** Date of the snapshot `net` is measured from, when not yesterday's (missed syncs). */
+  changeSince: string | null;
+}> {
   // Snapshot days follow DEFAULT_TZ, the zone the sync writes them in.
   const todayKey = getDateString(now, DEFAULT_TZ);
   const todayStart = parseDateOnlyInTimeZone(todayKey, DEFAULT_TZ, false);
   const [live, snapshots] = await Promise.all([
-    getLiveFollowersCount(accountId, accessToken, todayStart, now),
+    getLiveFollowersCount(accountId, accessToken, todayStart),
     db.followerSnapshot.findMany({
       where: {
         accountId,
@@ -121,9 +101,13 @@ export async function getTodayFollowers(
   const todayDate = dateKeyToUtcDate(todayKey).getTime();
   const opening = snapshots.filter((s) => s.date.getTime() < todayDate).at(-1);
   const current = live ?? snapshots.find((s) => s.date.getTime() === todayDate)?.followersCount;
+  const net = current != null && opening ? current - opening.followersCount : null;
+  const openingKey = opening && utcDateToKey(opening.date);
   return {
     current: current ?? null,
-    net: current != null && opening ? current - opening.followersCount : null,
+    net,
+    changeSince:
+      net !== null && openingKey && openingKey !== shiftDateKey(todayKey, -1) ? openingKey : null,
   };
 }
 
@@ -342,11 +326,14 @@ const INBOX_POST_LIMIT = 20;
 
 function getConversationCached(accountId: string, postId: string, accessToken: string) {
   // Captured, not an argument, so the token stays out of the cache key.
-  return unstable_cache(
+  return cachedFresh(
     () => getConversation(postId, accessToken),
     [TODAY_LIVE_TAG, accountId, postId],
-    { revalidate: INBOX_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
-  )();
+    {
+      ttlSeconds: INBOX_TTL_SECONDS,
+      tags: [TODAY_LIVE_TAG],
+    },
+  );
 }
 
 export async function getTodayInbox(
@@ -395,15 +382,15 @@ const MY_REPLIES_PAGE_LIMIT = 3;
 const MY_REPLIES_INSIGHTS_LIMIT = 50;
 
 function getReplyInsightsCached(accountId: string, replyId: string, accessToken: string) {
-  return unstable_cache(
+  return cachedFresh(
     () => getPostInsights(replyId, accessToken),
     [TODAY_LIVE_TAG, "reply-insights", accountId, replyId],
-    { revalidate: INBOX_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
-  )();
+    { ttlSeconds: INBOX_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
+  );
 }
 
 function getUserRepliesSinceCached(accountId: string, accessToken: string, since: number) {
-  return unstable_cache(
+  return cachedFresh(
     async () => {
       const replies: ThreadsUserReply[] = [];
       let after: string | undefined;
@@ -416,8 +403,8 @@ function getUserRepliesSinceCached(accountId: string, accessToken: string, since
       return { replies, truncated: after !== undefined };
     },
     [TODAY_LIVE_TAG, "my-replies", accountId, String(since)],
-    { revalidate: INBOX_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
-  )();
+    { ttlSeconds: INBOX_TTL_SECONDS, tags: [TODAY_LIVE_TAG] },
+  );
 }
 
 export async function getTodayMyReplies(
