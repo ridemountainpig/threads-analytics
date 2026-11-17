@@ -11,6 +11,7 @@ import {
 } from "@/lib/today-data";
 import { replyRate } from "@/lib/today-replies";
 import { Fragment } from "react";
+import Link from "next/link";
 import { ChevronRight } from "lucide-react";
 import { cn, normalizeIntlSpaces } from "@/lib/utils";
 import { StatCard } from "@/components/dashboard/stat-card";
@@ -450,21 +451,30 @@ export default async function TodayPage({ searchParams }: PageProps) {
             </div>
           }
           replies={
-            <RepliesCard
-              received={<ReplyInbox {...inboxProps} />}
-              sent={<MyReplies {...myRepliesProps} />}
-              receivedCount={inbox.status === "ok" ? inbox.inbox.replies.length : null}
-              sentCount={myReplies.status === "ok" ? myReplies.replies.length : null}
-              initialView={
-                inbox.status === "ok" &&
-                inbox.inbox.replies.length === 0 &&
-                myReplies.status === "ok" &&
-                myReplies.replies.length > 0
-                  ? "sent"
-                  : "received"
-              }
-              labels={t.today}
-            />
+            <div className="space-y-2">
+              <RepliesCard
+                received={<ReplyInbox {...inboxProps} />}
+                sent={<MyReplies {...myRepliesProps} />}
+                receivedCount={inbox.status === "ok" ? inbox.inbox.replies.length : null}
+                sentCount={myReplies.status === "ok" ? myReplies.replies.length : null}
+                initialView={
+                  inbox.status === "ok" &&
+                  inbox.inbox.replies.length === 0 &&
+                  myReplies.status === "ok" &&
+                  myReplies.replies.length > 0
+                    ? "sent"
+                    : "received"
+                }
+                labels={t.today}
+              />
+              <Link
+                href="/dashboard/unreplied"
+                className="text-tint inline-flex min-h-11 items-center gap-1 px-1 text-sm font-medium transition-opacity duration-150 hover:opacity-80 active:opacity-60 motion-reduce:transition-none"
+              >
+                {t.unreplied.todayLink}
+                <ChevronRight aria-hidden className="size-3.5" />
+              </Link>
+            </div>
           }
         />
       </div>

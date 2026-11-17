@@ -13,6 +13,7 @@ import {
   ArrowUpRight,
   Tag,
   Ellipsis,
+  MessageCircleReply,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { logoutAction } from "@/actions/auth";
@@ -31,6 +32,7 @@ import type { VersionLink } from "@/lib/update-status";
 
 const navItems = [
   { href: "/dashboard/today", labelKey: "today", icon: Sun },
+  { href: "/dashboard/unreplied", labelKey: "unreplied", icon: MessageCircleReply },
   { href: "/dashboard/overview", labelKey: "overview", icon: LayoutDashboard },
   { href: "/dashboard/analytics", labelKey: "analytics", icon: BarChart2 },
   { href: "/dashboard/posts", labelKey: "posts", icon: FileText },
@@ -65,6 +67,7 @@ interface SidebarProps {
   showSignOut?: boolean;
   labels: {
     today: string;
+    unreplied: string;
     overview: string;
     analytics: string;
     posts: string;
