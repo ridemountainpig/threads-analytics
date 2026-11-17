@@ -147,3 +147,64 @@ export function buildMyReplies(
     }))
     .sort((a, b) => b.timestamp.localeCompare(a.timestamp));
 }
+
+export interface UnrepliedComment extends InboxReply {
+  // Visible replies under this comment, at any depth: how much discussion it drew.
+  threadReplies: number;
+}
+
+export interface UnrepliedList {
+  comments: UnrepliedComment[];
+  answered: number;
+}
+
+export type UnrepliedSort = "newest" | "oldest" | "discussed";
+
+/**
+ * Every comment still waiting on the author across the given posts, whatever
+ * its age: the "Replies today" rule from buildReplyInbox with no cut-off.
+ */
+export function buildUnrepliedList(conversations: readonly PostConversation[]): UnrepliedList {
+  const inbox = buildReplyInbox(conversations, new Date(0));
+  const awaitingIds = new Set(
+    inbox.replies.filter((reply) => reply.status === "awaiting").map((reply) => reply.id),
+  );
+
+  const threadReplies = new Map<string, number>();
+  for (const { postId, replies } of conversations) {
+    const parentOf = new Map(replies.map((reply) => [reply.id, reply.repliedToId ?? postId]));
+    for (const reply of replies) {
+      if (reply.hidden || reply.ownedByMe) continue;
+      // Credit every awaiting ancestor; the seen set guards against a malformed cycle.
+      const seen = new Set<string>([reply.id]);
+      let parent = parentOf.get(reply.id);
+      while (parent && !seen.has(parent)) {
+        seen.add(parent);
+        if (awaitingIds.has(parent))
+          threadReplies.set(parent, (threadReplies.get(parent) ?? 0) + 1);
+        parent = parentOf.get(parent);
+      }
+    }
+  }
+
+  return {
+    comments: inbox.replies
+      .filter((reply) => reply.status === "awaiting")
+      .map((reply) => ({ ...reply, threadReplies: threadReplies.get(reply.id) ?? 0 })),
+    answered: inbox.answered,
+  };
+}
+
+export function sortUnreplied<T extends Pick<UnrepliedComment, "timestamp" | "threadReplies">>(
+  comments: readonly T[],
+  sort: UnrepliedSort,
+): T[] {
+  const newestFirst = (a: T, b: T) => b.timestamp.localeCompare(a.timestamp);
+  return [...comments].sort(
+    sort === "oldest"
+      ? (a, b) => -newestFirst(a, b)
+      : sort === "discussed"
+        ? (a, b) => b.threadReplies - a.threadReplies || newestFirst(a, b)
+        : newestFirst,
+  );
+}

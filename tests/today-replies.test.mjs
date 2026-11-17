@@ -3,8 +3,10 @@ import test from "node:test";
 import {
   buildMyReplies,
   buildReplyInbox,
+  buildUnrepliedList,
   isHiddenStatus,
   replyRate,
+  sortUnreplied,
 } from "../lib/today-replies.ts";
 
 const since = new Date("2026-10-11T16:00:00Z");
@@ -183,4 +185,42 @@ test("my replies keep comments anywhere but drop thread parts", () => {
       ["to-commenter", "mine"],
     ],
   );
+});
+
+test("unreplied list keeps every awaiting comment regardless of age", () => {
+  const list = buildUnrepliedList([
+    {
+      postId: "post",
+      replies: [
+        reply("old", "post", { at: "2026-09-01T00:00:00+0000" }),
+        reply("answered", "post", { minute: 1 }),
+        reply("me1", "answered", { minute: 2, ownedByMe: true }),
+        reply("followup", "me1", { minute: 3 }),
+        reply("chat", "old", { minute: 4 }),
+        reply("chat2", "chat", { minute: 5 }),
+        reply("spam", "post", { minute: 6, hidden: true }),
+      ],
+    },
+  ]);
+  assert.deepEqual(
+    list.comments.map((c) => c.id),
+    ["followup", "old"],
+  );
+  assert.equal(list.answered, 1);
+  const old = list.comments.find((c) => c.id === "old");
+  assert.equal(old.threadReplies, 2, "counts nested replies under the comment");
+  assert.equal(list.comments.find((c) => c.id === "followup").threadReplies, 0);
+});
+
+test("unreplied sort orders by time or by discussion", () => {
+  const items = [
+    { id: "a", timestamp: "2026-10-01T00:00:00.000Z", threadReplies: 0 },
+    { id: "b", timestamp: "2026-10-03T00:00:00.000Z", threadReplies: 1 },
+    { id: "c", timestamp: "2026-10-02T00:00:00.000Z", threadReplies: 5 },
+    { id: "d", timestamp: "2026-10-04T00:00:00.000Z", threadReplies: 1 },
+  ];
+  const ids = (sort) => sortUnreplied(items, sort).map((i) => i.id);
+  assert.deepEqual(ids("newest"), ["d", "b", "c", "a"]);
+  assert.deepEqual(ids("oldest"), ["a", "c", "b", "d"]);
+  assert.deepEqual(ids("discussed"), ["c", "d", "b", "a"]);
 });

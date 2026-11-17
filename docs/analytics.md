@@ -20,6 +20,16 @@ Everything about the current calendar day (in your time zone) on one page.
 
 > Post numbers are as fresh as the last sync; when it's more than an hour old, the page says so.
 
+## Unreplied
+
+Comments still waiting for your answer across your recent posts, so a new reply under an older post doesn't slip by. Read live from Threads and never stored; needs the `threads_read_replies` permission.
+
+- **Range:** posts from the last 7, 30 (default) or 90 days. Only posts the last sync saw with at least one reply are checked, the latest 60 at most.
+- **Awaiting:** the same rule as Replies Today, without the "today" cut-off: a reply to your post or to one of your replies that you haven't answered. Replies between commenters and replies you've hidden are left out.
+- **Sort:** newest, waiting longest, or most replies (how many visible replies the comment drew in its thread). Threads doesn't share like counts on other people's replies, so likes can't be used.
+- **Stat cards:** how many comments are waiting, how long the oldest has waited, and the reply rate (answered ÷ answered + waiting) for the range.
+- **Freshness:** each post's conversation is cached for 10 minutes and reread as soon as a sync sees its reply count change. **Refresh** rereads everything, e.g. right after you've replied on Threads.
+
 ## Overview
 
 | Section         | What it shows                                                                                                                                                                                                                                                         |
